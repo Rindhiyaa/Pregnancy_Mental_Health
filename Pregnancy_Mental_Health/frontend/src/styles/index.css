@@ -1,0 +1,32 @@
+/* Global and base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #ffffff;
+  color: #111827;
+  font-size: 16px;
+  overflow-x: hidden;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Import all separate stylesheets */
+@import './navbar.css';
+@import './hero.css';
+@import './pages.css';
+@import './auth.css';
+@import './footer.css';
+@import './responsive.css';

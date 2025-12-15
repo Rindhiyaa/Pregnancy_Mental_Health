@@ -1,0 +1,97 @@
+body {
+  background: #ffffff;
+  color: #111827;
+  font-size: 18px;              /* global base font bigger */
+}
+
+/* Navbar */
+.nav-inner {
+  max-width: 1200px;            /* more width */
+  margin: 0 auto;
+  padding: 1rem 2rem;           /* more padding */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.8rem;
+  font-size: 1rem;              /* was 0.95rem */
+  color: #6b7280;
+}
+
+.nav-right button {
+  padding: 0.65rem 1.5rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg,#8b5cf6,#ec4899);
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;              /* was 0.9rem */
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(148,88,246,0.3);
+}
+
+/* Hero section */
+.hero {
+  max-width: 1200px;            /* was 1100px */
+  margin: 4.5rem auto 4rem auto;
+  padding: 0 2.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 3.5rem;                  /* more gap between text and image */
+  align-items: center;
+}
+
+.hero-title {
+  font-size: 3.3rem;            /* was 3rem */
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.4rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.hero-sub-small {
+  font-size: 1rem;              /* was 0.95rem */
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.hero-sub {
+  font-size: 1.05rem;           /* was 1rem */
+  color: #6b7280;
+  max-width: 40rem;             /* wider */
+  margin-bottom: 1.8rem;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;                    /* more gap between buttons */
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-outline {
+  font-size: 1rem;              /* both buttons bigger */
+}
+
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;                  /* more gap between pills */
+  font-size: 0.9rem;            /* was 0.8rem */
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 800px) {
+  .hero {
+    grid-template-columns: 1fr;
+    margin: 3.5rem auto 3rem auto;
+    padding: 0 1.5rem;
+  }
+}

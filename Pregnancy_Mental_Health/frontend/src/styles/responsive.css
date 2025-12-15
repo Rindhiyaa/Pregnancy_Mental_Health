@@ -1,0 +1,154 @@
+/* --- RESPONSIVE STYLES --- */
+
+/* Mobile hamburger menu styles */
+@media (max-width: 1100px) {
+  .hamburger {
+    display: flex;
+  }
+
+  .nav-inner {
+    padding: 1rem 1.5rem;
+    gap: 1rem;
+  }
+
+  .logo-text {
+    display: none;
+  }
+
+  .logo-mark {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  /* Mobile nav links dropdown */
+  .nav-links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    justify-content: flex-start;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .nav-links.active {
+    max-height: 400px;
+  }
+
+  .nav-links a {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 1rem;
+    position: relative;
+  }
+
+  .nav-links a::after {
+    bottom: 1rem;
+  }
+
+  .nav-links a:last-child {
+    border-bottom: none;
+  }
+
+  .nav-right {
+    gap: 0.8rem;
+  }
+
+  .btn-signin,
+  .btn-signup {
+    padding: 0.7rem 1.4rem;
+    font-size: 0.95rem;
+  }
+
+  .profile-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .logout-btn {
+    padding: 0.7rem 1.4rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Tablet and mobile hero */
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin: 3rem auto 2rem auto;
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .auth-layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+
+  .auth-side {
+    display: none;
+  }
+
+  .page {
+    margin: 2.5rem auto;
+    padding: 0 1.5rem;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 640px) {
+  .nav-inner {
+    padding: 0.8rem 1rem;
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+  }
+
+  .hero {
+    margin: 2rem auto 1.5rem auto;
+    padding: 0 1rem;
+    gap: 1.5rem;
+  }
+
+  .hero-title {
+    font-size: 1.8rem;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-outline {
+    width: 100%;
+  }
+
+  .page {
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .page h1 {
+    font-size: 1.8rem;
+  }
+
+  .page p {
+    font-size: 1rem;
+  }
+}
