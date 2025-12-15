@@ -2,7 +2,7 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import HomePage from "../pages/HomePage";
 import AboutPage from "../pages/AboutPage";
-import FeaturesPage from "../pages/FeaturesPage";
+import DashboardPage from "../pages/DashboardPage";
 import CliniciansPage from "../pages/CliniciansPage";
 import PatientsPage from "../pages/PatientsPage";
 import SignInPage from "../pages/SignInPage";
@@ -15,7 +15,7 @@ export default function AppRouter() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/about" element={<AboutPage />} />
-      <Route path="/features" element={<FeaturesPage />} />
+      <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/clinicians" element={<CliniciansPage />} />
       <Route path="/patients" element={<PatientsPage />} />
       <Route path="/signin" element={<SignInPage />} />
@@ -25,4 +25,3 @@ export default function AppRouter() {
     </Routes>
   );
 }
-

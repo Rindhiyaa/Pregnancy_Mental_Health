@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function FeaturesPage() {
+export default function DashboardPage() {
   return (
     <main className="page">
       <h1>Features</h1>

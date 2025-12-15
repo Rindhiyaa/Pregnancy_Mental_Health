@@ -1,35 +1,74 @@
-/* --- AUTH PAGES (Fixed, Non-Scrollable, Narrower, BIGGER FONTS) --- */
+/* --- AUTH PAGES --- */
+
+/* Full-page background only here */
+/* body, #root, .page {
+  background: radial-gradient(circle at top left, #fdf2ff 0%, #ffffff 48%, #eff6ff 100%);
+} */
 
 .auth-page {
-  background: radial-gradient(circle at top left, #fdf2ff 0%, #ffffff 40%, #eff6ff 100%);
-  min-height: 100vh;
+  min-height: 5vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;       /* keep near top */
   justify-content: center;
-  padding: 0;
-  overflow: hidden;
+  padding:  0.5rem 0;
+                 /* small top/bottom gap */
 }
 
+/* Card WITHOUT extra box look */
 .auth-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.95fr);
-  max-width: 760px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  max-width: 1100px;
   width: 100%;
-  height: 100vh;
-  background: #ffffff;
-  border-radius: 0;
-  box-shadow: none;
-  overflow: hidden;
+   box-shadow:
+    0 32px 80px rgba(15, 23, 42, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.35);  /* subtle border */
+  backdrop-filter: blur(22px);            /* GLASS EFFECT */
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.16);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  border-radius: 28;
+   border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.65);              /* no outer rounded box */
+  box-shadow: none;              /* no outer shadow */
+}
+.auth-layout:hover {
+  opacity: 0.95;
+  transform: translateY(-4px);
+}
+.auth-main:hover {
+  opacity: 0.95;
+}
+.auth-side:hover {
+  opacity: 0.95;
 }
 
+/* Left side: form card */
 .auth-main {
   padding: 2.2rem 2rem;
-  overflow-y: auto;
-  max-height: 100vh;
+   
+  background: radial-gradient(circle at top left, #fdf2ff 0%, #ffffff 48%, #eff6ff 100%);
+  border-radius: 28px 0 0 28px;
+      transition: all 0.25s ease;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
 }
+
+/* Right side: info card, same height feel */
+.auth-side {
+  background: #f5f3ffcc;
+  color: #111827;
+  padding: 2rem 2rem 2rem 1.5rem;
+  display: flex;
+     transition: all 0.25s ease;
+  flex-direction: column;
+  justify-content: space-between;
+  border-left: 1px solid #ede9fe;
+  border-radius: 0 24px 24px 0;
+}
+
+/* ---- existing typography etc. can stay below ---- */
 
 .auth-brand {
   display: flex;
@@ -99,7 +138,7 @@
 .two-col-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.8rem;
+  gap: 0.35rem;
 }
 
 .auth-main label {
@@ -180,18 +219,6 @@ input:focus {
   opacity: 0.95;
 }
 
-.auth-side {
-  background: radial-gradient(circle at top, #fdf4ff 0, #f5f3ff 55%, #eef2ff 100%);
-  color: #111827;
-  padding: 1.8rem 1.6rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border-left: 1px solid #ede9fe;
-  overflow-y: auto;
-  max-height: 100vh;
-}
-
 .auth-side > div {
   display: flex;
   flex-direction: column;
@@ -260,4 +287,20 @@ input:focus {
   color: #9ca3af;
   line-height: 1.5;
   margin-top: 1.2rem;
+}
+
+/* Mobile stacking */
+@media (max-width: 900px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+    max-width: 540px;
+  }
+
+  .auth-main {
+    border-radius: 24px 24px 0 0;
+  }
+
+  .auth-side {
+    border-radius: 0 0 24px 24px;
+  }
 }
