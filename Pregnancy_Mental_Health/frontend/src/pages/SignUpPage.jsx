@@ -21,10 +21,10 @@ export default function SignUpPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+  
     if (!form.firstName || !form.email || !form.password) {
       setError("Please fill in first name, email, and password.");
       return;
@@ -37,10 +37,32 @@ export default function SignUpPage() {
       setError("You must agree to the guidelines to continue.");
       return;
     }
-
-    alert("Sign up successful!");
-    navigate("/signin");
+  
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: form.firstName,
+          last_name: form.lastName,
+          email: form.email,
+          password: form.password,
+          role: form.role,
+        }),
+      });
+  
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || "Signup failed");
+      }
+  
+      // success → go to sign-in
+      navigate("/signin");
+    } catch (err) {
+      setError(err.message || "Something went wrong. Please try again.");
+    }
   };
+  
 
   return (
     <main className="page auth-page">

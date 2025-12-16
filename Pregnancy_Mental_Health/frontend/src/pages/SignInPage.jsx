@@ -11,18 +11,38 @@ export default function SignInPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+  
     if (!form.email || !form.password) {
       setError("Please fill in email and password.");
       return;
     }
-
-    alert("Sign in successful!");
-    navigate("/");
+  
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+        }),
+      });
+  
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || "Sign in failed");
+      }
+  
+      const data = await res.json();
+      console.log("Login success", data);
+      navigate("/");
+    } catch (err) {
+      setError(err.message || "Something went wrong. Please try again.");
+    }
   };
+  
 
   return (
     <main className="page auth-page">
