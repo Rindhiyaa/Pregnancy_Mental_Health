@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from typing import List
 
 from ..database import get_db
-from ..schemas import PredictRequest, PredictResponse
+from ..schemas import PredictRequest, PredictResponse, HistoryItem
 from ..ml_model import model
 from .. import models
 
@@ -24,3 +25,17 @@ def predict(payload: PredictRequest, db: Session = Depends(get_db)):
     db.commit()
 
     return PredictResponse(prediction=pred, probability=proba)
+
+@router.get("/assessments/history", response_model=List[HistoryItem])
+def get_history(db: Session = Depends(get_db)):
+    logs = db.query(models.PredictionLog).all()
+    history = []
+    for log in logs:
+        risk = "high" if log.prediction > 0.5 else "low"
+        history.append(HistoryItem(
+            id=log.id,
+            name=f"Patient {log.id}",
+            date=log.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            risk=risk
+        ))
+    return history

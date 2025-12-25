@@ -30,3 +30,12 @@ class PredictRequest(BaseModel):
 class PredictResponse(BaseModel):
     prediction: float
     probability: float
+
+class HistoryItem(BaseModel):
+    id: int
+    name: str
+    date: str
+    risk: str
+
+    class Config:
+        from_attributes = True
