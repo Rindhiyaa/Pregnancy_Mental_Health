@@ -8,8 +8,8 @@ const ProfilePage = () => {
 
   // later you can load this from backend
   const [profile, setProfile] = useState({
-    fullName: "Rindhiyaa",
-    email: "rindhiyaa.2201205@srec.ac.in",
+    fullName: "amellia",
+    email: "ammellia@gmail.com",
     role: "Clinician",
     memberSince: "Dec 17, 2025",
   });
