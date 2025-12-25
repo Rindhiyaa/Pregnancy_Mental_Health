@@ -7,9 +7,11 @@ import CliniciansPage from "../pages/CliniciansPage";
 import PatientsPage from "../pages/PatientsPage";
 import SignInPage from "../pages/SignInPage";
 import SignUpPage from "../pages/SignUpPage";
-import RiskCheckPage from "../pages/RiskCheckPage";
-import NotFoundPage from "../pages/NotFoundPage";
 
+import NotFoundPage from "../pages/NotFoundPage";
+import HistoryPage from "../pages/HistoryPage";
+import ProfilePage from "../pages/ProfilePage";
+import NewAssessment from "../pages/NewAssessment";
 export default function AppRouter() {
   return (
     <Routes>
@@ -20,7 +22,13 @@ export default function AppRouter() {
       <Route path="/patients" element={<PatientsPage />} />
       <Route path="/signin" element={<SignInPage />} />
       <Route path="/signup" element={<SignUpPage />} />
-      <Route path="/risk-check" element={<RiskCheckPage />} />
+ 
+      <Route path="/Dashboard/History" element={<HistoryPage />} />
+<Route path="/Dashboard/Profile" element={<ProfilePage />} />
+
+<Route path="/Dashboard/new-assessment" element={<NewAssessment />} />
+
+
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

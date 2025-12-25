@@ -33,15 +33,15 @@ export default function Navbar() {
           <NavLink to="/about" className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
             About
           </NavLink>
-          <NavLink to="/features" className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
-            Features
+          <NavLink to="/dashboard" className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
+            Dashboard
           </NavLink>
-          <NavLink to="/clinicians" className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
+          {/* <NavLink to="/clinicians" className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
             For Clinicians
           </NavLink>
           <NavLink to="/patients" className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
             For Patients
-          </NavLink>
+          </NavLink> */}
         </nav>
 
         {/* Right side: Profile or Auth buttons */}

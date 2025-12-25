@@ -1,4 +1,4 @@
-/* --- PAGES (Sticky, Not Scrollable) --- */
+/* --- GLOBAL PAGE LAYOUT --- */
 
 html,
 body {
@@ -22,21 +22,22 @@ main {
   overflow-y: auto;
 }
 
+/* Generic page wrapper (for About, etc.) */
 .page {
   max-width: 1100px;
-  margin: 4rem auto;
+  margin: 3rem auto;
   padding: 0 2.5rem;
   width: 100%;
 }
 
 .page h1 {
-  font-size: 2.75rem;
+  font-size: 2.1rem;
   margin-bottom: 1rem;
   font-weight: 700;
 }
 
 .page p {
-  font-size: 1.15rem;
+  font-size: 1rem;
   color: #6b7280;
   margin-bottom: 1.2rem;
   line-height: 1.7;
@@ -49,6 +50,155 @@ main {
 
 .page li {
   margin-bottom: 0.8rem;
-  font-size: 1.1rem;
+  font-size: 0.98rem;
   line-height: 1.6;
+}
+
+/* --- HERO SECTION --- */
+
+.hero {
+  max-width: 1200px;
+  margin: 3rem auto;
+  padding: 0 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  background: #f3e8ff;
+  color: #6b21a8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.9rem;
+}
+
+.badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #8b5cf6;
+}
+
+/* Hero title – medium size */
+.hero-title {
+  font-size: 2.5rem;          /* in between big and small */
+  line-height: 1.25;
+  font-weight: 700;
+  max-width: 30rem;
+  margin: 0.8rem 0 1.6rem;
+  color: #111827;
+}
+
+.hero-title .highlight {
+  color: #ec4899;
+}
+
+/* Subtext */
+.hero-sub-small {
+  font-size: 1rem;            /* slightly bigger */
+  color: #6b7280;
+  margin-bottom: 0.4rem;
+}
+
+.hero-sub {
+  font-size: 1.05rem;         /* slightly bigger */
+  color: #6b7280;
+  line-height: 1.6;
+  max-width: 30rem;
+  margin-bottom: 1.4rem;
+}
+
+/* Buttons */
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.btn-primary {
+  padding: 0.65rem 1.8rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: #ffffff;
+  font-size: 1rem;            /* was 0.95rem */
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 16px rgba(139, 92, 246, 0.25);
+  transition: all 0.25s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(139, 92, 246, 0.35);
+}
+
+.btn-outline {
+  padding: 0.65rem 1.8rem;
+  border-radius: 999px;
+  border: 2px solid #8b5cf6;
+  background: #ffffff;
+  color: #8b5cf6;
+  font-size: 1rem;            /* was 0.95rem */
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-outline:hover {
+  background: #f3e8ff;
+  transform: translateY(-2px);
+}
+
+/* Tags */
+.hero-tags {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tag-pill {
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+/* Hero image */
+.hero-right {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.hero-image {
+  max-width: 360px;
+  width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .hero {
+    flex-direction: column-reverse;
+    text-align: left;
+    margin: 2.5rem auto;
+  }
+
+  .hero-title {
+    font-size: 2rem;          /* a bit larger than previous 1.8rem */
+  }
+
+  .hero-sub,
+  .hero-sub-small {
+    font-size: 0.95rem;
+  }
 }

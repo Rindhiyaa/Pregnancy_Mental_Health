@@ -68,7 +68,8 @@ body {
 
 .hero-buttons {
   display: flex;
-  gap: 1rem;                    /* more gap between buttons */
+  gap: 1rem;  
+  margin-top:2rem;                  /* more gap between buttons */
   margin-bottom: 2rem;
   flex-wrap: wrap;
 }

@@ -57,7 +57,7 @@ export default function SignUpPage() {
       }
   
       // success → go to sign-in
-      navigate("/signin");
+      navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     }

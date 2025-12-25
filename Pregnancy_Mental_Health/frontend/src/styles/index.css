@@ -1,3 +1,11 @@
+/* Import all separate stylesheets */
+@import './navbar.css';
+@import './hero.css';
+@import './pages.css';
+@import './auth.css';
+@import './footer.css';
+@import './responsive.css';
+
 /* Global and base styles */
 * {
   box-sizing: border-box;
@@ -22,11 +30,3 @@ a {
   text-decoration: none;
   color: inherit;
 }
-
-/* Import all separate stylesheets */
-@import './navbar.css';
-@import './hero.css';
-@import './pages.css';
-@import './auth.css';
-@import './footer.css';
-@import './responsive.css';

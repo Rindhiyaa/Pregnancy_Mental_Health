@@ -23,8 +23,8 @@
    box-shadow:
     0 32px 80px rgba(15, 23, 42, 0.35),
     0 0 0 1px rgba(255, 255, 255, 0.35);  /* subtle border */
-  backdrop-filter: blur(22px);            /* GLASS EFFECT */
-  -webkit-backdrop-filter: blur(22px);
+  /* backdrop-filter: blur(22px);            */
+  /* -webkit-backdrop-filter: blur(22px); */
   box-shadow: 0 18px 50px rgba(15, 23, 42, 0.16);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   border-radius: 28;

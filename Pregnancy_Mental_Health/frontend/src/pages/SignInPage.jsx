@@ -37,7 +37,7 @@ export default function SignInPage() {
   
       const data = await res.json();
       console.log("Login success", data);
-      navigate("/");
+      navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     }

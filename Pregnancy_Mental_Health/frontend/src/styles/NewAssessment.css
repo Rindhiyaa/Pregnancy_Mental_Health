@@ -1,0 +1,153 @@
+/* Layout */
+.layout {
+  display: flex;
+  height: 100vh;
+  background: #ffffff;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background: #f6f7fb;
+  padding: 30px 20px;
+  border-right: 1px solid #e5e7eb;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 30px;
+}
+
+.step-nav .step {
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  color: #555;
+}
+
+.step-nav .active {
+  background: #4f46e5;
+  color: white;
+}
+
+/* Main */
+.main {
+  flex: 1;
+  padding: 40px;
+  background: #ffffff;
+}
+
+/* Page Header */
+.page-header h1 {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: #6b7280;
+  margin-bottom: 30px;
+}
+
+/* Card */
+.card {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+  max-width: 900px;
+}
+
+.card-header h2 {
+  font-size: 22px;
+}
+
+.card-header p {
+  color: #6b7280;
+  margin-bottom: 25px;
+}
+
+/* Form */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+}
+
+.actions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #4f46e5;
+  color: white;
+  cursor: pointer;
+}
+
+.actions button:disabled {
+  background: #c7c7c7;
+}
+.actions .back-button {
+  background: #e5e7eb;
+  color: #374151;
+}
+/* Violet Titles */
+.violet-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #7c3aed; /* violet */
+}
+
+/* Question label */
+.question {
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+/* Option cards */
+.option-card {
+  display: flex;
+  align-items: center;
+  padding: 14px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  border: 1px solid #e5d9ff;
+  background: #faf8ff;
+  cursor: pointer;
+}
+
+.option-card input {
+  margin-right: 12px;
+}
+
+/* Select style */
+select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #ddd6fe;
+  margin-bottom: 10px;
+}

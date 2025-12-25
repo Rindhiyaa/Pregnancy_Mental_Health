@@ -1,0 +1,86 @@
+.history-root {
+  min-height: 100vh;
+ 
+}
+
+.history-shell {
+  max-width: 1220px;
+  margin: 2rem auto 3rem;
+  padding: 2rem;
+}
+
+.history-header h1 {
+  margin: 0.1rem 0;
+  font-size: 1.8rem;
+}
+
+.history-header p {
+  margin: 0.25rem 0 1.5rem;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.history-card {
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  padding: 1.5rem 1.4rem;
+}
+
+/* reuse dp-table look */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+}
+
+.history-table th,
+.history-table td {
+  padding: 0.45rem 0.2rem;
+  text-align: left;
+}
+
+.history-table th {
+  color: #6b7280;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.history-row:nth-child(odd) {
+  background: rgba(148, 163, 184, 0.05);
+}
+
+.history-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.history-pill-high {
+  background: rgba(248, 113, 113, 0.18);
+  color: #b91c1c;
+}
+
+.history-pill-low {
+  background: rgba(52, 211, 153, 0.18);
+  color: #166534;
+}
+
+.history-view-btn {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: none;
+  background: #8b5cf6;
+  color: white;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.history-muted {
+  font-size: 0.8rem;
+  color: #6b7280;
+}

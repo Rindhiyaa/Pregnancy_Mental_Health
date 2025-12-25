@@ -6,7 +6,6 @@ import heroImg from "../assets/image-1.png";  // ← Changed this
 export default function HomePage() {
   const navigate = useNavigate();
 
-
   return (
     <main>
      
@@ -32,10 +31,10 @@ export default function HomePage() {
             Screen mood, sleep, support at home, and history in minutes, then get an explainable risk
             score to guide follow‑up and referrals.
           </p>
-
+           
 
           <div className="hero-buttons">
-            <button className="btn-primary" onClick={() => navigate("/risk-check")}>
+            <button className="btn-primary" onClick={() => navigate("/signin")}>
               Start Risk Check
             </button>
             <button className="btn-outline" onClick={() => navigate("/features")}>
