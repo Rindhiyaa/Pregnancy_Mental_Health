@@ -21,40 +21,42 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = () => {
     try {
-      const storedProfile = localStorage.getItem('ppd_user_profile');
-      const fullName = localStorage.getItem('ppd_user_full_name');
       const email = localStorage.getItem('ppd_user_email');
+      const fullName = localStorage.getItem('ppd_user_full_name');
       const role = localStorage.getItem('ppd_user_role');
-
+  
+      let storedProfile = null;
+      if (email) {
+        storedProfile = localStorage.getItem(`ppd_user_profile_${email}`);
+      } else {
+        storedProfile = localStorage.getItem('ppd_user_profile');
+      }
+  
       if (storedProfile || fullName || email) {
         let userProfile = {
           fullName: fullName || 'Clinician',
           email: email || '',
           role: role || '',
-          isAuthenticated: true
+          isAuthenticated: true,
         };
-
+  
         if (storedProfile) {
           const parsedProfile = JSON.parse(storedProfile);
           userProfile = {
             ...userProfile,
-            fullName: parsedProfile.fullName || fullName || 'Clinician',
-            firstName: parsedProfile.firstName || '',
-            lastName: parsedProfile.lastName || '',
-            email: parsedProfile.email || email || '',
-            phone: parsedProfile.phone || '',
-            role: parsedProfile.role || role || '',
-            department: parsedProfile.department || '',
-            memberSince: parsedProfile.timestamp ? new Date(parsedProfile.timestamp).toLocaleDateString() : new Date().toLocaleDateString(),
-            isAuthenticated: true
+            ...parsedProfile,
+            memberSince: parsedProfile.timestamp
+              ? new Date(parsedProfile.timestamp).toLocaleDateString()
+              : new Date().toLocaleDateString(),
           };
         }
-
+  
         setUser(userProfile);
-        
-        // Restore user's specific assessment history
+  
         if (userProfile.email) {
-          const userHistory = localStorage.getItem(`assessmentHistory_${userProfile.email}`);
+          const userHistory = localStorage.getItem(
+            `assessmentHistory_${userProfile.email}`,
+          );
           if (userHistory) {
             localStorage.setItem('assessmentHistory', userHistory);
           }
@@ -69,37 +71,75 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
+  
 
   const login = (userData) => {
-    // Clear any existing data first
-    localStorage.removeItem('ppd_user_profile');
+    // clear session-level keys (not per-user profiles)
     localStorage.removeItem('ppd_user_full_name');
     localStorage.removeItem('ppd_user_email');
     localStorage.removeItem('ppd_user_role');
-    
-    const userProfile = {
+    localStorage.removeItem('assessmentHistory');
+  
+    let userProfile = {
       ...userData,
-      isAuthenticated: true
+      isAuthenticated: true,
     };
+  
+    if (userData.email) {
+      const key = `ppd_user_profile_${userData.email}`;
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+      
+          // Prefer non-empty stored values; only take backend values when they exist
+          userProfile = {
+            ...userData,
+            ...parsed,
+            // ensure core identity from backend
+            email: userData.email || parsed.email,
+            fullName: parsed.fullName || userData.fullName || "Clinician",
+            role: parsed.role || userData.role || "",
+            firstName: parsed.firstName || userData.firstName || "",
+            lastName: parsed.lastName || userData.lastName || "",
+            phone: parsed.phone || userData.phone || "",
+            department: parsed.department || userData.department || "",
+            memberSince:
+              parsed.memberSince ||
+              parsed.timestamp
+                ? new Date(parsed.timestamp).toLocaleDateString()
+                : userData.memberSince || new Date().toLocaleDateString(),
+            isAuthenticated: true,
+          };
+        } catch (e) {
+          console.error("Error parsing stored profile", e);
+        }
+      }
+      
+    }
+  
     setUser(userProfile);
-    
-    // Store fresh data in localStorage
-    localStorage.setItem('ppd_user_profile', JSON.stringify(userProfile));
+  
+    const baseKey = userProfile.email
+      ? `ppd_user_profile_${userProfile.email}`
+      : 'ppd_user_profile';
+    localStorage.setItem(baseKey, JSON.stringify(userProfile));
     localStorage.setItem('ppd_user_full_name', userProfile.fullName);
     localStorage.setItem('ppd_user_email', userProfile.email);
     localStorage.setItem('ppd_user_role', userProfile.role);
-    
-    // Restore user's specific assessment history
+  
     if (userProfile.email) {
-      const userHistory = localStorage.getItem(`assessmentHistory_${userProfile.email}`);
+      const userHistory = localStorage.getItem(
+        `assessmentHistory_${userProfile.email}`
+      );
       if (userHistory) {
         localStorage.setItem('assessmentHistory', userHistory);
       } else {
-        // If no history exists for this user, clear any existing history
         localStorage.removeItem('assessmentHistory');
       }
     }
-  };
+  };  
+  
 
   const logout = () => {
     // Store current user's assessment history before logout
@@ -111,7 +151,7 @@ export const AuthProvider = ({ children }) => {
     }
     
     // Clear user profile data
-    localStorage.removeItem('ppd_user_profile');
+    //localStorage.removeItem('ppd_user_profile');
     localStorage.removeItem('ppd_user_full_name');
     localStorage.removeItem('ppd_user_email');
     localStorage.removeItem('ppd_user_role');
@@ -123,16 +163,21 @@ export const AuthProvider = ({ children }) => {
   const updateUser = (updatedData) => {
     const updatedUser = {
       ...user,
-      ...updatedData
+      ...updatedData,
+      isAuthenticated: true,
     };
     setUser(updatedUser);
-    
-    // Update localStorage
-    localStorage.setItem('ppd_user_profile', JSON.stringify(updatedUser));
+  
+    const key = updatedUser.email
+      ? `ppd_user_profile_${updatedUser.email}`
+      : 'ppd_user_profile';
+  
+    localStorage.setItem(key, JSON.stringify(updatedUser));
     localStorage.setItem('ppd_user_full_name', updatedUser.fullName);
     localStorage.setItem('ppd_user_email', updatedUser.email);
     localStorage.setItem('ppd_user_role', updatedUser.role);
-  };
+  };  
+
 
   const value = {
     user,

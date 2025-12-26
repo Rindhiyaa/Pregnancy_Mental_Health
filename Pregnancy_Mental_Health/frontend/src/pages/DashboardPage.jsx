@@ -37,23 +37,52 @@ const DashboardPage = () => {
           const recentAssessments = sortedData.slice(0, 10);
           
           // Transform data to match expected format
-          const transformedRows = recentAssessments.map(assessment => ({
-            id: assessment.patient_name || 'Unknown',
-            name: assessment.patient_name || 'Unknown Patient',
-            date: assessment.date || new Date(assessment.timestamp).toLocaleDateString(),
-            risk: assessment.risk_level?.toLowerCase() === 'high' ? 'high' : 'low'
-          }));
+          // inside fetchData, when building transformedRows
+          const transformedRows = recentAssessments.map((assessment) => {
+            const aiLevel = assessment.risk_level?.toLowerCase();          // "low" | "moderate" | "high"
+            let clinicianLevel = assessment.clinician_risk?.toLowerCase(); // "low" | "medium" | "high"
+
+            // treat "medium" as "moderate"
+            if (clinicianLevel === "medium") clinicianLevel = "moderate";
+
+            const level = clinicianLevel || aiLevel;
+
+            let risk = "low";
+            if (level === "high") risk = "high";
+            else if (level === "moderate") risk = "moderate";
+      
+            return {
+              id: assessment.patient_name || "Unknown",
+              name: assessment.patient_name || "Unknown Patient",
+              date:
+                assessment.date ||
+                new Date(assessment.timestamp).toLocaleDateString(),
+              risk,
+            };
+          });
+          
           
           // Calculate statistics
           const totalAssessments = historyData.length;
-          const highRiskCount = historyData.filter(a => 
-            a.risk_level?.toLowerCase() === 'high' || 
-            a.clinician_risk?.toLowerCase() === 'high'
-          ).length;
-          const lowRiskCount = historyData.filter(a => 
-            a.risk_level?.toLowerCase() === 'low' || 
-            a.clinician_risk?.toLowerCase() === 'low'
-          ).length;
+
+          const highRiskCount = historyData.filter(a => {
+            const l1 = a.risk_level?.toLowerCase();
+            const l2 = a.clinician_risk?.toLowerCase();
+            return l1 === 'high' || l2 === 'high';
+          }).length;
+
+          const moderateRiskCount = historyData.filter(a => {
+            const l1 = a.risk_level?.toLowerCase();
+            const l2 = a.clinician_risk?.toLowerCase();
+            return l1 === 'moderate' || l2 === 'moderate';
+          }).length;
+
+          const lowRiskCount = historyData.filter(a => {
+            const l1 = a.risk_level?.toLowerCase();
+            const l2 = a.clinician_risk?.toLowerCase();
+            return l1 === 'low' || l2 === 'low';
+          }).length;
+
           
           // Today's assessments (assessments created today)
           const today = new Date().toDateString();
@@ -67,6 +96,7 @@ const DashboardPage = () => {
             total: totalAssessments,
             high: highRiskCount,
             low: lowRiskCount,
+            moderate: moderateRiskCount,
             today: todayCount
           });
         } else {
@@ -91,8 +121,9 @@ const DashboardPage = () => {
       (row.id && row.id.toLowerCase().includes(s)) ||
       (row.name && row.name.toLowerCase().includes(s));
 
-    const matchesRisk =
-      riskFilter === "all" ? true : row.risk === riskFilter;
+      const matchesRisk =
+        riskFilter === "all" ? true : row.risk === riskFilter;
+    
 
     return matchesSearch && matchesRisk;
   });
@@ -255,6 +286,7 @@ const DashboardPage = () => {
                   <option value="all">All</option>
                   <option value="high">High risk</option>
                   <option value="low">Low risk</option>
+                  <option value="moderate">Moderate risk</option>
                 </select>
               </div>
             </div>
@@ -282,16 +314,22 @@ const DashboardPage = () => {
                       </td>
                       <td>{row.date}</td>
                       <td>
-                        <span
-                          className={
-                            "dp-pill " +
-                            (row.risk === "high"
-                              ? "dp-pill-high"
-                              : "dp-pill-low")
-                          }
-                        >
-                          {row.risk === "high" ? "High" : "Low"}
-                        </span>
+                      <span
+                        className={
+                          "dp-pill " +
+                          (row.risk === "high"
+                            ? "dp-pill-high"
+                            : row.risk === "moderate"
+                            ? "dp-pill-moderate"
+                            : "dp-pill-low")
+                        }
+                      >
+                        {row.risk === "high"
+                          ? "High"
+                          : row.risk === "moderate"
+                          ? "Moderate"
+                          : "Low"}
+                      </span>
                       </td>
                       <td>
                         <button 

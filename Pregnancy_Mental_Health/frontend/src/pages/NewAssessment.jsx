@@ -845,17 +845,27 @@ export default function NewAssessment() {
                     }
 
                     // Save to history functionality
+                    // normalize AI risk into "low" | "moderate" | "high"
+                    let aiLevel = "unknown";
+                    if (result?.risk) {
+                      const r = result.risk.toLowerCase(); // e.g. "low risk"
+                      if (r.includes("high")) aiLevel = "high";
+                      else if (r.includes("moderate") || r.includes("medium")) aiLevel = "moderate";
+                      else if (r.includes("low")) aiLevel = "low";
+                    }
+
                     const assessmentData = {
                       id: Date.now(),
                       patient_name: formData.patient_name,
                       date: new Date().toLocaleDateString(),
-                      risk_level: result?.risk || "Unknown",
+                      risk_level: aiLevel,                      // <-- normalized
                       score: result?.score || 0,
-                      clinician_risk: formData.clinician_risk,
+                      clinician_risk: formData.clinician_risk,  // "Low" | "Medium" | "High"
                       plan: formData.plan,
                       notes: formData.notes,
                       timestamp: new Date().toISOString()
                     };
+
 
                     // Get existing history from localStorage
                     const existingHistory = JSON.parse(localStorage.getItem('assessmentHistory') || '[]');
