@@ -1,26 +1,18 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-
+import { useAuth } from "../contexts/AuthContext";
 import "../styles/HistoryPage.css";
 
 const HistoryPage = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [rows, setRows] = useState([]);
   const [filteredRows, setFilteredRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRisk, setFilterRisk] = useState("all");
-
-  const [currentUserName, setCurrentUserName] = useState("");
-  
-    useEffect(() => {
-      const storedName = localStorage.getItem("ppd_user_full_name");
-      if (storedName) {
-        setCurrentUserName(storedName);
-      } else {
-        setCurrentUserName("Clinician"); // fallback
-      }
-    }, []);
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -95,6 +87,11 @@ const HistoryPage = () => {
       setRows(updatedHistory);
       localStorage.setItem('assessmentHistory', JSON.stringify(updatedHistory));
       
+      // Also update user-specific history
+      if (user?.email) {
+        localStorage.setItem(`assessmentHistory_${user.email}`, JSON.stringify(updatedHistory));
+      }
+      
       // Show success message
       const deletedAssessment = rows.find(row => row.id === assessmentId);
       alert(`Assessment for ${deletedAssessment?.patient_name} has been deleted successfully.`);
@@ -104,9 +101,25 @@ const HistoryPage = () => {
   const clearHistory = () => {
     if (window.confirm('Are you sure you want to clear all assessment history? This action cannot be undone.')) {
       localStorage.removeItem('assessmentHistory');
+      
+      // Also clear user-specific history
+      if (user?.email) {
+        localStorage.removeItem(`assessmentHistory_${user.email}`);
+      }
+      
       setRows([]);
       setFilteredRows([]);
     }
+  };
+
+  const viewAssessmentDetails = (assessment) => {
+    setSelectedAssessment(assessment);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedAssessment(null);
   };
 
   return (
@@ -158,10 +171,18 @@ const HistoryPage = () => {
 
         <div className="dp-nav-right">
           <div className="dp-profile-chip">
-            <div className="dp-profile-avatar" />
-            <span className="dp-profile-name">{currentUserName}</span>
+            <div className="dp-profile-avatar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <span className="dp-profile-name">{user?.fullName || 'Clinician'}</span>
           </div>
-          <button className="dp-logout-btn" onClick={() => navigate("/")}>
+          <button className="dp-logout-btn" onClick={() => {
+            logout();
+            navigate("/");
+          }}>
             Logout
           </button>
         </div>
@@ -197,10 +218,10 @@ const HistoryPage = () => {
         <section className="history-filters">
           <div className="search-container">
             <div className="search-input-wrapper">
-              <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              {/* <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8"/>
                 <path d="m21 21-4.35-4.35"/>
-              </svg>
+              </svg> */}
               <input
                 type="text"
                 placeholder="Search by patient name, plan, or notes..."
@@ -294,10 +315,7 @@ const HistoryPage = () => {
                         <div className="action-buttons">
                           <button 
                             className="history-view-btn"
-                            onClick={() => {
-                              // Show detailed view modal
-                              alert(`Assessment Details:\n\nPatient: ${row.patient_name}\nDate: ${row.date}\nAI Risk: ${row.risk_level} (${row.score}/100)\nClinician Risk: ${row.clinician_risk}\nPlan: ${row.plan}\n\nNotes: ${row.notes || 'No notes provided'}`);
-                            }}
+                            onClick={() => viewAssessmentDetails(row)}
                             title="View Details"
                           >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -363,6 +381,79 @@ const HistoryPage = () => {
             </div>
           )}
         </section>
+
+        {/* Assessment Details Modal */}
+        {showModal && selectedAssessment && (
+          <div className="modal-overlay" onClick={closeModal}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Assessment Details</h2>
+                <button className="modal-close-btn" onClick={closeModal}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="modal-body">
+                <div className="assessment-detail-grid">
+                  <div className="detail-section">
+                    <h3>Patient Information</h3>
+                    <div className="detail-item">
+                      <span className="detail-label">Patient Name:</span>
+                      <span className="detail-value">{selectedAssessment.patient_name || 'Unknown'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Assessment Date:</span>
+                      <span className="detail-value">{selectedAssessment.date}</span>
+                    </div>
+                  </div>
+
+                  <div className="detail-section">
+                    <h3>Risk Assessment</h3>
+                    <div className="detail-item">
+                      <span className="detail-label">AI Risk Level:</span>
+                      <span className={`detail-pill pill-${selectedAssessment.risk_level?.toLowerCase()}`}>
+                        {selectedAssessment.risk_level || 'Unknown'}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">AI Score:</span>
+                      <span className="detail-score">{selectedAssessment.score || 0}/100</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Clinician Risk:</span>
+                      <span className={`detail-pill pill-${selectedAssessment.clinician_risk?.toLowerCase()}`}>
+                        {selectedAssessment.clinician_risk || 'Not Set'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="detail-section full-width">
+                    <h3>Treatment Plan</h3>
+                    <div className="detail-notes">
+                      {selectedAssessment.plan || 'No treatment plan specified'}
+                    </div>
+                  </div>
+
+                  <div className="detail-section full-width">
+                    <h3>Clinical Notes</h3>
+                    <div className="detail-notes">
+                      {selectedAssessment.notes || 'No additional notes provided'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button className="modal-btn-secondary" onClick={closeModal}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

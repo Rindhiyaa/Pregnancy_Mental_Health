@@ -1,75 +1,71 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import "../styles/DashboardPage.css";
 import "../styles/ProfilePage.css";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const { user, updateUser, logout } = useAuth();
   
-  const [profile, setProfile] = useState({
-    fullName: "",
-    email: "",
-    role: "",
-    memberSince: "",
-  });
-  const [error, setError] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  
+  const [profileData, setProfileData] = useState({
+    fullName: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    role: "",
+    department: "",
+    memberSince: ""
+  });
 
+  const [editData, setEditData] = useState({});
+
+  // Load profile data from auth context
   useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const res = await fetch("http://127.0.0.1:8000/api/me");
-        if (!res.ok) {
-          throw new Error("Failed to load profile");
-        }
-        const data = await res.json();
-        setProfile({
-          fullName: data.full_name,
-          email: data.email,
-          role: data.role || "",
-          memberSince: data.member_since || "",
-        });
-      } catch (err) {
-        setError(err.message || "Could not load profile");
-      }
-    };
-    loadProfile();
-  }, []);
+    if (user) {
+      setProfileData(user);
+      setEditData(user);
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
+    setEditData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setError("");
+  const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/me", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          full_name: profile.fullName,
-          role: profile.role,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || "Failed to save profile");
-      }
-      const data = await res.json();
-      setProfile((prev) => ({
-        ...prev,
-        fullName: data.full_name,
-        role: data.role || "",
-        memberSince: data.member_since || prev.memberSince,
-      }));
-    } catch (err) {
-      setError(err.message || "Could not save profile");
+      // Update auth context and localStorage
+      updateUser(editData);
+      setProfileData(editData);
+      setIsEditing(false);
+      
+      // Show success message
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      alert('Error saving profile. Please try again.');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCancel = () => {
+    setEditData(profileData);
+    setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    // Use auth context logout which clears all data
+    logout();
+    alert('Account deleted successfully!');
+    navigate('/');
   };
 
 
@@ -122,97 +118,215 @@ const ProfilePage = () => {
 
         <div className="dp-nav-right">
           <div className="dp-profile-chip">
-            <div className="dp-profile-avatar" />
-            <span className="dp-profile-name">{profile.fullName}</span>
+            <div className="dp-profile-avatar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <span className="dp-profile-name">{profileData.fullName}</span>
           </div>
-          <button className="dp-logout-btn" onClick={() => navigate("/")}>
+          <button className="dp-logout-btn" onClick={() => {
+            logout();
+            navigate("/");
+          }}>
             Logout
           </button>
         </div>
       </header>
 
       <main className="profile-shell">
-        {/* page heading */}
+        {/* Profile Header */}
         <section className="profile-header">
-          <div className="profile-header-title-row">
-            <div className="profile-header-icon">👤</div>
-            <div>
-              <h1>Profile</h1>
-              <p>Manage your account settings and preferences.</p>
+          <div className="profile-header-content">
+            <div className="profile-info">
+              <div className="profile-avatar-large">
+                {profileData.fullName.charAt(0).toUpperCase()}
+              </div>
+              <div className="profile-details">
+                <h1>{profileData.fullName}</h1>
+                <p>{profileData.role || 'Healthcare Professional'}</p>
+                <span className="member-since">Member since {profileData.memberSince}</span>
+              </div>
+            </div>
+            <div className="profile-actions">
+              {!isEditing ? (
+                <>
+                  <button className="btn-edit" onClick={() => setIsEditing(true)}>
+                    Edit Profile
+                  </button>
+                  <button className="btn-delete" onClick={() => setShowDeleteModal(true)}>
+                    Delete Account
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="btn-save" onClick={handleSave} disabled={saving}>
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button className="btn-cancel" onClick={handleCancel}>
+                    Cancel
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </section>
 
-        {/* main card */}
-        <section className="profile-card">
-          <h2 className="profile-card-title">Account Information</h2>
-          <p className="profile-card-subtitle">
-            Update your personal details here.
-          </p>
-
-          <form className="profile-form" onSubmit={handleSave}>
-            <div className="profile-field">
-              <div className="profile-label-row">
-                <span>Full Name</span>
-              </div>
-              <input
-                name="fullName"
-                value={profile.fullName}
-                onChange={handleChange}
-                className="profile-input"
-                type="text"
-              />
+        {/* Profile Cards */}
+        <section className="profile-cards">
+          {/* Personal Information Card */}
+          <div className="profile-card">
+            <div className="card-header">
+              <h3>Personal Information</h3>
             </div>
-
-            <div className="profile-field">
-              <div className="profile-label-row">
-                <span>Email Address</span>
-              </div>
-              <input
-                name="email"
-                value={profile.email}
-                disabled
-                className="profile-input"
-                type="email"
-              />
-              <span className="profile-label-helper">
-                Email cannot be changed.
-              </span>
-            </div>
-
-            <div className="profile-row-two">
-              <div className="profile-field">
-                <div className="profile-label-row">
-                  <span>Role</span>
+            <div className="card-content">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>First Name</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={editData.firstName}
+                      onChange={handleChange}
+                      placeholder="Enter first name"
+                    />
+                  ) : (
+                    <span className="field-value">{profileData.firstName || 'Not provided'}</span>
+                  )}
                 </div>
-                <input
-                  name="role"
-                  value={profile.role}
-                  onChange={handleChange}
-                  className="profile-input"
-                  type="text"
-                />
-              </div>
-
-              <div className="profile-field">
-                <div className="profile-label-row">
-                  <span>Member Since</span>
+                <div className="form-group">
+                  <label>Last Name</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={editData.lastName}
+                      onChange={handleChange}
+                      placeholder="Enter last name"
+                    />
+                  ) : (
+                    <span className="field-value">{profileData.lastName || 'Not provided'}</span>
+                  )}
                 </div>
-                <input
-                  name="memberSince"
-                  value={profile.memberSince}
-                  disabled
-                  className="profile-input"
-                  type="text"
-                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Full Name</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={editData.fullName}
+                      onChange={handleChange}
+                      placeholder="Enter full name"
+                    />
+                  ) : (
+                    <span className="field-value">{profileData.fullName}</span>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label>Phone Number</label>
+                  {isEditing ? (
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={editData.phone}
+                      onChange={handleChange}
+                      placeholder="Enter phone number"
+                    />
+                  ) : (
+                    <span className="field-value">{profileData.phone || 'Not provided'}</span>
+                  )}
+                </div>
               </div>
             </div>
+          </div>
 
-            <button type="submit" className="profile-save-btn">
-              Save Changes
-            </button>
-          </form>
+          {/* Professional Information Card */}
+          <div className="profile-card">
+            <div className="card-header">
+              <h3>Professional Information</h3>
+            </div>
+            <div className="card-content">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Email Address</label>
+                  {isEditing ? (
+                    <input
+                      type="email"
+                      name="email"
+                      value={editData.email}
+                      onChange={handleChange}
+                      placeholder="Enter email address"
+                    />
+                  ) : (
+                    <span className="field-value">{profileData.email}</span>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label>Role/Specialization</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="role"
+                      value={editData.role}
+                      onChange={handleChange}
+                      placeholder="Enter role or specialization"
+                    />
+                  ) : (
+                    <span className="field-value">{profileData.role || 'Not provided'}</span>
+                  )}
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group full-width">
+                  <label>Department</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="department"
+                      value={editData.department}
+                      onChange={handleChange}
+                      placeholder="Enter department"
+                    />
+                  ) : (
+                    <span className="field-value">{profileData.department || 'Not provided'}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
+
+        {/* Delete Account Modal */}
+        {showDeleteModal && (
+          <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Delete Account</h2>
+                <button className="modal-close-btn" onClick={() => setShowDeleteModal(false)}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <div className="modal-body">
+                <p>Are you sure you want to delete your account? This action cannot be undone and will remove all your data including assessment history.</p>
+              </div>
+              <div className="modal-footer">
+                <button className="modal-btn-secondary" onClick={() => setShowDeleteModal(false)}>
+                  Cancel
+                </button>
+                <button className="btn-delete-confirm" onClick={handleDelete}>
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

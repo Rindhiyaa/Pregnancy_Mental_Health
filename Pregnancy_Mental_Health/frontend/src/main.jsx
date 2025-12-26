@@ -11,6 +11,7 @@ import "./styles/pages.css";
 import "./styles/auth.css";
 import "./styles/footer.css";
 import "./styles/responsive.css";
+import "./styles/DashboardPage.css";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(

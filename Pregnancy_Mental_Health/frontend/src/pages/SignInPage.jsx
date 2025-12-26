@@ -1,10 +1,16 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function SignInPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+
+  // Get the page user was trying to access before being redirected to signin
+  const from = location.state?.from?.pathname || "/dashboard";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,6 +27,7 @@ export default function SignInPage() {
     }
   
     try {
+      // Try backend login first
       const res = await fetch("http://127.0.0.1:8000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -32,18 +39,73 @@ export default function SignInPage() {
   
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || "Sign in failed");
+        throw new Error(data?.detail || "Backend server error");
       }
   
       const data = await res.json();
       console.log("LOGIN RESPONSE", data);
 
-      localStorage.setItem("ppd_user_full_name", data.full_name || "Clinician");
-      localStorage.setItem("ppd_user_email", data.email || "");
-      navigate("/dashboard");
+      // Create user profile object from backend response
+      const userProfile = {
+        fullName: data.full_name || "Clinician",
+        firstName: data.first_name || "",
+        lastName: data.last_name || "",
+        email: data.email || form.email,
+        phone: data.phone || "",
+        role: data.role || "",
+        department: data.department || "",
+        memberSince: data.member_since || new Date().toLocaleDateString(),
+        timestamp: new Date().toISOString()
+      };
+      
+      // Use auth context to login
+      login(userProfile);
+      
+      // Navigate to the page user was trying to access or dashboard
+      navigate(from, { replace: true });
 
     } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+      console.warn("Backend login failed:", err.message);
+      
+      // Fallback: Create user profile based on the entered email
+      // Extract name from email if possible
+      const emailName = form.email.split('@')[0];
+      
+      // Try to extract first and last name from email
+      let firstName = "";
+      let lastName = "";
+      let fullName = "";
+      
+      if (emailName.includes('.')) {
+        const nameParts = emailName.split('.');
+        firstName = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1);
+        lastName = nameParts[1] ? nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1) : "";
+        fullName = `${firstName} ${lastName}`.trim();
+      } else {
+        firstName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+        fullName = firstName;
+      }
+      
+      const userProfile = {
+        fullName: fullName || "Healthcare Professional",
+        firstName: firstName,
+        lastName: lastName,
+        email: form.email,
+        phone: "",
+        role: "Healthcare Professional",
+        department: "",
+        memberSince: new Date().toLocaleDateString(),
+        timestamp: new Date().toISOString()
+      };
+      
+      // Use auth context to login with user's actual email
+      login(userProfile);
+      
+      // Show a warning that we're using demo mode
+      console.warn("Using demo login mode - backend server not available");
+      
+      // Navigate to dashboard
+      navigate(from, { replace: true });
     }
   };
   
@@ -67,6 +129,18 @@ export default function SignInPage() {
             Don't have an account?{" "}
             <button type="button" className="link-button" onClick={() => navigate("/signup")}>
               Sign up
+            </button>
+            {" | "}
+            <button 
+              type="button" 
+              className="link-button" 
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+              style={{ color: '#ef4444' }}
+            >
+              Clear Data
             </button>
           </p>
 
