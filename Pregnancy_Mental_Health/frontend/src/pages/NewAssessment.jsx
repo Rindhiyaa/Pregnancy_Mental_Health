@@ -604,35 +604,129 @@ const navigate = useNavigate();
     </div>
   </>
 )}
+{step === 6 && (
+  <>
+    <div className="card-header">
+      <h2>EPDS Assessment</h2>
+      <p>Please answer based on how you felt during the past 7 days</p>
+    </div>
 
-          {/* STEP 6 – EPDS ASSESSMENT */}
-          {step === 6 && (
-            <>
-              <div className="card-header">
-                <h2>EPDS Assessment</h2>
-                <p>10-question postpartum depression screening</p>
-              </div>
+    <div className="epds-list">
 
-              <div className="form-grid epds-grid">
-                {[...Array(10)].map((_, index) => (
-                  <div className="form-group" key={index}>
-                    <label>EPDS Question {index + 1}</label>
-                    <select
-                      name={`epds_${index + 1}`}
-                      value={formData[`epds_${index + 1}`] || ""}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select</option>
-                      <option value="0">0</option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                    </select>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+      <div className="epds-item">
+        <label>1. I have been able to laugh and see the funny side of things</label>
+        <select name="epds_1" value={formData.epds_1} onChange={handleChange}>
+          <option value="">Select</option>
+          <option value="0">Not at all</option>
+          <option value="1">Hardly ever</option>
+          <option value="2">Sometimes</option>
+          <option value="3">Quite often</option>
+        </select>
+      </div>
+
+      <div className="epds-item">
+        <label>2. I have looked forward with enjoyment to things</label>
+        <select name="epds_2" value={formData.epds_2} onChange={handleChange}>
+          <option value="">Select</option>
+          <option value="0">Not at all</option>
+          <option value="1">Hardly ever</option>
+          <option value="2">Sometimes</option>
+          <option value="3">Quite often</option>
+        </select>
+      </div>
+
+      <div className="epds-item">
+        <label>3. I have blamed myself unnecessarily when things went wrong</label>
+        <select name="epds_3" value={formData.epds_3} onChange={handleChange}>
+          <option value="">Select</option>
+          <option value="0">Not at all</option>
+          <option value="1">Hardly ever</option>
+          <option value="2">Sometimes</option>
+          <option value="3">Quite often</option>
+        </select>
+      </div>
+
+      <div className="epds-item">
+        <label>4. I have been anxious or worried for no good reason</label>
+        <select name="epds_4" value={formData.epds_4} onChange={handleChange}>
+          <option value="">Select</option>
+          <option value="0">Not at all</option>
+          <option value="1">Hardly ever</option>
+          <option value="2">Sometimes</option>
+          <option value="3">Quite often</option>
+        </select>
+      </div>
+
+      <div className="epds-item">
+        <label>5. I have felt scared or panicky for no very good reason</label>
+        <select name="epds_5" value={formData.epds_5} onChange={handleChange}>
+          <option value="">Select</option>
+          <option value="0">Not at all</option>
+          <option value="1">Hardly ever</option>
+          <option value="2">Sometimes</option>
+          <option value="3">Quite often</option>
+        </select>
+      </div>
+
+      <div className="epds-item">
+        <label>6. Things have been getting on top of me</label>
+        <select name="epds_6" value={formData.epds_6} onChange={handleChange}>
+          <option value="">Select</option>
+          <option value="0">Not at all</option>
+          <option value="1">Hardly ever</option>
+          <option value="2">Sometimes</option>
+          <option value="3">Quite often</option>
+        </select>
+      </div>
+
+      <div className="epds-item">
+        <label>7. I have been so unhappy that I have had difficulty sleeping</label>
+        <select name="epds_7" value={formData.epds_7} onChange={handleChange}>
+          <option value="">Select</option>
+          <option value="0">Not at all</option>
+          <option value="1">Hardly ever</option>
+          <option value="2">Sometimes</option>
+          <option value="3">Quite often</option>
+        </select>
+      </div>
+
+      <div className="epds-item">
+        <label>8. I have felt sad or miserable</label>
+        <select name="epds_8" value={formData.epds_8} onChange={handleChange}>
+          <option value="">Select</option>
+          <option value="0">Not at all</option>
+          <option value="1">Hardly ever</option>
+          <option value="2">Sometimes</option>
+          <option value="3">Quite often</option>
+        </select>
+      </div>
+
+      <div className="epds-item">
+        <label>9. I have been so unhappy that I have been crying</label>
+        <select name="epds_9" value={formData.epds_9} onChange={handleChange}>
+          <option value="">Select</option>
+          <option value="0">Not at all</option>
+          <option value="1">Hardly ever</option>
+          <option value="2">Sometimes</option>
+          <option value="3">Quite often</option>
+        </select>
+      </div>
+
+      <div className="epds-item">
+        <label>10. The thought of harming myself has occurred to me</label>
+        <select name="epds_10" value={formData.epds_10} onChange={handleChange}>
+          <option value="">Select</option>
+          <option value="0">Never</option>
+          <option value="1">Hardly ever</option>
+          <option value="2">Sometimes</option>
+          <option value="3">Quite often</option>
+        </select>
+      </div>
+
+    </div>
+  </>
+)}
+
 
           {/* STEP 7 – CLINICIAN SUMMARY */}
           {step === 8 && (
