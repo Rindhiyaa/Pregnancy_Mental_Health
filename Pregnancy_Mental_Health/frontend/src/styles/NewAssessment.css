@@ -14,7 +14,7 @@
   width: 320px;
   background: #ffffff;
   padding: 2rem 1.5rem;
-  border-right: 1px solid #e5e7eb;
+  border-right: none;
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
   position: sticky;
   top: 0;
@@ -80,84 +80,123 @@
   min-height: 100vh;
 }
 
-/* Enhanced Page Header */
+/* Enhanced Page Header - Modern Professional */
 .page-header {
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
   text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 1.5rem;
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  padding: 2rem;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #8b5cf6, #2dd4bf);
 }
 
 .page-header h1 {
-  font-size: 2.25rem;
+  font-size: 2rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
   color: #1f2937;
+  background: linear-gradient(135deg, #1f2937, #374151);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .subtitle {
   color: #6b7280;
   font-size: 1rem;
   margin-bottom: 0;
-  font-weight: 400;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-/* Enhanced Card - Wider and Professional */
+.subtitle::before {
+  content: '📋';
+  font-size: 1.2rem;
+}
+
+/* Enhanced Card - Modern and Optimal Width */
 .card {
   background: #ffffff;
-  padding: 3rem;
+  padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  max-width: 1200px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 900px;
   width: 100%;
   margin: 0 auto;
-  border: 1px solid #e5e7eb;
+  border: none;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .card:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
 }
 
 .card-header {
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
   text-align: left;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 1rem;
+  border-bottom: none;
+  position: relative;
+}
+
+.card-header::after {
+  display: none;
 }
 
 .card-header h2 {
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 700;
   color: #1f2937;
   margin-bottom: 0.5rem;
 }
 
 .card-header p {
-  color: #6b7280;
-  font-size: 0.875rem;
+  color: #374151;
+  font-size: 0.95rem;
   margin: 0;
+  font-weight: 500;
 }
 
-/* Enhanced Form - Professional Layout */
+/* Enhanced Form - Modern Professional Layout */
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  position: relative;
 }
 
 .form-group label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
+  color: #1f2937;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .form-group label.highlight {
@@ -170,19 +209,21 @@
   content: '*';
   color: #ef4444;
   margin-left: 4px;
+  font-size: 1rem;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 0.875rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 8px;
-  border: 1px solid #d1d5db;
+  border: 2px solid #e5e7eb;
   font-size: 0.875rem;
   background: #ffffff;
   transition: all 0.3s ease;
   font-family: inherit;
+  position: relative;
 }
 
 .form-group input:focus,
@@ -191,48 +232,80 @@
   outline: none;
   border-color: #8b5cf6;
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  background: #fefefe;
 }
 
 .form-group select {
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 0.5rem center;
+  background-position: right 0.75rem center;
   background-repeat: no-repeat;
-  background-size: 1.5em 1.5em;
+  background-size: 1.25em 1.25em;
   padding-right: 2.5rem;
 }
 
-/* EPDS Assessment Styling - Clean and Professional */
+/* Modern Input Enhancement */
+.form-group input:not(:placeholder-shown),
+.form-group select:not([value=""]),
+.form-group textarea:not(:placeholder-shown) {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+/* EPDS Assessment Styling - Modern Cards */
 .epds-list {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.75rem;
 }
 
 .epds-item {
-  padding: 1.5rem;
+  padding: 1.25rem;
   background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  border: none;
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .epds-item:hover {
-  border-color: #8b5cf6;
   background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
 }
 
 .epds-item label {
   display: block;
-  font-weight: 500;
-  color: #374151;
+  font-weight: 600;
+  color: #1f2937;
   margin-bottom: 1rem;
-  font-size: 0.875rem;
-  line-height: 1.5;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  padding-left: 0.5rem;
 }
 
 .epds-item select {
   margin-top: 0.5rem;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.25em 1.25em;
+  padding-right: 2.5rem;
+}
+
+.epds-item select:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  outline: none;
 }
 
 /* Enhanced Actions - Professional Buttons */
@@ -240,14 +313,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 3rem;
-  padding-top: 2rem;
-  border-top: 1px solid #e5e7eb;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: none;
   gap: 1rem;
 }
 
 .actions button {
-  padding: 0.875rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 8px;
   border: none;
   font-weight: 600;

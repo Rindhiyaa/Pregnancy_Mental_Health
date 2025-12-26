@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/NewAssessment.css";
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -10,6 +10,23 @@ const mockResult = {
   score: 62,
 };
 const navigate = useNavigate();
+const [userName, setUserName] = useState("Dr. Smith");
+
+// Load user name from localStorage
+useEffect(() => {
+  const signupData = localStorage.getItem('signupData');
+  const userData = localStorage.getItem('userData');
+  
+  if (signupData) {
+    const parsedData = JSON.parse(signupData);
+    const name = parsedData.name || parsedData.full_name || "Dr. Smith";
+    setUserName(name.split(' ')[0] || "Dr. Smith");
+  } else if (userData) {
+    const parsedData = JSON.parse(userData);
+    const name = parsedData.name || parsedData.full_name || "Dr. Smith";
+    setUserName(name.split(' ')[0] || "Dr. Smith");
+  }
+}, []);
 
 
   // 🔹 ONE SINGLE FORM DATA OBJECT
@@ -145,7 +162,7 @@ const navigate = useNavigate();
   <div className="dp-nav-right">
     <div className="dp-profile-chip">
       <div className="dp-profile-avatar" />
-      <span className="dp-profile-name">Dr. Smith</span>
+      <span className="dp-profile-name">{userName}</span>
     </div>
 
     <button className="dp-logout-btn" onClick={() => navigate("/")}>
@@ -171,10 +188,7 @@ const navigate = useNavigate();
 
       {/* MAIN */}
       <main className="main">
-        <div className="page-header">
-          <h1>New Assessment</h1>
-          <p className="subtitle">Postpartum depression risk screening</p>
-        </div>
+       
 
         <section className="card">
 
@@ -783,7 +797,7 @@ const navigate = useNavigate();
                 </div>
               </div>
 
-              <div className="clinician-summary-actions" style={{ marginTop: "20px", textAlign: "center" }}>
+              <div className="clinician-summary-actions" style={{ marginTop: "20px", display: "flex", gap: "12px", justifyContent: "center" }}>
                 <button
                   className="save-to-history-btn"
                   onClick={() => {
@@ -818,12 +832,11 @@ const navigate = useNavigate();
                     background: "#8b5cf6",
                     color: "white",
                     border: "none",
-                    padding: "14px 28px",
+                    padding: "12px 24px",
                     borderRadius: "8px",
-                    fontSize: "16px",
+                    fontSize: "14px",
                     fontWeight: "600",
-                    cursor: "pointer",
-                    marginRight: "10px"
+                    cursor: "pointer"
                   }}
                 >
                   Save to History
@@ -839,9 +852,9 @@ const navigate = useNavigate();
                     background: "#22c55e",
                     color: "white",
                     border: "none",
-                    padding: "14px 28px",
+                    padding: "12px 24px",
                     borderRadius: "8px",
-                    fontSize: "16px",
+                    fontSize: "14px",
                     fontWeight: "600",
                     cursor: "pointer"
                   }}
@@ -885,7 +898,7 @@ const navigate = useNavigate();
 
         <h2>{result.score} / 100</h2>
 
-        <div style={{ marginTop: "20px" }}>
+        <div style={{ marginTop: "20px", display: "flex", gap: "12px", justifyContent: "center" }}>
           <button
             className="save-result-btn"
             onClick={() => {
@@ -898,10 +911,9 @@ const navigate = useNavigate();
               border: "none",
               padding: "12px 24px",
               borderRadius: "8px",
-              fontSize: "16px",
+              fontSize: "14px",
               fontWeight: "600",
-              cursor: "pointer",
-              marginRight: "10px"
+              cursor: "pointer"
             }}
           >
             Save Result
