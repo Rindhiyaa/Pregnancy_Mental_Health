@@ -11,6 +11,17 @@ const HistoryPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRisk, setFilterRisk] = useState("all");
 
+  const [currentUserName, setCurrentUserName] = useState("");
+  
+    useEffect(() => {
+      const storedName = localStorage.getItem("ppd_user_full_name");
+      if (storedName) {
+        setCurrentUserName(storedName);
+      } else {
+        setCurrentUserName("Clinician"); // fallback
+      }
+    }, []);
+
   useEffect(() => {
     const fetchHistory = async () => {
       try {
@@ -148,7 +159,7 @@ const HistoryPage = () => {
         <div className="dp-nav-right">
           <div className="dp-profile-chip">
             <div className="dp-profile-avatar" />
-            <span className="dp-profile-name">Dr. Smith</span>
+            <span className="dp-profile-name">{currentUserName}</span>
           </div>
           <button className="dp-logout-btn" onClick={() => navigate("/")}>
             Logout

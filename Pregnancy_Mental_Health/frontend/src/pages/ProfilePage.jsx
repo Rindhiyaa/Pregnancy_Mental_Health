@@ -1,29 +1,77 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import "../styles/DashboardPage.css";
 import "../styles/ProfilePage.css";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-
-  // later you can load this from backend
+  
   const [profile, setProfile] = useState({
-    fullName: "amellia",
-    email: "ammellia@gmail.com",
-    role: "Clinician",
-    memberSince: "Dec 17, 2025",
+    fullName: "",
+    email: "",
+    role: "",
+    memberSince: "",
   });
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/me");
+        if (!res.ok) {
+          throw new Error("Failed to load profile");
+        }
+        const data = await res.json();
+        setProfile({
+          fullName: data.full_name,
+          email: data.email,
+          role: data.role || "",
+          memberSince: data.member_since || "",
+        });
+      } catch (err) {
+        setError(err.message || "Could not load profile");
+      }
+    };
+    loadProfile();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    // TODO: call backend to update profile
-    console.log("Save profile", profile);
+    setError("");
+    setSaving(true);
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/me", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: profile.fullName,
+          role: profile.role,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || "Failed to save profile");
+      }
+      const data = await res.json();
+      setProfile((prev) => ({
+        ...prev,
+        fullName: data.full_name,
+        role: data.role || "",
+        memberSince: data.member_since || prev.memberSince,
+      }));
+    } catch (err) {
+      setError(err.message || "Could not save profile");
+    } finally {
+      setSaving(false);
+    }
   };
+
 
   return (
     <div className="dp-root profile-root">

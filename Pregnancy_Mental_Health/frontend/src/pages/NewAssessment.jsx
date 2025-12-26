@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/NewAssessment.css";
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -10,6 +10,17 @@ const mockResult = {
   score: 62,
 };
 const navigate = useNavigate();
+
+  const [currentUserName, setCurrentUserName] = useState("");
+
+  useEffect(() => {
+    const storedName = localStorage.getItem("ppd_user_full_name");
+    if (storedName) {
+      setCurrentUserName(storedName);
+    } else {
+      setCurrentUserName("Clinician"); // fallback
+    }
+  }, []);
 
 
   // 🔹 ONE SINGLE FORM DATA OBJECT
@@ -72,26 +83,26 @@ const navigate = useNavigate();
 
   // 🔹 FINAL SUBMIT (API READY)
   const submitAssessment = async () => {
-    console.log("Sending data to backend:", formData);
-
-    // 🔹 TEMP RESULT (until backend is ready)
-    setResult({
-      risk: "Moderate Risk",
-      score: 62
-    });
-
-    // 🔹 BACKEND READY CODE (keep commented)
-    /*
-    const response = await fetch("http://localhost:8000/predict", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData)
-    });
-
-    const data = await response.json();
-    setResult(data);
-    */
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/assessments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+  
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || "Unable to generate risk score");
+      }
+  
+      const data = await res.json();
+      setResult({ risk: data.risk_level, score: data.score });
+    } catch (err) {
+      console.error(err);
+      // optionally show an error message in UI
+    }
   };
+  
 
   return (
     <>
@@ -145,7 +156,7 @@ const navigate = useNavigate();
   <div className="dp-nav-right">
     <div className="dp-profile-chip">
       <div className="dp-profile-avatar" />
-      <span className="dp-profile-name">Dr. Smith</span>
+      <span className="dp-profile-name">{currentUserName}</span>
     </div>
 
     <button className="dp-logout-btn" onClick={() => navigate("/")}>
@@ -861,7 +872,7 @@ const navigate = useNavigate();
 
     <button
       className="submit-btn"
-      onClick={() => setResult(mockResult)}
+      onClick={submitAssessment}  // 🔹 call backend
     >
       Generate Result
     </button>
@@ -888,10 +899,7 @@ const navigate = useNavigate();
         <div style={{ marginTop: "20px" }}>
           <button
             className="save-result-btn"
-            onClick={() => {
-              // Save result and move to clinician summary
-              setStep(8);
-            }}
+            onClick={() => setStep(8)}   // 🔹 go to clinician summary
             style={{
               background: "#2dd4bf",
               color: "white",
@@ -901,7 +909,7 @@ const navigate = useNavigate();
               fontSize: "16px",
               fontWeight: "600",
               cursor: "pointer",
-              marginRight: "10px"
+              marginRight: "10px",
             }}
           >
             Save Result
@@ -911,6 +919,7 @@ const navigate = useNavigate();
     )}
   </>
 )}
+
    
           {/* NAV BUTTONS */}
           <div className="actions">
