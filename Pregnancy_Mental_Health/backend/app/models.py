@@ -1,5 +1,5 @@
 # backend/app/models.py
-from sqlalchemy import Column, Integer, Float, DateTime, func, String, Boolean
+from sqlalchemy import Column, Integer, Float, DateTime, func, String, Boolean, JSON
 from .database import Base
 
 class User(Base):
@@ -11,6 +11,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     role = Column(String, nullable=True)
+    member_since = Column(DateTime(timezone=True), server_default=func.now())
     is_active = Column(Boolean, default=True)
 
 
@@ -22,3 +23,15 @@ class PredictionLog(Base):
     feature_2 = Column(Float, nullable=False)
     prediction = Column(Float, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class Assessment(Base):
+    __tablename__ = "assessments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    patient_name = Column(String, nullable=False)
+    raw_data = Column(JSON, nullable=False)           # full formData as JSON
+    risk_score = Column(Float, nullable=False)
+    risk_level = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+

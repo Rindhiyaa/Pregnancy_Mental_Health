@@ -3,84 +3,6 @@ import { NavLink, useNavigate } from "react-router-dom";
 
 import "../styles/HistoryPage.css";
 
-// Modal Component for Assessment Details
-const AssessmentModal = ({ isOpen, onClose, assessment }) => {
-  if (!isOpen || !assessment) return null;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Assessment Details</h2>
-          <button className="modal-close-btn" onClick={onClose}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-        
-        <div className="modal-body">
-          <div className="assessment-detail-grid">
-            <div className="detail-section">
-              <h3>Patient Information</h3>
-              <div className="detail-item">
-                <span className="detail-label">Patient Name:</span>
-                <span className="detail-value">{assessment.patient_name || 'Unknown Patient'}</span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Assessment Date:</span>
-                <span className="detail-value">{assessment.date}</span>
-              </div>
-            </div>
-
-            <div className="detail-section">
-              <h3>Risk Assessment</h3>
-              <div className="detail-item">
-                <span className="detail-label">AI Risk Level:</span>
-                <span className={`detail-pill ${assessment.risk_level?.toLowerCase() === 'high' ? 'pill-high' : assessment.risk_level?.toLowerCase() === 'medium' ? 'pill-medium' : 'pill-low'}`}>
-                  {assessment.risk_level || 'Unknown'}
-                </span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">AI Score:</span>
-                <span className="detail-score">{assessment.score || 0}/100</span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Clinician Risk:</span>
-                <span className={`detail-pill ${assessment.clinician_risk?.toLowerCase() === 'high' ? 'pill-high' : assessment.clinician_risk?.toLowerCase() === 'medium' ? 'pill-medium' : 'pill-low'}`}>
-                  {assessment.clinician_risk || 'Not Set'}
-                </span>
-              </div>
-            </div>
-
-            <div className="detail-section full-width">
-              <h3>Treatment Plan</h3>
-              <div className="detail-item">
-                <span className="detail-label">Recommended Plan:</span>
-                <span className="detail-value">{assessment.plan || 'No plan specified'}</span>
-              </div>
-            </div>
-
-            <div className="detail-section full-width">
-              <h3>Clinical Notes</h3>
-              <div className="detail-notes">
-                {assessment.notes || 'No notes provided'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="modal-footer">
-          <button className="modal-btn-secondary" onClick={onClose}>
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const HistoryPage = () => {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
@@ -88,25 +10,17 @@ const HistoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRisk, setFilterRisk] = useState("all");
-  const [selectedAssessment, setSelectedAssessment] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userName, setUserName] = useState("Dr. Smith");
 
-  // Load user name from localStorage
-  useEffect(() => {
-    const signupData = localStorage.getItem('signupData');
-    const userData = localStorage.getItem('userData');
-    
-    if (signupData) {
-      const parsedData = JSON.parse(signupData);
-      const name = parsedData.name || parsedData.full_name || "Dr. Smith";
-      setUserName(name.split(' ')[0] || "Dr. Smith");
-    } else if (userData) {
-      const parsedData = JSON.parse(userData);
-      const name = parsedData.name || parsedData.full_name || "Dr. Smith";
-      setUserName(name.split(' ')[0] || "Dr. Smith");
-    }
-  }, []);
+  const [currentUserName, setCurrentUserName] = useState("");
+  
+    useEffect(() => {
+      const storedName = localStorage.getItem("ppd_user_full_name");
+      if (storedName) {
+        setCurrentUserName(storedName);
+      } else {
+        setCurrentUserName("Clinician"); // fallback
+      }
+    }, []);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -195,16 +109,6 @@ const HistoryPage = () => {
     }
   };
 
-  const openModal = (assessment) => {
-    setSelectedAssessment(assessment);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setSelectedAssessment(null);
-    setIsModalOpen(false);
-  };
-
   return (
     <div className="dp-root history-root">
       {/* same navbar */}
@@ -255,7 +159,7 @@ const HistoryPage = () => {
         <div className="dp-nav-right">
           <div className="dp-profile-chip">
             <div className="dp-profile-avatar" />
-            <span className="dp-profile-name">{userName}</span>
+            <span className="dp-profile-name">{currentUserName}</span>
           </div>
           <button className="dp-logout-btn" onClick={() => navigate("/")}>
             Logout
@@ -390,7 +294,10 @@ const HistoryPage = () => {
                         <div className="action-buttons">
                           <button 
                             className="history-view-btn"
-                            onClick={() => openModal(row)}
+                            onClick={() => {
+                              // Show detailed view modal
+                              alert(`Assessment Details:\n\nPatient: ${row.patient_name}\nDate: ${row.date}\nAI Risk: ${row.risk_level} (${row.score}/100)\nClinician Risk: ${row.clinician_risk}\nPlan: ${row.plan}\n\nNotes: ${row.notes || 'No notes provided'}`);
+                            }}
                             title="View Details"
                           >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -456,13 +363,6 @@ const HistoryPage = () => {
             </div>
           )}
         </section>
-
-        {/* Assessment Details Modal */}
-        <AssessmentModal 
-          isOpen={isModalOpen}
-          onClose={closeModal}
-          assessment={selectedAssessment}
-        />
       </main>
     </div>
   );

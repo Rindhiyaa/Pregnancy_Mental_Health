@@ -36,8 +36,12 @@ export default function SignInPage() {
       }
   
       const data = await res.json();
-      console.log("Login success", data);
+      console.log("LOGIN RESPONSE", data);
+
+      localStorage.setItem("ppd_user_full_name", data.full_name || "Clinician");
+      localStorage.setItem("ppd_user_email", data.email || "");
       navigate("/dashboard");
+
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     }

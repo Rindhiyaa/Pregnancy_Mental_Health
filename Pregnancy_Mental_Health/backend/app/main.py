@@ -2,8 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine
 from . import models
-from .routers import predictions, auth
-
+from .routers import predictions, auth, assessments
 
 app = FastAPI()
 
@@ -20,3 +19,4 @@ app.add_middleware(
 models.Base.metadata.create_all(bind=engine)
 app.include_router(predictions.router)
 app.include_router(auth.router)
+app.include_router(assessments.router)
