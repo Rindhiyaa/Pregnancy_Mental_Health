@@ -951,18 +951,18 @@ export default function NewAssessment() {
 )}
 
    
-          {/* NAV BUTTONS */}
-          <div className="actions">
-            <button disabled={step === 1} onClick={() => setStep(step - 1)}>
-              ← Previous
-            </button>
+          {/* NAV BUTTONS - Only show for steps 1-7 */}
+          {step < 8 && (
+            <div className="actions">
+              <button disabled={step === 1} onClick={() => setStep(step - 1)}>
+                ← Previous
+              </button>
 
-            {step < 8 && (
               <button onClick={() => setStep(step + 1)}>
                 Next →
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
         </section>
       </main>
