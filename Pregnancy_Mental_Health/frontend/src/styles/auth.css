@@ -123,10 +123,12 @@
   font-weight: 600;
   cursor: pointer;
   padding: 0;
+  transition: all 0.3s ease;
 }
 
 .link-button:hover {
   color: #db2777;
+  transform: translateY(-1px);
 }
 
 .auth-main form {
@@ -216,7 +218,10 @@ input:focus {
 }
 
 .btn-primary.full-width:hover {
-  opacity: 0.95;
+  background: linear-gradient(135deg, #7c3aed, #db2777);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(148, 88, 246, 0.4);
+  opacity: 1;
 }
 
 .auth-side > div {

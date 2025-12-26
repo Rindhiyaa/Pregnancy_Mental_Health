@@ -315,8 +315,9 @@
   align-items: center;
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: none;
+  border-top: 1px solid #e5e7eb;
   gap: 1rem;
+  flex-wrap: nowrap;
 }
 
 .actions button {
@@ -330,6 +331,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  white-space: nowrap;
 }
 
 .actions button:not(:disabled) {
@@ -347,6 +349,47 @@
   background: #f3f4f6;
   color: #9ca3af;
   cursor: not-allowed;
+}
+
+/* Clinician Summary Actions */
+.clinician-summary-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.clinician-summary-actions button {
+  padding: 14px 28px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.save-to-history-btn {
+  background: linear-gradient(135deg, #f472b6, #ec4899);
+  color: white;
+}
+
+.save-to-history-btn:hover {
+  background: linear-gradient(135deg, #ec4899, #db2777);
+  transform: translateY(-1px);
+}
+
+.new-assessment-btn {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: white;
+}
+
+.new-assessment-btn:hover {
+  background: linear-gradient(135deg, #0891b2, #0e7490);
+  transform: translateY(-1px);
 }
 
 /* Submit Button - Professional */

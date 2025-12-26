@@ -1,23 +1,15 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "../styles/DashboardPage.css";
-
 import { NavLink, useNavigate } from "react-router-dom";
-
-
-
-/**
- * Single-page clinician dashboard:
- * - Top navbar with logo, links, profile, logout
- * - Dynamic data: fetches assessments + stats from backend
- * - Search + risk filter on recent assessments
- *
- * NOTE: adjust API URLs to match your backend.
- */
+import { useAuth } from "../contexts/AuthContext";
 
 const DashboardPage = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [search, setSearch] = useState("");
   const [riskFilter, setRiskFilter] = useState("all");
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState({
@@ -26,18 +18,6 @@ const DashboardPage = () => {
     low: 0,
     today: 0,
   });
-
-  const [currentUserName, setCurrentUserName] = useState("");
-    
-      useEffect(() => {
-        const storedName = localStorage.getItem("ppd_user_full_name");
-        if (storedName) {
-          setCurrentUserName(storedName);
-        } else {
-          setCurrentUserName("Clinician"); // fallback
-        }
-      }, []);
-
 
   const [loading, setLoading] = useState(true);
 
@@ -117,6 +97,25 @@ const DashboardPage = () => {
     return matchesSearch && matchesRisk;
   });
 
+  // Modal functions
+  const viewAssessmentDetails = (assessment) => {
+    // Find the full assessment data from localStorage
+    const savedHistory = localStorage.getItem('assessmentHistory');
+    if (savedHistory) {
+      const historyData = JSON.parse(savedHistory);
+      const fullAssessment = historyData.find(a => a.patient_name === assessment.name);
+      if (fullAssessment) {
+        setSelectedAssessment(fullAssessment);
+        setShowModal(true);
+      }
+    }
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedAssessment(null);
+  };
+
   return (
     <div className="dp-root">
       {/* NAVBAR */}
@@ -171,13 +170,21 @@ const DashboardPage = () => {
 
   <div className="dp-nav-right">
     <div className="dp-profile-chip">
-      <div className="dp-profile-avatar" />
-      <span className="dp-profile-name">{currentUserName}</span>
+      <div className="dp-profile-avatar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <span className="dp-profile-name">{user?.fullName || 'Clinician'}</span>
     </div>
 
     <button
       className="dp-logout-btn"
-      onClick={() => navigate("/")} // go back to landing / login
+      onClick={() => {
+        logout();
+        navigate("/");
+      }}
     >
       Logout
     </button>
@@ -289,19 +296,7 @@ const DashboardPage = () => {
                       <td>
                         <button 
                           className="dp-view-btn"
-                          onClick={() => {
-                            // Find the full assessment data from localStorage
-                            const savedHistory = localStorage.getItem('assessmentHistory');
-                            if (savedHistory) {
-                              const historyData = JSON.parse(savedHistory);
-                              const assessment = historyData.find(a => a.patient_name === row.name);
-                              if (assessment) {
-                                alert(`Assessment Details:\n\nPatient: ${assessment.patient_name}\nDate: ${assessment.date}\nAI Risk: ${assessment.risk_level} (${assessment.score}/100)\nClinician Risk: ${assessment.clinician_risk || 'Not Set'}\nPlan: ${assessment.plan || 'No plan specified'}\n\nNotes: ${assessment.notes || 'No notes provided'}`);
-                              } else {
-                                alert('Assessment details not found.');
-                              }
-                            }
-                          }}
+                          onClick={() => viewAssessmentDetails(row)}
                         >
                           View details
                         </button>
@@ -351,6 +346,79 @@ const DashboardPage = () => {
 
         </section>
       </main>
+
+      {/* Assessment Details Modal */}
+      {showModal && selectedAssessment && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Assessment Details</h2>
+              <button className="modal-close-btn" onClick={closeModal}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="assessment-detail-grid">
+                <div className="detail-section">
+                  <h3>Patient Information</h3>
+                  <div className="detail-item">
+                    <span className="detail-label">Patient Name:</span>
+                    <span className="detail-value">{selectedAssessment.patient_name || 'Unknown'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Assessment Date:</span>
+                    <span className="detail-value">{selectedAssessment.date}</span>
+                  </div>
+                </div>
+
+                <div className="detail-section">
+                  <h3>Risk Assessment</h3>
+                  <div className="detail-item">
+                    <span className="detail-label">AI Risk Level:</span>
+                    <span className={`detail-pill pill-${selectedAssessment.risk_level?.toLowerCase()}`}>
+                      {selectedAssessment.risk_level || 'Unknown'}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">AI Score:</span>
+                    <span className="detail-score">{selectedAssessment.score || 0}/100</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Clinician Risk:</span>
+                    <span className={`detail-pill pill-${selectedAssessment.clinician_risk?.toLowerCase()}`}>
+                      {selectedAssessment.clinician_risk || 'Not Set'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="detail-section full-width">
+                  <h3>Treatment Plan</h3>
+                  <div className="detail-notes">
+                    {selectedAssessment.plan || 'No treatment plan specified'}
+                  </div>
+                </div>
+
+                <div className="detail-section full-width">
+                  <h3>Clinical Notes</h3>
+                  <div className="detail-notes">
+                    {selectedAssessment.notes || 'No additional notes provided'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="modal-btn-secondary" onClick={closeModal}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

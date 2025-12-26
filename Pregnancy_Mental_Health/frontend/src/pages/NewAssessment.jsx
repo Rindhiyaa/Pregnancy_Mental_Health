@@ -1,26 +1,14 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import "../styles/NewAssessment.css";
+import "../styles/DashboardPage.css";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 
 export default function NewAssessment() {
   const [step, setStep] = useState(1);
-const mockResult = {
-  risk: "Moderate Risk",
-  score: 62,
-};
-const navigate = useNavigate();
-
-  const [currentUserName, setCurrentUserName] = useState("");
-
-  useEffect(() => {
-    const storedName = localStorage.getItem("ppd_user_full_name");
-    if (storedName) {
-      setCurrentUserName(storedName);
-    } else {
-      setCurrentUserName("Clinician"); // fallback
-    }
-  }, []);
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
 
   // 🔹 ONE SINGLE FORM DATA OBJECT
@@ -98,9 +86,43 @@ const navigate = useNavigate();
       const data = await res.json();
       setResult({ risk: data.risk_level, score: data.score });
     } catch (err) {
-      console.error(err);
-      // optionally show an error message in UI
+      console.error("Backend error:", err);
+      
+      // Mock result data for UI testing
+      const mockResults = [
+        { risk: "Low Risk", score: 25 },
+        { risk: "Moderate Risk", score: 62 },
+        { risk: "High Risk", score: 85 },
+        { risk: "Low Risk", score: 18 },
+        { risk: "Moderate Risk", score: 55 },
+        { risk: "High Risk", score: 92 }
+      ];
+      
+      // Select a random mock result
+      const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
+      
+      // Add slight delay to simulate API call
+      setTimeout(() => {
+        setResult(randomResult);
+      }, 1000);
     }
+  };
+
+  // Calculate EPDS score from form data
+  const calculateEPDSScore = () => {
+    let total = 0;
+    for (let i = 1; i <= 10; i++) {
+      const value = parseInt(formData[`epds_${i}`]) || 0;
+      total += value;
+    }
+    return total;
+  };
+
+  // Determine risk level based on EPDS score
+  const getRiskLevel = (score) => {
+    if (score >= 13) return "High Risk";
+    if (score >= 10) return "Moderate Risk";
+    return "Low Risk";
   };
   
 
@@ -155,11 +177,19 @@ const navigate = useNavigate();
 
   <div className="dp-nav-right">
     <div className="dp-profile-chip">
-      <div className="dp-profile-avatar" />
-      <span className="dp-profile-name">{currentUserName}</span>
+      <div className="dp-profile-avatar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <span className="dp-profile-name">{user?.fullName || 'Clinician'}</span>
     </div>
 
-    <button className="dp-logout-btn" onClick={() => navigate("/")}>
+    <button className="dp-logout-btn" onClick={() => {
+      logout();
+      navigate("/");
+    }}>
       Logout
     </button>
   </div>
@@ -182,10 +212,10 @@ const navigate = useNavigate();
 
       {/* MAIN */}
       <main className="main">
-        <div className="page-header">
+        {/* <div className="page-header">
           <h1>New Assessment</h1>
           <p className="subtitle">Postpartum depression risk screening</p>
-        </div>
+        </div> */}
 
         <section className="card">
 
@@ -633,10 +663,10 @@ const navigate = useNavigate();
         <label>1. I have been able to laugh and see the funny side of things</label>
         <select name="epds_1" value={formData.epds_1} onChange={handleChange}>
           <option value="">Select</option>
+          <option value="3">As much as I always could</option>
+          <option value="2">Not quite so much now</option>
+          <option value="1">Definitely not so much now</option>
           <option value="0">Not at all</option>
-          <option value="1">Hardly ever</option>
-          <option value="2">Sometimes</option>
-          <option value="3">Quite often</option>
         </select>
       </div>
 
@@ -644,10 +674,10 @@ const navigate = useNavigate();
         <label>2. I have looked forward with enjoyment to things</label>
         <select name="epds_2" value={formData.epds_2} onChange={handleChange}>
           <option value="">Select</option>
-          <option value="0">Not at all</option>
-          <option value="1">Hardly ever</option>
-          <option value="2">Sometimes</option>
-          <option value="3">Quite often</option>
+          <option value="3">As much as I ever did</option>
+          <option value="2">Rather less than I used to</option>
+          <option value="1">Definitely less than I used to</option>
+          <option value="0">Hardly at all</option>
         </select>
       </div>
 
@@ -655,10 +685,10 @@ const navigate = useNavigate();
         <label>3. I have blamed myself unnecessarily when things went wrong</label>
         <select name="epds_3" value={formData.epds_3} onChange={handleChange}>
           <option value="">Select</option>
-          <option value="0">Not at all</option>
-          <option value="1">Hardly ever</option>
-          <option value="2">Sometimes</option>
-          <option value="3">Quite often</option>
+          <option value="3">Yes, most of the time</option>
+          <option value="2">Yes, some of the time</option>
+          <option value="1">Not very often</option>
+          <option value="0">No, never</option>
         </select>
       </div>
 
@@ -666,10 +696,10 @@ const navigate = useNavigate();
         <label>4. I have been anxious or worried for no good reason</label>
         <select name="epds_4" value={formData.epds_4} onChange={handleChange}>
           <option value="">Select</option>
-          <option value="0">Not at all</option>
+          <option value="0">No, not at all</option>
           <option value="1">Hardly ever</option>
-          <option value="2">Sometimes</option>
-          <option value="3">Quite often</option>
+          <option value="2">Yes, sometimes</option>
+          <option value="3">Yes, very often</option>
         </select>
       </div>
 
@@ -677,10 +707,10 @@ const navigate = useNavigate();
         <label>5. I have felt scared or panicky for no very good reason</label>
         <select name="epds_5" value={formData.epds_5} onChange={handleChange}>
           <option value="">Select</option>
-          <option value="0">Not at all</option>
-          <option value="1">Hardly ever</option>
-          <option value="2">Sometimes</option>
-          <option value="3">Quite often</option>
+          <option value="3">Yes, quite a lot</option>
+          <option value="2">Yes, sometimes</option>
+          <option value="1">No, not much</option>
+          <option value="0">No, not at all</option>
         </select>
       </div>
 
@@ -688,10 +718,10 @@ const navigate = useNavigate();
         <label>6. Things have been getting on top of me</label>
         <select name="epds_6" value={formData.epds_6} onChange={handleChange}>
           <option value="">Select</option>
-          <option value="0">Not at all</option>
-          <option value="1">Hardly ever</option>
-          <option value="2">Sometimes</option>
-          <option value="3">Quite often</option>
+          <option value="3">Yes, most of the time I haven't been able to cope at all</option>
+          <option value="2">Yes, sometimes I haven't been coping as well as usual</option>
+          <option value="1">No, most of the time I have coped quite well</option>
+          <option value="0">No, I have been coping as well as ever</option>
         </select>
       </div>
 
@@ -699,10 +729,10 @@ const navigate = useNavigate();
         <label>7. I have been so unhappy that I have had difficulty sleeping</label>
         <select name="epds_7" value={formData.epds_7} onChange={handleChange}>
           <option value="">Select</option>
-          <option value="0">Not at all</option>
-          <option value="1">Hardly ever</option>
-          <option value="2">Sometimes</option>
-          <option value="3">Quite often</option>
+          <option value="3">Yes, most of the time</option>
+          <option value="2">Yes, sometimes</option>
+          <option value="1">Not very often</option>
+          <option value="0">No, not at all</option>
         </select>
       </div>
 
@@ -710,10 +740,10 @@ const navigate = useNavigate();
         <label>8. I have felt sad or miserable</label>
         <select name="epds_8" value={formData.epds_8} onChange={handleChange}>
           <option value="">Select</option>
-          <option value="0">Not at all</option>
-          <option value="1">Hardly ever</option>
-          <option value="2">Sometimes</option>
-          <option value="3">Quite often</option>
+          <option value="3">Yes, most of the time</option>
+          <option value="2">Yes, quite often</option>
+          <option value="1">Not very often</option>
+          <option value="0">No, not at all</option>
         </select>
       </div>
 
@@ -721,10 +751,10 @@ const navigate = useNavigate();
         <label>9. I have been so unhappy that I have been crying</label>
         <select name="epds_9" value={formData.epds_9} onChange={handleChange}>
           <option value="">Select</option>
-          <option value="0">Not at all</option>
-          <option value="1">Hardly ever</option>
-          <option value="2">Sometimes</option>
-          <option value="3">Quite often</option>
+          <option value="3">Yes, most of the time</option>
+          <option value="2">Yes, quite often</option>
+          <option value="1">Only occasionally</option>
+          <option value="0">No, never</option>
         </select>
       </div>
 
@@ -732,10 +762,10 @@ const navigate = useNavigate();
         <label>10. The thought of harming myself has occurred to me</label>
         <select name="epds_10" value={formData.epds_10} onChange={handleChange}>
           <option value="">Select</option>
-          <option value="0">Never</option>
-          <option value="1">Hardly ever</option>
+          <option value="3">Yes, quite often</option>
           <option value="2">Sometimes</option>
-          <option value="3">Quite often</option>
+          <option value="1">Hardly ever</option>
+          <option value="0">Never</option>
         </select>
       </div>
 
@@ -794,10 +824,26 @@ const navigate = useNavigate();
                 </div>
               </div>
 
-              <div className="clinician-summary-actions" style={{ marginTop: "20px", textAlign: "center" }}>
+              <div className="clinician-summary-actions">
                 <button
                   className="save-to-history-btn"
                   onClick={() => {
+                    // Validate required fields
+                    if (!formData.patient_name) {
+                      alert('Please enter patient name before saving.');
+                      return;
+                    }
+                    
+                    if (!formData.clinician_risk) {
+                      alert('Please select clinician risk level before saving.');
+                      return;
+                    }
+                    
+                    if (!formData.plan) {
+                      alert('Please select a recommended plan before saving.');
+                      return;
+                    }
+
                     // Save to history functionality
                     const assessmentData = {
                       id: Date.now(),
@@ -817,24 +863,18 @@ const navigate = useNavigate();
                     // Add new assessment
                     existingHistory.push(assessmentData);
                     
-                    // Save back to localStorage
+                    // Save back to localStorage (current session)
                     localStorage.setItem('assessmentHistory', JSON.stringify(existingHistory));
                     
-                    alert(`Assessment for ${formData.patient_name} saved to history!`);
+                    // Also save to user-specific history for persistence across logins
+                    if (user?.email) {
+                      localStorage.setItem(`assessmentHistory_${user.email}`, JSON.stringify(existingHistory));
+                    }
+                    
+                    alert(`Assessment for ${formData.patient_name} saved to history successfully!`);
                     
                     // Navigate to history page
                     navigate('/dashboard/History');
-                  }}
-                  style={{
-                    background: "#8b5cf6",
-                    color: "white",
-                    border: "none",
-                    padding: "14px 28px",
-                    borderRadius: "8px",
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    marginRight: "10px"
                   }}
                 >
                   Save to History
@@ -845,16 +885,6 @@ const navigate = useNavigate();
                   onClick={() => {
                     // Reset form and start new assessment
                     window.location.reload();
-                  }}
-                  style={{
-                    background: "#22c55e",
-                    color: "white",
-                    border: "none",
-                    padding: "14px 28px",
-                    borderRadius: "8px",
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    cursor: "pointer"
                   }}
                 >
                   New Assessment
