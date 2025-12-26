@@ -26,6 +26,19 @@ const DashboardPage = () => {
     low: 0,
     today: 0,
   });
+
+  const [currentUserName, setCurrentUserName] = useState("");
+    
+      useEffect(() => {
+        const storedName = localStorage.getItem("ppd_user_full_name");
+        if (storedName) {
+          setCurrentUserName(storedName);
+        } else {
+          setCurrentUserName("Clinician"); // fallback
+        }
+      }, []);
+
+
   const [loading, setLoading] = useState(true);
 
   // fetch data from localStorage (same as History page)
@@ -159,7 +172,7 @@ const DashboardPage = () => {
   <div className="dp-nav-right">
     <div className="dp-profile-chip">
       <div className="dp-profile-avatar" />
-      <span className="dp-profile-name">Dr. Smith</span>
+      <span className="dp-profile-name">{currentUserName}</span>
     </div>
 
     <button
