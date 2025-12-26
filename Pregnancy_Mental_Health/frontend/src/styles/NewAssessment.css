@@ -1,153 +1,419 @@
+/* Enhanced New Assessment Page - Professional Healthcare Theme */
+
 /* Layout */
 .layout {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   background: #ffffff;
-  font-family: "Segoe UI", sans-serif;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  position: relative;
 }
 
-/* Sidebar */
+/* Enhanced Sidebar - Sticky and Professional */
 .sidebar {
-  width: 260px;
-  background: #f6f7fb;
-  padding: 30px 20px;
+  width: 320px;
+  background: #ffffff;
+  padding: 2rem 1.5rem;
   border-right: 1px solid #e5e7eb;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 10;
 }
 
 .logo {
-  font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 30px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 2.5rem;
+  color: #1f2937;
+  background: linear-gradient(135deg, #8b5cf6, #2dd4bf);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background-color: #f8fafc;
+}
+
+.step-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .step-nav .step {
-  padding: 12px 14px;
-  margin-bottom: 10px;
+  padding: 1rem 1.5rem;
   border-radius: 8px;
-  color: #555;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  border: none;
+  background: transparent;
+  position: relative;
+  cursor: pointer;
+  text-align: left;
+}
+
+.step-nav .step:hover {
+  background: #f8fafc;
+  color: #374151;
 }
 
 .step-nav .active {
-  background: #4f46e5;
+  background: #8b5cf6;
   color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
 }
 
-/* Main */
+/* Enhanced Main Content */
 .main {
   flex: 1;
-  padding: 40px;
+  padding: 2.5rem 3rem;
   background: #ffffff;
+  position: relative;
+  overflow-y: auto;
+  min-height: 100vh;
 }
 
-/* Page Header */
+/* Enhanced Page Header */
+.page-header {
+  margin-bottom: 2.5rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 1.5rem;
+}
+
 .page-header h1 {
-  font-size: 28px;
-  margin-bottom: 6px;
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #1f2937;
 }
 
 .subtitle {
   color: #6b7280;
-  margin-bottom: 30px;
+  font-size: 1rem;
+  margin-bottom: 0;
+  font-weight: 400;
 }
 
-/* Card */
+/* Enhanced Card - Wider and Professional */
 .card {
   background: #ffffff;
-  padding: 30px;
-  border-radius: 14px;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
-  max-width: 900px;
+  padding: 3rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  margin-bottom: 2.5rem;
+  text-align: left;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .card-header h2 {
-  font-size: 22px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
 }
 
 .card-header p {
   color: #6b7280;
-  margin-bottom: 25px;
+  font-size: 0.875rem;
+  margin: 0;
 }
 
-/* Form */
+/* Enhanced Form - Professional Layout */
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .form-group label {
-  display: block;
-  font-size: 14px;
-  margin-bottom: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.form-group label.highlight {
+  color: #8b5cf6;
+  font-weight: 700;
+  position: relative;
+}
+
+.form-group label.highlight::after {
+  content: '*';
+  color: #ef4444;
+  margin-left: 4px;
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
   width: 100%;
-  padding: 12px;
+  padding: 0.875rem 1rem;
   border-radius: 8px;
   border: 1px solid #d1d5db;
+  font-size: 0.875rem;
+  background: #ffffff;
+  transition: all 0.3s ease;
+  font-family: inherit;
 }
 
-/* Actions */
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.form-group select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+/* EPDS Assessment Styling - Clean and Professional */
+.epds-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.epds-item {
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.epds-item:hover {
+  border-color: #8b5cf6;
+  background: #ffffff;
+}
+
+.epds-item label {
+  display: block;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.epds-item select {
+  margin-top: 0.5rem;
+}
+
+/* Enhanced Actions - Professional Buttons */
 .actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 30px;
+  align-items: center;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+  gap: 1rem;
 }
 
 .actions button {
-  padding: 10px 20px;
+  padding: 0.875rem 1.5rem;
   border-radius: 8px;
   border: none;
-  background: #4f46e5;
-  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
   cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.actions button:not(:disabled) {
+  background: #8b5cf6;
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.actions button:not(:disabled):hover {
+  background: #7c3aed;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .actions button:disabled {
-  background: #c7c7c7;
-}
-.actions .back-button {
-  background: #e5e7eb;
-  color: #374151;
-}
-/* Violet Titles */
-.violet-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #7c3aed; /* violet */
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
 }
 
-/* Question label */
-.question {
-  margin-top: 20px;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #4b5563;
-}
-
-/* Option cards */
-.option-card {
-  display: flex;
-  align-items: center;
-  padding: 14px;
-  margin-bottom: 12px;
-  border-radius: 12px;
-  border: 1px solid #e5d9ff;
-  background: #faf8ff;
-  cursor: pointer;
-}
-
-.option-card input {
-  margin-right: 12px;
-}
-
-/* Select style */
-select {
+/* Submit Button - Professional */
+.submit-btn {
   width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid #ddd6fe;
-  margin-bottom: 10px;
+  padding: 1rem 2rem;
+  background: #2dd4bf;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.submit-btn:hover {
+  background: #14b8a6;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Result Card Enhancement - Clean */
+.result-card {
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.result-card h3 {
+  color: #166534;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.result-card p {
+  color: #15803d !important;
+  font-weight: 600 !important;
+}
+
+.result-card h2 {
+  color: #166534;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 1rem 0;
+}
+
+/* Responsive Design - Professional */
+@media (max-width: 1024px) {
+  .layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    padding: 1.5rem;
+  }
+  
+  .step-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .step-nav .step {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 0.75rem 1rem;
+  }
+  
+  .main {
+    padding: 2rem;
+  }
+  
+  .page-header h1 {
+    font-size: 2rem;
+  }
+  
+  .card {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .actions {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+  }
+  
+  .actions button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  .card-header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .epds-item {
+    padding: 1rem;
+  }
+  
+  .main {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .main {
+    padding: 1rem;
+  }
+  
+  .card {
+    padding: 1.5rem;
+  }
+  
+  .sidebar {
+    padding: 1rem;
+  }
+  
+  .step-nav .step {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .form-grid {
+    gap: 1rem;
+  }
 }

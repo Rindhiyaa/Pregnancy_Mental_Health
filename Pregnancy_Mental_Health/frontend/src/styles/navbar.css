@@ -46,7 +46,7 @@
   width: 38px;                    /* was 44px */
   height: 38px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+   background: conic-gradient(from 150deg, #ec4899, #8b5cf6, #38bdf8, #ec4899);
   display: flex;
   align-items: center;
   justify-content: center;

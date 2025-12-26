@@ -28,25 +28,62 @@ const DashboardPage = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // fetch data from backend
+  // fetch data from localStorage (same as History page)
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = () => {
       try {
         setLoading(true);
 
-        // TODO: change to your actual routes
-        const [assessRes, statsRes] = await Promise.all([
-          fetch("/api/assessments/recent"),
-          fetch("/api/assessments/stats"),
-        ]);
-
-        const assessJson = await assessRes.json();
-        const statsJson = await statsRes.json();
-
-        setRows(assessJson || []);
-        setStats(statsJson || { total: 0, high: 0, low: 0, today: 0 });
+        // Load from localStorage instead of API
+        const savedHistory = localStorage.getItem('assessmentHistory');
+        if (savedHistory) {
+          const historyData = JSON.parse(savedHistory);
+          
+          // Sort by timestamp (newest first) and take recent 10
+          const sortedData = historyData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          const recentAssessments = sortedData.slice(0, 10);
+          
+          // Transform data to match expected format
+          const transformedRows = recentAssessments.map(assessment => ({
+            id: assessment.patient_name || 'Unknown',
+            name: assessment.patient_name || 'Unknown Patient',
+            date: assessment.date || new Date(assessment.timestamp).toLocaleDateString(),
+            risk: assessment.risk_level?.toLowerCase() === 'high' ? 'high' : 'low'
+          }));
+          
+          // Calculate statistics
+          const totalAssessments = historyData.length;
+          const highRiskCount = historyData.filter(a => 
+            a.risk_level?.toLowerCase() === 'high' || 
+            a.clinician_risk?.toLowerCase() === 'high'
+          ).length;
+          const lowRiskCount = historyData.filter(a => 
+            a.risk_level?.toLowerCase() === 'low' || 
+            a.clinician_risk?.toLowerCase() === 'low'
+          ).length;
+          
+          // Today's assessments (assessments created today)
+          const today = new Date().toDateString();
+          const todayCount = historyData.filter(a => {
+            const assessmentDate = new Date(a.timestamp || a.date).toDateString();
+            return assessmentDate === today;
+          }).length;
+          
+          setRows(transformedRows);
+          setStats({
+            total: totalAssessments,
+            high: highRiskCount,
+            low: lowRiskCount,
+            today: todayCount
+          });
+        } else {
+          setRows([]);
+          setStats({ total: 0, high: 0, low: 0, today: 0 });
+        }
       } catch (err) {
         console.error("Failed to load dashboard data", err);
+        setRows([]);
+        setStats({ total: 0, high: 0, low: 0, today: 0 });
       } finally {
         setLoading(false);
       }
@@ -237,7 +274,24 @@ const DashboardPage = () => {
                         </span>
                       </td>
                       <td>
-                        <button className="dp-view-btn">View details</button>
+                        <button 
+                          className="dp-view-btn"
+                          onClick={() => {
+                            // Find the full assessment data from localStorage
+                            const savedHistory = localStorage.getItem('assessmentHistory');
+                            if (savedHistory) {
+                              const historyData = JSON.parse(savedHistory);
+                              const assessment = historyData.find(a => a.patient_name === row.name);
+                              if (assessment) {
+                                alert(`Assessment Details:\n\nPatient: ${assessment.patient_name}\nDate: ${assessment.date}\nAI Risk: ${assessment.risk_level} (${assessment.score}/100)\nClinician Risk: ${assessment.clinician_risk || 'Not Set'}\nPlan: ${assessment.plan || 'No plan specified'}\n\nNotes: ${assessment.notes || 'No notes provided'}`);
+                              } else {
+                                alert('Assessment details not found.');
+                              }
+                            }
+                          }}
+                        >
+                          View details
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -261,10 +315,16 @@ const DashboardPage = () => {
 
   <div className="dp-quick-inner">
     <div className="dp-qa-buttons">
-      <button className="dp-qa-primary">
+      <button 
+        className="dp-qa-primary"
+        onClick={() => navigate('/dashboard/new-assessment')}
+      >
         Start New Assessment
       </button>
-      <button className="dp-qa-secondary">
+      <button 
+        className="dp-qa-secondary"
+        onClick={() => navigate('/dashboard/History')}
+      >
         View Full History
       </button>
     </div>

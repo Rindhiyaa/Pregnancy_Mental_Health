@@ -34,9 +34,14 @@ const navigate = useNavigate();
     previous_treatment: "",
     family_support: "",
     partner_support: "",
+    living_situation: "",
+    social_network: "",
+    additional_support: "",
     major_life_events: "",
     financial_stress: "",
     employment_status_current: "",
+    relationship_stress: "",
+    caregiving_responsibilities: "",
     self_harm: "",
     harm_baby: "",
     safety_concern: "",
@@ -728,11 +733,12 @@ const navigate = useNavigate();
 )}
 
 
-          {/* STEP 7 – CLINICIAN SUMMARY */}
+          {/* STEP 8 – CLINICIAN SUMMARY */}
           {step === 8 && (
             <>
               <div className="card-header">
                 <h2>Clinician Summary</h2>
+                <p>Complete your clinical assessment and recommendations</p>
               </div>
 
               <div className="form-grid">
@@ -747,7 +753,7 @@ const navigate = useNavigate();
                 </div>
 
                 <div className="form-group">
-                  <label>Plan</label>
+                  <label>Recommended Plan</label>
                   <select name="plan" value={formData.plan} onChange={handleChange}>
                     <option value="">Select</option>
                     <option value="Routine follow-up">Routine follow-up</option>
@@ -757,51 +763,152 @@ const navigate = useNavigate();
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Notes (optional)</label>
+                <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                  <label>Clinical Notes</label>
                   <textarea
                     name="notes"
                     value={formData.notes || ""}
                     onChange={handleChange}
-                    placeholder="Enter any notes for clinician record"
-                    rows={3}
-                    style={{ borderRadius: "8px", padding: "12px", border: "1px solid #d1d5db", width: "100%" }}
+                    placeholder="Enter clinical observations, recommendations, and follow-up notes..."
+                    rows={4}
+                    style={{ 
+                      borderRadius: "8px", 
+                      padding: "12px", 
+                      border: "1px solid #d1d5db", 
+                      width: "100%",
+                      fontSize: "14px",
+                      fontFamily: "inherit"
+                    }}
                   />
                 </div>
+              </div>
+
+              <div className="clinician-summary-actions" style={{ marginTop: "20px", textAlign: "center" }}>
+                <button
+                  className="save-to-history-btn"
+                  onClick={() => {
+                    // Save to history functionality
+                    const assessmentData = {
+                      id: Date.now(),
+                      patient_name: formData.patient_name,
+                      date: new Date().toLocaleDateString(),
+                      risk_level: result?.risk || "Unknown",
+                      score: result?.score || 0,
+                      clinician_risk: formData.clinician_risk,
+                      plan: formData.plan,
+                      notes: formData.notes,
+                      timestamp: new Date().toISOString()
+                    };
+
+                    // Get existing history from localStorage
+                    const existingHistory = JSON.parse(localStorage.getItem('assessmentHistory') || '[]');
+                    
+                    // Add new assessment
+                    existingHistory.push(assessmentData);
+                    
+                    // Save back to localStorage
+                    localStorage.setItem('assessmentHistory', JSON.stringify(existingHistory));
+                    
+                    alert(`Assessment for ${formData.patient_name} saved to history!`);
+                    
+                    // Navigate to history page
+                    navigate('/dashboard/History');
+                  }}
+                  style={{
+                    background: "#8b5cf6",
+                    color: "white",
+                    border: "none",
+                    padding: "14px 28px",
+                    borderRadius: "8px",
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    marginRight: "10px"
+                  }}
+                >
+                  Save to History
+                </button>
+                
+                <button
+                  className="new-assessment-btn"
+                  onClick={() => {
+                    // Reset form and start new assessment
+                    window.location.reload();
+                  }}
+                  style={{
+                    background: "#22c55e",
+                    color: "white",
+                    border: "none",
+                    padding: "14px 28px",
+                    borderRadius: "8px",
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    cursor: "pointer"
+                  }}
+                >
+                  New Assessment
+                </button>
               </div>
             </>
           )}
 
 {step === 7 && (
   <>
+    <div className="card-header">
+      <h2>Assessment Result</h2>
+      <p>Generate and review the risk assessment</p>
+    </div>
+
     <button
-  className="submit-btn"
-  onClick={() => setResult(mockResult)}
->
-  Generate Result
-</button>
+      className="submit-btn"
+      onClick={() => setResult(mockResult)}
+    >
+      Generate Result
+    </button>
 
     {result && (
-  <div
-    className="result-card"
-    style={{
-      background: "#e6f8f1",
-      padding: "25px",
-      marginTop: "20px",
-      borderRadius: "12px",
-      textAlign: "center",
-    }}
-  >
-    <h3>Assessment Complete</h3>
+      <div
+        className="result-card"
+        style={{
+          background: "#e6f8f1",
+          padding: "25px",
+          marginTop: "20px",
+          borderRadius: "12px",
+          textAlign: "center",
+        }}
+      >
+        <h3>Assessment Complete</h3>
 
-    <p style={{ fontSize: "20px", fontWeight: "600" }}>
-      Risk Level: {result.risk}
-    </p>
+        <p style={{ fontSize: "20px", fontWeight: "600" }}>
+          Risk Level: {result.risk}
+        </p>
 
-    <h2>{result.score} / 100</h2>
-  </div>
-)}
+        <h2>{result.score} / 100</h2>
 
+        <div style={{ marginTop: "20px" }}>
+          <button
+            className="save-result-btn"
+            onClick={() => {
+              // Save result and move to clinician summary
+              setStep(8);
+            }}
+            style={{
+              background: "#2dd4bf",
+              color: "white",
+              border: "none",
+              padding: "12px 24px",
+              borderRadius: "8px",
+              fontSize: "16px",
+              fontWeight: "600",
+              cursor: "pointer",
+              marginRight: "10px"
+            }}
+          >
+            Save Result
+          </button>
+        </div>
+      </div>
+    )}
   </>
 )}
    
