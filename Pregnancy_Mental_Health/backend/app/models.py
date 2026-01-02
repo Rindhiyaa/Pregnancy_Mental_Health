@@ -33,5 +33,11 @@ class Assessment(Base):
     raw_data = Column(JSON, nullable=False)           # full formData as JSON
     risk_score = Column(Float, nullable=False)
     risk_level = Column(String, nullable=False)
+    clinician_risk = Column(String, nullable=True)    # "Low" | "Medium" | "High"
+    plan = Column(String, nullable=True)
+    notes = Column(String, nullable=True)
+    clinician_email = Column(String, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 

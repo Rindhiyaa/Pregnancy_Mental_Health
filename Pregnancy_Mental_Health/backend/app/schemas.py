@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+from typing import Optional, Dict, Any
 
 class UserCreate(BaseModel):
     first_name: str
@@ -86,6 +87,17 @@ class AssessmentCreate(BaseModel):
 class AssessmentResult(BaseModel):
     risk_level: str
     score: float
+
+class AssessmentSave(BaseModel):
+    patient_name: str
+    risk_level: str          # "Low Risk" | "Moderate Risk" | "High Risk"
+    score: float
+    clinician_risk: Optional[str] = None
+    plan: Optional[str] = None
+    notes: Optional[str] = None
+    clinician_email: Optional[str] = None
+    raw_data: Optional[Dict[str, Any]] = None
+
 
 class PredictRequest(BaseModel):
     feature_1: float

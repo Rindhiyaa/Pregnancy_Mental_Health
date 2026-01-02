@@ -18,19 +18,44 @@ const HistoryPage = () => {
     const fetchHistory = async () => {
       try {
         setLoading(true);
-        
-        // Load from localStorage instead of API
-        const savedHistory = localStorage.getItem('assessmentHistory');
-        if (savedHistory) {
-          const historyData = JSON.parse(savedHistory);
-          // Sort by timestamp (newest first)
-          const sortedData = historyData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-          setRows(sortedData);
-          setFilteredRows(sortedData);
-        } else {
-          setRows([]);
-          setFilteredRows([]);
+  
+        let historyData = [];
+  
+        // 1) try backend if clinician email is known
+        if (user?.email) {
+          try {
+            const res = await fetch(
+              `http://127.0.0.1:8000/api/assessments?clinician_email=${encodeURIComponent(
+                user.email
+              )}`
+            );
+            if (res.ok) {
+              historyData = await res.json();
+  
+              // mirror to localStorage cache
+              localStorage.setItem("assessmentHistory", JSON.stringify(historyData));
+              localStorage.setItem(
+                `assessmentHistory_${user.email}`,
+                JSON.stringify(historyData)
+              );
+            }
+          } catch (e) {
+            console.warn("Backend unavailable, using localStorage cache instead", e);
+          }
         }
+  
+        // 2) if backend gave nothing, fall back to localStorage
+        if (!historyData.length) {
+          const savedHistory = localStorage.getItem("assessmentHistory");
+          historyData = savedHistory ? JSON.parse(savedHistory) : [];
+        }
+  
+        // Sort by timestamp (newest first)
+        const sortedData = historyData.sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        );
+        setRows(sortedData);
+        setFilteredRows(sortedData);
       } catch (err) {
         console.error("Failed to load history", err);
         setRows([]);
@@ -39,9 +64,9 @@ const HistoryPage = () => {
         setLoading(false);
       }
     };
-
+  
     fetchHistory();
-  }, []);
+  }, [user]);  
 
   // Filter and search functionality
   useEffect(() => {
@@ -81,36 +106,102 @@ const HistoryPage = () => {
     }
   };
 
-  const deleteAssessment = (assessmentId) => {
-    if (window.confirm('Are you sure you want to delete this assessment? This action cannot be undone.')) {
-      const updatedHistory = rows.filter(row => row.id !== assessmentId);
+  const deleteAssessment = async (assessmentId) => {
+    if (!window.confirm("Are you sure you want to delete this assessment? This action cannot be undone.")) {
+      return;
+    }
+  
+    // 1) try backend delete (optional safety if backend supports it)
+    try {
+      await fetch(
+        `http://127.0.0.1:8000/api/assessments/${assessmentId}`,
+        {
+          method: "DELETE",
+        }
+      );
+    } catch (e) {
+      console.warn("Failed to delete on backend, removing from local cache only", e);
+    }
+  
+    // 2) always update local state + localStorage
+    const updatedHistory = rows.filter((row) => row.id !== assessmentId);
+    setRows(updatedHistory);
+    setFilteredRows(updatedHistory);
+    localStorage.setItem("assessmentHistory", JSON.stringify(updatedHistory));
+  
+    if (user?.email) {
+      localStorage.setItem(
+        `assessmentHistory_${user.email}`,
+        JSON.stringify(updatedHistory)
+      );
+    }
+  
+    const deleteAssessment = async (assessmentId) => {
+      if (!window.confirm("Are you sure you want to delete this assessment? This action cannot be undone.")) {
+        return;
+      }
+    
+      // 1) try backend delete
+      try {
+        await fetch(`http://127.0.0.1:8000/api/assessments/${assessmentId}`, {
+          method: "DELETE",
+        });
+      } catch (e) {
+        console.warn("Failed to delete on backend, removing from local cache only", e);
+      }
+    
+      // 2) always update local state and cache
+      const updatedHistory = rows.filter((row) => row.id !== assessmentId);
       setRows(updatedHistory);
-      localStorage.setItem('assessmentHistory', JSON.stringify(updatedHistory));
-      
-      // Also update user-specific history
+      setFilteredRows(updatedHistory);
+      localStorage.setItem("assessmentHistory", JSON.stringify(updatedHistory));
       if (user?.email) {
-        localStorage.setItem(`assessmentHistory_${user.email}`, JSON.stringify(updatedHistory));
+        localStorage.setItem(
+          `assessmentHistory_${user.email}`,
+          JSON.stringify(updatedHistory)
+        );
       }
-      
-      // Show success message
-      const deletedAssessment = rows.find(row => row.id === assessmentId);
+    
+      const deletedAssessment = rows.find((row) => row.id === assessmentId);
       alert(`Assessment for ${deletedAssessment?.patient_name} has been deleted successfully.`);
-    }
-  };
+    }};    
+  
 
-  const clearHistory = () => {
-    if (window.confirm('Are you sure you want to clear all assessment history? This action cannot be undone.')) {
-      localStorage.removeItem('assessmentHistory');
-      
-      // Also clear user-specific history
-      if (user?.email) {
-        localStorage.removeItem(`assessmentHistory_${user.email}`);
-      }
-      
-      setRows([]);
-      setFilteredRows([]);
+  const clearHistory = async () => {
+    if (
+      !window.confirm(
+        "Are you sure you want to clear all assessment history? This action cannot be undone."
+      )
+    ) {
+      return;
     }
+  
+    // 1) try backend clear for this clinician (if you add such endpoint)
+    if (user?.email) {
+      try {
+        await fetch(
+          `http://127.0.0.1:8000/api/assessments/clear?clinician_email=${encodeURIComponent(
+            user.email
+          )}`,
+          {
+            method: "DELETE",
+          }
+        );
+      } catch (e) {
+        console.warn("Failed to clear history on backend, clearing local cache only", e);
+      }
+    }
+  
+    // 2) clear local cache
+    localStorage.removeItem("assessmentHistory");
+    if (user?.email) {
+      localStorage.removeItem(`assessmentHistory_${user.email}`);
+    }
+  
+    setRows([]);
+    setFilteredRows([]);
   };
+  
 
   const viewAssessmentDetails = (assessment) => {
     setSelectedAssessment(assessment);

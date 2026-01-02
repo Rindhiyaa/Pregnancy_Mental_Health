@@ -72,7 +72,7 @@ export default function NewAssessment() {
   // 🔹 FINAL SUBMIT (API READY)
   const submitAssessment = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/assessments", {
+      const res = await fetch("http://127.0.0.1:8000/api/assessments/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -87,26 +87,10 @@ export default function NewAssessment() {
       setResult({ risk: data.risk_level, score: data.score });
     } catch (err) {
       console.error("Backend error:", err);
-      
-      // Mock result data for UI testing
-      const mockResults = [
-        { risk: "Low Risk", score: 25 },
-        { risk: "Moderate Risk", score: 62 },
-        { risk: "High Risk", score: 85 },
-        { risk: "Low Risk", score: 18 },
-        { risk: "Moderate Risk", score: 55 },
-        { risk: "High Risk", score: 92 }
-      ];
-      
-      // Select a random mock result
-      const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
-      
-      // Add slight delay to simulate API call
-      setTimeout(() => {
-        setResult(randomResult);
-      }, 1000);
+      alert("Could not generate risk score. Please try again.");
     }
   };
+  
 
   // Calculate EPDS score from form data
   const calculateEPDSScore = () => {
@@ -825,70 +809,83 @@ export default function NewAssessment() {
               </div>
 
               <div className="clinician-summary-actions">
-                <button
-                  className="save-to-history-btn"
-                  onClick={() => {
-                    // Validate required fields
-                    if (!formData.patient_name) {
-                      alert('Please enter patient name before saving.');
-                      return;
-                    }
-                    
-                    if (!formData.clinician_risk) {
-                      alert('Please select clinician risk level before saving.');
-                      return;
-                    }
-                    
-                    if (!formData.plan) {
-                      alert('Please select a recommended plan before saving.');
-                      return;
-                    }
+              <button
+                className="save-to-history-btn"
+                onClick={async () => {
+                  // Validate required fields
+                  if (!formData.patient_name) {
+                    alert("Please enter patient name before saving.");
+                    return;
+                  }
 
-                    // Save to history functionality
-                    // normalize AI risk into "low" | "moderate" | "high"
-                    let aiLevel = "unknown";
-                    if (result?.risk) {
-                      const r = result.risk.toLowerCase(); // e.g. "low risk"
-                      if (r.includes("high")) aiLevel = "high";
-                      else if (r.includes("moderate") || r.includes("medium")) aiLevel = "moderate";
-                      else if (r.includes("low")) aiLevel = "low";
-                    }
+                  if (!formData.clinician_risk) {
+                    alert("Please select clinician risk level before saving.");
+                    return;
+                  }
 
-                    const assessmentData = {
-                      id: Date.now(),
-                      patient_name: formData.patient_name,
-                      date: new Date().toLocaleDateString(),
-                      risk_level: aiLevel,                      // <-- normalized
-                      score: result?.score || 0,
-                      clinician_risk: formData.clinician_risk,  // "Low" | "Medium" | "High"
-                      plan: formData.plan,
-                      notes: formData.notes,
-                      timestamp: new Date().toISOString()
-                    };
+                  if (!formData.plan) {
+                    alert("Please select a recommended plan before saving.");
+                    return;
+                  }
 
+                  if (!result) {
+                    alert("Please generate the result before saving.");
+                    return;
+                  }
 
-                    // Get existing history from localStorage
-                    const existingHistory = JSON.parse(localStorage.getItem('assessmentHistory') || '[]');
-                    
-                    // Add new assessment
-                    existingHistory.push(assessmentData);
-                    
-                    // Save back to localStorage (current session)
-                    localStorage.setItem('assessmentHistory', JSON.stringify(existingHistory));
-                    
-                    // Also save to user-specific history for persistence across logins
+                  // Use AI risk directly (e.g. "Low Risk" / "Moderate Risk" / "High Risk")
+                  const riskLevel = result.risk;
+
+                  const payload = {
+                    patient_name: formData.patient_name,
+                    risk_level: riskLevel,
+                    score: result.score,
+                    clinician_risk: formData.clinician_risk, // "Low" | "Medium" | "High"
+                    plan: formData.plan,
+                    notes: formData.notes,
+                    clinician_email: user?.email || "",
+                    raw_data: formData, // optional: full questionnaire
+                  };
+
+                  try {
+                    const res = await fetch("http://127.0.0.1:8000/api/assessments", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(payload),
+                    });
+
+                    if (!res.ok) throw new Error("Failed to save assessment");
+
+                    const saved = await res.json(); // contains id, dates, etc.
+
+                    // Mirror into localStorage as cache
+                    const existingHistory = JSON.parse(
+                      localStorage.getItem("assessmentHistory") || "[]"
+                    );
+                    existingHistory.push(saved);
+                    localStorage.setItem(
+                      "assessmentHistory",
+                      JSON.stringify(existingHistory)
+                    );
                     if (user?.email) {
-                      localStorage.setItem(`assessmentHistory_${user.email}`, JSON.stringify(existingHistory));
+                      localStorage.setItem(
+                        `assessmentHistory_${user.email}`,
+                        JSON.stringify(existingHistory)
+                      );
                     }
-                    
-                    alert(`Assessment for ${formData.patient_name} saved to history successfully!`);
-                    
-                    // Navigate to history page
-                    navigate('/dashboard/History');
-                  }}
-                >
-                  Save to History
-                </button>
+
+                    alert(
+                      `Assessment for ${formData.patient_name} saved to history successfully!`
+                    );
+                    navigate("/dashboard/History");
+                  } catch (err) {
+                    console.error("Error saving assessment", err);
+                    alert("Could not save assessment, please try again.");
+                  }
+                }}
+              >
+                Save to History
+              </button>
                 
                 <button
                   className="new-assessment-btn"

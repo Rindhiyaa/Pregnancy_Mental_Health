@@ -23,86 +23,102 @@ const DashboardPage = () => {
 
   // fetch data from localStorage (same as History page)
   useEffect(() => {
-    const fetchData = () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-
-        // Load from localStorage instead of API
-        const savedHistory = localStorage.getItem('assessmentHistory');
-        if (savedHistory) {
-          const historyData = JSON.parse(savedHistory);
-          
-          // Sort by timestamp (newest first) and take recent 10
-          const sortedData = historyData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-          const recentAssessments = sortedData.slice(0, 10);
-          
-          // Transform data to match expected format
-          // inside fetchData, when building transformedRows
-          const transformedRows = recentAssessments.map((assessment) => {
-            const aiLevel = assessment.risk_level?.toLowerCase();          // "low" | "moderate" | "high"
-            let clinicianLevel = assessment.clinician_risk?.toLowerCase(); // "low" | "medium" | "high"
-
-            // treat "medium" as "moderate"
-            if (clinicianLevel === "medium") clinicianLevel = "moderate";
-
-            const level = clinicianLevel || aiLevel;
-
-            let risk = "low";
-            if (level === "high") risk = "high";
-            else if (level === "moderate") risk = "moderate";
-      
-            return {
-              id: assessment.patient_name || "Unknown",
-              name: assessment.patient_name || "Unknown Patient",
-              date:
-                assessment.date ||
-                new Date(assessment.timestamp).toLocaleDateString(),
-              risk,
-            };
-          });
-          
-          
-          // Calculate statistics
-          const totalAssessments = historyData.length;
-
-          const highRiskCount = historyData.filter(a => {
-            const l1 = a.risk_level?.toLowerCase();
-            const l2 = a.clinician_risk?.toLowerCase();
-            return l1 === 'high' || l2 === 'high';
-          }).length;
-
-          const moderateRiskCount = historyData.filter(a => {
-            const l1 = a.risk_level?.toLowerCase();
-            const l2 = a.clinician_risk?.toLowerCase();
-            return l1 === 'moderate' || l2 === 'moderate';
-          }).length;
-
-          const lowRiskCount = historyData.filter(a => {
-            const l1 = a.risk_level?.toLowerCase();
-            const l2 = a.clinician_risk?.toLowerCase();
-            return l1 === 'low' || l2 === 'low';
-          }).length;
-
-          
-          // Today's assessments (assessments created today)
-          const today = new Date().toDateString();
-          const todayCount = historyData.filter(a => {
-            const assessmentDate = new Date(a.timestamp || a.date).toDateString();
-            return assessmentDate === today;
-          }).length;
-          
-          setRows(transformedRows);
-          setStats({
-            total: totalAssessments,
-            high: highRiskCount,
-            low: lowRiskCount,
-            moderate: moderateRiskCount,
-            today: todayCount
-          });
-        } else {
-          setRows([]);
-          setStats({ total: 0, high: 0, low: 0, today: 0 });
+    
+        let historyData = [];
+    
+        // 1) try backend
+        if (user?.email) {
+          try {
+            const res = await fetch(
+              `http://127.0.0.1:8000/api/assessments?clinician_email=${encodeURIComponent(
+                user.email
+              )}`
+            );
+            if (res.ok) {
+              historyData = await res.json();
+              // mirror to localStorage cache
+              localStorage.setItem(
+                "assessmentHistory",
+                JSON.stringify(historyData)
+              );
+              localStorage.setItem(
+                `assessmentHistory_${user.email}`,
+                JSON.stringify(historyData)
+              );
+            }
+          } catch (e) {
+            console.warn("Backend unavailable, using localStorage cache instead");
+          }
         }
+    
+        // 2) if no backend data, use localStorage
+        if (!historyData.length) {
+          const savedHistory = localStorage.getItem("assessmentHistory");
+          historyData = savedHistory ? JSON.parse(savedHistory) : [];
+        }
+    
+        // your existing sorting + transformedRows + stats logic, but using historyData
+        const sortedData = historyData.sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        );
+        const recentAssessments = sortedData.slice(0, 10);
+    
+        const transformedRows = recentAssessments.map((assessment) => {
+          const aiLevel = assessment.risk_level?.toLowerCase();
+          let clinicianLevel = assessment.clinician_risk?.toLowerCase();
+          if (clinicianLevel === "medium") clinicianLevel = "moderate";
+          const level = clinicianLevel || aiLevel;
+    
+          let risk = "low";
+          if (level === "high") risk = "high";
+          else if (level === "moderate") risk = "moderate";
+    
+          return {
+            id: assessment.patient_name || "Unknown",
+            name: assessment.patient_name || "Unknown Patient",
+            date:
+              assessment.date ||
+              new Date(assessment.timestamp).toLocaleDateString(),
+            risk,
+          };
+        });
+    
+        const totalAssessments = historyData.length;
+        const highRiskCount = historyData.filter((a) => {
+          const l1 = a.risk_level?.toLowerCase();
+          let l2 = a.clinician_risk?.toLowerCase();
+          if (l2 === "medium") l2 = "moderate";
+          return l1 === "high" || l2 === "high";
+        }).length;
+        const moderateRiskCount = historyData.filter((a) => {
+          const l1 = a.risk_level?.toLowerCase();
+          let l2 = a.clinician_risk?.toLowerCase();
+          if (l2 === "medium") l2 = "moderate";
+          return l1 === "moderate" || l2 === "moderate";
+        }).length;
+        const lowRiskCount = historyData.filter((a) => {
+          const l1 = a.risk_level?.toLowerCase();
+          const l2 = a.clinician_risk?.toLowerCase();
+          return l1 === "low" || l2 === "low";
+        }).length;
+    
+        const today = new Date().toDateString();
+        const todayCount = historyData.filter((a) => {
+          const assessmentDate = new Date(a.timestamp || a.date).toDateString();
+          return assessmentDate === today;
+        }).length;
+    
+        setRows(transformedRows);
+        setStats({
+          total: totalAssessments,
+          high: highRiskCount,
+          low: lowRiskCount,
+          moderate: moderateRiskCount,
+          today: todayCount,
+        });
       } catch (err) {
         console.error("Failed to load dashboard data", err);
         setRows([]);
@@ -111,6 +127,7 @@ const DashboardPage = () => {
         setLoading(false);
       }
     };
+    
 
     fetchData();
   }, []);
