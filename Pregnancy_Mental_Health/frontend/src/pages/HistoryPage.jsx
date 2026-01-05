@@ -168,7 +168,7 @@ const HistoryPage = () => {
   const deleteAssessment = async (assessmentId) => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this assessment? This action cannot be undone."
+        "Are you sure you want to delete this assessment? This action cannot be undone!!!"
       )
     ) {
       return;
