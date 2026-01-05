@@ -130,67 +130,6 @@ const HistoryPage = () => {
     }
   };
 
-  const deleteAssessment = async (assessmentId) => {
-    if (!window.confirm("Are you sure you want to delete this assessment? This action cannot be undone.")) {
-      return;
-    }
-  
-    // 1) try backend delete (optional safety if backend supports it)
-    try {
-      await fetch(
-        `http://127.0.0.1:8000/api/assessments/${assessmentId}`,
-        {
-          method: "DELETE",
-        }
-      );
-    } catch (e) {
-      console.warn("Failed to delete on backend, removing from local cache only", e);
-    }
-  
-    // 2) always update local state + localStorage
-    const updatedHistory = rows.filter((row) => row.id !== assessmentId);
-    setRows(updatedHistory);
-    setFilteredRows(updatedHistory);
-    localStorage.setItem("assessmentHistory", JSON.stringify(updatedHistory));
-  
-    if (user?.email) {
-      localStorage.setItem(
-        `assessmentHistory_${user.email}`,
-        JSON.stringify(updatedHistory)
-      );
-    }
-  
-    const deleteAssessment = async (assessmentId) => {
-      if (!window.confirm("Are you sure you want to delete this assessment? This action cannot be undone.")) {
-        return;
-      }
-    
-      // 1) try backend delete
-      try {
-        await fetch(`http://127.0.0.1:8000/api/assessments/${assessmentId}`, {
-          method: "DELETE",
-        });
-      } catch (e) {
-        console.warn("Failed to delete on backend, removing from local cache only", e);
-      }
-    
-      // 2) always update local state and cache
-      const updatedHistory = rows.filter((row) => row.id !== assessmentId);
-      setRows(updatedHistory);
-      setFilteredRows(updatedHistory);
-      localStorage.setItem("assessmentHistory", JSON.stringify(updatedHistory));
-      if (user?.email) {
-        localStorage.setItem(
-          `assessmentHistory_${user.email}`,
-          JSON.stringify(updatedHistory)
-        );
-      }
-    
-      const deletedAssessment = rows.find((row) => row.id === assessmentId);
-      alert(`Assessment for ${deletedAssessment?.patient_name} has been deleted successfully.`);
-    }};    
-  
-
   const clearHistory = async () => {
     if (
       !window.confirm(
@@ -225,6 +164,42 @@ const HistoryPage = () => {
     setRows([]);
     setFilteredRows([]);
   };
+      
+  const deleteAssessment = async (assessmentId) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this assessment? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+  
+    try {
+      await fetch(`http://127.0.0.1:8000/api/assessments/${assessmentId}`, {
+        method: "DELETE",
+      });
+    } catch (e) {
+      console.warn("Failed to delete on backend, removing from local cache only", e);
+    }
+  
+    const updatedHistory = rows.filter((row) => row.id !== assessmentId);
+    setRows(updatedHistory);
+    setFilteredRows(updatedHistory);
+    localStorage.setItem("assessmentHistory", JSON.stringify(updatedHistory));
+    if (user?.email) {
+      localStorage.setItem(
+        `assessmentHistory_${user.email}`,
+        JSON.stringify(updatedHistory)
+      );
+    }
+  
+    const deletedAssessment = rows.find((row) => row.id === assessmentId);
+    alert(
+      `Assessment for ${deletedAssessment?.patient_name} has been deleted successfully.`
+    );
+  };
+  
+
   
 
   const viewAssessmentDetails = (assessment) => {

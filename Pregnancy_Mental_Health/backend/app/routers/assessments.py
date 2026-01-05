@@ -94,6 +94,20 @@ def list_assessments(
         for a in records
     ]
 
+@router.delete("/assessments/clear", status_code=status.HTTP_204_NO_CONTENT)
+def clear_assessments_for_clinician(
+    clinician_email: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    deleted = (
+        db.query(models.Assessment)
+        .filter(models.Assessment.clinician_email == clinician_email)
+        .delete(synchronize_session=False)
+    )
+
+    db.commit()
+
+    return
 
 @router.delete("/assessments/{assessment_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_assessment(
@@ -110,5 +124,6 @@ def delete_assessment(
     db.delete(assessment)
     db.commit()
     return 
+
 
 
