@@ -19,7 +19,7 @@ def predict(payload: PredictRequest, db: Session = Depends(get_db)):
     log = models.PredictionLog(
         feature_1=payload.feature_1,
         feature_2=payload.feature_2,
-        prediction=pred,
+        prediction=pred, 
     )
     db.add(log)
     db.commit()

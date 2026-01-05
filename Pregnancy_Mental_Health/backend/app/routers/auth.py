@@ -106,5 +106,5 @@ def update_profile(
         email=user.email,
         role=user.role,
         member_since=member_since,
-    )
+    )   
 
