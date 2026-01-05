@@ -63,6 +63,30 @@ export default function NewAssessment() {
   // 🔹 RESULT FROM BACKEND
   const [result, setResult] = useState(null);
 
+  //handle logout
+
+  const handleTopLogout = async () => {
+    try {
+      if (user?.email) {
+        await fetch(
+          `http://127.0.0.1:8000/api/logout-status?email=${encodeURIComponent(
+            user.email
+          )}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    } catch (e) {
+      console.error("Failed to update logout status", e);
+    }
+  
+    logout();
+    navigate("/");
+  };
+
+
   // 🔹 HANDLE INPUT CHANGE
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -170,12 +194,13 @@ export default function NewAssessment() {
       <span className="dp-profile-name">{user?.fullName || 'Clinician'}</span>
     </div>
 
-    <button className="dp-logout-btn" onClick={() => { 
-      logout(); 
-      navigate("/");
-    }}>
+    <button
+      className="dp-logout-btn"
+      onClick={handleTopLogout}
+    >
       Logout
     </button>
+
   </div>
 </header>
     <div className="layout">

@@ -14,6 +14,30 @@ const HistoryPage = () => {
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+
+  //handle logout
+  const handleTopLogout = async () => {
+    try {
+      if (user?.email) {
+        await fetch(
+          `http://127.0.0.1:8000/api/logout-status?email=${encodeURIComponent(
+            user.email
+          )}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    } catch (e) {
+      console.error("Failed to update logout status", e);
+    }
+  
+    logout();
+    navigate("/");
+  };
+
+
   useEffect(() => {
     const fetchHistory = async () => {
       try {
@@ -270,12 +294,13 @@ const HistoryPage = () => {
             </div>
             <span className="dp-profile-name">{user?.fullName || 'Clinician'}</span>
           </div>
-          <button className="dp-logout-btn" onClick={() => {
-            logout();
-            navigate("/");
-          }}>
+          <button
+            className="dp-logout-btn"
+            onClick={handleTopLogout}
+          >
             Logout
           </button>
+
         </div>
       </header>
 

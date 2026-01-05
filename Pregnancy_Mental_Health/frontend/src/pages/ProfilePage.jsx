@@ -25,6 +25,28 @@ const ProfilePage = () => {
 
   const [editData, setEditData] = useState({});
 
+  //handle logout
+  const handleTopLogout = async () => {
+    try {
+      if (user?.email) {
+        await fetch(
+          `http://127.0.0.1:8000/api/logout-status?email=${encodeURIComponent(
+            user.email
+          )}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    } catch (e) {
+      console.error("Failed to update logout status", e);
+    }
+  
+    logout();
+    navigate("/");
+  };
+
   // Load profile data from auth context
   useEffect(() => {
     if (user) {
@@ -61,12 +83,33 @@ const ProfilePage = () => {
     setIsEditing(false);
   };
 
-  const handleDelete = () => {
-    // Use auth context logout which clears all data
-    logout();
-    alert('Account deleted successfully!');
-    navigate('/');
-  };
+  const handleDelete = async () => {
+    if (!user?.email) {
+      alert("Could not determine your email. Please log in again.");
+      return;
+    }
+  
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:8000/api/me?email=${encodeURIComponent(user.email)}`,
+        { method: "DELETE" }
+      );
+  
+      if (!res.ok) {
+        const msg = await res.text();
+        console.error("Delete failed:", res.status, msg);
+        alert("Error deleting account. Please try again.");
+        return;
+      }
+  
+      logout();      // clear frontend
+      alert("Account deleted successfully!");
+      navigate("/");
+    } catch (err) {
+      console.error("Network error while deleting account:", err);
+      alert("Network error while deleting account. Please try again.");
+    }
+  };  
 
 
   return (
@@ -126,12 +169,10 @@ const ProfilePage = () => {
             </div>
             <span className="dp-profile-name">{profileData.fullName}</span>
           </div>
-          <button className="dp-logout-btn" onClick={() => {
-            logout();
-            navigate("/");
-          }}>
+          <button className="dp-logout-btn" onClick={handleTopLogout}>
             Logout
           </button>
+
         </div>
       </header>
 

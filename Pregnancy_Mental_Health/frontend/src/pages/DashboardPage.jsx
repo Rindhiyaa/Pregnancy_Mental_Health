@@ -10,7 +10,7 @@ const DashboardPage = () => {
   const [riskFilter, setRiskFilter] = useState("all");
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [showModal, setShowModal] = useState(false);
-
+  
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -18,8 +18,30 @@ const DashboardPage = () => {
     low: 0,
     today: 0,
   });
-
+  
   const [loading, setLoading] = useState(true); 
+  //handle logout
+  
+  const handleTopLogout = async () => {
+    try {
+      if (user?.email) {
+        await fetch(
+          `http://127.0.0.1:8000/api/logout-status?email=${encodeURIComponent(
+            user.email
+          )}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    } catch (e) {
+      console.error("Failed to update logout status", e);
+    }
+  
+    logout();
+    navigate("/");
+  };
 
   // fetch data from localStorage (same as History page)
   useEffect(() => {
@@ -85,6 +107,8 @@ const DashboardPage = () => {
             risk,
           };
         });
+ 
+
     
         const totalAssessments = historyData.length;
         const highRiskCount = historyData.filter((a) => {
@@ -229,13 +253,11 @@ const DashboardPage = () => {
 
     <button
       className="dp-logout-btn"
-      onClick={() => {
-        logout();
-        navigate("/");
-      }}
+      onClick={handleTopLogout}
     >
       Logout
     </button>
+
   </div>
 </header>
 

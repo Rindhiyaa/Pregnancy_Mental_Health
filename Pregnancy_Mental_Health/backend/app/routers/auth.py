@@ -37,6 +37,13 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
             detail="Invalid email or password",
         )
 
+    # Mark as logged in
+    if not user.is_active:
+        user.is_active = True
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
     full_name = f"{user.first_name} {user.last_name or ''}".strip()
 
     return {
@@ -46,6 +53,7 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
         "email": user.email,
         "role": user.role,
     }
+
 
 
 def get_user_or_404(user_id: int, db: Session) -> models.User:
@@ -107,4 +115,36 @@ def update_profile(
         role=user.role,
         member_since=member_since,
     )   
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_account(
+    email: str,
+    db: Session = Depends(get_db),
+):
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db.delete(user)
+    db.commit()
+    return
+
+
+@router.post("/logout-status", status_code=status.HTTP_204_NO_CONTENT)
+def set_logout_inactive(
+    email: str,
+    db: Session = Depends(get_db),
+):
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_active = False
+    db.commit()
+    return
+
+
+
+
+
 
