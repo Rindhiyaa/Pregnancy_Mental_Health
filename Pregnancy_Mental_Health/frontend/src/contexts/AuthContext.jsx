@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }) => {
               parsed.memberSince ||
               parsed.timestamp
                 ? new Date(parsed.timestamp).toLocaleDateString()
-                : userData.memberSince || new Date().toLocaleDateString(),
+                : userData.memberSince || new Date().toLocaleDateString(), 
             isAuthenticated: true,
           };
         } catch (e) {

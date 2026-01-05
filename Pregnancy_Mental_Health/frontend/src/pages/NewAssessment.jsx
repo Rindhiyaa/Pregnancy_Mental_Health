@@ -170,7 +170,7 @@ export default function NewAssessment() {
       <span className="dp-profile-name">{user?.fullName || 'Clinician'}</span>
     </div>
 
-    <button className="dp-logout-btn" onClick={() => {
+    <button className="dp-logout-btn" onClick={() => { 
       logout(); 
       navigate("/");
     }}>

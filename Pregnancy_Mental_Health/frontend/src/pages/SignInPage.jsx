@@ -10,7 +10,7 @@ export default function SignInPage() {
   const [error, setError] = useState("");
 
   // Get the page user was trying to access before being redirected to signin
-  const from = location.state?.from?.pathname || "/dashboard";
+  const from = location.state?.from?.pathname || "/dashboard"; 
 
   const handleChange = (e) => {
     const { name, value } = e.target;

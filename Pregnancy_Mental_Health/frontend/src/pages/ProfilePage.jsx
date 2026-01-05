@@ -29,7 +29,7 @@ const ProfilePage = () => {
   useEffect(() => {
     if (user) {
       setProfileData(user);
-      setEditData(user);
+      setEditData(user); 
     }
   }, [user]);
 

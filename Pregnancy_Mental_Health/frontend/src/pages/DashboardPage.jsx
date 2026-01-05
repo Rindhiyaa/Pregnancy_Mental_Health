@@ -32,7 +32,7 @@ const DashboardPage = () => {
         // 1) try backend
         if (user?.email) {
           try {
-            const res = await fetch(
+            const res = await fetch( 
               `http://127.0.0.1:8000/api/assessments?clinician_email=${encodeURIComponent(
                 user.email
               )}`

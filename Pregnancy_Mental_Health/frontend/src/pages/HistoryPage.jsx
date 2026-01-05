@@ -35,7 +35,7 @@ const HistoryPage = () => {
               // mirror to localStorage cache
               localStorage.setItem("assessmentHistory", JSON.stringify(historyData));
               localStorage.setItem(
-                `assessmentHistory_${user.email}`,
+                `assessmentHistory_${user.email}`, 
                 JSON.stringify(historyData)
               );
             }
