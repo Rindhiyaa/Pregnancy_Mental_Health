@@ -171,7 +171,7 @@ export default function NewAssessment() {
     </div>
 
     <button className="dp-logout-btn" onClick={() => {
-      logout();
+      logout(); 
       navigate("/");
     }}>
       Logout

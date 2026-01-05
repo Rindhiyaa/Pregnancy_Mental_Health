@@ -19,7 +19,7 @@ const DashboardPage = () => {
     today: 0,
   });
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
 
   // fetch data from localStorage (same as History page)
   useEffect(() => {

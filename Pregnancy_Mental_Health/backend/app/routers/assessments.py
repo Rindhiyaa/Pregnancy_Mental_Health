@@ -110,3 +110,5 @@ def delete_assessment(
     db.delete(assessment)
     db.commit()
     return
+
+

@@ -38,6 +38,6 @@ class Assessment(Base):
     notes = Column(String, nullable=True)
     clinician_email = Column(String, nullable=True)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now()) 
 
 

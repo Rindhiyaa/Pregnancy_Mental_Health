@@ -30,7 +30,7 @@ const HistoryPage = () => {
               )}`
             );
             if (res.ok) {
-              historyData = await res.json();
+              historyData = await res.json(); 
   
               // mirror to localStorage cache
               localStorage.setItem("assessmentHistory", JSON.stringify(historyData));
