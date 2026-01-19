@@ -37,7 +37,7 @@ export default function HomePage() {
             <button className="btn-primary" onClick={() => navigate("/signin")}>
               Start Risk Check
             </button>
-            <button className="btn-outline" onClick={() => navigate("/features")}>
+            <button className="btn-outline" onClick={() => navigate("/about")}>
               How it works
             </button>
           </div>

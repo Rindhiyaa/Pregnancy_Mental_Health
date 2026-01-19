@@ -106,7 +106,6 @@ def clear_assessments_for_clinician(
     )
 
     db.commit()
-
     return
 
 @router.delete("/assessments/{assessment_id}", status_code=status.HTTP_204_NO_CONTENT)

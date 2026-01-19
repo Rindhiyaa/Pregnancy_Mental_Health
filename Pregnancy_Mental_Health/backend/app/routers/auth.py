@@ -116,6 +116,7 @@ def update_profile(
         member_since=member_since,
     )   
 
+
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 def delete_account(
     email: str,
@@ -124,7 +125,7 @@ def delete_account(
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
+    
     db.delete(user)
     db.commit()
     return
