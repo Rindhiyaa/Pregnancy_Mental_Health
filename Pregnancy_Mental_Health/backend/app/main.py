@@ -6,13 +6,10 @@ from .routers import predictions, auth, assessments
 
 app = FastAPI(title="PPD Predictor API", version="1.0.0")
 
-# Updated CORS for production
 origins = [
     "http://localhost:5173", 
     "http://localhost:5174", 
-    "http://localhost:3000",
-    "https://*.vercel.app",  # Allow Vercel deployments
-    "https://*.railway.app"  # Allow Railway deployments
+    "http://localhost:3000"
 ]
 
 app.add_middleware(
