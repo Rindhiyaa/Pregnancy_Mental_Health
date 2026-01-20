@@ -4,9 +4,16 @@ from .database import engine
 from . import models
 from .routers import predictions, auth, assessments
 
-app = FastAPI()
+app = FastAPI(title="PPD Predictor API", version="1.0.0")
 
-origins = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
+# Updated CORS for production
+origins = [
+    "http://localhost:5173", 
+    "http://localhost:5174", 
+    "http://localhost:3000",
+    "https://*.vercel.app",  # Allow Vercel deployments
+    "https://*.railway.app"  # Allow Railway deployments
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,4 +26,8 @@ app.add_middleware(
 models.Base.metadata.create_all(bind=engine)
 app.include_router(predictions.router)
 app.include_router(auth.router)
-app.include_router(assessments.router)  
+app.include_router(assessments.router)
+
+@app.get("/")
+def root():
+    return {"message": "PPD Predictor API is running!"}  

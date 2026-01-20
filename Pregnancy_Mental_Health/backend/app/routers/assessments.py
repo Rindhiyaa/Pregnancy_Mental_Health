@@ -118,7 +118,7 @@ def delete_assessment(
     ).first()
 
     if not assessment:
-        raise HTTPException(status_code=404, detail="Assessment not found")   
+        raise HTTPException(status_code=404, detail="Assessment not found!!!")   
 
     db.delete(assessment)
     db.commit()
