@@ -462,7 +462,12 @@ const DashboardPage = () => {
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">AI Score:</span>
-                    <span className="detail-score">{selectedAssessment.score || 0}/100</span>
+                    <span className="detail-score">
+                      {selectedAssessment.score != null
+                        ? Number(selectedAssessment.score).toFixed(2)
+                        : "0.00"
+                      }/100
+                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Clinician Risk:</span>

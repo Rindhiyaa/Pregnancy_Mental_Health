@@ -390,7 +390,7 @@ const HistoryPage = () => {
                       </td>
                       <td className="score-cell">
                         <div className="score-display">
-                          <span className="score-number">{row.score || 0}</span>
+                          <span className="score-number">{row.score != null ? Number(row.score).toFixed(2) : "0.00"}</span>
                           <span className="score-total">/100</span>
                         </div>
                       </td>
@@ -511,7 +511,12 @@ const HistoryPage = () => {
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">AI Score:</span>
-                      <span className="detail-score">{selectedAssessment.score || 0}/100</span>
+                      <span className="detail-score">
+                        {selectedAssessment.score != null
+                          ? Number(selectedAssessment.score).toFixed(2)
+                          : "0.00"
+                        }/100
+                      </span>
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Clinician Risk:</span>

@@ -1020,7 +1020,7 @@ export default function NewAssessment() {
             
             <h3>Risk Assessment Results</h3>
             
-            <div className="score">{Math.round(result.score)}</div>
+            <div className="score">{Number(result.score).toFixed(2)}</div>
             
             <div className="risk-container">
               <div className={`risk-badge ${
