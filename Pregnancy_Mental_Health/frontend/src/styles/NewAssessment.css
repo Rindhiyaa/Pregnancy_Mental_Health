@@ -341,14 +341,15 @@
 }
 
 .actions button:not(:disabled) {
-  background: #8b5cf6;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.25);
 }
 
 .actions button:not(:disabled):hover {
-  background: #7c3aed;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+  transform: translateY(-1px);
 }
 
 .actions button:disabled {
@@ -398,34 +399,348 @@
   transform: translateY(-1px);
 }
 
-/* Submit Button - Professional */
+/* Modern Generate Result Button - Smaller */
 .submit-btn {
-  width: 50%;
-  max-width: 400px;
-  margin: 0 auto 1.5rem auto;
+  width: 100%;
+  max-width: 320px;
+  margin: 1rem auto;
   display: block;
-  padding: 1rem 2rem;
-  background: #2dd4bf;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.25);
+  position: relative;
+  overflow: hidden;
 }
 
 .submit-btn:hover {
-  background: #14b8a6;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.35);
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
 }
 
-/* Result Card Enhancement - Clean */
+.submit-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.25);
+}
+
+.submit-btn:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.submit-btn:hover:before {
+  left: 100%;
+}
+
+/* Faded button state after result is generated - completely invisible */
+.submit-btn.faded {
+  opacity: 0;
+  cursor: not-allowed;
+  transform: none;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.submit-btn.faded:hover {
+  transform: none;
+  opacity: 0;
+}
+
+.submit-btn.faded:before {
+  display: none;
+}
+
+/* ================================
+RESULT CARD – MEDICAL GRADE UI
+================================ */
 .result-card {
-  background: #f0fdf4 !important;
-  border: 1px solid #bbf7d0 !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  background: linear-gradient(135deg, #f0fdf4, #ecfeff) !important;
+  border-left: 6px solid #22c55e !important;
+  border-radius: 16px !important;
+  padding: 2.5rem !important;
+  margin: 2rem auto !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08) !important;
+  max-width: 720px;
+  position: relative;
+  animation: slideInUp 0.6s ease-out;
+  /* Center the card vertically and horizontally */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+/* Header Tag */
+.result-header {
+  position: absolute;
+  top: -14px;
+  left: 24px;
+}
+
+.result-tag {
+  background: #22c55e;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  letter-spacing: 0.6px;
+}
+
+/* Score */
+.score {
+  font-size: 3.5rem;
+  font-weight: 800;
+  text-align: center;
+  color: #065f46;
+  margin: 1.5rem 0 1rem;
+}
+
+/* Risk Badge */
+.risk-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.risk-badge {
+  padding: 0.5rem 1.5rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* Risk Levels */
+.risk-low {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.risk-moderate {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.risk-high {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Risk Title */
+.result-card h3 {
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #14532d;
+  margin-bottom: 1rem;
+}
+
+.result-card h3:before {
+  display: none; /* Remove the checkmark icon */
+}
+
+/* Description */
+.result-card p {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #14532d;
+  max-width: 600px;
+  margin: 0 auto 1.5rem;
+  line-height: 1.6;
+}
+
+/* Animated Loading State */
+.submit-btn.loading {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  cursor: not-allowed;
+  position: relative;
+}
+
+.submit-btn.loading:after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Risk Level Display Styles - Smaller */
+.risk-level-display {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 16px 0;
+  padding: 10px 20px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.risk-low {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+.risk-moderate {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  border: 1px solid #f59e0b;
+}
+
+.risk-high {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #991b1b;
+  border: 1px solid #ef4444;
+}
+
+.score-display {
+  font-size: 36px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 20px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.score-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-top: -6px;
+}
+
+/* Modern Save Result Button - Smaller */
+.save-result-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
+  margin-right: 12px;
+}
+
+.save-result-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.save-result-btn:active {
+  transform: translateY(0);
+}
+
+/* Result Actions Container - Smaller */
+.result-actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Risk Level Icon - Smaller */
+.risk-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.risk-icon.low {
+  background: #10b981;
+  color: white;
+}
+
+.risk-icon.moderate {
+  background: #f59e0b;
+  color: white;
+}
+
+.risk-icon.high {
+  background: #ef4444;
+  color: white;
+}
+
+/* Responsive Design for Result Section - Smaller */
+@media (max-width: 768px) {
+  .submit-btn {
+    font-size: 14px;
+    padding: 12px 20px;
+    max-width: 280px;
+  }
+  
+  .result-card {
+    padding: 20px 16px !important;
+    margin: 1rem auto !important;
+    min-height: 50vh !important;
+  }
+  
+  .score-display {
+    font-size: 28px;
+  }
+  
+  .risk-level-display {
+    font-size: 16px;
+    padding: 8px 16px;
+  }
+  
+  .result-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .save-result-btn {
+    width: 100%;
+    max-width: 240px;
+  }
 }
 
 .result-card h3 {
@@ -539,5 +854,50 @@
   
   .form-grid {
     gap: 1rem;
+  }
+}
+
+/* Clickable Sidebar Navigation */
+.step.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6b7280; /* Medium gray text for better visibility */
+}
+
+.step.clickable:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateX(4px);
+  color: #374151; /* Darker gray on hover */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.step.clickable:active {
+  transform: translateX(2px);
+  color: #374151;
+}
+
+/* Active step styling - white background */
+.step.active {
+  background: rgba(255, 255, 255, 1);
+  color: #1f2937; /* Dark text for contrast on white background */
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Base step styling for better visibility */
+.step {
+  color: #9ca3af; /* Light gray for all steps */
+  padding: 0.75rem 1rem;
+  margin: 0.25rem 0;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+/* Responsive sidebar navigation */
+@media (max-width: 768px) {
+  .step.clickable:hover {
+    transform: none;
+    background: rgba(255, 255, 255, 0.85);
+    color: #374151;
   }
 }

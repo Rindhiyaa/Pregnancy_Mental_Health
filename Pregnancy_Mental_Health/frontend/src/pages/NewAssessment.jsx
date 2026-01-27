@@ -208,14 +208,54 @@ export default function NewAssessment() {
       <aside className="sidebar">
         <h2 className="logo">PPD Prediction</h2>
         <div className="step-nav">
-          <div className={step === 1 ? "step active" : "step"}>Demographics</div>
-          <div className={step === 2 ? "step active" : "step"}>Obstetric & Medical</div>
-          <div className={step === 3 ? "step active" : "step"}>Mental Well-being</div>
-          <div className={step === 4 ? "step active" : "step"}>Social Support</div>
-          <div className={step === 5 ? "step active" : "step"}>Life Stressors</div>
-          <div className={step === 6 ? "step active" : "step"}>EPDS Assessment</div>
-          <div className={step === 7 ? "step active" : "step"}>Result</div>
-          <div className={step === 8 ? "step active" : "step"}>Clinician Summary</div>
+          <div 
+            className={step === 1 ? "step active" : "step clickable"} 
+            onClick={() => setStep(1)}
+          >
+            Demographics
+          </div>
+          <div 
+            className={step === 2 ? "step active" : "step clickable"} 
+            onClick={() => setStep(2)}
+          >
+            Obstetric & Medical
+          </div>
+          <div 
+            className={step === 3 ? "step active" : "step clickable"} 
+            onClick={() => setStep(3)}
+          >
+            Mental Well-being
+          </div>
+          <div 
+            className={step === 4 ? "step active" : "step clickable"} 
+            onClick={() => setStep(4)}
+          >
+            Social Support
+          </div>
+          <div 
+            className={step === 5 ? "step active" : "step clickable"} 
+            onClick={() => setStep(5)}
+          >
+            Life Stressors
+          </div>
+          <div 
+            className={step === 6 ? "step active" : "step clickable"} 
+            onClick={() => setStep(6)}
+          >
+            EPDS Assessment
+          </div>
+          <div 
+            className={step === 7 ? "step active" : "step clickable"} 
+            onClick={() => setStep(7)}
+          >
+            Result
+          </div>
+          <div 
+            className={step === 8 ? "step active" : "step clickable"} 
+            onClick={() => setStep(8)}
+          >
+            Clinician Summary
+          </div>
         </div>
       </aside>
 
@@ -226,7 +266,9 @@ export default function NewAssessment() {
           <p className="subtitle">Postpartum depression risk screening</p>
         </div> */}
 
-        <section className="card">
+        {/* Show card for steps 1-7 (before result) or step 8 */}
+        {(step < 7 || (step === 7 && !result) || step === 8) && (
+          <section className="card">
 
           {/* STEP 1 – DEMOGRAPHICS */}
           {step === 1 && (
@@ -927,64 +969,25 @@ export default function NewAssessment() {
 
 {step === 7 && (
   <>
-    <div className="card-header">
-      <h2>Assessment Result</h2>
-      <p>Generate and review the risk assessment</p>
-    </div>
-
-    <button
-      className="submit-btn"
-      onClick={submitAssessment}  // 🔹 call backend
-    >
-      Generate Result
-    </button>
-
-    {result && (
-      <div
-        className="result-card"
-        style={{
-          background: "#e6f8f1",
-          padding: "25px",
-          marginTop: "20px",
-          borderRadius: "12px",
-          textAlign: "center",
-        }}
-      >
-        <h3>Assessment Complete</h3>
-
-        <p style={{ fontSize: "20px", fontWeight: "600" }}>
-          Risk Level: {result.risk}
-        </p>
-
-        <h2>{result.score} / 100</h2>
-
-        <div style={{ marginTop: "20px" }}>
-          <button
-            className="save-result-btn"
-            onClick={() => setStep(8)}   // 🔹 go to clinician summary
-            style={{
-              background: "#2dd4bf",
-              color: "white",
-              border: "none",
-              padding: "12px 24px",
-              borderRadius: "8px",
-              fontSize: "16px",
-              fontWeight: "600",
-              cursor: "pointer",
-              marginRight: "10px",
-            }}
-          >
-            Save Result
-          </button>
-        </div>
+    {!result && (
+      <div className="card-header">
+        <h2>Assessment Result</h2>
+        <p>Generate and review the risk assessment</p>
       </div>
     )}
+
+    <button
+      className={`submit-btn ${result ? 'faded' : ''}`}
+      onClick={submitAssessment}
+    >
+      Generate AI Risk Assessment
+    </button>
   </>
 )}
 
    
-          {/* NAV BUTTONS - Only show for steps 1-7 */}
-          {step < 8 && (
+          {/* NAV BUTTONS - Show for steps 1-6 and step 8, hide only on step 7 (result page) */}
+          {step !== 7 && step < 8 && (
             <div className="actions">
               <button disabled={step === 1} onClick={() => setStep(step - 1)}>
                 ← Previous
@@ -996,7 +999,53 @@ export default function NewAssessment() {
             </div>
           )}
 
+          {/* NAV BUTTONS for step 8 - only show Previous */}
+          {step === 8 && (
+            <div className="actions">
+              <button onClick={() => setStep(step - 1)}>
+                ← Previous
+              </button>
+            </div>
+          )}
+
         </section>
+        )}
+
+        {/* Result card appears outside the main card when result is generated */}
+        {step === 7 && result && (
+          <div className="result-card">
+            <div className="result-header">
+              <div className="result-tag">ASSESSMENT COMPLETE</div>
+            </div>
+            
+            <h3>Risk Assessment Results</h3>
+            
+            <div className="score">{Math.round(result.score)}</div>
+            
+            <div className="risk-container">
+              <div className={`risk-badge ${
+                result.risk === 'Low Risk' ? 'risk-low' : 
+                result.risk === 'Moderate Risk' ? 'risk-moderate' : 'risk-high'
+              }`}>
+                {result.risk}
+              </div>
+            </div>
+
+            <p>
+              Based on the comprehensive assessment, the AI model has calculated a risk score of {Math.round(result.score)} out of 100. 
+              This indicates a {result.risk.toLowerCase()} for postpartum depression.
+            </p>
+
+            <div className="result-actions">
+              <button
+                className="save-result-btn"
+                onClick={() => setStep(8)}
+              >
+                Continue to Clinical Summary
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
     </>
