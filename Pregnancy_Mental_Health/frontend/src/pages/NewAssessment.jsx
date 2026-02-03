@@ -11,43 +11,52 @@ export default function NewAssessment() {
   const { user, logout } = useAuth();
 
 
-  // 🔹 ONE SINGLE FORM DATA OBJECT
+  // 🔹 47-QUESTION PRENATAL ASSESSMENT
   const [formData, setFormData] = useState({
     patient_name: "",
+    
+    // Section 1: Demographics (7 questions)
     age: "",
+    residence: "",
     education_level: "",
-    employment_status: "",
-    delivery_type: "",
-    delivery_complications: "",
-    past_obstetric: "",
-    medical_conditions: "",
-    sleep_quality: "",
-    anxiety_level: "",
-    stress_level: "",
-    fatigue_level: "",
-    pain_level: "",
-    appetite: "",
-    energy_level: "",
-    history_depression: "",
-    history_anxiety: "",
-    previous_treatment: "",
-    family_support: "",
-    partner_support: "",
-    living_situation: "",
-    social_network: "",
-    additional_support: "",
-    major_life_events: "",
-    financial_stress: "",
-    employment_status_current: "",
-    relationship_stress: "",
-    caregiving_responsibilities: "",
-    self_harm: "",
-    harm_baby: "",
-    safety_concern: "",
-    clinician_risk: "",
-    plan: "",
-    notes: "",
-    // EPDS questions
+    marital_status: "",
+    partner_education: "",
+    partner_income: "",
+    household_members: "",
+    
+    // Section 2: Relationships & Support (6 questions)
+    relationship_inlaws: "",
+    relationship_husband: "",
+    support_during_pregnancy: "",
+    need_more_support: "",
+    major_changes_losses: "",
+    trust_share_feelings: "",
+    
+    // Section 3: Pregnancy History (6 questions)
+    total_children_now: "",
+    pregnancy_number: "",
+    pregnancy_length: "",
+    pregnancy_planned: "",
+    regular_checkups: "",
+    medical_conditions_pregnancy: "",
+    
+    // Section 4: Mental Health History (6 questions)
+    depression_before_pregnancy: "",
+    depression_during_pregnancy: "",
+    fear_pregnancy_childbirth: "",
+    major_life_changes_pregnancy: "",
+    abuse_during_pregnancy: "",
+    family_type: "",
+    
+    // Section 5: Current Mental State (6 questions)
+    feeling_about_motherhood: "",
+    angry_irritable_since_pregnancy: "",
+    feeling_daily_activities: "",
+    sleep_quality_since_pregnancy: "",
+    anxiety_level_now: "",
+    stress_level_now: "",
+    
+    // Section 6: EPDS Assessment (10 questions)
     epds_1: "",
     epds_2: "",
     epds_3: "",
@@ -57,7 +66,12 @@ export default function NewAssessment() {
     epds_7: "",
     epds_8: "",
     epds_9: "",
-    epds_10: ""
+    epds_10: "",
+    
+    // Clinician fields
+    clinician_risk: "",
+    plan: "",
+    notes: ""
   });
 
   // 🔹 RESULT FROM BACKEND
@@ -218,25 +232,25 @@ export default function NewAssessment() {
             className={step === 2 ? "step active" : "step clickable"} 
             onClick={() => setStep(2)}
           >
-            Obstetric & Medical
+            Relationships & Support
           </div>
           <div 
             className={step === 3 ? "step active" : "step clickable"} 
             onClick={() => setStep(3)}
           >
-            Mental Well-being
+            Pregnancy History
           </div>
           <div 
             className={step === 4 ? "step active" : "step clickable"} 
             onClick={() => setStep(4)}
           >
-            Social Support
+            Mental Health History
           </div>
           <div 
             className={step === 5 ? "step active" : "step clickable"} 
             onClick={() => setStep(5)}
           >
-            Life Stressors
+            Current Mental State
           </div>
           <div 
             className={step === 6 ? "step active" : "step clickable"} 
@@ -266,7 +280,7 @@ export default function NewAssessment() {
           <p className="subtitle">Postpartum depression risk screening</p>
         </div> */}
 
-        {/* Show card for steps 1-7 (before result) or step 8 */}
+        {/* Show card for steps 1-6 (before result) or step 8 */}
         {(step < 7 || (step === 7 && !result) || step === 8) && (
           <section className="card">
 
@@ -275,7 +289,7 @@ export default function NewAssessment() {
             <>
               <div className="card-header">
                 <h2>Demographics</h2>
-                <p>Basic patient information</p>
+                <p>Basic patient information (7 questions)</p>
               </div>
 
               <div className="form-grid">
@@ -290,412 +304,489 @@ export default function NewAssessment() {
                 </div>
 
                 <div className="form-group">
-                  <label>Age</label>
+                  <label>Age (18-50)</label>
                   <input
                     type="number"
                     name="age"
                     value={formData.age}
                     onChange={handleChange}
+                    placeholder="18-50"
+                    min="18"
+                    max="50"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label>Education Level</label>
+                  <label>Where do you live?</label>
+                  <select
+                    name="residence"
+                    value={formData.residence}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
+                    <option value="City">City</option>
+                    <option value="Village">Village</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Highest education level?</label>
                   <select
                     name="education_level"
                     value={formData.education_level}
                     onChange={handleChange}
                   >
                     <option value="">Select</option>
-                    <option value="School">School</option>
-                    <option value="Undergraduate">Undergraduate</option>
-                    <option value="Postgraduate">Postgraduate</option>
+                    <option value="University">University</option>
+                    <option value="College">College</option>
+                    <option value="High School">High School</option>
+                    <option value="Primary School">Primary School</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>Employment Status</label>
+                  <label>Marital status?</label>
                   <select
-                    name="employment_status"
-                    value={formData.employment_status}
+                    name="marital_status"
+                    value={formData.marital_status}
                     onChange={handleChange}
                   >
                     <option value="">Select</option>
-                    <option value="Employed">Employed</option>
-                    <option value="Unemployed">Unemployed</option>
+                    <option value="Married">Married</option>
+                    <option value="Divorced">Divorced</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Husband's education level?</label>
+                  <select
+                    name="partner_education"
+                    value={formData.partner_education}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
+                    <option value="University">University</option>
+                    <option value="College">College</option>
+                    <option value="High School">High School</option>
+                    <option value="Primary School">Primary School</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Husband's monthly income?</label>
+                  <select
+                    name="partner_income"
+                    value={formData.partner_income}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
+                    <option value="5000-10000">5000-10000</option>
+                    <option value="10000-20000">10000-20000</option>
+                    <option value="20000-30000">20000-30000</option>
+                    <option value=">30000">>30000</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>How many people live in household?</label>
+                  <select
+                    name="household_members"
+                    value={formData.household_members}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
+                    <option value="2 to 5">2 to 5</option>
+                    <option value="6 to 8">6 to 8</option>
+                    <option value="9 or more">9 or more</option>
                   </select>
                 </div>
               </div>
             </>
           )}
 
-          {/* STEP 2 – MEDICAL */}
+          {/* STEP 2 – RELATIONSHIPS & SUPPORT */}
           {step === 2 && (
             <>
               <div className="card-header">
-                <h2>Medical History</h2>
-                <p>Delivery and obstetric information</p>
+                <h2>Relationships & Support</h2>
+                <p>Information about your relationships and support system (6 questions)</p>
               </div>
 
               <div className="form-grid">
                 <div className="form-group">
-                  <label>Type of Delivery</label>
+                  <label>Relationship with in-laws?</label>
                   <select
-                    name="delivery_type"
-                    value={formData.delivery_type}
+                    name="relationship_inlaws"
+                    value={formData.relationship_inlaws}
                     onChange={handleChange}
                   >
                     <option value="">Select</option>
-                    <option value="Normal">Normal</option>
-                    <option value="C-Section">C-Section</option>
-                    <option value="Assisted">Assisted (forceps/vacuum)</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Delivery Complications</label>
-                  <select
-                    name="delivery_complications"
-                    value={formData.delivery_complications}
-                    onChange={handleChange}
-                  >
-                    <option value="">Select</option>
-                    <option value="Gestational diabetes">Gestational diabetes</option>
-                    <option value="Pre-eclampsia">Pre-eclampsia</option>
-                    <option value="Postpartum hemorrhage">Postpartum hemorrhage</option>
-                    <option value="Preterm birth">Preterm birth</option>
-                    <option value="None">None</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Past Obstetric History</label>
-                  <select
-                    name="past_obstetric"
-                    value={formData.past_obstetric}
-                    onChange={handleChange}
-                  >
-                    <option value="">Select</option>
-                    <option value="Miscarriage">Miscarriage</option>
-                    <option value="Stillbirth">Stillbirth</option>
-                    <option value="NICU admission">NICU admission</option>
-                    <option value="None">None</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Medical Conditions</label>
-                  <select
-                    name="medical_conditions"
-                    value={formData.medical_conditions}
-                    onChange={handleChange}
-                  >
-                    <option value="">Select</option>
-                    <option value="Thyroid disorder">Thyroid disorder</option>
-                    <option value="Hypertension">Hypertension</option>
-                    <option value="Diabetes">Diabetes</option>
-                    <option value="Anemia">Anemia</option>
-                    <option value="Other">Other</option>
-                    <option value="None">None</option>
-                  </select>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* STEP 3 – MENTAL WELL-BEING */}
-          {step === 3 && (
-            <>
-              <div className="card-header">
-                <h2>Mental Well-being</h2>
-                <p>Your emotional and physical health</p>
-              </div>
-
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Sleep Quality (last week)</label>
-                  <select name="sleep_quality" value={formData.sleep_quality} onChange={handleChange}>
-                    <option value="">Select</option>
-                    <option value="Very good">Very good</option>
                     <option value="Good">Good</option>
-                    <option value="Fair">Fair</option>
+                    <option value="Neutral">Neutral</option>
+                    <option value="Friendly">Friendly</option>
+                    <option value="Bad">Bad</option>
                     <option value="Poor">Poor</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>Anxiety Level</label>
-                  <select name="anxiety_level" value={formData.anxiety_level} onChange={handleChange}>
+                  <label>Relationship with husband?</label>
+                  <select
+                    name="relationship_husband"
+                    value={formData.relationship_husband}
+                    onChange={handleChange}
+                  >
                     <option value="">Select</option>
-                    <option value="Low">Low</option>
-                    <option value="Moderate">Moderate</option>
+                    <option value="Good">Good</option>
+                    <option value="Neutral">Neutral</option>
+                    <option value="Friendly">Friendly</option>
+                    <option value="Bad">Bad</option>
+                    <option value="Poor">Poor</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Support from family/friends during pregnancy?</label>
+                  <select
+                    name="support_during_pregnancy"
+                    value={formData.support_during_pregnancy}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
                     <option value="High">High</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Stress Level</label>
-                  <select name="stress_level" value={formData.stress_level} onChange={handleChange}>
-                    <option value="">Select</option>
+                    <option value="Medium">Medium</option>
                     <option value="Low">Low</option>
-                    <option value="Moderate">Moderate</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Do you need more support?</label>
+                  <select
+                    name="need_more_support"
+                    value={formData.need_more_support}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
                     <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>Fatigue Level</label>
-                  <select name="fatigue_level" value={formData.fatigue_level} onChange={handleChange}>
-                    <option value="">Select</option>
-                    <option value="None">None</option>
-                    <option value="Mild">Mild</option>
-                    <option value="Moderate">Moderate</option>
-                    <option value="Severe">Severe</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Pain / Discomfort</label>
-                  <select name="pain_level" value={formData.pain_level} onChange={handleChange}>
-                    <option value="">Select</option>
-                    <option value="None">None</option>
-                    <option value="Mild">Mild</option>
-                    <option value="Moderate">Moderate</option>
-                    <option value="Severe">Severe</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Appetite</label>
-                  <select name="appetite" value={formData.appetite} onChange={handleChange}>
-                    <option value="">Select</option>
-                    <option value="Normal">Normal</option>
-                    <option value="Reduced">Reduced</option>
-                    <option value="Increased">Increased</option>
-                    <option value="Very Poor">Very Poor</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Energy for Daily Activities</label>
-                  <select name="energy_level" value={formData.energy_level} onChange={handleChange}>
-                    <option value="">Select</option>
-                    <option value="Normal">Normal</option>
-                    <option value="Slightly reduced">Slightly reduced</option>
-                    <option value="Much reduced">Much reduced</option>
-                    <option value="Unable to manage">Unable to manage</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>History of Depression before this pregnancy</label>
-                  <select name="history_depression" value={formData.history_depression} onChange={handleChange}>
+                  <label>Major changes/losses during pregnancy?</label>
+                  <select
+                    name="major_changes_losses"
+                    value={formData.major_changes_losses}
+                    onChange={handleChange}
+                  >
                     <option value="">Select</option>
                     <option value="Yes">Yes</option>
                     <option value="No">No</option>
-                    <option value="Unsure">Unsure</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>History of Anxiety / Panic</label>
-                  <select name="history_anxiety" value={formData.history_anxiety} onChange={handleChange}>
+                  <label>Someone you can trust and share feelings with?</label>
+                  <select
+                    name="trust_share_feelings"
+                    value={formData.trust_share_feelings}
+                    onChange={handleChange}
+                  >
                     <option value="">Select</option>
                     <option value="Yes">Yes</option>
                     <option value="No">No</option>
-                    <option value="Unsure">Unsure</option>
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* STEP 3 – PREGNANCY HISTORY */}
+          {step === 3 && (
+            <>
+              <div className="card-header">
+                <h2>Pregnancy History</h2>
+                <p>Information about your pregnancy history (6 questions)</p>
+              </div>
+
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>How many total children now?</label>
+                  <select
+                    name="total_children_now"
+                    value={formData.total_children_now}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
+                    <option value="One">One</option>
+                    <option value="Two">Two</option>
+                    <option value="More than two">More than two</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>Previous Psychiatric Treatment</label>
-                  <select name="previous_treatment" value={formData.previous_treatment} onChange={handleChange}>
+                  <label>What number pregnancy is this?</label>
+                  <select
+                    name="pregnancy_number"
+                    value={formData.pregnancy_number}
+                    onChange={handleChange}
+                  >
                     <option value="">Select</option>
-                    <option value="Counseling / Therapy">Counseling / Therapy</option>
-                    <option value="Antidepressant Medication">Antidepressant Medication</option>
-                    <option value="Psychiatric Admission">Psychiatric Admission</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Pregnancy length?</label>
+                  <select
+                    name="pregnancy_length"
+                    value={formData.pregnancy_length}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
+                    <option value="Less than 5m">Less than 5m</option>
+                    <option value="6m">6m</option>
+                    <option value="7m">7m</option>
+                    <option value="8m">8m</option>
+                    <option value="9m">9m</option>
+                    <option value="10m">10m</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Was pregnancy planned?</label>
+                  <select
+                    name="pregnancy_planned"
+                    value={formData.pregnancy_planned}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Regular antenatal checkups?</label>
+                  <select
+                    name="regular_checkups"
+                    value={formData.regular_checkups}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Medical conditions during pregnancy?</label>
+                  <select
+                    name="medical_conditions_pregnancy"
+                    value={formData.medical_conditions_pregnancy}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
+                    <option value="Chronic">Chronic</option>
+                    <option value="Non-Chronic">Non-Chronic</option>
                     <option value="None">None</option>
                   </select>
                 </div>
               </div>
             </>
           )}
-          {/* STEP 4 – SOCIAL SUPPORT */}
+          {/* STEP 4 – MENTAL HEALTH HISTORY */}
 {step === 4 && (
   <>
     <div className="card-header">
-      <h2>Social Support</h2>
-      <p>Information about your support system</p>
+      <h2>Mental Health History</h2>
+      <p>Information about your mental health history (6 questions)</p>
     </div>
 
     <div className="form-grid">
-      {/* Family Support */}
       <div className="form-group">
-        <label>Family Support</label>
+        <label>Depression BEFORE pregnancy?</label>
         <select
-          name="family_support"
-          value={formData.family_support}
+          name="depression_before_pregnancy"
+          value={formData.depression_before_pregnancy}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="Low">Low</option>
-          <option value="Moderate">Moderate</option>
-          <option value="Strong">Strong</option>
+          <option value="Positive">Positive</option>
+          <option value="Negative">Negative</option>
         </select>
       </div>
 
-      {/* Partner Support */}
       <div className="form-group">
-        <label>Partner Support</label>
+        <label>Depression DURING pregnancy?</label>
         <select
-          name="partner_support"
-          value={formData.partner_support}
+          name="depression_during_pregnancy"
+          value={formData.depression_during_pregnancy}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="Low">Low</option>
-          <option value="Moderate">Moderate</option>
-          <option value="Strong">Strong</option>
+          <option value="Positive">Positive</option>
+          <option value="Negative">Negative</option>
         </select>
       </div>
 
-      {/* Living Situation */}
       <div className="form-group">
-        <label>Living Situation</label>
+        <label>Fear about pregnancy/childbirth?</label>
         <select
-          name="living_situation"
-          value={formData.living_situation}
+          name="fear_pregnancy_childbirth"
+          value={formData.fear_pregnancy_childbirth}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="Alone">Alone</option>
-          <option value="With partner">With partner</option>
-          <option value="With family">With family</option>
-          <option value="Other">Other</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
         </select>
       </div>
 
-      {/* Social Network */}
       <div className="form-group">
-        <label>Social Network / Friends</label>
+        <label>Major life changes during pregnancy?</label>
         <select
-          name="social_network"
-          value={formData.social_network}
+          name="major_life_changes_pregnancy"
+          value={formData.major_life_changes_pregnancy}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="Weak">Weak</option>
-          <option value="Moderate">Moderate</option>
-          <option value="Strong">Strong</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
         </select>
       </div>
 
-      {/* Additional Support Systems */}
       <div className="form-group">
-        <label>Additional Support Systems</label>
+        <label>Any abuse during pregnancy?</label>
         <select
-          name="additional_support"
-          value={formData.additional_support}
+          name="abuse_during_pregnancy"
+          value={formData.abuse_during_pregnancy}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="Healthcare professionals">Healthcare professionals</option>
-          <option value="Community groups">Community groups</option>
-          <option value="None">None</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Family type?</label>
+        <select
+          name="family_type"
+          value={formData.family_type}
+          onChange={handleChange}
+        >
+          <option value="">Select</option>
+          <option value="Nuclear">Nuclear</option>
+          <option value="Joint">Joint</option>
         </select>
       </div>
     </div>
   </>
 )}
 
-         {/* STEP 5 – LIFE STRESSORS */}
+         {/* STEP 5 – SLEEP, EMOTIONS & DAILY FUNCTION */}
 {step === 5 && (
   <>
     <div className="card-header">
-      <h2>Life Stressors</h2>
+      <h2>Sleep, Emotions & Daily Function</h2>
       <p>Patient’s psychosocial stress factors</p>
     </div>
 
     <div className="form-grid">
-      {/* Recent Major Life Events */}
+      {/* Can you relax when your baby is being tended to by someone else? */}
       <div className="form-group">
-        <label>Recent Major Life Events</label>
+        <label>Can you relax when your baby is being tended to by someone else?</label>
         <select
-          name="major_life_events"
-          value={formData.major_life_events}
+          name="relax_when_tended"
+          value={formData.relax_when_tended}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="Job loss">Job loss</option>
-          <option value="Bereavement">Bereavement</option>
-          <option value="Relationship breakup">Relationship breakup</option>
-          <option value="Moving house">Moving house</option>
-          <option value="Serious illness in family">Serious illness in family</option>
-          <option value="None">None</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+          <option value="Sometimes">Sometimes</option>
         </select>
       </div>
 
-      {/* Financial Stress */}
+      {/* Can you relax when your baby is asleep? */}
       <div className="form-group">
-        <label>Financial Stress</label>
+        <label>Can you relax when your baby is asleep?</label>
         <select
-          name="financial_stress"
-          value={formData.financial_stress}
+          name="relax_when_asleep"
+          value={formData.relax_when_asleep}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="Stable/comfortable">Stable/comfortable</option>
-          <option value="Some stress">Some stress</option>
-          <option value="High stress">High stress</option>
-          <option value="Very high/critical">Very high/critical</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+          <option value="Sometimes">Sometimes</option>
         </select>
       </div>
 
-      {/* Employment Status */}
+      {/* How often do you feel angry after childbirth? */}
       <div className="form-group">
-        <label>Current Employment Status</label>
+        <label>How often do you feel angry after childbirth?</label>
         <select
-          name="employment_status_current"
-          value={formData.employment_status_current}
+          name="angry_after_birth"
+          value={formData.angry_after_birth}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="Working (full/part-time)">Working (full/part-time)</option>
-          <option value="On maternity leave">On maternity leave</option>
-          <option value="Not working">Not working</option>
-          <option value="Student">Student</option>
+          <option value="Not at all">Not at all</option>
+          <option value="Sometimes">Sometimes</option>
+          <option value="Often">Often</option>
+          <option value="Very often">Very often</option>
         </select>
       </div>
 
-      {/* Relationship Stress */}
+      {/* How do you feel about regular activities? */}
       <div className="form-group">
-        <label>Relationship Stress</label>
+        <label>How do you feel about regular activities?</label>
         <select
-          name="relationship_stress"
-          value={formData.relationship_stress}
+          name="feeling_activities"
+          value={formData.feeling_activities}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="None">None</option>
-          <option value="Mild">Mild</option>
-          <option value="Moderate">Moderate</option>
-          <option value="Severe">Severe</option>
+          <option value="Normal">Normal</option>
+          <option value="Tired">Tired</option>
+          <option value="Worried">Worried</option>
+          <option value="Unable">Unable</option>
         </select>
       </div>
 
-      {/* Caregiving Responsibilities */}
+      {/* Did you have depression before this pregnancy? */}
       <div className="form-group">
-        <label>Caregiving Responsibilities</label>
+        <label>Did you have depression before this pregnancy?</label>
         <select
-          name="caregiving_responsibilities"
-          value={formData.caregiving_responsibilities}
+          name="depression_before"
+          value={formData.depression_before}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="None">None</option>
-          <option value="Some">Some</option>
-          <option value="Many">Many</option>
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+          <option value="Unsure">Unsure</option>
+        </select>
+      </div>
+
+      {/* Did you have depression during this pregnancy? */}
+      <div className="form-group">
+        <label>Did you have depression during this pregnancy?</label>
+        <select
+          name="depression_during"
+          value={formData.depression_during}
+          onChange={handleChange}
+        >
+          <option value="">Select</option>
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+          <option value="Unsure">Unsure</option>
         </select>
       </div>
     </div>
@@ -986,7 +1077,7 @@ export default function NewAssessment() {
 )}
 
    
-          {/* NAV BUTTONS - Show for steps 1-6 and step 8, hide only on step 7 (result page) */}
+          {/* NAV BUTTONS - Show for steps 1-6, hide only on step 7 (result page) */}
           {step !== 7 && step < 8 && (
             <div className="actions">
               <button disabled={step === 1} onClick={() => setStep(step - 1)}>
