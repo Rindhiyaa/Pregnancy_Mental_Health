@@ -689,104 +689,95 @@ export default function NewAssessment() {
   </>
 )}
 
-         {/* STEP 5 – SLEEP, EMOTIONS & DAILY FUNCTION */}
+         {/* STEP 5 – CURRENT MENTAL STATE */}
 {step === 5 && (
   <>
     <div className="card-header">
-      <h2>Sleep, Emotions & Daily Function</h2>
+      <h2>Current Mental State</h2>
       <p>Patient’s psychosocial stress factors</p>
     </div>
 
     <div className="form-grid">
-      {/* Can you relax when your baby is being tended to by someone else? */}
       <div className="form-group">
-        <label>Can you relax when your baby is being tended to by someone else?</label>
+        <label>Feeling about motherhood/becoming mother?</label>
         <select
-          name="relax_when_tended"
-          value={formData.relax_when_tended}
+          name="feeling_about_motherhood"
+          value={formData.feeling_about_motherhood}
+          onChange={handleChange}
+        >
+          <option value="">Select</option>
+          <option value="Happy">Happy</option>
+          <option value="Neutral">Neutral</option>
+          <option value="Sad">Sad</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Since pregnancy, felt angry/irritable?</label>
+        <select
+          name="angry_irritable_since_pregnancy"
+          value={formData.angry_irritable_since_pregnancy}
           onChange={handleChange}
         >
           <option value="">Select</option>
           <option value="Yes">Yes</option>
           <option value="No">No</option>
-          <option value="Sometimes">Sometimes</option>
         </select>
       </div>
 
-      {/* Can you relax when your baby is asleep? */}
       <div className="form-group">
-        <label>Can you relax when your baby is asleep?</label>
+        <label>How do you feel about daily activities?</label>
         <select
-          name="relax_when_asleep"
-          value={formData.relax_when_asleep}
+          name="feeling_daily_activities"
+          value={formData.feeling_daily_activities}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="Yes">Yes</option>
-          <option value="No">No</option>
-          <option value="Sometimes">Sometimes</option>
-        </select>
-      </div>
-
-      {/* How often do you feel angry after childbirth? */}
-      <div className="form-group">
-        <label>How often do you feel angry after childbirth?</label>
-        <select
-          name="angry_after_birth"
-          value={formData.angry_after_birth}
-          onChange={handleChange}
-        >
-          <option value="">Select</option>
-          <option value="Not at all">Not at all</option>
-          <option value="Sometimes">Sometimes</option>
-          <option value="Often">Often</option>
-          <option value="Very often">Very often</option>
-        </select>
-      </div>
-
-      {/* How do you feel about regular activities? */}
-      <div className="form-group">
-        <label>How do you feel about regular activities?</label>
-        <select
-          name="feeling_activities"
-          value={formData.feeling_activities}
-          onChange={handleChange}
-        >
-          <option value="">Select</option>
-          <option value="Normal">Normal</option>
-          <option value="Tired">Tired</option>
           <option value="Worried">Worried</option>
-          <option value="Unable">Unable</option>
+          <option value="Tired">Tired</option>
+          <option value="Afraid">Afraid</option>
         </select>
       </div>
 
-      {/* Did you have depression before this pregnancy? */}
       <div className="form-group">
-        <label>Did you have depression before this pregnancy?</label>
+        <label>Sleep quality since pregnancy?</label>
         <select
-          name="depression_before"
-          value={formData.depression_before}
+          name="sleep_quality_since_pregnancy"
+          value={formData.sleep_quality_since_pregnancy}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-          <option value="Unsure">Unsure</option>
+          <option value="Good">Good</option>
+          <option value="Fair">Fair</option>
+          <option value="Poor">Poor</option>
         </select>
       </div>
 
-      {/* Did you have depression during this pregnancy? */}
       <div className="form-group">
-        <label>Did you have depression during this pregnancy?</label>
+        <label>Anxiety level now?</label>
         <select
-          name="depression_during"
-          value={formData.depression_during}
+          name="anxiety_level_now"
+          value={formData.anxiety_level_now}
           onChange={handleChange}
         >
           <option value="">Select</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-          <option value="Unsure">Unsure</option>
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Stress level now?</label>
+        <select
+          name="stress_level_now"
+          value={formData.stress_level_now}
+          onChange={handleChange}
+        >
+          <option value="">Select</option>
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
         </select>
       </div>
     </div>
