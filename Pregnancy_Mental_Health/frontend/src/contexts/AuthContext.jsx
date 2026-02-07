@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = () => {
     try {
+      const token = localStorage.getItem('ppd_access_token');
       const email = localStorage.getItem('ppd_user_email');
       const fullName = localStorage.getItem('ppd_user_full_name');
       const role = localStorage.getItem('ppd_user_role');
@@ -32,7 +33,7 @@ export const AuthProvider = ({ children }) => {
         storedProfile = localStorage.getItem('ppd_user_profile');
       }
   
-      if (storedProfile || fullName || email) {
+      if ((token && email) || storedProfile || fullName || email) {
         let userProfile = {
           fullName: fullName || 'Clinician',
           email: email || '',
@@ -74,6 +75,11 @@ export const AuthProvider = ({ children }) => {
   
 
   const login = (userData) => {
+    // Store JWT token if provided
+    if (userData.access_token) {
+      localStorage.setItem('ppd_access_token', userData.access_token);
+    }
+    
     // clear session-level keys (not per-user profiles)
     localStorage.removeItem('ppd_user_full_name');
     localStorage.removeItem('ppd_user_email');
@@ -149,6 +155,9 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem(`assessmentHistory_${user.email}`, currentHistory);
       }
     }
+    
+    // Clear JWT token
+    localStorage.removeItem('ppd_access_token');
     
     // Clear user profile data
     //localStorage.removeItem('ppd_user_profile');

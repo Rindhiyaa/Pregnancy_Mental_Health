@@ -45,6 +45,24 @@ export default function SignInPage() {
       
       const data = await res.json();
       
+      // Check if OTP is required
+      if (data.requires_otp) {
+        // Redirect to OTP verification page
+        navigate("/verify-otp", {
+          state: {
+            userData: {
+              email: data.email,
+              full_name: data.full_name,
+              role: data.role,
+              password: form.password, // Store temporarily for resend
+            },
+            otpCode: data.otp_code, // For testing only - remove in production
+          },
+        });
+        return;
+      }
+      
+      // If no OTP required, login directly (backward compatibility)
       const userProfile = {
         fullName: data.full_name || "Clinician",
         firstName: data.first_name || "",
@@ -54,8 +72,14 @@ export default function SignInPage() {
         role: data.role || "",
         department: data.department || "",
         memberSince: data.member_since || new Date().toLocaleDateString(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        access_token: data.access_token, // Store JWT token
       };
+      
+      // Store JWT token
+      if (data.access_token) {
+        localStorage.setItem('ppd_access_token', data.access_token);
+      }
       
       login(userProfile);
       navigate(from, { replace: true });

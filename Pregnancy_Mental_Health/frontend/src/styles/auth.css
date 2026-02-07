@@ -255,6 +255,29 @@ input:focus {
   border: 1px solid #6ee7b7;
 }
 
+/* OTP Page Styles */
+.otp-test-display {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 2px solid #fbbf24;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.otp-timer {
+  text-align: center;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+  color: #6b7280;
+}
+
+.otp-timer strong {
+  color: #8b5cf6;
+  font-size: 1.1rem;
+}
+
 .btn-primary.full-width {
   width: 100%;
   padding: 0.85rem 1.6rem;

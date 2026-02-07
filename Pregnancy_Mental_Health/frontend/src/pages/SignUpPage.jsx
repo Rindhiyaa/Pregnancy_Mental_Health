@@ -75,6 +75,13 @@ export default function SignUpPage() {
         throw new Error(data?.detail || "Signup failed");
       }
   
+      const data = await res.json();
+      
+      // Store JWT token if provided
+      if (data.access_token) {
+        localStorage.setItem('ppd_access_token', data.access_token);
+      }
+      
       // success → go to dashboard
       navigate("/dashboard");
     } catch (err) {

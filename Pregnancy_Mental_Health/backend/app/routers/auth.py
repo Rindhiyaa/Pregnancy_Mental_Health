@@ -5,6 +5,7 @@ from .. import models
 from ..schemas import UserCreate, UserOut, LoginRequest, ForgotPasswordRequest, ResetPasswordRequest
 from ..security import hash_password, verify_password
 from ..schemas import UserProfileOut, UserProfileUpdate
+from ..jwt_handler import create_access_token, get_current_user_email
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
@@ -26,7 +27,16 @@ def signup(user_in: UserCreate, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+    
+    # Create JWT token for auto-login after signup
+    access_token = create_access_token(data={"sub": user.email})
+    
+    # Return user data with token
+    return {
+        **UserOut.model_validate(user).model_dump(),
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 @router.post("/login")
 def login(credentials: LoginRequest, db: Session = Depends(get_db)):
@@ -45,13 +55,22 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
         db.refresh(user)
 
     full_name = f"{user.first_name} {user.last_name or ''}".strip()
+    member_since = user.member_since.strftime("%b %d, %Y") if user.member_since else None
+
+    # Create JWT token
+    access_token = create_access_token(data={"sub": user.email})
 
     return {
         "message": "Login successful",
+        "access_token": access_token,
+        "token_type": "bearer",
         "user_id": user.id,
         "full_name": full_name,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
         "email": user.email,
         "role": user.role,
+        "member_since": member_since,
     }
 
 
@@ -64,10 +83,10 @@ def get_user_or_404(user_id: int, db: Session) -> models.User:
 
 @router.get("/me", response_model=UserProfileOut)
 def get_profile(
-    email: str,
+    current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db),
 ):
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(models.User.email == current_user_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -86,10 +105,10 @@ def get_profile(
 @router.put("/me", response_model=UserProfileOut)
 def update_profile(
     payload: UserProfileUpdate,
-    email: str,
+    current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db),
 ):
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(models.User.email == current_user_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -119,10 +138,10 @@ def update_profile(
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 def delete_account(
-    email: str,
+    current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db),
 ):
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(models.User.email == current_user_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
@@ -133,10 +152,10 @@ def delete_account(
 
 @router.post("/logout-status", status_code=status.HTTP_204_NO_CONTENT)
 def set_logout_inactive(
-    email: str,
+    current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db),
 ):
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(models.User.email == current_user_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 

@@ -6,6 +6,7 @@ from ..database import get_db
 from ..schemas import AssessmentCreate, AssessmentResult, AssessmentSave
 from ..ml_model import model
 from .. import models
+from ..jwt_handler import get_current_user_email
 
 router = APIRouter(prefix="/api", tags=["assessments"])
 
@@ -192,7 +193,11 @@ def calculate_weighted_risk_score(features) -> float:
     return min(max(score, 0), 100)
 
 @router.post("/assessments")
-def save_assessment(payload: AssessmentSave, db: Session = Depends(get_db)):
+def save_assessment(
+    payload: AssessmentSave,
+    current_user_email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db)
+):
     assessment = models.Assessment(
         patient_name=payload.patient_name,
         raw_data=payload.raw_data,
@@ -201,7 +206,7 @@ def save_assessment(payload: AssessmentSave, db: Session = Depends(get_db)):
         clinician_risk=payload.clinician_risk,
         plan=payload.plan,
         notes=payload.notes,
-        clinician_email=payload.clinician_email,
+        clinician_email=payload.clinician_email or current_user_email,
     )
     db.add(assessment)
     db.commit()
@@ -226,12 +231,16 @@ def save_assessment(payload: AssessmentSave, db: Session = Depends(get_db)):
 
 @router.get("/assessments")
 def list_assessments(
+    current_user_email: str = Depends(get_current_user_email),
     clinician_email: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
+    # Use provided clinician_email or fall back to current user
+    email_filter = clinician_email or current_user_email
+    
     query = db.query(models.Assessment)
-    if clinician_email:
-        query = query.filter(models.Assessment.clinician_email == clinician_email)
+    if email_filter:
+        query = query.filter(models.Assessment.clinician_email == email_filter)
 
     records = query.order_by(models.Assessment.created_at.desc()).all()
 
@@ -253,12 +262,16 @@ def list_assessments(
 
 @router.delete("/assessments/clear", status_code=status.HTTP_204_NO_CONTENT)
 def clear_assessments_for_clinician(
-    clinician_email: str = Query(...),
+    current_user_email: str = Depends(get_current_user_email),
+    clinician_email: str = Query(None),
     db: Session = Depends(get_db),
 ):
+    # Use provided clinician_email or fall back to current user
+    email_filter = clinician_email or current_user_email
+    
     deleted = (
         db.query(models.Assessment)
-        .filter(models.Assessment.clinician_email == clinician_email)
+        .filter(models.Assessment.clinician_email == email_filter)
         .delete(synchronize_session=False)
     )
 
@@ -268,6 +281,7 @@ def clear_assessments_for_clinician(
 @router.delete("/assessments/{assessment_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_assessment(
     assessment_id: int,
+    current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db),
 ):
     assessment = db.query(models.Assessment).filter(

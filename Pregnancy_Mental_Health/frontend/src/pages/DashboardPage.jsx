@@ -54,10 +54,15 @@ const DashboardPage = () => {
         // 1) try backend
         if (user?.email) {
           try {
+            const token = localStorage.getItem('ppd_access_token');
             const res = await fetch( 
-              `http://127.0.0.1:8000/api/assessments?clinician_email=${encodeURIComponent(
-                user.email
-              )}`
+              `http://127.0.0.1:8000/api/assessments`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              }
             );
             if (res.ok) {
               historyData = await res.json();
