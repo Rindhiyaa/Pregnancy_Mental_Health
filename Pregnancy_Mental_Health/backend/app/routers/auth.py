@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import models
-from ..schemas import UserCreate, UserOut, LoginRequest
+from ..schemas import UserCreate, UserOut, LoginRequest, ForgotPasswordRequest, ResetPasswordRequest
 from ..security import hash_password, verify_password
 from ..schemas import UserProfileOut, UserProfileUpdate
 
@@ -143,6 +143,61 @@ def set_logout_inactive(
     user.is_active = False
     db.commit()
     return
+
+
+@router.post("/forgot-password")
+def forgot_password(
+    request: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Check if user exists with this email.
+    Returns error if email not found.
+    """
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No account found with this email address. Please check your email or sign up."
+        )
+    
+    # Email exists - in production you would send reset link via email
+    return {
+        "message": "Email verified. You can now reset your password.",
+        "email": request.email
+    }
+
+
+@router.post("/reset-password")
+def reset_password(
+    request: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Reset user password.
+    In production, you would verify a reset token first.
+    """
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Validate new password
+    if len(request.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters"
+        )
+    
+    # Update password
+    user.hashed_password = hash_password(request.new_password)
+    db.commit()
+    
+    return {
+        "message": "Password reset successful. You can now login with your new password."
+    }
 
 
 

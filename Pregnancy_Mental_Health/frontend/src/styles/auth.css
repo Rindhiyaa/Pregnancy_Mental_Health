@@ -162,6 +162,48 @@ input[type="password"] {
   transition: all 0.2s ease;
 }
 
+/* Password Input Wrapper with Eye Toggle */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 2.75rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  transition: color 0.2s ease;
+  border-radius: 4px;
+}
+
+.password-toggle:hover {
+  color: #6b7280;
+  background: #f3f4f6;
+}
+
+.password-toggle:focus {
+  outline: none;
+  color: #8b5cf6;
+}
+
+.password-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
 input:focus {
   outline: none;
   border-color: #8b5cf6;
@@ -202,6 +244,17 @@ input:focus {
   margin-top: 0.2rem;
 }
 
+.success {
+  color: #059669;
+  background: #d1fae5;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  margin-top: 0.2rem;
+  border: 1px solid #6ee7b7;
+}
+
 .btn-primary.full-width {
   width: 100%;
   padding: 0.85rem 1.6rem;
@@ -222,6 +275,31 @@ input:focus {
   transform: translateY(-2px);
   box-shadow: 0 15px 30px rgba(148, 88, 246, 0.4);
   opacity: 1;
+}
+
+.btn-primary.full-width:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-outline.full-width {
+  width: 100%;
+  padding: 0.85rem 1.6rem;
+  font-size: 1rem;
+  background: white;
+  color: #8b5cf6;
+  border: 2px solid #e9d5ff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border-radius: 999px;
+}
+
+.btn-outline.full-width:hover {
+  background: #faf5ff;
+  border-color: #d8b4fe;
+  transform: translateY(-1px);
 }
 
 .auth-side > div {
