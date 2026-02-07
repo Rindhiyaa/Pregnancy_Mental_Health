@@ -107,19 +107,23 @@ export default function NewAssessment() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-
+  
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || "Unable to generate risk score");
+        const errorBody = await res.json().catch(() => null);
+        console.error("predict error:", JSON.stringify(errorBody, null, 2));
+        alert("Could not generate risk score.");
+        return;
       }
-
+  
       const data = await res.json();
       setResult({ risk: data.risk_level, score: data.score });
+      setStep(6);  // make sure you navigate to result step
     } catch (err) {
       console.error("Backend error:", err);
       alert("Could not generate risk score. Please try again.");
     }
   };
+  
 
 
   // Calculate EPDS score from form data
@@ -267,7 +271,7 @@ export default function NewAssessment() {
         </div> */}
 
           {/* Show card for steps 1-6 (before result) or step 8 */}
-          {(step < 7 || (step === 7 && !result) || step === 8) && (
+          {step >= 1 && step <= 7 && (
             <section className="card">
 
               {/* STEP 1 – DEMOGRAPHICS */}
@@ -369,7 +373,7 @@ export default function NewAssessment() {
                         <option value="5000-10000">5000-10000</option>
                         <option value="10000-20000">10000-20000</option>
                         <option value="20000-30000">20000-30000</option>
-                        <option value=">30000">>30000</option>
+                        <option value=">30000">30000</option>
                       </select>
                     </div>
 
