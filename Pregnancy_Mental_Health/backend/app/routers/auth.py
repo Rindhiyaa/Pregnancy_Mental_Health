@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import models
-from ..schemas import UserCreate, UserOut, LoginRequest
+from ..schemas import UserCreate, UserOut, LoginRequest, ForgotPasswordRequest, ResetPasswordRequest
 from ..security import hash_password, verify_password
 from ..schemas import UserProfileOut, UserProfileUpdate
+from ..jwt_handler import create_access_token, get_current_user_email
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
@@ -26,7 +27,16 @@ def signup(user_in: UserCreate, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+    
+    # Create JWT token for auto-login after signup
+    access_token = create_access_token(data={"sub": user.email})
+    
+    # Return user data with token
+    return {
+        **UserOut.model_validate(user).model_dump(),
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 @router.post("/login")
 def login(credentials: LoginRequest, db: Session = Depends(get_db)):
@@ -45,13 +55,22 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
         db.refresh(user)
 
     full_name = f"{user.first_name} {user.last_name or ''}".strip()
+    member_since = user.member_since.strftime("%b %d, %Y") if user.member_since else None
+
+    # Create JWT token
+    access_token = create_access_token(data={"sub": user.email})
 
     return {
         "message": "Login successful",
+        "access_token": access_token,
+        "token_type": "bearer",
         "user_id": user.id,
         "full_name": full_name,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
         "email": user.email,
         "role": user.role,
+        "member_since": member_since,
     }
 
 
@@ -64,10 +83,10 @@ def get_user_or_404(user_id: int, db: Session) -> models.User:
 
 @router.get("/me", response_model=UserProfileOut)
 def get_profile(
-    email: str,
+    current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db),
 ):
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(models.User.email == current_user_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -86,10 +105,10 @@ def get_profile(
 @router.put("/me", response_model=UserProfileOut)
 def update_profile(
     payload: UserProfileUpdate,
-    email: str,
+    current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db),
 ):
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(models.User.email == current_user_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -119,10 +138,10 @@ def update_profile(
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 def delete_account(
-    email: str,
+    current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db),
 ):
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(models.User.email == current_user_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
@@ -133,16 +152,71 @@ def delete_account(
 
 @router.post("/logout-status", status_code=status.HTTP_204_NO_CONTENT)
 def set_logout_inactive(
-    email: str,
+    current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db),
 ):
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(models.User.email == current_user_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     user.is_active = False
     db.commit()
     return
+
+
+@router.post("/forgot-password")
+def forgot_password(
+    request: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Check if user exists with this email.
+    Returns error if email not found.
+    """
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No account found with this email address. Please check your email or sign up."
+        )
+    
+    # Email exists - in production you would send reset link via email
+    return {
+        "message": "Email verified. You can now reset your password.",
+        "email": request.email
+    }
+
+
+@router.post("/reset-password")
+def reset_password(
+    request: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Reset user password.
+    In production, you would verify a reset token first.
+    """
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Validate new password
+    if len(request.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters"
+        )
+    
+    # Update password
+    user.hashed_password = hash_password(request.new_password)
+    db.commit()
+    
+    return {
+        "message": "Password reset successful. You can now login with your new password."
+    }
 
 
 

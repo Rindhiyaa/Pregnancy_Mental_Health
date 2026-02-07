@@ -48,10 +48,15 @@ const HistoryPage = () => {
         // 1) try backend if clinician email is known
         if (user?.email) {
           try {
+            const token = localStorage.getItem('ppd_access_token');
             const res = await fetch(
-              `http://127.0.0.1:8000/api/assessments?clinician_email=${encodeURIComponent(
-                user.email
-              )}`
+              `http://127.0.0.1:8000/api/assessments`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              }
             );
             if (res.ok) {
               historyData = await res.json(); 
@@ -142,12 +147,15 @@ const HistoryPage = () => {
     // 1) try backend clear for this clinician (if you add such endpoint)
     if (user?.email) {
       try {
+        const token = localStorage.getItem('ppd_access_token');
         await fetch(
-          `http://127.0.0.1:8000/api/assessments/clear?clinician_email=${encodeURIComponent(
-            user.email
-          )}`,
+          `http://127.0.0.1:8000/api/assessments/clear`,
           {
             method: "DELETE",
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
           }
         );
       } catch (e) {
@@ -175,8 +183,13 @@ const HistoryPage = () => {
     }
   
     try {
+      const token = localStorage.getItem('ppd_access_token');
       await fetch(`http://127.0.0.1:8000/api/assessments/${assessmentId}`, {
         method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
     } catch (e) {
       console.warn("Failed to delete on backend, removing from local cache only", e);

@@ -8,6 +8,7 @@ import CliniciansPage from "../pages/CliniciansPage";
 import PatientsPage from "../pages/PatientsPage";
 import SignInPage from "../pages/SignInPage";
 import SignUpPage from "../pages/SignUpPage";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import HistoryPage from "../pages/HistoryPage";
 import ProfilePage from "../pages/ProfilePage";
@@ -23,6 +24,7 @@ export default function AppRouter() {
       <Route path="/patients" element={<PatientsPage />} />
       <Route path="/signin" element={<SignInPage />} />
       <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* Protected Dashboard Routes */}
       <Route 

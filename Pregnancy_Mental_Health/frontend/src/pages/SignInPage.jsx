@@ -8,6 +8,7 @@ export default function SignInPage() {
   const { login } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // Get the page user was trying to access before being redirected to signin
   const from = location.state?.from?.pathname || "/dashboard"; 
@@ -44,6 +45,24 @@ export default function SignInPage() {
       
       const data = await res.json();
       
+      // Check if OTP is required
+      if (data.requires_otp) {
+        // Redirect to OTP verification page
+        navigate("/verify-otp", {
+          state: {
+            userData: {
+              email: data.email,
+              full_name: data.full_name,
+              role: data.role,
+              password: form.password, // Store temporarily for resend
+            },
+            otpCode: data.otp_code, // For testing only - remove in production
+          },
+        });
+        return;
+      }
+      
+      // If no OTP required, login directly (backward compatibility)
       const userProfile = {
         fullName: data.full_name || "Clinician",
         firstName: data.first_name || "",
@@ -53,8 +72,14 @@ export default function SignInPage() {
         role: data.role || "",
         department: data.department || "",
         memberSince: data.member_since || new Date().toLocaleDateString(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        access_token: data.access_token, // Store JWT token
       };
+      
+      // Store JWT token
+      if (data.access_token) {
+        localStorage.setItem('ppd_access_token', data.access_token);
+      }
       
       login(userProfile);
       navigate(from, { replace: true });
@@ -115,14 +140,45 @@ export default function SignInPage() {
 
             <label>
               Password
-              <input
-                type="password"
-                name="password"
-                placeholder="••••••••"
-                value={form.password}
-                onChange={handleChange}
-              />
+              <div className="password-input-wrapper">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={handleChange}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
             </label>
+
+            <div style={{ textAlign: 'right', marginTop: '-0.5rem', marginBottom: '1rem' }}>
+              <button 
+                type="button" 
+                className="link-button" 
+                onClick={() => navigate("/forgot-password")}
+                style={{ fontSize: '0.9rem', color: '#8b5cf6' }}
+              >
+                Forgot password?
+              </button>
+            </div>
 
             {error && <div className="error">{error}</div>}
 

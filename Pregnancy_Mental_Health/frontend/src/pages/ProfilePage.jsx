@@ -28,14 +28,16 @@ const ProfilePage = () => {
   //handle logout
   const handleTopLogout = async () => {
     try {
-      if (user?.email) {
+      const token = localStorage.getItem('ppd_access_token');
+      if (user?.email && token) {
         await fetch(
-          `http://127.0.0.1:8000/api/logout-status?email=${encodeURIComponent(
-            user.email
-          )}`,
+          `http://127.0.0.1:8000/api/logout-status`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
           }
         );
       }
@@ -84,15 +86,21 @@ const ProfilePage = () => {
   };
 
   const handleDelete = async () => {
-    if (!user?.email) {
+    const token = localStorage.getItem('ppd_access_token');
+    if (!user?.email || !token) {
       alert("Could not determine your email. Please log in again.");
       return;
     }
   
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/api/me?email=${encodeURIComponent(user.email)}`,
-        { method: "DELETE" }
+        `http://127.0.0.1:8000/api/me`,
+        { 
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        }
       );
   
       if (!res.ok) {
