@@ -14,41 +14,35 @@ export default function NewAssessment() {
   // 🔹 35-QUESTION PRENATAL ASSESSMENT (Section 5 removed - postpartum questions)
   const [formData, setFormData] = useState({
     patient_name: "",
-
-    // Section 1: Demographics (7 questions)
     age: "",
     residence: "",
     education_level: "",
     marital_status: "",
     partner_education: "",
     partner_income: "",
-    household_members: "",
-
-    // Section 2: Relationships & Support (6 questions)
+    household_members: "",   // add field if you keep it
+  
     relationship_inlaws: "",
     relationship_husband: "",
     support_during_pregnancy: "",
     need_more_support: "",
-    major_changes_losses: "",
+    major_changes_losses: "",                 // rename key
     trust_share_feelings: "",
-
-    // Section 3: Pregnancy History (6 questions)
+  
     total_children_now: "",
     pregnancy_number: "",
     pregnancy_length: "",
     pregnancy_planned: "",
     regular_checkups: "",
     medical_conditions_pregnancy: "",
-
-    // Section 4: Mental Health History (6 questions)
+  
     depression_before_pregnancy: "",
     depression_during_pregnancy: "",
     fear_pregnancy_childbirth: "",
     major_life_changes_pregnancy: "",
     abuse_during_pregnancy: "",
     family_type: "",
-
-    // Section 6: EPDS Assessment (10 questions)
+  
     epds_1: "",
     epds_2: "",
     epds_3: "",
@@ -59,12 +53,8 @@ export default function NewAssessment() {
     epds_8: "",
     epds_9: "",
     epds_10: "",
-
-    // Clinician fields
-    clinician_risk: "",
-    plan: "",
-    notes: ""
   });
+  
 
   // 🔹 RESULT FROM BACKEND
   const [result, setResult] = useState(null);
@@ -100,7 +90,29 @@ export default function NewAssessment() {
   };
 
   // 🔹 FINAL SUBMIT (API READY)
+  const REQUIRED_FIELDS = [
+    "age","residence","education_level","marital_status",
+    "partner_education","partner_income","household_members",
+    "relationship_inlaws","relationship_husband","support_during_pregnancy",
+    "need_more_support","major_changes_losses","trust_share_feelings",
+    "total_children_now","pregnancy_number","pregnancy_length",
+    "pregnancy_planned","regular_checkups","medical_conditions_pregnancy",
+    "depression_before_pregnancy","depression_during_pregnancy",
+    "fear_pregnancy_childbirth","major_life_changes_pregnancy",
+    "abuse_during_pregnancy","family_type",
+    "epds_1","epds_2","epds_3","epds_4","epds_5",
+    "epds_6","epds_7","epds_8","epds_9","epds_10",
+  ];  
+
   const submitAssessment = async () => {
+    for (const f of REQUIRED_FIELDS) {
+      const v = formData[f];
+      if (!v) {
+        console.log("MISSING FIELD:", f, "VALUE:", v);
+        alert("Please answer all questions before generating risk.");
+        return;
+      }
+    }
     try {
       const res = await fetch("http://127.0.0.1:8000/api/assessments/predict", {
         method: "POST",
