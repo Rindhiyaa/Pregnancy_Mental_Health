@@ -25,44 +25,75 @@ def predict_assessment(payload: AssessmentCreate):
 
     try:
         # 4) Predict EPDS Result class and probabilities
-        # Classes: assume CatBoost was trained with target ["High", "Medium", "Low"]
+        cat_classes = list(model.classes_)  # e.g. ['High', 'Low', 'Medium']
         pred_class = model.predict(X_aligned)[0]
         proba = model.predict_proba(X_aligned)[0]
-
-        # Map class probabilities to Low/Moderate/High risk for UI
-        # Adjust class order according to model.classes_
-        cat_classes = list(model.classes_)  # e.g. ['High', 'Low', 'Medium']
 
         class_to_prob = {cls: p for cls, p in zip(cat_classes, proba)}
         high_prob = class_to_prob.get("High", 0.0)
         med_prob = class_to_prob.get("Medium", 0.0)
         low_prob = class_to_prob.get("Low", 0.0)
 
-        # Pick max-probability risk level
+        # Pick max-probability risk level and original model_score (0–100)
         if high_prob >= med_prob and high_prob >= low_prob:
-            risk_level = "High Risk"
-            pred_score = 70 + high_prob * 30
+            risk_level_from_model = "High Risk"
+            model_score = 70 + high_prob * 30
         elif med_prob >= low_prob:
-            risk_level = "Moderate Risk"
-            pred_score = 40 + med_prob * 30
+            risk_level_from_model = "Moderate Risk"
+            model_score = 40 + med_prob * 30
         else:
-            risk_level = "Low Risk"
-            pred_score = low_prob * 40
+            risk_level_from_model = "Low Risk"
+            model_score = low_prob * 40
 
         print("CatBoost EPDS prediction:")
         print(f"  classes: {cat_classes}")
         print(f"  probs: {proba}")
-        print(f"  risk_level: {risk_level}, score: {pred_score:.1f}")
+        print(f"  model risk_level: {risk_level_from_model}, model_score: {model_score:.1f}")
+
+        # 5) EPDS total and scaled (0–100)
+        epds_items = [
+            int(payload.epds_1),
+            int(payload.epds_2),
+            int(payload.epds_3),
+            int(payload.epds_4),
+            int(payload.epds_5),
+            int(payload.epds_6),
+            int(payload.epds_7),
+            int(payload.epds_8),
+            int(payload.epds_9),
+            int(payload.epds_10),
+        ]
+        epds_total = sum(epds_items)
+        epds_scaled = (epds_total / 30.0) * 100.0
+
+        # 6) 70/30 combined score
+        final_score = 0.7 * model_score + 0.3 * epds_scaled
+
+        # 7) Map final_score → final risk level (based on combined score)
+        if final_score >= 66:
+            final_risk = "High Risk"
+        elif final_score >= 33:
+            final_risk = "Moderate Risk"
+        else:
+            final_risk = "Low Risk"
+
+        print(
+            f"  EPDS total: {epds_total}, EPDS scaled: {epds_scaled:.1f}, "
+            f"final_score: {final_score:.1f}, final_risk: {final_risk}"
+        )
 
     except Exception as e:
-        # If something breaks, return a safe error
         print(f"❌ ML Model failed: {e}")
         raise HTTPException(
             status_code=500,
             detail="Model prediction failed. Please contact admin."
         )
 
-    return AssessmentResult(risk_level=risk_level, score=pred_score)
+    # response_model=AssessmentResult expects risk_level + score
+    return AssessmentResult(
+        risk_level=final_risk,
+        score=final_score,
+    )
 
 def calculate_weighted_risk_score(features) -> float:
     """
