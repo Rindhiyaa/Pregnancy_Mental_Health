@@ -14,7 +14,7 @@ export default function Navbar() {
       <div className="nav-inner">
         {/* Logo on left */}
         <Link to="/" className="nav-left" onClick={() => setIsMenuOpen(false)}>
-          <div className="logo-mark">PI</div>
+          <div className="logo-mark"></div>
           <span className="logo-text">Postpartum Risk Insight</span>
         </Link>
 

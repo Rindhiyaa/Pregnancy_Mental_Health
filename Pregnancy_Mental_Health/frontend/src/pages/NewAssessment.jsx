@@ -3,12 +3,33 @@ import "../styles/NewAssessment.css";
 import "../styles/DashboardPage.css";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import SafetyAlert from "../components/SafetyAlert";
 
 
 export default function NewAssessment() {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      type: 'alert',
+      title: 'Assessment Reminder',
+      message: 'Complete pending assessments for better patient care',
+      time: '1 hour ago',
+      priority: 'medium'
+    },
+    {
+      id: 2,
+      type: 'info',
+      title: 'System Update',
+      message: 'New features available in the assessment tool',
+      time: '2 hours ago',
+      priority: 'low'
+    }
+  ]);
 
 
   // 🔹 35-QUESTION PRENATAL ASSESSMENT (Section 5 removed - postpartum questions)
@@ -58,6 +79,7 @@ export default function NewAssessment() {
 
   // 🔹 RESULT FROM BACKEND
   const [result, setResult] = useState(null);
+  const [showSafetyAlert, setShowSafetyAlert] = useState(false);
 
   //handle logout
 
@@ -87,6 +109,16 @@ export default function NewAssessment() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  // 🔹 HANDLE STEP CHANGE - Clear result when going back from step 6
+  const handleStepChange = (newStep) => {
+    if (step === 6 && newStep < 6) {
+      // Clear result when going back from result page
+      setResult(null);
+      setShowSafetyAlert(false);
+    }
+    setStep(newStep);
   };
 
   // 🔹 FINAL SUBMIT (API READY)
@@ -129,6 +161,14 @@ export default function NewAssessment() {
   
       const data = await res.json();
       setResult({ risk: data.risk_level, score: data.score });
+      
+      // Check if safety alert should be shown
+      const epdsTotal = calculateEPDSScore();
+      const selfHarmRisk = parseInt(formData.epds_10) > 0;
+      if (selfHarmRisk || epdsTotal >= 13) {
+        setShowSafetyAlert(true);
+      }
+      
       setStep(6);  // make sure you navigate to result step
     } catch (err) {
       console.error("Backend error:", err);
@@ -158,9 +198,18 @@ export default function NewAssessment() {
 
   return (
     <>
+      {/* Safety Alert - Modal popup when critical risk detected */}
+      {showSafetyAlert && (
+        <SafetyAlert 
+          epdsData={formData}
+          patientName={formData.patient_name}
+          onAcknowledge={() => setShowSafetyAlert(false)}
+        />
+      )}
+      
       <header className="dp-navbar">
         <div className="dp-nav-left">
-          <div className="dp-logo-mark">PR</div>
+          <div className="dp-logo-mark"></div>
           <div className="dp-logo-text">
             <span>Postpartum Risk Insight</span>
             <span>Clinician dashboard</span>
@@ -194,35 +243,69 @@ export default function NewAssessment() {
           >
             History
           </NavLink>
-
-          <NavLink
-            to="/dashboard/profile"
-            className={({ isActive }) =>
-              "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
-            }
-          >
-            Profile
-          </NavLink>
         </nav>
 
         <div className="dp-nav-right">
-          <div className="dp-profile-chip">
-            <div className="dp-profile-avatar">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
+          <button 
+            className="dp-notifications-btn" 
+            onClick={() => setShowNotifications(!showNotifications)}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            {notifications.length > 0 && <span className="dp-notification-badge">{notifications.length}</span>}
+          </button>
+          
+          <div className="dp-profile-wrapper">
+            <div 
+              className="dp-profile-chip"
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+            >
+              <div className="dp-profile-avatar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </div>
+              <span className="dp-profile-name">{user?.fullName || 'Clinician'}</span>
+              <svg className="dp-profile-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9"/>
               </svg>
             </div>
-            <span className="dp-profile-name">{user?.fullName || 'Clinician'}</span>
+
+            {showProfileMenu && (
+              <div className="dp-profile-dropdown">
+                <div 
+                  className="dp-dropdown-item"
+                  onClick={() => {
+                    navigate('/dashboard/Profile');
+                    setShowProfileMenu(false);
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span>Profile</span>
+                </div>
+                <div 
+                  className="dp-dropdown-item dp-dropdown-logout"
+                  onClick={() => {
+                    handleTopLogout();
+                    setShowProfileMenu(false);
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                  <span>Logout</span>
+                </div>
+              </div>
+            )}
           </div>
-
-          <button
-            className="dp-logout-btn"
-            onClick={handleTopLogout}
-          >
-            Logout
-          </button>
-
         </div>
       </header>
       <div className="layout">
@@ -232,43 +315,43 @@ export default function NewAssessment() {
           <div className="step-nav">
             <div
               className={step === 1 ? "step active" : "step clickable"}
-              onClick={() => setStep(1)}
+              onClick={() => handleStepChange(1)}
             >
               Demographics
             </div>
             <div
               className={step === 2 ? "step active" : "step clickable"}
-              onClick={() => setStep(2)}
+              onClick={() => handleStepChange(2)}
             >
               Relationships & Support
             </div>
             <div
               className={step === 3 ? "step active" : "step clickable"}
-              onClick={() => setStep(3)}
+              onClick={() => handleStepChange(3)}
             >
               Pregnancy History
             </div>
             <div
               className={step === 4 ? "step active" : "step clickable"}
-              onClick={() => setStep(4)}
+              onClick={() => handleStepChange(4)}
             >
               Mental Health History
             </div>
             <div
               className={step === 5 ? "step active" : "step clickable"}
-              onClick={() => setStep(5)}
+              onClick={() => handleStepChange(5)}
             >
               EPDS Assessment
             </div>
             <div
               className={step === 6 ? "step active" : "step clickable"}
-              onClick={() => setStep(6)}
+              onClick={() => handleStepChange(6)}
             >
               Result
             </div>
             <div
               className={step === 7 ? "step active" : "step clickable"}
-              onClick={() => setStep(7)}
+              onClick={() => handleStepChange(7)}
             >
               Clinician Summary
             </div>
@@ -282,8 +365,8 @@ export default function NewAssessment() {
           <p className="subtitle">Postpartum depression risk screening</p>
         </div> */}
 
-          {/* Show card for steps 1-6 (before result) or step 8 */}
-          {step >= 1 && step <= 7 && (
+          {/* Show card for steps 1-5 and step 7 (not step 6) */}
+          {step >= 1 && step <= 7 && step !== 6 && (
             <section className="card">
 
               {/* STEP 1 – DEMOGRAPHICS */}
@@ -960,33 +1043,15 @@ export default function NewAssessment() {
                 </>
               )}
 
-              {step === 6 && (
-                <>
-                  {!result && (
-                    <div className="card-header">
-                      <h2>Assessment Result</h2>
-                      <p>Generate and review the risk assessment</p>
-                    </div>
-                  )}
-
-                  <button
-                    className={`submit-btn ${result ? 'faded' : ''}`}
-                    onClick={submitAssessment}
-                  >
-                    Generate AI Risk Assessment
-                  </button>
-                </>
-              )}
-
 
               {/* NAV BUTTONS - Show for steps 1-5, hide only on step 6 (result page) */}
               {step !== 6 && step < 7 && (
                 <div className="actions">
-                  <button disabled={step === 1} onClick={() => setStep(step - 1)}>
+                  <button disabled={step === 1} onClick={() => handleStepChange(step - 1)}>
                     ← Previous
                   </button>
 
-                  <button onClick={() => setStep(step + 1)}>
+                  <button onClick={() => handleStepChange(step + 1)}>
                     Next →
                   </button>
                 </div>
@@ -995,13 +1060,25 @@ export default function NewAssessment() {
               {/* NAV BUTTONS for step 7 - only show Previous */}
               {step === 7 && (
                 <div className="actions">
-                  <button onClick={() => setStep(step - 1)}>
+                  <button onClick={() => handleStepChange(step - 1)}>
                     ← Previous
                   </button>
                 </div>
               )}
 
             </section>
+          )}
+
+          {/* Step 6 - Generate button (no white box) */}
+          {step === 6 && !result && (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <button
+                className="submit-btn"
+                onClick={submitAssessment}
+              >
+                Generate AI Risk Assessment
+              </button>
+            </div>
           )}
 
           {/* Result card appears outside the main card when result is generated */}
@@ -1031,7 +1108,7 @@ export default function NewAssessment() {
               <div className="result-actions">
                 <button
                   className="save-result-btn"
-                  onClick={() => setStep(7)}
+                  onClick={() => handleStepChange(7)}
                 >
                   Continue to Clinical Summary
                 </button>
@@ -1040,6 +1117,30 @@ export default function NewAssessment() {
           )}
         </main>
       </div>
+
+      {/* Notifications Panel */}
+      {showNotifications && (
+        <div className="dp-notifications-panel">
+          <div className="dp-notifications-header">
+            <h3>Notifications</h3>
+            <button onClick={() => setShowNotifications(false)}>✕</button>
+          </div>
+          <div className="dp-notifications-content">
+            {notifications.map((notification) => (
+              <div key={notification.id} className={`dp-notification-item dp-notification-${notification.priority}`}>
+                <div className="dp-notification-icon">
+                  {notification.type === 'alert' ? '⚠️' : notification.type === 'success' ? '✅' : 'ℹ️'}
+                </div>
+                <div className="dp-notification-content">
+                  <div className="dp-notification-title">{notification.title}</div>
+                  <div className="dp-notification-message">{notification.message}</div>
+                  <div className="dp-notification-time">{notification.time}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -56,6 +56,11 @@
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
 }
 
+.logo-mark::before {
+  content: '❤';
+  font-size: 1.2rem;
+}
+
 .logo-text {
   font-weight: 700;
   font-size: 1.15rem;             /* was 1.4rem */
@@ -98,7 +103,7 @@
   transition: all 0.25s ease;
   text-decoration: none;
   position: relative;
-  padding-bottom: 0.35rem;        /* was 0.5rem */
+  padding-bottom: 0.15rem;        /* reduced from 0.35rem */
   cursor: pointer;
 }
 

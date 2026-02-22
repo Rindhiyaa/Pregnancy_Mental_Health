@@ -97,7 +97,7 @@ export default function SignUpPage() {
       <div className="auth-layout">
         <div className="auth-main">
           <div className="auth-brand">
-            <div className="logo-mark">PI</div>
+            <div className="logo-mark"></div>
             <span className="logo-text">Postpartum Risk Insight</span>
           </div>
 

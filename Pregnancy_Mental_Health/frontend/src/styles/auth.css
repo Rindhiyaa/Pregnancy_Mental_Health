@@ -81,13 +81,19 @@
   width: 36px;
   height: 36px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  background: conic-gradient(from 150deg, #ec4899, #8b5cf6, #38bdf8, #ec4899);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.2rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+}
+
+.auth-brand .logo-mark::before {
+  content: '❤';
+  font-size: 1.2rem;
 }
 
 .auth-brand .logo-text {

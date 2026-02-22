@@ -7,11 +7,10 @@
 }
 
 .history-shell {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
-  position: relative;
-  z-index: 1;
+  padding: 2rem 1.5rem;
+  width: 100%;
 }
 
 /* Search and Filter Section */
@@ -292,11 +291,12 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #8b5cf6, #2dd4bf);
+  background: #f5f3ff;
+  color: #7c3aed;
+  border: 1.5px solid #ddd6fe;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
   font-weight: 700;
   font-size: 1rem;
   flex-shrink: 0;
@@ -312,36 +312,39 @@
 .history-pill {
   display: inline-flex;
   align-items: center;
-  padding: 0.375rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  justify-content: center;
+  width: 90px;          /* fixed width — ALL same size */
+  height: 28px;         /* fixed height */
+  border-radius: 999px; /* fully rounded pill */
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  border: 1.5px solid;
+  text-align: center;
 }
 
 .history-pill-high {
-  background: linear-gradient(135deg, #fef2f2, #ffffff);
-  color: #dc2626;
-  border: 1px solid #fca5a5;
+  background: #fff1f1;
+  color: #b91c1c;
+  border-color: #fca5a5;
 }
 
 .history-pill-medium {
-  background: linear-gradient(135deg, #fffbeb, #ffffff);
-  color: #d97706;
-  border: 1px solid #fcd34d;
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fcd34d;
 }
 
 .history-pill-low {
-  background: linear-gradient(135deg, #f0fdf4, #ffffff);
-  color: #16a34a;
-  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #047857;
+  border-color: #6ee7b7;
 }
 
 .history-pill-unknown {
-  background: linear-gradient(135deg, #f8fafc, #ffffff);
+  background: #f8fafc;
   color: #6b7280;
-  border: 1px solid #d1d5db;
+  border-color: #d1d5db;
 }
 
 /* Score Display */
@@ -399,9 +402,9 @@
   align-items: center;
   justify-content: center;
   padding: 8px;
-  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
-  color: white;
-  border: none;
+  background: #f5f3ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -411,7 +414,12 @@
 
 .history-view-btn:hover {
   transform: translateY(-1px);
+  background: #ede9fe;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.history-view-btn svg {
+  stroke: #7c3aed;
 }
 
 .history-delete-btn {
@@ -419,9 +427,9 @@
   align-items: center;
   justify-content: center;
   padding: 8px;
-  background: linear-gradient(135deg, #ef4444, #f87171);
-  color: white;
-  border: none;
+  background: #fff1f1;
+  color: #dc2626;
+  border: 1px solid #fecaca;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -431,8 +439,12 @@
 
 .history-delete-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
-  background: linear-gradient(135deg, #dc2626, #ef4444);
+  background: #fee2e2;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.history-delete-btn svg {
+  stroke: #dc2626;
 }
 
 /* No Results State */
@@ -964,4 +976,53 @@
     max-height: 60px;
     padding: 0.5rem;
   }
+}
+
+
+/* Export PDF Button */
+.history-export-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: #f0f9ff;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 32px;
+  height: 32px;
+}
+
+.history-export-btn:hover {
+  transform: translateY(-1px);
+  background: #e0f2fe;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.history-export-btn svg {
+  stroke: #0284c7;
+}
+
+/* Modal Primary Button */
+.modal-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.modal-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
 }

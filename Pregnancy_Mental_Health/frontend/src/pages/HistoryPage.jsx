@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { exportAssessmentToPDF } from "../utils/pdfExport";
 import "../styles/HistoryPage.css";
 
 const HistoryPage = () => {
@@ -13,6 +14,26 @@ const HistoryPage = () => {
   const [filterRisk, setFilterRisk] = useState("all");
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      type: 'alert',
+      title: 'High Risk Cases',
+      message: 'Review recent high-risk assessments requiring attention',
+      time: '30 minutes ago',
+      priority: 'high'
+    },
+    {
+      id: 2,
+      type: 'info',
+      title: 'History Updated',
+      message: 'Assessment history has been synchronized',
+      time: '1 hour ago',
+      priority: 'low'
+    }
+  ]);
 
 
   //handle logout
@@ -230,7 +251,7 @@ const HistoryPage = () => {
       {/* same navbar */}
       <header className="dp-navbar">
         <div className="dp-nav-left">
-          <div className="dp-logo-mark">PR</div>
+          <div className="dp-logo-mark"></div>
           <div className="dp-logo-text">
             <span>Postpartum Risk Insight</span>
             <span>Clinician dashboard</span>
@@ -262,33 +283,69 @@ const HistoryPage = () => {
           >
             History
           </NavLink>
-          <NavLink
-            to="/dashboard/Profile"
-            className={({ isActive }) =>
-              "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
-            }
-          >
-            Profile
-          </NavLink>
         </nav>
 
         <div className="dp-nav-right">
-          <div className="dp-profile-chip">
-            <div className="dp-profile-avatar">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
+          <button 
+            className="dp-notifications-btn" 
+            onClick={() => setShowNotifications(!showNotifications)}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            {notifications.length > 0 && <span className="dp-notification-badge">{notifications.length}</span>}
+          </button>
+          
+          <div className="dp-profile-wrapper">
+            <div 
+              className="dp-profile-chip"
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+            >
+              <div className="dp-profile-avatar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              <span className="dp-profile-name">{user?.fullName || 'Clinician'}</span>
+              <svg className="dp-profile-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9"/>
               </svg>
             </div>
-            <span className="dp-profile-name">{user?.fullName || 'Clinician'}</span>
-          </div>
-          <button
-            className="dp-logout-btn"
-            onClick={handleTopLogout}
-          >
-            Logout
-          </button>
 
+            {showProfileMenu && (
+              <div className="dp-profile-dropdown">
+                <div 
+                  className="dp-dropdown-item"
+                  onClick={() => {
+                    navigate('/dashboard/Profile');
+                    setShowProfileMenu(false);
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span>Profile</span>
+                </div>
+                <div 
+                  className="dp-dropdown-item dp-dropdown-logout"
+                  onClick={() => {
+                    handleTopLogout();
+                    setShowProfileMenu(false);
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                  <span>Logout</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -428,6 +485,17 @@ const HistoryPage = () => {
                             </svg>
                           </button>
                           <button 
+                            className="history-export-btn"
+                            onClick={() => exportAssessmentToPDF(row)}
+                            title="Export PDF"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                              <polyline points="7 10 12 15 17 10"/>
+                              <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                          </button>
+                          <button 
                             className="history-delete-btn"
                             onClick={() => deleteAssessment(row.id)}
                             title="Delete Assessment"
@@ -556,6 +624,17 @@ const HistoryPage = () => {
               </div>
 
               <div className="modal-footer">
+                <button 
+                  className="modal-btn-primary" 
+                  onClick={() => exportAssessmentToPDF(selectedAssessment)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: '6px'}}>
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Export PDF
+                </button>
                 <button className="modal-btn-secondary" onClick={closeModal}>
                   Close
                 </button>
@@ -564,6 +643,30 @@ const HistoryPage = () => {
           </div>
         )}
       </main>
+
+      {/* Notifications Panel */}
+      {showNotifications && (
+        <div className="dp-notifications-panel">
+          <div className="dp-notifications-header">
+            <h3>Notifications</h3>
+            <button onClick={() => setShowNotifications(false)}>✕</button>
+          </div>
+          <div className="dp-notifications-content">
+            {notifications.map((notification) => (
+              <div key={notification.id} className={`dp-notification-item dp-notification-${notification.priority}`}>
+                <div className="dp-notification-icon">
+                  {notification.type === 'alert' ? '⚠️' : notification.type === 'success' ? '✅' : 'ℹ️'}
+                </div>
+                <div className="dp-notification-content">
+                  <div className="dp-notification-title">{notification.title}</div>
+                  <div className="dp-notification-message">{notification.message}</div>
+                  <div className="dp-notification-time">{notification.time}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

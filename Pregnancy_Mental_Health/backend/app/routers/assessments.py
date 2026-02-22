@@ -147,6 +147,22 @@ def save_assessment(
     timestamp = created_at.isoformat() if created_at else None
     date_str = created_at.date().isoformat() if created_at else None
 
+    # Print assessment details to terminal
+    print("\n" + "="*80)
+    print("✅ ASSESSMENT SAVED TO HISTORY")
+    print("="*80)
+    print(f" Patient Name: {assessment.patient_name}")
+    print(f" Assessment ID: {assessment.id}")
+    print(f" Date: {date_str}")
+    print(f" Timestamp: {timestamp}")
+    print(f" Risk Level: {assessment.risk_level}")
+    print(f" Risk Score: {assessment.risk_score:.2f}")
+    print(f" Clinician Risk Assessment: {assessment.clinician_risk or 'Not provided'}")
+    print(f" Plan: {assessment.plan or 'Not provided'}")
+    print(f" Notes: {assessment.notes or 'Not provided'}")
+    print(f" Clinician Email: {assessment.clinician_email}")
+    print("="*80 + "\n")
+
     return {
         "id": assessment.id,
         "patient_name": assessment.patient_name,
