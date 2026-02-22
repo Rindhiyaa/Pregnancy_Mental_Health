@@ -1,0 +1,173 @@
+/* Compact Safety Alert - Modal Notification Popup */
+
+/* Modal container */
+.safety-alert-compact {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 2px solid #dc2626;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(220, 38, 38, 0.25);
+  z-index: 10000;
+  animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.alert-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #fee2e2;
+}
+
+.alert-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alert-icon-small {
+  font-size: 24px;
+}
+
+.alert-title h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #fee2e2;
+}
+
+.alert-content-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alert-message {
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.alert-message.critical {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 2px solid #fca5a5;
+}
+
+.alert-message.high {
+  background: #fffbeb;
+  color: #92400e;
+  border: 2px solid #fcd34d;
+}
+
+.crisis-compact {
+  background: #f0fdf4;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 2px solid #86efac;
+}
+
+.crisis-compact strong {
+  display: block;
+  color: #166534;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.crisis-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.crisis-numbers a {
+  display: inline-block;
+  padding: 8px 14px;
+  background: white;
+  color: #10b981;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 2px solid #86efac;
+  transition: all 0.2s ease;
+}
+
+.crisis-numbers a:hover {
+  background: #10b981;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.crisis-numbers a.emergency-link {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+}
+
+.crisis-numbers a.emergency-link:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .safety-alert-compact {
+    width: 95%;
+    padding: 16px;
+  }
+
+  .alert-title h3 {
+    font-size: 16px;
+  }
+
+  .crisis-numbers {
+    flex-direction: column;
+  }
+
+  .crisis-numbers a {
+    text-align: center;
+  }
+}
