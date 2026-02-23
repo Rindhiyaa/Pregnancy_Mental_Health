@@ -597,7 +597,7 @@ export default function NewAssessment() {
 
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>How many total children now?</label>
+                      <label>How many total children till now?</label>
                       <select
                         name="total_children_now"
                         value={formData.total_children_now}
@@ -621,7 +621,6 @@ export default function NewAssessment() {
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
-                        <option value="4">4</option>
                       </select>
                     </div>
 
