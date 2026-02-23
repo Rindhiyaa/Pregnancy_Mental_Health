@@ -47,7 +47,7 @@ export default function NewAssessment() {
     relationship_husband: "",
     support_during_pregnancy: "",
     need_more_support: "",
-    major_changes_losses: "",                 // rename key
+    major_changes_losses: "",                 // rename keyy
     trust_share_feelings: "",
   
     total_children_now: "",

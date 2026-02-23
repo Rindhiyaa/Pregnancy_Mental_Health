@@ -36,7 +36,7 @@ const HistoryPage = () => {
   ]);
 
 
-  //handle logout
+  //handle top logout
   const handleTopLogout = async () => {
     try {
       if (user?.email) {

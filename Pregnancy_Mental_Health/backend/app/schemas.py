@@ -96,7 +96,7 @@ class AssessmentCreate(BaseModel):
     epds_9: int | None = None
     epds_10: int | None = None
 
-    # Clinician summary (used only when saving)
+    # Clinician summary 
     clinician_risk: Optional[str] = None
     plan: Optional[str] = None
     notes: Optional[str] = None

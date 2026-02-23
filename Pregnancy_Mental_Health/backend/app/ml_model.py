@@ -142,7 +142,7 @@ def build_model_input_from_form(data) -> pd.DataFrame:
             }
         )
 
-    # One-hot encode + align to training columns, if you use that pattern [file:14]
+    # One-hot encode + align to training columns, if you use that pattern
     X_encoded = pd.get_dummies(df, drop_first=False)
     for col in feature_columns:
         if col not in X_encoded.columns:
