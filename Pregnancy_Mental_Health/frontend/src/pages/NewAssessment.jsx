@@ -162,10 +162,8 @@ export default function NewAssessment() {
       const data = await res.json();
       setResult({ risk: data.risk_level, score: data.score });
       
-      // Check if safety alert should be shown
-      const epdsTotal = calculateEPDSScore();
-      const selfHarmRisk = parseInt(formData.epds_10) > 0;
-      if (selfHarmRisk || epdsTotal >= 13) {
+      // Check if safety alert should be shown - only for High Risk
+      if (data.risk_level === "High Risk") {
         setShowSafetyAlert(true);
       }
       
@@ -624,7 +622,7 @@ export default function NewAssessment() {
                       </select>
                     </div>
 
-                    <div className="form-group">
+                    {/* <div className="form-group">
                       <label>Pregnancy length?</label>
                       <select
                         name="pregnancy_length"
@@ -639,7 +637,7 @@ export default function NewAssessment() {
                         <option value="9m">9m</option>
                         <option value="10m">10m</option>
                       </select>
-                    </div>
+                    </div> */}
 
                     <div className="form-group">
                       <label>Was pregnancy planned?</label>
