@@ -256,17 +256,27 @@
   color: #374151;
   font-weight: 600;
   padding: 1rem;
-  text-align: left;
+  text-align: center;
   border-bottom: 2px solid #e5e7eb;
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  vertical-align: middle;
+}
+
+.history-table th:first-child {
+  text-align: left;
 }
 
 .history-table td {
   padding: 1rem;
   border-bottom: 1px solid #f3f4f6;
   vertical-align: middle;
+  text-align: center;
+}
+
+.history-table td:first-child {
+  text-align: left;
 }
 
 .history-row {
