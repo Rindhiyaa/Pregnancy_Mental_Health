@@ -87,17 +87,6 @@ def build_model_input_from_form(data) -> pd.DataFrame:
         "Number of the latest pregnancy": int(
             _require(data.pregnancy_number, "pregnancy_number")
         ),
-        "Pregnancy length": {
-            "Less than 5m": "Less than 5 months",
-            "6m": "6 months",
-            "7m": "7 months",
-            "8m": "8 months",
-            "9m": "9 months",
-            "10m": "10 months",
-        }.get(
-            _require(data.pregnancy_length, "pregnancy_length"),
-            "9 months",  # mapping fallback only
-        ),
         "Pregnancy plan": _require(
             data.pregnancy_planned, "pregnancy_planned"
         ),
