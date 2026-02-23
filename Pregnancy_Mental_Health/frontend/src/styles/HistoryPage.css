@@ -249,6 +249,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
+  table-layout: fixed;
 }
 
 .history-table th {
@@ -290,11 +291,17 @@
 
 /* Patient Name Cell */
 .patient-name {
-  display: flex;
+  /* display: flex; */
   align-items: center;
   gap: 0.75rem;
   font-weight: 600;
   color: #1f2937;
+}
+
+.patient-name-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .patient-avatar {

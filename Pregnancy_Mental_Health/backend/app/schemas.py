@@ -72,7 +72,6 @@ class AssessmentCreate(BaseModel):
     # Section 3 – Pregnancy History
     total_children_now: str | None = None
     pregnancy_number: str | None = None
-    pregnancy_length: str | None = None
     pregnancy_planned: str | None = None
     regular_checkups: str | None = None
     medical_conditions_pregnancy: str | None = None

@@ -447,10 +447,12 @@ const HistoryPage = () => {
                   {filteredRows.map((row) => (
                     <tr key={row.id} className="history-row">
                       <td className="patient-name">
+                      <div className="patient-name-content">
                         <div className="patient-avatar">
                           {row.patient_name?.charAt(0)?.toUpperCase() || 'P'}
                         </div>
                         <span>{row.patient_name || 'Unknown Patient'}</span>
+                      </div>
                       </td>
                       <td className="assessment-date">{row.date}</td>
                       <td>

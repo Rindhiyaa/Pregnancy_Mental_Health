@@ -52,7 +52,6 @@ export default function NewAssessment() {
   
     total_children_now: "",
     pregnancy_number: "",
-    pregnancy_length: "",
     pregnancy_planned: "",
     regular_checkups: "",
     medical_conditions_pregnancy: "",
@@ -127,7 +126,7 @@ export default function NewAssessment() {
     "partner_education","partner_income","household_members",
     "relationship_inlaws","relationship_husband","support_during_pregnancy",
     "need_more_support","major_changes_losses","trust_share_feelings",
-    "total_children_now","pregnancy_number","pregnancy_length",
+    "total_children_now","pregnancy_number",
     "pregnancy_planned","regular_checkups","medical_conditions_pregnancy",
     "depression_before_pregnancy","depression_during_pregnancy",
     "fear_pregnancy_childbirth","major_life_changes_pregnancy",
@@ -590,7 +589,7 @@ export default function NewAssessment() {
                 <>
                   <div className="card-header">
                     <h2>Pregnancy History</h2>
-                    <p>Information about your pregnancy history (6 questions)</p>
+                    <p>Information about your pregnancy history (5 questions)</p>
                   </div>
 
                   <div className="form-grid">
@@ -602,6 +601,7 @@ export default function NewAssessment() {
                         onChange={handleChange}
                       >
                         <option value="">Select</option>
+                        <option value="Zero">Zero</option>
                         <option value="One">One</option>
                         <option value="Two">Two</option>
                         <option value="More than two">More than two</option>

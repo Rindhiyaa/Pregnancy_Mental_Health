@@ -142,17 +142,6 @@ def build_model_input_from_form(data) -> pd.DataFrame:
             }
         )
 
-    # Pregnancy length mapping (string → numeric) [file:14]
-    length_map = {
-        "Less than 5 months": 1,
-        "6 months": 2,
-        "7 months": 3,
-        "8 months": 4,
-        "9 months": 5,
-        "10 months": 6,
-    }
-    df["Pregnancy length"] = df["Pregnancy length"].map(length_map)
-
     # One-hot encode + align to training columns, if you use that pattern [file:14]
     X_encoded = pd.get_dummies(df, drop_first=False)
     for col in feature_columns:
