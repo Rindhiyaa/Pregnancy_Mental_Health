@@ -202,7 +202,8 @@ const DashboardPage = () => {
         const sortedData = historyData.sort(
           (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
         );
-        const recentAssessments = sortedData.slice(0, 10);
+        // Show all assessments, not just 10
+        const recentAssessments = sortedData;
     
         const transformedRows = recentAssessments.map((assessment) => {
           const aiLevel = assessment.risk_level?.toLowerCase();
