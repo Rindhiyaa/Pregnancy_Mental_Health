@@ -39,14 +39,16 @@ const HistoryPage = () => {
   //handle top logout
   const handleTopLogout = async () => {
     try {
-      if (user?.email) {
+      const token = localStorage.getItem('ppd_access_token');
+      if (user?.email && token) {
         await fetch(
-          `http://127.0.0.1:8000/api/logout-status?email=${encodeURIComponent(
-            user.email
-          )}`,
+          `http://127.0.0.1:8000/api/logout-status`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
           }
         );
       }

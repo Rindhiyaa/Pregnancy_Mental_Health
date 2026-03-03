@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import heroImg from "../assets/image-1.png";  // ← Changed this
+import heroImg from "../assets/image-1.png";
 
 
 export default function HomePage() {
@@ -13,23 +13,27 @@ export default function HomePage() {
         <div>
           <div className="badge">
             <span className="badge-dot" />
-            <span>Support for pregnancy and after birth</span>
+            <span>Early PPD Risk Detection for Pregnant Mothers</span>
           </div>
 
 
           <h1 className="hero-title">
-            Care For Mothers During <span className="highlight">Pregnancy</span> And After Delivery.
+          
+            During Pregnancy Detect<br/>
+            <span className="highlight">Postpartum</span> Depression <br/>
+             Risk Early
           </h1>
 
 
-          <p className="hero-sub-small">
-            A simple clinical decision support tool for pregnancy and postpartum depression risk.
+          <p className="hero-sub">
+            Help Clinicians Identify <b>PPD</b> during pregnancy,not after delivery.
           </p>
 
 
           <p className="hero-sub">
-            Screen mood, sleep, support at home, and history in minutes, then get an explainable risk
-            score to guide follow‑up and referrals.
+            Answer clinical questions + AI analysis = instant risk score
+            to guide early intervention and specialist referrals  — enabling early support 
+that protects both mother and baby.
           </p>
            
 
@@ -44,9 +48,9 @@ export default function HomePage() {
 
 
           <div className="hero-tags">
-            <span className="tag-pill">For clinicians</span>
-            <span className="tag-pill">Evidence‑informed</span>
-            <span className="tag-pill">Explainable AI</span>
+            <span className="tag-pill">For Doctors & Clinicians</span>
+            <span className="tag-pill">During Pregnancy</span>
+            <span className="tag-pill">AI-Powered Screening</span>
           </div>
         </div>
 

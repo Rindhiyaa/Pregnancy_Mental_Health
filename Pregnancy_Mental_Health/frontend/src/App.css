@@ -35,17 +35,17 @@ body {
 
 /* Hero section */
 .hero {
-  max-width: 1200px;            /* was 1100px */
+  max-width: 1200px;
   margin: 4.5rem auto 4rem auto;
   padding: 0 2.5rem;
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: 3.5rem;                  /* more gap between text and image */
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 6rem;
   align-items: center;
 }
 
 .hero-title {
-  font-size: 3.3rem;            /* was 3rem */
+  font-size: 2.2rem;            /* reduced size */
   line-height: 1.3;
   letter-spacing: -0.03em;
   margin-bottom: 1.4rem;
