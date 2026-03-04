@@ -55,6 +55,7 @@ export default function NewAssessment() {
     pregnancy_planned: "",
     regular_checkups: "",
     medical_conditions_pregnancy: "",
+    occupation_before_surgery: "",
   
     depression_before_pregnancy: "",
     depression_during_pregnancy: "",
@@ -327,7 +328,7 @@ export default function NewAssessment() {
               className={step === 3 ? "step active" : "step clickable"}
               onClick={() => handleStepChange(3)}
             >
-              Pregnancy History
+              Obstetric & Pregnancy Related Factors
             </div>
             <div
               className={step === 4 ? "step active" : "step clickable"}
@@ -585,12 +586,12 @@ export default function NewAssessment() {
                 </>
               )}
 
-              {/* STEP 3 – PREGNANCY HISTORY */}
+              {/* STEP 3 – PREGNANCY HISTORY OBSTETRIC & PREGNANCY-RELATED FACTORS */}
               {step === 3 && (
                 <>
                   <div className="card-header">
-                    <h2>Pregnancy History</h2>
-                    <p>Information about your pregnancy history (5 questions)</p>
+                    <h2>Obstetric & Pregnancy Related Factors</h2>
+                    <p>Information about your pregnancy history (6 questions)</p>
                   </div>
 
                   <div className="form-grid">
@@ -677,6 +678,22 @@ export default function NewAssessment() {
                         <option value="None">None</option>
                         <option value="Non-Chronic">Non-Chronic conditions</option>
                         <option value="Chronic">Chronic conditions</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>What is your occupation during pregnancy?</label>
+                      <select
+                        name="occupation_before_surgery"
+                        value={formData.occupation_before_surgery}
+                        onChange={handleChange}
+                      >
+                        <option value="">Select</option>
+                        <option value="Doctor">Doctor</option>
+                        <option value="Teacher">Teacher</option>
+                        <option value="HouseWife">HouseWife</option>
+                        <option value="Student">Student</option>
+                        <option value="Others">Others</option>
                       </select>
                     </div>
                   </div>
