@@ -457,7 +457,7 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>Husband's/Partner's monthly income?</label>
+                      <label>Family's monthly income?</label>
                       <select
                         name="partner_income"
                         value={formData.partner_income}
@@ -761,16 +761,18 @@ export default function NewAssessment() {
                   </div>
                 </>
               )}
+
+              {/* STEP 5 – EPDS ASSESSMENT */}
               {step === 5 && (
                 <>
                   <div className="card-header">
                     <h2>EPDS Assessment</h2>
-                    <p>Please answer based on how you felt during the past 7 days</p>
+                    <p>Edinburgh Postnatal Depression Scale - Answer based on how you felt during the past 7 days (10 questions)</p>
                   </div>
 
-                  <div className="epds-list">
+                  <div className="form-grid">
 
-                    <div className="epds-item">
+                    <div className="form-group">
                       <label>1. I have been able to laugh and see the funny side of things</label>
                       <select name="epds_1" value={formData.epds_1} onChange={handleChange}>
                         <option value="">Select</option>
@@ -781,7 +783,7 @@ export default function NewAssessment() {
                       </select>
                     </div>
 
-                    <div className="epds-item">
+                    <div className="form-group">
                       <label>2. I have looked forward with enjoyment to things</label>
                       <select name="epds_2" value={formData.epds_2} onChange={handleChange}>
                         <option value="">Select</option>
@@ -792,7 +794,7 @@ export default function NewAssessment() {
                       </select>
                     </div>
 
-                    <div className="epds-item">
+                    <div className="form-group">
                       <label>3. I have blamed myself unnecessarily when things went wrong</label>
                       <select name="epds_3" value={formData.epds_3} onChange={handleChange}>
                         <option value="">Select</option>
@@ -803,7 +805,7 @@ export default function NewAssessment() {
                       </select>
                     </div>
 
-                    <div className="epds-item">
+                    <div className="form-group">
                       <label>4. I have been anxious or worried for no good reason</label>
                       <select name="epds_4" value={formData.epds_4} onChange={handleChange}>
                         <option value="">Select</option>
@@ -814,7 +816,7 @@ export default function NewAssessment() {
                       </select>
                     </div>
 
-                    <div className="epds-item">
+                    <div className="form-group">
                       <label>5. I have felt scared or panicky for no very good reason</label>
                       <select name="epds_5" value={formData.epds_5} onChange={handleChange}>
                         <option value="">Select</option>
@@ -825,7 +827,7 @@ export default function NewAssessment() {
                       </select>
                     </div>
 
-                    <div className="epds-item">
+                    <div className="form-group">
                       <label>6. Things have been getting on top of me</label>
                       <select name="epds_6" value={formData.epds_6} onChange={handleChange}>
                         <option value="">Select</option>
@@ -836,7 +838,7 @@ export default function NewAssessment() {
                       </select>
                     </div>
 
-                    <div className="epds-item">
+                    <div className="form-group">
                       <label>7. I have been so unhappy that I have had difficulty sleeping</label>
                       <select name="epds_7" value={formData.epds_7} onChange={handleChange}>
                         <option value="">Select</option>
@@ -847,7 +849,7 @@ export default function NewAssessment() {
                       </select>
                     </div>
 
-                    <div className="epds-item">
+                    <div className="form-group">
                       <label>8. I have felt sad or miserable</label>
                       <select name="epds_8" value={formData.epds_8} onChange={handleChange}>
                         <option value="">Select</option>
@@ -858,7 +860,7 @@ export default function NewAssessment() {
                       </select>
                     </div>
 
-                    <div className="epds-item">
+                    <div className="form-group">
                       <label>9. I have been so unhappy that I have been crying</label>
                       <select name="epds_9" value={formData.epds_9} onChange={handleChange}>
                         <option value="">Select</option>
@@ -869,7 +871,7 @@ export default function NewAssessment() {
                       </select>
                     </div>
 
-                    <div className="epds-item">
+                    <div className="form-group">
                       <label>10. The thought of harming myself has occurred to me</label>
                       <select name="epds_10" value={formData.epds_10} onChange={handleChange}>
                         <option value="">Select</option>
