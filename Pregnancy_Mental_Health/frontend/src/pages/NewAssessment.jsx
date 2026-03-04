@@ -388,7 +388,7 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>Age (18-50)</label>
+                      <label>What is your Age? (18-50)</label>
                       <input
                         type="number"
                         name="age"
@@ -437,12 +437,12 @@ export default function NewAssessment() {
                       >
                         <option value="">Select</option>
                         <option value="Married">Married</option>
-                        <option value="Divorced">Divorced</option>
+                        <option value="Divorced">Divorced/Unmarried</option>
                       </select>
                     </div>
 
                     <div className="form-group">
-                      <label>Husband's education level?</label>
+                      <label>Husband's/Partner's education level?</label>
                       <select
                         name="partner_education"
                         value={formData.partner_education}
@@ -457,7 +457,7 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>Husband's monthly income?</label>
+                      <label>Husband's/Partner's monthly income?</label>
                       <select
                         name="partner_income"
                         value={formData.partner_income}
@@ -472,7 +472,7 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>How many people live in household?</label>
+                      <label>How many people live in your household?</label>
                       <select
                         name="household_members"
                         value={formData.household_members}
@@ -514,7 +514,7 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>Relationship with husband?</label>
+                      <label>Relationship with husband/Partner?</label>
                       <select
                         name="relationship_husband"
                         value={formData.relationship_husband}
@@ -544,7 +544,7 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>Do you need more support?</label>
+                      <label>Do you feel you need more support?</label>
                       <select
                         name="need_more_support"
                         value={formData.need_more_support}
@@ -558,7 +558,7 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>Major changes/losses during pregnancy?</label>
+                      <label> Major changes or losses during pregnancy?</label>
                       <select
                         name="major_changes_losses"
                         value={formData.major_changes_losses}
@@ -571,7 +571,7 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>Someone you can trust and share feelings with?</label>
+                      <label>Is there Someone you can trust and share your feelings with?</label>
                       <select
                         name="trust_share_feelings"
                         value={formData.trust_share_feelings}
@@ -596,7 +596,7 @@ export default function NewAssessment() {
 
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>How many total children till now?</label>
+                      <label>How many total children do you have until now?</label>
                       <select
                         name="total_children_now"
                         value={formData.total_children_now}
@@ -606,7 +606,7 @@ export default function NewAssessment() {
                         <option value="Zero">Zero</option>
                         <option value="One">One</option>
                         <option value="Two">Two</option>
-                        <option value="More than two">More than two</option>
+                       
                       </select>
                     </div>
 
@@ -642,7 +642,7 @@ export default function NewAssessment() {
                     </div> */}
 
                     <div className="form-group">
-                      <label>Was pregnancy planned?</label>
+                      <label>Was this pregnancy planned?</label>
                       <select
                         name="pregnancy_planned"
                         value={formData.pregnancy_planned}
@@ -655,7 +655,7 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>Regular antenatal checkups?</label>
+                      <label>Have you attended Regular antenatal checkups?</label>
                       <select
                         name="regular_checkups"
                         value={formData.regular_checkups}
@@ -668,16 +668,16 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>Medical conditions during pregnancy?</label>
+                      <label>Did you have Medical conditions during pregnancy?</label>
                       <select
                         name="medical_conditions_pregnancy"
                         value={formData.medical_conditions_pregnancy}
                         onChange={handleChange}
                       >
                         <option value="">Select</option>
-                        <option value="Chronic">Chronic</option>
-                        <option value="Non-Chronic">Non-Chronic</option>
                         <option value="None">None</option>
+                        <option value="Non-Chronic">Non-Chronic conditions</option>
+                        <option value="Chronic">Chronic conditions</option>
                       </select>
                     </div>
                   </div>
@@ -693,7 +693,7 @@ export default function NewAssessment() {
 
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>Depression BEFORE pregnancy?</label>
+                      <label>Did you experience depression BEFORE this pregnancy?</label>
                       <select
                         name="depression_before_pregnancy"
                         value={formData.depression_before_pregnancy}
@@ -706,7 +706,7 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>Depression DURING pregnancy?</label>
+                      <label>Did you experience depression DURING this pregnancy?</label>
                       <select
                         name="depression_during_pregnancy"
                         value={formData.depression_during_pregnancy}
@@ -719,7 +719,7 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>Fear about pregnancy/childbirth?</label>
+                      <label>Do you have FEAR about pregnancy or childbirth?</label>
                       <select
                         name="fear_pregnancy_childbirth"
                         value={formData.fear_pregnancy_childbirth}
@@ -731,21 +731,10 @@ export default function NewAssessment() {
                       </select>
                     </div>
 
-                    <div className="form-group">
-                      <label>Major life changes during pregnancy?</label>
-                      <select
-                        name="major_life_changes_pregnancy"
-                        value={formData.major_life_changes_pregnancy}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                      </select>
-                    </div>
+                    
 
                     <div className="form-group">
-                      <label>Any abuse during pregnancy?</label>
+                      <label>Have you experienced any ABUSE during pregnancy?</label>
                       <select
                         name="abuse_during_pregnancy"
                         value={formData.abuse_during_pregnancy}
@@ -758,7 +747,7 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label>Family type?</label>
+                      <label>What is your Family type?</label>
                       <select
                         name="family_type"
                         value={formData.family_type}
