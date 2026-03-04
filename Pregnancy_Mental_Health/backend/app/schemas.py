@@ -80,7 +80,6 @@ class AssessmentCreate(BaseModel):
     depression_before_pregnancy: str | None = None
     depression_during_pregnancy: str | None = None
     fear_pregnancy_childbirth: str | None = None
-    major_life_changes_pregnancy: str | None = None
     abuse_during_pregnancy: str | None = None
     family_type: str | None = None
 

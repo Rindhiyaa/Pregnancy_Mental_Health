@@ -131,8 +131,7 @@ export default function NewAssessment() {
     "total_children_now","pregnancy_number",
     "pregnancy_planned","regular_checkups","medical_conditions_pregnancy",
     "depression_before_pregnancy","depression_during_pregnancy",
-    "fear_pregnancy_childbirth","major_life_changes_pregnancy",
-    "abuse_during_pregnancy","family_type",
+    "fear_pregnancy_childbirth","abuse_during_pregnancy","family_type",
     "epds_1","epds_2","epds_3","epds_4","epds_5",
     "epds_6","epds_7","epds_8","epds_9","epds_10",
   ];  
