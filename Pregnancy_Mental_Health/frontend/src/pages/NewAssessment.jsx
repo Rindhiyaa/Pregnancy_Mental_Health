@@ -558,19 +558,6 @@ export default function NewAssessment() {
                     </div>
 
                     <div className="form-group">
-                      <label> Major changes or losses during pregnancy?</label>
-                      <select
-                        name="major_changes_losses"
-                        value={formData.major_changes_losses}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
                       <label>Is there Someone you can trust and share your feelings with?</label>
                       <select
                         name="trust_share_feelings"
@@ -580,6 +567,19 @@ export default function NewAssessment() {
                         <option value="">Select</option>
                         <option value="Yes">Yes</option>
                         <option value="No">No</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>What is your Family type?</label>
+                      <select
+                        name="family_type"
+                        value={formData.family_type}
+                        onChange={handleChange}
+                      >
+                        <option value="">Select</option>
+                        <option value="Nuclear">Nuclear</option>
+                        <option value="Joint">Joint</option>
                       </select>
                     </div>
                   </div>
@@ -704,7 +704,7 @@ export default function NewAssessment() {
                 <>
                   <div className="card-header">
                     <h2>Mental Health History</h2>
-                    <p>Information about your mental health history (6 questions)</p>
+                    <p>Information about your mental health history (5 questions)</p>
                   </div>
 
                   <div className="form-grid">
@@ -747,7 +747,18 @@ export default function NewAssessment() {
                       </select>
                     </div>
 
-                    
+                    <div className="form-group">
+                      <label>Have you experienced Major life changes during pregnancy?</label>
+                      <select
+                        name="major_life_changes_pregnancy"
+                        value={formData.major_life_changes_pregnancy}
+                        onChange={handleChange}
+                      >
+                        <option value="">Select</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                      </select>
+                    </div>
 
                     <div className="form-group">
                       <label>Have you experienced any ABUSE during pregnancy?</label>
@@ -759,19 +770,6 @@ export default function NewAssessment() {
                         <option value="">Select</option>
                         <option value="Yes">Yes</option>
                         <option value="No">No</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label>What is your Family type?</label>
-                      <select
-                        name="family_type"
-                        value={formData.family_type}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select</option>
-                        <option value="Nuclear">Nuclear</option>
-                        <option value="Joint">Joint</option>
                       </select>
                     </div>
                   </div>
