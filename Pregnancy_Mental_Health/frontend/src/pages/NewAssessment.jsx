@@ -128,7 +128,7 @@ export default function NewAssessment() {
     "age","residence","education_level","marital_status",
     "partner_education","partner_income","household_members",
     "relationship_inlaws","relationship_husband","support_during_pregnancy",
-    "need_more_support","major_changes_losses","trust_share_feelings",
+    "need_more_support","major_life_changes_pregnancy", "occupation_before_surgery","trust_share_feelings",
     "total_children_now","pregnancy_number",
     "pregnancy_planned","regular_checkups","medical_conditions_pregnancy",
     "depression_before_pregnancy","depression_during_pregnancy",
@@ -691,7 +691,7 @@ export default function NewAssessment() {
                         <option value="">Select</option>
                         <option value="Doctor">Doctor</option>
                         <option value="Teacher">Teacher</option>
-                        <option value="HouseWife">HouseWife</option>
+                        <option value="Housewife">HouseWife</option>
                         <option value="Student">Student</option>
                         <option value="Others">Others</option>
                       </select>

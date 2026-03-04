@@ -66,8 +66,8 @@ class AssessmentCreate(BaseModel):
     relationship_husband: str | None = None
     support_during_pregnancy: str | None = None
     need_more_support: str | None = None
-    major_changes_losses: str | None = None   # maps from majorlifechangespregnancy
     trust_share_feelings: str | None = None
+    family_type: str | None = None
 
     # Section 3 – Pregnancy History
     total_children_now: str | None = None
@@ -75,13 +75,15 @@ class AssessmentCreate(BaseModel):
     pregnancy_planned: str | None = None
     regular_checkups: str | None = None
     medical_conditions_pregnancy: str | None = None
+    occupation_before_surgery: str | None = None
 
     # Section 4 – Mental Health History
     depression_before_pregnancy: str | None = None
     depression_during_pregnancy: str | None = None
     fear_pregnancy_childbirth: str | None = None
+    major_life_changes_pregnancy: str | None = None   # maps from majorlifechangespregnancy
     abuse_during_pregnancy: str | None = None
-    family_type: str | None = None
+   
 
     # Section 6 – EPDS Assessment (kept for frontend, not used by model yet)
     epds_1: int | None = None

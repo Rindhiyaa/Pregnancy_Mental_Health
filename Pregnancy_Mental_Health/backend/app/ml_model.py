@@ -78,7 +78,7 @@ def build_model_input_from_form(data) -> pd.DataFrame:
             data.need_more_support, "need_more_support"
         ),
         "Major changes or losses during pregnancy": _require(
-            data.major_changes_losses, "major_changes_losses"
+            data.major_life_changes_pregnancy, "major_life_changes_pregnancy"
         ),
         "Abuse": _require(data.abuse_during_pregnancy, "abuse_during_pregnancy"),
         "Trust and share feelings": _require(
@@ -112,6 +112,9 @@ def build_model_input_from_form(data) -> pd.DataFrame:
         ),
         "Depression during pregnancy (PHQ2)": _require(
             data.depression_during_pregnancy, "depression_during_pregnancy"
+        ),
+        "Occupation before latest pregnancy": _require(
+            data.occupation_before_surgery, "occupation_before_surgery"
         ),
     }
 
