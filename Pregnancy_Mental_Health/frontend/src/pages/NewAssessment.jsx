@@ -689,8 +689,7 @@ export default function NewAssessment() {
                         onChange={handleChange}
                       >
                         <option value="">Select</option>
-                        <option value="Doctor">Doctor</option>
-                        <option value="Teacher">Teacher</option>
+                        
                         <option value="Housewife">HouseWife</option>
                         <option value="Student">Student</option>
                         <option value="Others">Others</option>
