@@ -113,8 +113,13 @@ def build_model_input_from_form(data) -> pd.DataFrame:
         "Depression during pregnancy (PHQ2)": _require(
             data.depression_during_pregnancy, "depression_during_pregnancy"
         ),
-        "Occupation before latest pregnancy": _require(
-            data.occupation_before_surgery, "occupation_before_surgery"
+        "Occupation before latest pregnancy": {
+            "Doctor": "Others",
+            "Teacher": "Others",
+            "HouseWife": "Housewife",  # only if your training used "Housewife"
+        }.get(
+            _require(data.occupation_before_surgery, "occupation_before_surgery"),
+            _require(data.occupation_before_surgery, "occupation_before_surgery"),
         ),
     }
 
