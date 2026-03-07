@@ -482,30 +482,30 @@ body.dashboard-page {
   transition: all 0.2s ease;
 }
 
-/* Light background colors for each card */
+/* Clean white cards with subtle borders */
 .dp-stat-card:nth-child(1) {
-  background: linear-gradient(135deg, #eff6ff, #dbeafe);
-  border-color: #bfdbfe;
+  background: #ffffff;
+  border-color: #e5e7eb;
 }
 
 .dp-stat-card:nth-child(2) {
-  background: linear-gradient(135deg, #fef2f2, #fee2e2);
-  border-color: #fecaca;
+  background: #ffffff;
+  border-color: #e5e7eb;
 }
 
 .dp-stat-card:nth-child(3) {
-  background: linear-gradient(135deg, #fffbeb, #fef3c7);
-  border-color: #fde68a;
+  background: #ffffff;
+  border-color: #e5e7eb;
 }
 
 .dp-stat-card:nth-child(4) {
-  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-  border-color: #bbf7d0;
+  background: #ffffff;
+  border-color: #e5e7eb;
 }
 
 .dp-stat-card:nth-child(5) {
-  background: linear-gradient(135deg, #faf5ff, #f3e8ff);
-  border-color: #e9d5ff;
+  background: #ffffff;
+  border-color: #e5e7eb;
 }
 
 .dp-stat-card:hover {
