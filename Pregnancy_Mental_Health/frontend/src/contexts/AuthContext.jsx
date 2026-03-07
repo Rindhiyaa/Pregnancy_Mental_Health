@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
   
 
   const login = (userData) => {
-    // Store JWT token if provided
+    // Store JWT access token only (refresh token in httpOnly cookie)
     if (userData.access_token) {
       localStorage.setItem('ppd_access_token', userData.access_token);
     }
@@ -156,7 +156,7 @@ export const AuthProvider = ({ children }) => {
       }
     }
     
-    // Clear JWT token
+    // Clear JWT access token (refresh token in httpOnly cookie cleared by backend)
     localStorage.removeItem('ppd_access_token');
     
     // Clear user profile data

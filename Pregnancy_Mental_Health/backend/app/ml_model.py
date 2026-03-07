@@ -35,11 +35,7 @@ def _require(value: Any, field_name: str) -> Any:
 
 
 def build_model_input_from_form(data) -> pd.DataFrame:
-    """
-    Build a 1-row DataFrame from the FastAPI schema instance `data`,
-    performing only the same cleaning/mapping as in training.
-    No automatic defaults are applied.
-    """
+    
 
     # Map raw Pydantic fields → training column names, but without defaults
     row: Dict[str, Any] = {
@@ -116,7 +112,8 @@ def build_model_input_from_form(data) -> pd.DataFrame:
         "Occupation before latest pregnancy": {
             "Doctor": "Others",
             "Teacher": "Others",
-            "HouseWife": "Housewife",  # only if your training used "Housewife"
+            "HouseWife": "Housewife",
+            "Housewife": "Housewife",
         }.get(
             _require(data.occupation_before_surgery, "occupation_before_surgery"),
             _require(data.occupation_before_surgery, "occupation_before_surgery"),

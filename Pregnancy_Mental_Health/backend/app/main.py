@@ -1,26 +1,79 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse
 from .database import engine
 from . import models
 from .routers import predictions, auth, assessments
+from .rate_limiter import rate_limiter
+from .config import ALLOWED_ORIGINS, TRUSTED_HOSTS, IS_PRODUCTION
+import asyncio
 
-app = FastAPI(title="PPD Predictor API", version="1.0.0")
+app = FastAPI(
+    title="PPD Predictor API", 
+    version="1.0.0",
+    docs_url="/api/docs",  # Move docs to /api/docs
+    redoc_url="/api/redoc"
+)
 
-origins = [
-    "http://localhost:5173", 
-    "http://localhost:5174", 
-    "http://localhost:5175", 
-    "http://localhost:5176", 
-    "http://localhost:3000"
-]
+# Security: Trusted Host Middleware (prevent host header attacks)
+# In development: allow all hosts
+# In production: only allow configured hosts
+if IS_PRODUCTION:
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=TRUSTED_HOSTS
+    )
+else:
+    # Development: allow all hosts (localhost, 127.0.0.1, etc.)
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=["*"]
+    )
 
+# CORS Configuration - Uses centralized ALLOWED_ORIGINS from config.py
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    
+    # Only set HSTS in production (not on localhost)
+    if IS_PRODUCTION:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    
+    return response
+
+# Rate Limiting Middleware
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    # Apply rate limiting to API endpoints
+    if request.url.path.startswith("/api/"):
+        try:
+            await rate_limiter.check_rate_limit(request)
+        except Exception as e:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": str(e.detail) if hasattr(e, 'detail') else "Rate limit exceeded"}
+            )
+    
+    response = await call_next(request)
+    return response
+
+# Start background cleanup task
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(rate_limiter.cleanup_old_entries())
 
 models.Base.metadata.create_all(bind=engine)
 app.include_router(predictions.router)
@@ -29,4 +82,4 @@ app.include_router(assessments.router)
 
 @app.get("/")
 def root():
-    return {"message": "PPD Predictor API is running!"}  
+    return {"message": "PPD Predictor API is running!", "version": "1.0.0"}  

@@ -32,7 +32,7 @@ export default function NewAssessment() {
   ]);
 
 
-  // 🔹 35-QUESTION PRENATAL ASSESSMENT (Section 5 removed - postpartum questions)
+  // 🔹 PRENATAL ASSESSMENT - All fields match backend requirements
   const [formData, setFormData] = useState({
     patient_name: "",
     age: "",
@@ -41,14 +41,14 @@ export default function NewAssessment() {
     marital_status: "",
     partner_education: "",
     partner_income: "",
-    household_members: "",   // add field if you keep it
+    household_members: "",
   
     relationship_inlaws: "",
     relationship_husband: "",
     support_during_pregnancy: "",
     need_more_support: "",
-    major_changes_losses: "",                 // rename keyy
     trust_share_feelings: "",
+    family_type: "",
   
     total_children_now: "",
     pregnancy_number: "",
@@ -62,7 +62,6 @@ export default function NewAssessment() {
     fear_pregnancy_childbirth: "",
     major_life_changes_pregnancy: "",
     abuse_during_pregnancy: "",
-    family_type: "",
   
     epds_1: "",
     epds_2: "",
@@ -123,29 +122,42 @@ export default function NewAssessment() {
     setStep(newStep);
   };
 
-  // 🔹 FINAL SUBMIT (API READY)
+  // 🔹 FINAL SUBMIT - All 34 required fields organized by section
   const REQUIRED_FIELDS = [
-    "age","residence","education_level","marital_status",
-    "partner_education","partner_income","household_members",
-    "relationship_inlaws","relationship_husband","support_during_pregnancy",
-    "need_more_support","major_life_changes_pregnancy", "occupation_before_surgery","trust_share_feelings",
-    "total_children_now","pregnancy_number",
-    "pregnancy_planned","regular_checkups","medical_conditions_pregnancy",
-    "depression_before_pregnancy","depression_during_pregnancy",
-    "fear_pregnancy_childbirth","abuse_during_pregnancy","family_type",
-    "epds_1","epds_2","epds_3","epds_4","epds_5",
-    "epds_6","epds_7","epds_8","epds_9","epds_10",
-  ];  
+    // Demographics (7 fields)
+    "age", "residence", "education_level", "marital_status",
+    "partner_education", "partner_income", "household_members",
+    
+    // Relationships & Support (6 fields)
+    "relationship_inlaws", "relationship_husband", 
+    "support_during_pregnancy", "need_more_support",
+    "trust_share_feelings", "family_type",
+    
+    // Obstetric & Pregnancy (6 fields)
+    "total_children_now", "pregnancy_number",
+    "pregnancy_planned", "regular_checkups",
+    "medical_conditions_pregnancy", "occupation_before_surgery",
+    
+    // Mental Health (5 fields)
+    "depression_before_pregnancy", "depression_during_pregnancy",
+    "fear_pregnancy_childbirth", "major_life_changes_pregnancy",
+    "abuse_during_pregnancy",
+    
+    // EPDS Assessment (10 fields)
+    "epds_1", "epds_2", "epds_3", "epds_4", "epds_5",
+    "epds_6", "epds_7", "epds_8", "epds_9", "epds_10"
+  ];
 
   const submitAssessment = async () => {
+    // Validate all required fields
     for (const f of REQUIRED_FIELDS) {
       const v = formData[f];
       if (!v) {
-        console.log("MISSING FIELD:", f, "VALUE:", v);
-        alert("Please answer all questions before generating risk.");
+        alert(`Please answer all questions before generating risk. Missing: ${f}`);
         return;
       }
     }
+    
     try {
       const res = await fetch("http://127.0.0.1:8000/api/assessments/predict", {
         method: "POST",
@@ -155,20 +167,20 @@ export default function NewAssessment() {
   
       if (!res.ok) {
         const errorBody = await res.json().catch(() => null);
-        console.error("predict error:", JSON.stringify(errorBody, null, 2));
-        alert("Could not generate risk score.");
+        console.error("Prediction error:", errorBody);
+        alert("Could not generate risk score. Please check all fields.");
         return;
       }
   
       const data = await res.json();
       setResult({ risk: data.risk_level, score: data.score });
       
-      // Check if safety alert should be shown - only for High Risk
+      // Show safety alert only for High Risk
       if (data.risk_level === "High Risk") {
         setShowSafetyAlert(true);
       }
       
-      setStep(6);  // make sure you navigate to result step
+      setStep(6);
     } catch (err) {
       console.error("Backend error:", err);
       alert("Could not generate risk score. Please try again.");

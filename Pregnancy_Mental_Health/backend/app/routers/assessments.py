@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 import pandas as pd
 from typing import List, Optional
+import logging
 
 from ..database import get_db
 from ..schemas import AssessmentCreate, AssessmentResult, AssessmentSave
@@ -10,6 +11,7 @@ from .. import models
 from ..jwt_handler import get_current_user_email
 
 router = APIRouter(prefix="/api", tags=["assessments"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/assessments/predict", response_model=AssessmentResult)
@@ -45,10 +47,8 @@ def predict_assessment(payload: AssessmentCreate):
             risk_level_from_model = "Low Risk"
             model_score = low_prob * 40
 
-        print("CatBoost EPDS prediction:")
-        print(f"  classes: {cat_classes}")
-        print(f"  probs: {proba}")
-        print(f"  model risk_level: {risk_level_from_model}, model_score: {model_score:.1f}")
+        logger.info(f"CatBoost prediction - classes: {cat_classes}, probs: {proba}")
+        logger.info(f"Model risk: {risk_level_from_model}, score: {model_score:.1f}")
 
         # 5) EPDS total and scaled (0–100)
         epds_items = [
@@ -77,13 +77,13 @@ def predict_assessment(payload: AssessmentCreate):
         else:
             final_risk = "Low Risk"
 
-        print(
-            f"  EPDS total: {epds_total}, EPDS scaled: {epds_scaled:.1f}, "
+        logger.info(
+            f"EPDS total: {epds_total}, scaled: {epds_scaled:.1f}, "
             f"final_score: {final_score:.1f}, final_risk: {final_risk}"
         )
 
     except Exception as e:
-        print(f"❌ ML Model failed: {e}")
+        logger.error(f"ML Model failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Model prediction failed. Please contact admin."
@@ -147,21 +147,14 @@ def save_assessment(
     timestamp = created_at.isoformat() if created_at else None
     date_str = created_at.date().isoformat() if created_at else None
 
-    # Print assessment details to terminal
-    print("\n" + "="*80)
-    print("✅ ASSESSMENT SAVED TO HISTORY")
-    print("="*80)
-    print(f" Patient Name: {assessment.patient_name}")
-    print(f" Assessment ID: {assessment.id}")
-    print(f" Date: {date_str}")
-    print(f" Timestamp: {timestamp}")
-    print(f" Risk Level: {assessment.risk_level}")
-    print(f" Risk Score: {assessment.risk_score:.2f}")
-    print(f" Clinician Risk Assessment: {assessment.clinician_risk or 'Not provided'}")
-    print(f" Plan: {assessment.plan or 'Not provided'}")
-    print(f" Notes: {assessment.notes or 'Not provided'}")
-    print(f" Clinician Email: {assessment.clinician_email}")
-    print("="*80 + "\n")
+    # Log assessment details
+    logger.info("="*80)
+    logger.info("ASSESSMENT SAVED TO HISTORY")
+    logger.info(f"Patient: {assessment.patient_name}, ID: {assessment.id}")
+    logger.info(f"Date: {date_str}, Risk: {assessment.risk_level}, Score: {assessment.risk_score:.2f}")
+    logger.info(f"Clinician Risk: {assessment.clinician_risk or 'N/A'}, Plan: {assessment.plan or 'N/A'}")
+    logger.info(f"Clinician: {assessment.clinician_email}")
+    logger.info("="*80)
 
     return {
         "id": assessment.id,

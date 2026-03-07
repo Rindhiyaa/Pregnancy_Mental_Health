@@ -1,8 +1,64 @@
 /**
- * API utility functions with JWT authentication
+ * API utility functions with JWT authentication and token refresh
+ * Refresh tokens are stored in httpOnly cookies (secure, XSS-protected)
+ * Handles multi-tab race conditions with request queuing
  */
 
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
+
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+/**
+ * Subscribe to token refresh completion
+ */
+const subscribeTokenRefresh = (callback) => {
+  refreshSubscribers.push(callback);
+};
+
+/**
+ * Notify all subscribers when token is refreshed
+ */
+const onTokenRefreshed = (newToken) => {
+  refreshSubscribers.forEach(callback => callback(newToken));
+  refreshSubscribers = [];
+};
+
+/**
+ * Refresh access token using httpOnly cookie
+ * Cookie is sent automatically by browser
+ */
+const refreshAccessToken = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/refresh`, {
+      method: 'POST',
+      credentials: 'include',  // Send httpOnly cookie
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Token refresh failed');
+    }
+    
+    const data = await response.json();
+    localStorage.setItem('ppd_access_token', data.access_token);
+    return data.access_token;
+  } catch (error) {
+    // Refresh failed - clear tokens and redirect to login
+    localStorage.removeItem('ppd_access_token');
+    localStorage.removeItem('ppd_user_email');
+    localStorage.removeItem('ppd_user_full_name');
+    localStorage.removeItem('ppd_user_role');
+    
+    if (!window.location.pathname.includes('/signin')) {
+      window.location.href = '/signin';
+    }
+    
+    throw error;
+  }
+};
 
 /**
  * Get authorization headers with JWT token
@@ -21,36 +77,68 @@ export const getAuthHeaders = () => {
 };
 
 /**
- * Make authenticated API request
+ * Make authenticated API request with automatic token refresh
+ * Handles multi-tab race conditions by queuing requests during refresh
  */
 export const apiRequest = async (endpoint, options = {}) => {
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
   
   const config = {
     ...options,
+    credentials: 'include',  // Always send cookies (for refresh token)
     headers: {
       ...getAuthHeaders(),
       ...options.headers,
     },
   };
   
+  // Add retry flag to prevent infinite loops
+  if (!config._retry) {
+    config._retry = false;
+  }
+  
   try {
     const response = await fetch(url, config);
     
     // Handle 401 Unauthorized - token expired or invalid
-    if (response.status === 401) {
-      // Clear auth data and redirect to login
-      localStorage.removeItem('ppd_access_token');
-      localStorage.removeItem('ppd_user_email');
-      localStorage.removeItem('ppd_user_full_name');
-      localStorage.removeItem('ppd_user_role');
+    if (response.status === 401 && !config._retry) {
+      // Mark this request as retried
+      config._retry = true;
       
-      // Only redirect if not already on login page
-      if (!window.location.pathname.includes('/signin')) {
-        window.location.href = '/signin';
+      // If already refreshing, queue this request
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          subscribeTokenRefresh((newToken) => {
+            // Update authorization header with new token
+            config.headers['Authorization'] = `Bearer ${newToken}`;
+            // Retry the original request
+            fetch(url, config)
+              .then(resolve)
+              .catch(reject);
+          });
+        });
       }
       
-      throw new Error('Session expired. Please login again.');
+      // Start refresh process
+      isRefreshing = true;
+      
+      try {
+        const newToken = await refreshAccessToken();
+        isRefreshing = false;
+        
+        // Notify all queued requests
+        onTokenRefreshed(newToken);
+        
+        // Retry original request with new token
+        config.headers['Authorization'] = `Bearer ${newToken}`;
+        return await fetch(url, config);
+      } catch (refreshError) {
+        isRefreshing = false;
+        // Notify queued requests of failure
+        refreshSubscribers.forEach(callback => callback(null));
+        refreshSubscribers = [];
+        throw new Error('Session expired. Please login again.');
+      }
     }
     
     return response;
