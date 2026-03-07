@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import "../styles/NewAssessment.css";
 import "../styles/DashboardPage.css";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import SafetyAlert from "../components/SafetyAlert";
+import { API_BASE_URL } from "../utils/api";
 
 
 export default function NewAssessment() {
@@ -87,7 +88,7 @@ export default function NewAssessment() {
       const token = localStorage.getItem('ppd_access_token');
       if (user?.email && token) {
         await fetch(
-          `http://127.0.0.1:8000/api/logout-status`,
+          `${API_BASE_URL}/logout-status`,
           {
             method: "POST",
             headers: { 
@@ -159,7 +160,7 @@ export default function NewAssessment() {
     }
     
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/assessments/predict", {
+      const res = await fetch(`${API_BASE_URL}/assessments/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -1003,7 +1004,7 @@ export default function NewAssessment() {
 
                         try {
                           const token = localStorage.getItem('ppd_access_token');
-                          const res = await fetch("http://127.0.0.1:8000/api/assessments", {
+                          const res = await fetch(`${API_BASE_URL}/assessments`, {
                             method: "POST",
                             headers: { 
                               "Content-Type": "application/json",

@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 from .database import engine
 from . import models
 from .routers import predictions, auth, assessments
@@ -9,11 +10,20 @@ from .rate_limiter import rate_limiter
 from .config import ALLOWED_ORIGINS, TRUSTED_HOSTS, IS_PRODUCTION
 import asyncio
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Start background cleanup task
+    cleanup_task = asyncio.create_task(rate_limiter.cleanup_old_entries())
+    yield
+    # Shutdown: Cancel cleanup task
+    cleanup_task.cancel()
+
 app = FastAPI(
     title="PPD Predictor API", 
     version="1.0.0",
-    docs_url="/api/docs",  # Move docs to /api/docs
-    redoc_url="/api/redoc"
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    lifespan=lifespan
 )
 
 # Security: Trusted Host Middleware (prevent host header attacks)
@@ -69,11 +79,6 @@ async def rate_limit_middleware(request: Request, call_next):
     
     response = await call_next(request)
     return response
-
-# Start background cleanup task
-@app.on_event("startup")
-async def startup_event():
-    asyncio.create_task(rate_limiter.cleanup_old_entries())
 
 models.Base.metadata.create_all(bind=engine)
 app.include_router(predictions.router)

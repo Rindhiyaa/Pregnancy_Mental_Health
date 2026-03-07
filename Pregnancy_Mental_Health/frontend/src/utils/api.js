@@ -4,7 +4,13 @@
  * Handles multi-tab race conditions with request queuing
  */
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+// Vite bakes env vars at BUILD TIME, not runtime
+// Use .env.production for production URL (committed to Git)
+// Use .env.development for local development
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api';
+
+// Export for use in other components
+export { API_BASE_URL };
 
 let isRefreshing = false;
 let refreshSubscribers = [];

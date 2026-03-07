@@ -15,7 +15,7 @@ from ..config import ALLOWED_ORIGINS, IS_PRODUCTION
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
-@router.post("/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("/signup", status_code=status.HTTP_201_CREATED)
 def signup(user_in: UserCreate, response: Response, db: Session = Depends(get_db)):
     existing = db.query(models.User).filter(models.User.email == user_in.email).first()
     if existing:

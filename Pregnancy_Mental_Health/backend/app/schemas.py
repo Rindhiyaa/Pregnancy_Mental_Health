@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional, Dict, Any
 
 
@@ -11,14 +11,13 @@ class UserCreate(BaseModel):
 
 
 class UserProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     full_name: str
     email: EmailStr
     role: str | None = None
     member_since: str | None = None
-
-    class Config:
-        from_attributes = True
 
 
 class UserProfileUpdate(BaseModel):
@@ -27,14 +26,13 @@ class UserProfileUpdate(BaseModel):
 
 
 class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     first_name: str
     last_name: str | None = None
     email: EmailStr
     role: str | None = None
-
-    class Config:
-        from_attributes = True
 
 
 class LoginRequest(BaseModel):
@@ -130,10 +128,9 @@ class PredictResponse(BaseModel):
 
 
 class HistoryItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     name: str
     date: str
     risk: str
-
-    class Config:
-        from_attributes = True

@@ -32,6 +32,7 @@ frontend/.env
 # IDE
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~
@@ -45,9 +46,9 @@ desktop.ini
 *.log
 logs/
 
-# Documentation (optional - uncomment if you don't want to track)
-# *.md
-# !README.md
+#Documentation (optional - uncomment if you don't want to track)
+*.md
+!README.md
 
 # Model files (large files)
 *.pkl

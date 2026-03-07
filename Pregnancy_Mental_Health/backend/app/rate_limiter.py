@@ -1,6 +1,6 @@
 # backend/app/rate_limiter.py
 from fastapi import Request, HTTPException, status
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 from typing import Dict, Tuple
 import asyncio
@@ -40,7 +40,7 @@ class RateLimiter:
         max_requests, window_seconds = self.limits.get(endpoint, self.limits["default"])
         
         async with self.lock:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             cutoff = now - timedelta(seconds=window_seconds)
             
             # Clean old requests
@@ -73,7 +73,7 @@ class RateLimiter:
         while True:
             await asyncio.sleep(3600)  # Clean every hour
             async with self.lock:
-                now = datetime.utcnow()
+                now = datetime.now(timezone.utc)
                 cutoff = now - timedelta(hours=2)
                 
                 # Remove IPs with no recent requests

@@ -10,7 +10,14 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+
+# Environment files with secrets (ignore)
 *.local
+
+# Environment files without secrets (commit these!)
+# .env.production - MUST be committed (Vite bakes at build time)
+# .env.development - MUST be committed (no secrets, just URLs)
+# .env - Can be committed (no secrets)
 
 # Editor directories and files
 .vscode/*
