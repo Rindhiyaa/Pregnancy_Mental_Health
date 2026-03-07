@@ -17,6 +17,13 @@ router = APIRouter(prefix="/api", tags=["auth"])
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
 def signup(user_in: UserCreate, response: Response, db: Session = Depends(get_db)):
+    # Validate password length
+    if len(user_in.password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters",
+        )
+    
     existing = db.query(models.User).filter(models.User.email == user_in.email).first()
     if existing:
         raise HTTPException(

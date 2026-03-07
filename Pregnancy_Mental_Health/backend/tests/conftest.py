@@ -5,16 +5,19 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from app.main import app
 from app.database import get_db
 from app import models
 from unittest.mock import AsyncMock
 
 # Use SQLite for tests (no PostgreSQL needed)
-SQLALCHEMY_TEST_URL = "sqlite:///./test.db"
+# Use in-memory with check_same_thread=False for test isolation
+SQLALCHEMY_TEST_URL = "sqlite:///:memory:"
 engine = create_engine(
     SQLALCHEMY_TEST_URL, 
-    connect_args={"check_same_thread": False}
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool  # Keep single connection for in-memory DB
 )
 TestingSession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

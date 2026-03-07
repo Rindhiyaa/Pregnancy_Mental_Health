@@ -190,3 +190,19 @@ def test_all_34_fields_processed():
     column_str = " ".join(str(col) for col in df.columns)
     for field in expected_fields:
         assert field in column_str or any(field in str(col) for col in df.columns)
+
+
+def test_no_null_values_in_output():
+    """ML input must have zero nulls — nulls break CatBoost inference"""
+    assessment = create_sample_assessment()
+    df = build_model_input_from_form(assessment)
+    
+    null_cols = df.columns[df.isnull().any()].tolist()
+    assert len(null_cols) == 0, f"Null values found in: {null_cols}"
+
+def test_output_is_single_row():
+    """Each assessment must produce exactly one prediction row"""
+    assessment = create_sample_assessment()
+    df = build_model_input_from_form(assessment)
+    
+    assert df.shape[0] == 1, f"Expected 1 row, got {df.shape[0]}"

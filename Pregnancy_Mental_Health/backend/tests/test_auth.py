@@ -128,10 +128,9 @@ def test_password_minimum_length(client):
         "password": "Pass12",  # Only 6 characters
         "role": "clinician"
     })
-    # Note: Password validation not implemented yet
-    # This test documents the requirement for future implementation
-    # For now, short passwords are accepted
-    assert response.status_code == 201
+    # Should reject short passwords
+    assert response.status_code == 400
+    assert "8 characters" in response.json()["detail"].lower()
 
 def test_refresh_token_in_cookie(client):
     """Test that refresh token is set as httpOnly cookie"""
@@ -162,3 +161,44 @@ def test_access_token_in_response_body(client):
     assert "access_token" in data
     assert "token_type" in data
     assert data["token_type"] == "bearer"
+
+
+def test_get_profile_requires_auth(client):
+    """Protected routes must reject unauthenticated requests"""
+    response = client.get("/api/me")
+    assert response.status_code == 401
+
+def test_get_profile_with_valid_token(client):
+    """Authenticated user can access their profile"""
+    # Signup
+    signup = client.post("/api/signup", json={
+        "first_name": "Rind",
+        "last_name": "S",
+        "email": "profile@example.com",
+        "password": "Pass1234",
+        "role": "clinician"
+    })
+    token = signup.json()["access_token"]
+    
+    # Access profile
+    response = client.get("/api/me",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+    assert response.json()["email"] == "profile@example.com"
+
+def test_logout_clears_cookie(client):
+    """Logout must clear the refresh_token cookie"""
+    signup = client.post("/api/signup", json={
+        "first_name": "A",
+        "last_name": "B",
+        "email": "logout@example.com",
+        "password": "Pass1234",
+        "role": "clinician"
+    })
+    token = signup.json()["access_token"]
+    
+    response = client.post("/api/logout-status",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 204
