@@ -19,16 +19,18 @@ def predict_assessment(payload: AssessmentCreate):
     # 1) Build 1-row dataframe with same raw columns as training
     df_input = build_model_input_from_form(payload)  # DataFrame with 26 cols
 
-    # 2) One-hot encode exactly like during training
-    X_encoded = pd.get_dummies(df_input, drop_first=False)
-
-    # 3) Align columns with training feature_columns (fill missing with 0)
-    X_aligned = X_encoded.reindex(columns=feature_columns, fill_value=0)
+    # 2) Align columns with training feature_columns (fill missing with 0)
+    X_aligned = df_input.reindex(columns=feature_columns, fill_value=0)
 
     try:
         # 4) Predict EPDS Result class and probabilities
-        cat_classes = list(model.classes_)  # e.g. ['High', 'Low', 'Medium']
+        cat_classes = list(model.classes_)
         pred_class = model.predict(X_aligned)[0]
+
+        # convert numeric prediction to label
+        if isinstance(pred_class, (int, float)):
+            label_map = {0: "High", 1: "Low", 2: "Medium"}
+            pred_class = label_map.get(int(pred_class), "Medium")
         proba = model.predict_proba(X_aligned)[0]
 
         class_to_prob = {cls: p for cls, p in zip(cat_classes, proba)}
