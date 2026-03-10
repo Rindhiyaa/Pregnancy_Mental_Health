@@ -32,6 +32,7 @@ export default function SignInPage() {
       // Try backend login first
       const res = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
+        credentials: 'include',  // Required to receive httpOnly cookies
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: form.email,

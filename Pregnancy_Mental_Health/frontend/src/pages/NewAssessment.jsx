@@ -4,7 +4,7 @@ import "../styles/DashboardPage.css";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import SafetyAlert from "../components/SafetyAlert";
-import { API_BASE_URL } from "../utils/api";
+import { API_BASE_URL, api } from "../utils/api";
 
 
 export default function NewAssessment() {
@@ -85,18 +85,8 @@ export default function NewAssessment() {
 
   const handleTopLogout = async () => {
     try {
-      const token = localStorage.getItem('ppd_access_token');
-      if (user?.email && token) {
-        await fetch(
-          `${API_BASE_URL}/logout-status`,
-          {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-            },
-          }
-        );
+      if (user?.email) {
+        await api.post('/logout-status', {});
       }
     } catch (e) {
       console.error("Failed to update logout status", e);
@@ -160,11 +150,7 @@ export default function NewAssessment() {
     }
     
     try {
-      const res = await fetch(`${API_BASE_URL}/assessments/predict`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const res = await api.post('/assessments/predict', formData);
   
       if (!res.ok) {
         const errorBody = await res.json().catch(() => null);
@@ -1003,19 +989,10 @@ export default function NewAssessment() {
                         };
 
                         try {
-                          const token = localStorage.getItem('ppd_access_token');
-                          const fullUrl = `${API_BASE_URL}/assessments`;
-                          console.log("Full API URL:", fullUrl);
-                          console.log("API_BASE_URL:", API_BASE_URL);
+                          console.log("Saving assessment with automatic refresh...");
+                          console.log("Payload:", payload);
                           
-                          const res = await fetch(fullUrl, {
-                            method: "POST",
-                            headers: { 
-                              "Content-Type": "application/json",
-                              "Authorization": `Bearer ${token}`
-                            },
-                            body: JSON.stringify(payload),
-                          });
+                          const res = await api.post('/assessments', payload);
 
                           if (!res.ok) {
                             const errorText = await res.text();
@@ -1048,7 +1025,6 @@ export default function NewAssessment() {
                         } catch (err) {
                           console.error("Error saving assessment", err);
                           console.error("Payload sent:", payload);
-                          console.error("Full URL used:", `${API_BASE_URL}/assessments`);
                           alert(`Could not save assessment: ${err.message}`);
                         }
                       }}

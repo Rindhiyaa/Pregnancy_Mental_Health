@@ -52,7 +52,8 @@ def signup(user_in: UserCreate, response: Response, db: Session = Depends(get_db
         httponly=True,      # Cannot be accessed by JavaScript (XSS protection)
         secure=IS_PRODUCTION,  # HTTPS only in production
         samesite="lax",     # Better for SPA + API pattern, allows navigation
-        max_age=7 * 24 * 3600  # 7 days
+        max_age=7 * 24 * 3600,  # 7 days
+        path="/"            # Ensure cookie is available for all paths
     )
     
     # Return user data with access token only (refresh token in cookie)
@@ -92,7 +93,8 @@ def login(credentials: LoginRequest, response: Response, db: Session = Depends(g
         httponly=True,      # Cannot be accessed by JavaScript (XSS protection)
         secure=IS_PRODUCTION,  # HTTPS only in production
         samesite="lax",     # Better for SPA + API pattern, allows navigation
-        max_age=7 * 24 * 3600  # 7 days
+        max_age=7 * 24 * 3600,  # 7 days
+        path="/"            # Ensure cookie is available for all paths
     )
 
     return {
