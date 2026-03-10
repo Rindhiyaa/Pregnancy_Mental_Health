@@ -4,11 +4,12 @@ import heroImg from "../assets/image-1.png";
 
 
 export default function HomePage() {
+  // Navigation
   const navigate = useNavigate();
 
   return (
     <main>
-     
+      
       <section className="hero">
         <div>
           <div className="badge">
