@@ -291,7 +291,7 @@ export default function NewAssessment() {
                 <div 
                   className="dp-dropdown-item"
                   onClick={() => {
-                    navigate('/dashboard/Profile');
+                    navigate('/dashboard/profile');
                     setShowProfileMenu(false);
                   }}
                 >
@@ -1013,7 +1013,11 @@ export default function NewAssessment() {
                             body: JSON.stringify(payload),
                           });
 
-                          if (!res.ok) throw new Error("Failed to save assessment");
+                          if (!res.ok) {
+                            const errorText = await res.text();
+                            console.error("Save assessment failed:", res.status, errorText);
+                            throw new Error(`Failed to save assessment: ${res.status} - ${errorText}`);
+                          }
 
                           const saved = await res.json(); // contains id, dates, etc.
 
@@ -1036,10 +1040,13 @@ export default function NewAssessment() {
                           alert(
                             `Assessment for ${formData.patient_name} saved to history successfully!`
                           );
-                          navigate("/dashboard/History");
+                          navigate("/dashboard/history");
                         } catch (err) {
                           console.error("Error saving assessment", err);
-                          alert("Could not save assessment, please try again.");
+                          console.error("Payload sent:", payload);
+                          console.error("Token:", token ? "Present" : "Missing");
+                          console.error("API URL:", `${API_BASE_URL}/assessments`);
+                          alert(`Could not save assessment: ${err.message}`);
                         }
                       }}
                     >

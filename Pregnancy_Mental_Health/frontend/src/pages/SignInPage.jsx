@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { API_BASE_URL } from "../utils/api";
 
 export default function SignInPage() {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ export default function SignInPage() {
   
     try {
       // Try backend login first
-      const res = await fetch("http://127.0.0.1:8000/api/login", {
+      const res = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

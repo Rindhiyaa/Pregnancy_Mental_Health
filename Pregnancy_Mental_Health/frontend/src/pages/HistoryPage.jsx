@@ -278,7 +278,7 @@ const HistoryPage = () => {
             New Assessment
           </NavLink>
           <NavLink
-            to="/dashboard/History"
+            to="/dashboard/history"
             className={({ isActive }) =>
               "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
             }
@@ -321,7 +321,7 @@ const HistoryPage = () => {
                 <div 
                   className="dp-dropdown-item"
                   onClick={() => {
-                    navigate('/dashboard/Profile');
+                    navigate('/dashboard/profile');
                     setShowProfileMenu(false);
                   }}
                 >

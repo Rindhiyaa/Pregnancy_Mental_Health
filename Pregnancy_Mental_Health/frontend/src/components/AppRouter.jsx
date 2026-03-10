@@ -36,7 +36,7 @@ export default function AppRouter() {
         } 
       />
       <Route 
-        path="/dashboard/History" 
+        path="/dashboard/history" 
         element={
           <ProtectedRoute>
             <HistoryPage />
@@ -44,7 +44,7 @@ export default function AppRouter() {
         } 
       />
       <Route 
-        path="/dashboard/Profile" 
+        path="/dashboard/profile" 
         element={
           <ProtectedRoute>
             <ProfilePage />
