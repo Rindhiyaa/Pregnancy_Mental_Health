@@ -85,7 +85,7 @@ export default function SignUpPage() {
       // success → go to dashboard
       navigate("/dashboard");
     } catch (err) {
-      // If backend fails, still allow frontend to work with localStorage data
+      // If backend fails, still allow frontend to work with localStorage 
       console.warn("Backend signup failed, but user logged in with localStorage data:", err.message);
       navigate("/dashboard");
     }

@@ -94,7 +94,7 @@ export default function ForgotPasswordPage() {
       const data = await res.json();
       setSuccess(data.message);
 
-      // Redirect to signin after 2 seconds
+      // Redirect to signin after 2 secondss
       setTimeout(() => {
         navigate("/signin");
       }, 2000);

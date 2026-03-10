@@ -26,7 +26,7 @@ export default function AppRouter() {
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-      {/* Protected Dashboard Routes */}
+      {/* Protected Dashboard Routess */}
       <Route 
         path="/dashboard" 
         element={

@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
   
 
   const login = (userData) => {
-    // Store JWT access token only (refresh token in httpOnly cookie)
+    // Store JWT access token only 
     if (userData.access_token) {
       localStorage.setItem('ppd_access_token', userData.access_token);
     }

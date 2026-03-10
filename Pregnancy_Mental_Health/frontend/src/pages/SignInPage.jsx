@@ -62,7 +62,7 @@ export default function SignInPage() {
         return;
       }
       
-      // If no OTP required, login directly (backward compatibility)
+      // If no OTP required, login directly 
       const userProfile = {
         fullName: data.full_name || "Clinician",
         firstName: data.first_name || "",
