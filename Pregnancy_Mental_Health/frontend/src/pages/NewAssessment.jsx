@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "../styles/NewAssessment.css";
 import "../styles/DashboardPage.css";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import SafetyAlert from "../components/SafetyAlert";
 import { API_BASE_URL, api } from "../utils/api";
@@ -10,9 +10,12 @@ import { API_BASE_URL, api } from "../utils/api";
 export default function NewAssessment() {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState(''); // 'saving', 'saved', 'error'
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -32,10 +35,12 @@ export default function NewAssessment() {
     }
   ]);
 
+  // Get patient name from URL params if provided
+  const prefilledPatientName = searchParams.get('patient') || '';
 
   // 🔹 PRENATAL ASSESSMENT - All fields match backend requirements
   const [formData, setFormData] = useState({
-    patient_name: "",
+    patient_name: prefilledPatientName,
     age: "",
     residence: "",
     education_level: "",
@@ -80,6 +85,71 @@ export default function NewAssessment() {
   // 🔹 RESULT FROM BACKEND
   const [result, setResult] = useState(null);
   const [showSafetyAlert, setShowSafetyAlert] = useState(false);
+
+  // 🔹 AUTO-SAVE FUNCTIONALITY (using localStorage)
+  const autoSaveDraft = async (data) => {
+    if (!data.patient_name.trim()) return; // Don't save if no patient name
+    
+    try {
+      setAutoSaveStatus('saving');
+      
+      const draftKey = `ppd_draft_${data.patient_name}`;
+      const draftData = {
+        patient_name: data.patient_name,
+        draft_data: data,
+        saved_at: new Date().toISOString()
+      };
+      
+      // Save to localStorage
+      localStorage.setItem(draftKey, JSON.stringify(draftData));
+      
+      setAutoSaveStatus('saved');
+      setLastSaved(new Date());
+      setTimeout(() => setAutoSaveStatus(''), 3000); // Clear status after 3 seconds
+      
+    } catch (error) {
+      console.error('Auto-save error:', error);
+      setAutoSaveStatus('error');
+      setTimeout(() => setAutoSaveStatus(''), 3000);
+    }
+  };
+
+  const loadDraft = async (patientName) => {
+    if (!patientName.trim()) return;
+    
+    try {
+      const draftKey = `ppd_draft_${patientName}`;
+      const savedDraft = localStorage.getItem(draftKey);
+      
+      if (savedDraft) {
+        const draft = JSON.parse(savedDraft);
+        setFormData(draft.draft_data);
+        setLastSaved(new Date(draft.saved_at));
+        console.log('Draft loaded for patient:', patientName);
+      }
+    } catch (error) {
+      // Draft doesn't exist or is corrupted, which is fine
+      console.log('No draft found for patient:', patientName);
+    }
+  };
+
+  // Auto-save when form data changes (debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.patient_name.trim()) {
+        autoSaveDraft(formData);
+      }
+    }, 2000); // Save 2 seconds after user stops typing
+
+    return () => clearTimeout(timeoutId);
+  }, [formData]);
+
+  // Load draft when patient name is set
+  useEffect(() => {
+    if (formData.patient_name.trim() && !lastSaved) {
+      loadDraft(formData.patient_name);
+    }
+  }, [formData.patient_name]);
 
   //handle logout
 
@@ -366,6 +436,20 @@ export default function NewAssessment() {
           {/* Show card for steps 1-5 and step 7 (not step 6) */}
           {step >= 1 && step <= 7 && step !== 6 && (
             <section className="card">
+              
+              {/* Auto-save Status Indicator */}
+              {autoSaveStatus && (
+                <div className={`auto-save-status ${autoSaveStatus}`}>
+                  {autoSaveStatus === 'saving' && '💾 Saving draft...'}
+                  {autoSaveStatus === 'saved' && '✅ Draft saved'}
+                  {autoSaveStatus === 'error' && '❌ Save failed'}
+                  {lastSaved && autoSaveStatus === 'saved' && (
+                    <span className="last-saved">
+                      Last saved: {lastSaved.toLocaleTimeString()}
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* STEP 1 – DEMOGRAPHICS */}
               {step === 1 && (

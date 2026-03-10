@@ -901,3 +901,53 @@ RESULT CARD – MEDICAL GRADE UI
     color: #374151;
   }
 }
+
+/* Auto-save Status Indicator */
+.auto-save-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.auto-save-status.saving {
+  border-left: 4px solid #f59e0b;
+  color: #92400e;
+}
+
+.auto-save-status.saved {
+  border-left: 4px solid #10b981;
+  color: #065f46;
+}
+
+.auto-save-status.error {
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+}
+
+.last-saved {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-left: 0.5rem;
+}
+
+/* Mobile responsiveness for auto-save status */
+@media (max-width: 640px) {
+  .auto-save-status {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
