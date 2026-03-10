@@ -1004,7 +1004,11 @@ export default function NewAssessment() {
 
                         try {
                           const token = localStorage.getItem('ppd_access_token');
-                          const res = await fetch(`${API_BASE_URL}/assessments`, {
+                          const fullUrl = `${API_BASE_URL}/assessments`;
+                          console.log("Full API URL:", fullUrl);
+                          console.log("API_BASE_URL:", API_BASE_URL);
+                          
+                          const res = await fetch(fullUrl, {
                             method: "POST",
                             headers: { 
                               "Content-Type": "application/json",
@@ -1044,8 +1048,7 @@ export default function NewAssessment() {
                         } catch (err) {
                           console.error("Error saving assessment", err);
                           console.error("Payload sent:", payload);
-                          console.error("Token:", token ? "Present" : "Missing");
-                          console.error("API URL:", `${API_BASE_URL}/assessments`);
+                          console.error("Full URL used:", `${API_BASE_URL}/assessments`);
                           alert(`Could not save assessment: ${err.message}`);
                         }
                       }}
