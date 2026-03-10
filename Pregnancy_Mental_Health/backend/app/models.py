@@ -1,5 +1,5 @@
-# backend/app/models.py
 from sqlalchemy import Column, Integer, Float, DateTime, func, String, Boolean, JSON
+from sqlalchemy.orm import relationship
 from .database import Base
 
 class User(Base):
@@ -30,6 +30,7 @@ class Assessment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     patient_name = Column(String, nullable=False)
+    
     raw_data = Column(JSON, nullable=False)           # full formData as JSON
     risk_score = Column(Float, nullable=False)
     risk_level = Column(String, nullable=False)

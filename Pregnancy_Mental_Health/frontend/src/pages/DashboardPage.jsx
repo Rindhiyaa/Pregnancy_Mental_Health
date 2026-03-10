@@ -51,18 +51,8 @@ const DashboardPage = () => {
   
   const handleTopLogout = async () => {
     try {
-      const token = localStorage.getItem('ppd_access_token');
-      if (user?.email && token) {
-        await fetch(
-          `http://127.0.0.1:8000/api/logout-status`,
-          {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-            },
-          }
-        );
+      if (user?.email) {
+        await api.post('/logout-status');
       }
     } catch (e) {
       console.error("Failed to update logout status", e);
@@ -165,16 +155,7 @@ const DashboardPage = () => {
         // 1) try backend
         if (user?.email) {
           try {
-            const token = localStorage.getItem('ppd_access_token');
-            const res = await fetch( 
-              `http://127.0.0.1:8000/api/assessments`,
-              {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                }
-              }
-            );
+            const res = await api.get('/assessments');
             if (res.ok) {
               historyData = await res.json();
               // mirror to localStorage cache
@@ -218,7 +199,7 @@ const DashboardPage = () => {
           else if (level === "moderate") risk = "moderate";
     
           return {
-            id: assessment.patient_name || "Unknown",
+            id: String(assessment.id || `${assessment.patient_name}-${assessment.timestamp}`),
             name: assessment.patient_name || "Unknown Patient",
             date:
               assessment.date ||
@@ -329,6 +310,7 @@ const DashboardPage = () => {
             const assessmentDate = new Date(a.timestamp || a.date);
             const daysAgo = Math.floor((new Date() - assessmentDate) / (1000 * 60 * 60 * 24));
             return {
+              id: String(a.id || `${a.patient_name}-${a.timestamp}`),
               name: a.patient_name || 'Unknown Patient',
               risk: 'High',
               daysAgo: daysAgo,
@@ -481,7 +463,7 @@ const DashboardPage = () => {
   const filteredRows = rows.filter((row) => {
     const s = search.toLowerCase();
     const matchesSearch =
-      (row.id && row.id.toLowerCase().includes(s)) ||
+      (row.id && String(row.id).toLowerCase().includes(s)) ||
       (row.name && row.name.toLowerCase().includes(s));
 
       const matchesRisk =
@@ -515,14 +497,7 @@ const DashboardPage = () => {
     }
   
     try {
-      const token = localStorage.getItem('ppd_access_token');
-      await fetch(`http://127.0.0.1:8000/api/assessments/${assessmentId}`, {
-        method: "DELETE",
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      await api.delete(`/assessments/${assessmentId}`);
     } catch (e) {
       console.warn("Failed to delete on backend, removing from local cache only", e);
     }
@@ -1087,8 +1062,8 @@ const DashboardPage = () => {
                 {activeTab === 'alerts' && (
                   <div className="dp-alerts-panel">
                     {urgentCases.length > 0 ? (
-                      urgentCases.map((urgentCase, index) => (
-                        <div key={index} className="dp-alert-item">
+                      urgentCases.map((urgentCase) => (
+                        <div key={urgentCase.id} className="dp-alert-item">
                           <div className="dp-alert-icon">▲</div>
                           <div className="dp-alert-content">
                             <div className="dp-alert-title">{urgentCase.name}</div>

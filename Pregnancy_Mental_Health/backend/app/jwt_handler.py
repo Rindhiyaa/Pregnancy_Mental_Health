@@ -31,7 +31,7 @@ if not JWT_REFRESH_SECRET:
         print("⚠️  WARNING: Using auto-generated JWT_REFRESH_SECRET for development")
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 15 # 2 minutes for testing refresh
+ACCESS_TOKEN_EXPIRE_MINUTES = 60  # 60 minutes for better user experience
 REFRESH_TOKEN_EXPIRE_DAYS = 30  # 30 days
 
 security = HTTPBearer()

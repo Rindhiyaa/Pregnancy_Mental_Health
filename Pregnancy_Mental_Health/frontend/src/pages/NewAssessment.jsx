@@ -4,7 +4,7 @@ import "../styles/DashboardPage.css";
 import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import SafetyAlert from "../components/SafetyAlert";
-import { API_BASE_URL, api } from "../utils/api";
+import { api } from "../utils/api";
 
 
 export default function NewAssessment() {
@@ -220,16 +220,21 @@ export default function NewAssessment() {
     }
     
     try {
+      console.log("Submitting assessment for prediction...");
+      console.log("Form data:", formData);
+      
       const res = await api.post('/assessments/predict', formData);
   
       if (!res.ok) {
-        const errorBody = await res.json().catch(() => null);
-        console.error("Prediction error:", errorBody);
-        alert("Could not generate risk score. Please check all fields.");
+        const errorText = await res.text().catch(() => 'Unknown error');
+        console.error("Prediction error:", res.status, errorText);
+        alert(`Could not generate risk score. Server error: ${res.status} - ${errorText}`);
         return;
       }
   
       const data = await res.json();
+      console.log("Prediction response:", data);
+      
       setResult({ risk: data.risk_level, score: data.score });
       
       // Show safety alert only for High Risk
@@ -240,7 +245,7 @@ export default function NewAssessment() {
       setStep(6);
     } catch (err) {
       console.error("Backend error:", err);
-      alert("Could not generate risk score. Please try again.");
+      alert(`Could not generate risk score. Network error: ${err.message}`);
     }
   };
   
@@ -1037,6 +1042,13 @@ export default function NewAssessment() {
                     <button
                       className="save-to-history-btn"
                       onClick={async () => {
+                        // Check if user is authenticated
+                        if (!user?.isAuthenticated || !user?.email) {
+                          alert("You must be signed in to save assessments. Please sign in and try again.");
+                          navigate("/signin");
+                          return;
+                        }
+
                         // Validate required fields
                         if (!formData.patient_name) {
                           alert("Please enter patient name before saving.");
@@ -1081,6 +1093,13 @@ export default function NewAssessment() {
                           if (!res.ok) {
                             const errorText = await res.text();
                             console.error("Save assessment failed:", res.status, errorText);
+                            
+                            if (res.status === 401) {
+                              alert("Your session has expired. Please sign in again to save the assessment.");
+                              navigate("/signin");
+                              return;
+                            }
+                            
                             throw new Error(`Failed to save assessment: ${res.status} - ${errorText}`);
                           }
 
@@ -1109,7 +1128,15 @@ export default function NewAssessment() {
                         } catch (err) {
                           console.error("Error saving assessment", err);
                           console.error("Payload sent:", payload);
-                          alert(`Could not save assessment: ${err.message}`);
+                          
+                          if (err.message && err.message.includes("401")) {
+                            alert("Your session has expired. Please sign in again to save the assessment.");
+                            navigate("/signin");
+                          } else if (err.message && err.message.includes("Network")) {
+                            alert("Network error. Please check your connection and try again.");
+                          } else {
+                            alert(`Could not save assessment: ${err.message}`);
+                          }
                         }
                       }}
                     >

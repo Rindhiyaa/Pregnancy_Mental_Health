@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { api } from "../utils/api";
 
 export default function SignUpPage() {
   const navigate = useNavigate();
@@ -42,7 +43,39 @@ export default function SignUpPage() {
     }
   
     try {
-      // Create profile data for auth context
+      // First, try to signup with the backend
+      const res = await api.post('/signup', {
+        first_name: form.firstName,
+        last_name: form.lastName,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+      });
+  
+      if (!res.ok) {
+        // Handle HTTP error responses (400, 500, etc.)
+        let errorMessage = "Signup failed";
+        try {
+          const data = await res.json();
+          errorMessage = data?.detail || errorMessage;
+        } catch (e) {
+          // If response isn't JSON, use status text
+          errorMessage = res.statusText || errorMessage;
+        }
+        
+        // Show specific error for duplicate email
+        if (errorMessage.includes("already exists") || errorMessage.includes("already registered")) {
+          setError("This email is already registered. Please use a different email or sign in instead.");
+        } else {
+          setError(errorMessage);
+        }
+        return; // Stop here, don't login
+      }
+
+      // Success - get the response data
+      const data = await res.json();
+      
+      // Only if signup was successful, create profile data and login
       const profileData = {
         fullName: `${form.firstName} ${form.lastName}`.trim(),
         firstName: form.firstName,
@@ -55,39 +88,19 @@ export default function SignUpPage() {
         timestamp: new Date().toISOString()
       };
       
-      // Use auth context to login the user
-      login(profileData);
-
-      const res = await fetch("http://127.0.0.1:8000/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({
-          first_name: form.firstName,
-          last_name: form.lastName,
-          email: form.email,
-          password: form.password,
-          role: form.role,
-        }),
-      });
-  
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || "Signup failed");
-      }
-  
-      const data = await res.json();
-      
       // Store JWT token if provided
       if (data.access_token) {
         localStorage.setItem('ppd_access_token', data.access_token);
       }
       
+      // Use auth context to login the user
+      login(profileData);
+      
       // success → go to dashboard
       navigate("/dashboard");
     } catch (err) {
-      // If backend fails, still allow frontend to work with localStorage 
-      console.warn("Backend signup failed, but user logged in with localStorage data:", err.message);
-      navigate("/dashboard");
+      console.error("Signup error:", err);
+      setError("Network error. Please check your connection and try again.");
     }
   };
   
