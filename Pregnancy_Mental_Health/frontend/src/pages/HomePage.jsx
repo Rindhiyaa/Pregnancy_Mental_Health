@@ -27,7 +27,7 @@ export default function HomePage() {
 
 
           <p className="hero-sub">
-            Help Clinicians Identify <b>PPD</b> during pregnancy,not after delivery.
+            Help Clinicians Identify <b>PPD</b> during pregnancy, not after delivery.
           </p>
 
 

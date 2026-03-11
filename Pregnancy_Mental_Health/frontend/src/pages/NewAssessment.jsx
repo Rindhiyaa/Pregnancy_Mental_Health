@@ -125,11 +125,10 @@ export default function NewAssessment() {
         const draft = JSON.parse(savedDraft);
         setFormData(draft.draft_data);
         setLastSaved(new Date(draft.saved_at));
-        console.log('Draft loaded for patient:', patientName);
+        // Draft loaded successfully
       }
     } catch (error) {
       // Draft doesn't exist or is corrupted, which is fine
-      console.log('No draft found for patient:', patientName);
     }
   };
 

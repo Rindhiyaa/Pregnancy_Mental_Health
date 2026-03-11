@@ -10,6 +10,7 @@ export default function SignInPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Get the page user was trying to access before being redirected to signin
   const from = location.state?.from?.pathname || "/dashboard"; 
@@ -22,9 +23,11 @@ export default function SignInPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
   
     if (!form.email || !form.password) {
       setError("Please fill in email and password.");
+      setIsLoading(false);
       return;
     }
   
@@ -90,6 +93,8 @@ export default function SignInPage() {
         console.warn("Backend login failed:", err.message);
         setError(err.message || "Login failed. Please check your credentials.");
         return;
+      } finally {
+        setIsLoading(false);
       }      
   };
   
@@ -182,10 +187,10 @@ export default function SignInPage() {
               </button>
             </div>
 
-            {error && <div className="error">{error}</div>}
+            {error && <div className="error" role="alert" aria-live="polite">{error}</div>}
 
-            <button type="submit" className="btn-primary full-width">
-              Sign in
+            <button type="submit" className="btn-primary full-width" disabled={isLoading}>
+              {isLoading ? "Signing in..." : "Sign in"}
             </button>
           </form>
         </div>

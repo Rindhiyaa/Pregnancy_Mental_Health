@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../utils/api";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/forgot-password", {
+      const res = await fetch(`${API_BASE_URL}/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -77,7 +78,7 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/reset-password", {
+      const res = await fetch(`${API_BASE_URL}/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
