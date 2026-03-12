@@ -87,7 +87,7 @@ const DashboardPage = () => {
 
     yPos = 45;
 
-    // Statistics Summary
+    // Statistics Summaryy
     doc.setTextColor(51, 51, 51);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');

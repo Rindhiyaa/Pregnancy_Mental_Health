@@ -102,7 +102,7 @@ const HistoryPage = () => {
           historyData = savedHistory ? JSON.parse(savedHistory) : [];
         }
   
-        // Sort by timestamp (newest first)
+        // Sort by timestamp (new first)
         const sortedData = historyData.sort(
           (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
         );
