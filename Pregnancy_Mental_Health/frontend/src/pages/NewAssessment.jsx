@@ -196,18 +196,19 @@ export default function NewAssessment() {
   };
 
   // 🔹 PATIENT MANAGEMENT FUNCTIONS (localStorage-based)
-  const loadPatients = () => {
+  const loadPatients = async () => {
     try {
-      console.log('🔍 Loading patients from localStorage...');
-      
-      // Load patients from localStorage without seeding
-      const storedPatients = localStorage.getItem('ppd_patients');
-      const patients = storedPatients ? JSON.parse(storedPatients) : [];
-      setPatients(patients);
-      
-      console.log(`📋 Loaded ${patients.length} patients from localStorage`);
+      const res = await api.get("/patients");
+      if (!res.ok) {
+        console.error("Failed to load patients:", res.status);
+        setPatients([]);
+        return;
+      }
+      const data = await res.json(); // [{id, name, age, ...}]
+      setPatients(data);
+      console.log(`📋 Loaded ${data.length} patients from API`);
     } catch (error) {
-      console.error('Failed to load patients from localStorage:', error);
+      console.error("Failed to load patients from API:", error);
       setPatients([]);
     }
   };
@@ -226,44 +227,45 @@ export default function NewAssessment() {
     return Date.now() + Math.floor(Math.random() * 1000);
   };
 
-  const createNewPatient = () => {
+  const createNewPatient = async () => {
     if (!newPatientData.name.trim()) {
-      alert('Patient name is required');
+      alert("Patient name is required");
       return;
     }
-
+  
     try {
-      // Check if patient with same name already exists
       const existingPatient = patients.find(
-        p => p.name.toLowerCase() === newPatientData.name.trim().toLowerCase()
+        (p) => p.name.toLowerCase() === newPatientData.name.trim().toLowerCase()
       );
-
       if (existingPatient) {
         alert(`Patient with name "${newPatientData.name}" already exists`);
         return;
       }
-
-      // Create new patient with auto-generated ID
-      const newPatient = {
-        id: generatePatientId(),
+  
+      const res = await api.post("/patients", {
         name: newPatientData.name.trim(),
         age: newPatientData.age ? parseInt(newPatientData.age) : null,
         phone: newPatientData.phone.trim() || null,
-        clinician_email: user?.email || null,
-        created_at: new Date().toISOString()
-      };
-
+      });
+  
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        console.error("Failed to create patient:", res.status, body);
+        alert(body?.detail || "Failed to create patient");
+        return;
+      }
+  
+      const newPatient = await res.json(); // has DB id
       const updatedPatients = [newPatient, ...patients];
       setPatients(updatedPatients);
-      savePatients(updatedPatients);
-      
+  
       selectPatient(newPatient);
       setShowCreatePatient(false);
-      setNewPatientData({ name: '', age: '', phone: '' });
-      
+      setNewPatientData({ name: "", age: "", phone: "" });
+  
       console.log(`✅ Created patient: ${newPatient.name} (ID: ${newPatient.id})`);
     } catch (error) {
-      console.error('Failed to create patient:', error);
+      console.error("Failed to create patient:", error);
       alert(`Failed to create patient: ${error.message}`);
     }
   };

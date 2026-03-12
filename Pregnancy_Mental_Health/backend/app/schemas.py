@@ -138,22 +138,21 @@ class HistoryItem(BaseModel):
     risk: str
 
 
-class PatientCreate(BaseModel):
+class PatientBase(BaseModel):
     name: str
     age: Optional[int] = None
     phone: Optional[str] = None
 
+class PatientCreate(PatientBase):
+    pass
 
-class PatientOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    
+class PatientOut(PatientBase):
     id: int
-    name: str
-    age: Optional[int] = None
-    phone: Optional[str] = None
     clinician_email: Optional[str] = None
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
+    class Config:
+        orm_mode = True
 
 class PatientUpdate(BaseModel):
     name: Optional[str] = None

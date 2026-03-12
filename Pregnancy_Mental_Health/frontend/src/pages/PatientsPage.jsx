@@ -45,83 +45,97 @@ export default function PatientsPage() {
     navigate("/");
   };
 
-  const loadPatients = () => {
+  const loadPatients = async () => {
     setLoading(true);
     try {
-      console.log('🔍 Loading patients from localStorage...');
-      
-      // Load patients from localStorage without seeding
-      const storedPatients = localStorage.getItem('ppd_patients');
-      const patientsList = storedPatients ? JSON.parse(storedPatients) : [];
-      
-      // Load assessments from localStorage to calculate stats
-      const storedAssessments = localStorage.getItem('assessmentHistory');
-      const assessments = storedAssessments ? JSON.parse(storedAssessments) : [];
-      
-      console.log('Patients loaded:', patientsList);
-      console.log('Assessments loaded:', assessments);
-      
+      // 1) Load patients from backend
+      const res = await api.get("/patients"); // this is /api/patients on FastAPI
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        console.error("Failed to load patients:", res.status, body);
+        setPatients([]);
+        setStats({ total: 0, high: 0, moderate: 0, low: 0 });
+        setLoading(false);
+        return;
+      }
+  
+      const patientsList = await res.json();
       setPatients(patientsList);
-
-      // Calculate stats from assessments
+  
+      // 2) For now, reuse local assessmentHistory to compute stats
+      const storedAssessments = localStorage.getItem("assessmentHistory");
+      const assessments = storedAssessments ? JSON.parse(storedAssessments) : [];
+  
       let high = 0, moderate = 0, low = 0;
-      
-      // Group assessments by patient_id or patient_name
+  
+      // Group assessments by patient_id
       const patientAssessments = {};
-      assessments.forEach(assessment => {
+      assessments.forEach((assessment) => {
         const key = assessment.patient_id || assessment.patient_name;
         if (!patientAssessments[key]) {
           patientAssessments[key] = [];
         }
         patientAssessments[key].push(assessment);
       });
-      
-      // Get latest assessment for each patient to determine risk level
-      patientsList.forEach(patient => {
-        const patientAssmts = patientAssessments[patient.id] || patientAssessments[patient.name] || [];
+  
+      patientsList.forEach((patient) => {
+        const patientAssmts =
+          patientAssessments[patient.id] || patientAssessments[patient.name] || [];
         if (patientAssmts.length > 0) {
-          // Sort by date and get the latest
-          const latest = patientAssmts.sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date))[0];
+          const latest = patientAssmts.sort(
+            (a, b) =>
+              new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date)
+          )[0];
           if (latest?.risk_level === "High Risk") high++;
           else if (latest?.risk_level === "Moderate Risk") moderate++;
           else if (latest?.risk_level === "Low Risk") low++;
         }
       });
-      
+  
       setStats({ total: patientsList.length, high, moderate, low });
-      console.log('📊 Stats calculated:', { total: patientsList.length, high, moderate, low });
     } catch (err) {
       console.error("Failed to load patients:", err);
       setPatients([]);
       setStats({ total: 0, high: 0, moderate: 0, low: 0 });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
+  
 
-  const openPatientHistory = (patient) => {
+  const openPatientHistory = async (patient) => {
     setSelectedPatient(patient);
     setHistoryLoading(true);
-    
+
     try {
-      // Load assessments from localStorage for this patient
-      const savedHistory = localStorage.getItem("assessmentHistory");
-      if (savedHistory) {
-        const allAssessments = JSON.parse(savedHistory);
-        const patientAssessments = allAssessments.filter(
-          assessment => assessment.patient_id === patient.id || 
-                       assessment.patient_name === patient.name
-        );
-        setPatientHistory(patientAssessments);
-      } else {
+      // Call backend assessments list, filtered by clinician (already done server‑side)
+      const res = await api.get("/assessments");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        console.error("Failed to load history from API:", res.status, body);
         setPatientHistory([]);
+        setHistoryLoading(false);
+        return;
       }
+
+      const allAssessments = await res.json();
+
+      // Filter for this patient using patient_id (preferred) or name as fallback
+      const patientAssessments = allAssessments.filter(
+        (assessment) =>
+          assessment.patient_id === patient.id ||
+          assessment.patient_name === patient.name
+      );
+
+      setPatientHistory(patientAssessments);
     } catch (err) {
       console.error("Failed to load history", err);
       setPatientHistory([]);
+    } finally {
+      setHistoryLoading(false);
     }
-    
-    setHistoryLoading(false);
   };
+
 
   const generatePatientId = () => {
     return Date.now() + Math.floor(Math.random() * 1000);
@@ -136,69 +150,77 @@ export default function PatientsPage() {
     }
   };
 
-  const createPatient = () => {
+
+
+  const createPatient = async () => {
     if (!newPatient.name.trim()) {
-      alert('Patient name is required');
+      alert("Patient name is required");
       return;
     }
-    
-    try {
-      // Check if patient with same name already exists
-      const existingPatient = patients.find(
-        p => p.name.toLowerCase() === newPatient.name.trim().toLowerCase()
-      );
 
+    try {
+      // Optional: frontend duplicate check
+      const existingPatient = patients.find(
+        (p) => p.name.toLowerCase() === newPatient.name.trim().toLowerCase()
+      );
       if (existingPatient) {
         alert(`Patient with name "${newPatient.name}" already exists`);
         return;
       }
 
-      // Create new patient with auto-generated ID
-      const created = {
-        id: generatePatientId(),
+      // Create patient in backend
+      const res = await api.post("/patients", {
         name: newPatient.name.trim(),
         age: newPatient.age ? parseInt(newPatient.age) : null,
         phone: newPatient.phone.trim() || null,
-        clinician_email: user?.email || null,
-        created_at: new Date().toISOString()
-      };
+      });
 
-      const updatedPatients = [created, ...patients];
-      setPatients(updatedPatients);
-      savePatients(updatedPatients);
-      
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        console.error("Create patient failed:", res.status, body);
+        alert(body?.detail || "Failed to create patient");
+        return;
+      }
+
+      const created = await res.json(); // has id, clinician_email, created_at from DB
+
+      // Update local state
+      setPatients((prev) => [created, ...prev]);
       setShowNewPatient(false);
       setNewPatient({ name: "", age: "", phone: "" });
-      
-      // Recalculate stats
-      loadPatients();
-      
-      console.log(` Created patient: ${created.name} (ID: ${created.id})`);
+
+      console.log(`🆕 Created patient: ${created.name} (ID: ${created.id})`);
     } catch (err) {
       console.error("Failed to create patient", err);
       alert("Failed to create patient. Please try again.");
     }
   };
 
-  const deletePatient = (patientId) => {
-    if (!confirm('Are you sure you want to delete this patient? This action cannot be undone.')) {
+
+  const deletePatient = async (patientId) => {
+    if (!confirm("Are you sure you want to delete this patient? This action cannot be undone.")) {
       return;
     }
 
     try {
-      const updatedPatients = patients.filter(p => p.id !== patientId);
-      setPatients(updatedPatients);
-      savePatients(updatedPatients);
-      
-      // Recalculate stats
-      loadPatients();
-      
+      const res = await api.delete(`/patients/${patientId}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        console.error("Delete patient failed:", res.status, body);
+        alert(body?.detail || "Failed to delete patient");
+        return;
+      }
+
+      // Remove from state
+      setPatients((prev) => prev.filter((p) => p.id !== patientId));
+
       console.log(`🗑️ Deleted patient ID: ${patientId}`);
     } catch (err) {
       console.error("Failed to delete patient", err);
       alert("Failed to delete patient. Please try again.");
     }
   };
+
 
   const filteredPatients = patients
     .filter((p) =>
