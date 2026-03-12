@@ -287,7 +287,7 @@ export default function PatientsPage() {
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
               </div>
-              <span className="dp-profile-name">{user?.email?.split("@")[0] || "Clinician"}</span>
+              <span className="dp-profile-name">{user?.fullName || 'Clinician'}</span>
               <svg className="dp-profile-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="6 9 12 15 18 9"/>
               </svg>
