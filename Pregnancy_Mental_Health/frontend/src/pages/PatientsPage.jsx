@@ -140,30 +140,7 @@ export default function PatientsPage() {
     const storedPatients = localStorage.getItem('ppd_patients');
     if (!storedPatients || JSON.parse(storedPatients).length === 0) {
       const initialPatients = [
-        {
-          id: generatePatientId(),
-          name: "Sarah Johnson",
-          age: 28,
-          phone: "555-0123",
-          clinician_email: user?.email || null,
-          created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days ago
-        },
-        {
-          id: generatePatientId(),
-          name: "Maria Garcia",
-          age: 32,
-          phone: "555-0456",
-          clinician_email: user?.email || null,
-          created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days ago
-        },
-        {
-          id: generatePatientId(),
-          name: "Emily Chen",
-          age: 25,
-          phone: null,
-          clinician_email: user?.email || null,
-          created_at: new Date().toISOString()
-        }
+       
       ];
       
       savePatients(initialPatients);

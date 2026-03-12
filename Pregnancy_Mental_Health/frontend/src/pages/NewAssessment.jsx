@@ -230,30 +230,7 @@ export default function NewAssessment() {
     const storedPatients = localStorage.getItem('ppd_patients');
     if (!storedPatients || JSON.parse(storedPatients).length === 0) {
       const initialPatients = [
-        {
-          id: generatePatientId(),
-          name: "Sarah Johnson",
-          age: 28,
-          phone: "555-0123",
-          clinician_email: user?.email || null,
-          created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days ago
-        },
-        {
-          id: generatePatientId(),
-          name: "Maria Garcia",
-          age: 32,
-          phone: "555-0456",
-          clinician_email: user?.email || null,
-          created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days ago
-        },
-        {
-          id: generatePatientId(),
-          name: "Emily Chen",
-          age: 25,
-          phone: null,
-          clinician_email: user?.email || null,
-          created_at: new Date().toISOString()
-        }
+        
       ];
       
       savePatients(initialPatients);
@@ -1451,9 +1428,19 @@ export default function NewAssessment() {
           <div className="patient-modal" onClick={(e) => e.stopPropagation()}>
             <div className="patient-modal-header">
               <h2>Select Patient to Continue</h2>
-              {selectedPatient && (
-                <button className="patient-modal-close" onClick={() => setShowPatientModal(false)}>✕</button>
-              )}
+              <button 
+                className="patient-modal-close" 
+                onClick={() => {
+                  if (selectedPatient) {
+                    setShowPatientModal(false);
+                  } else {
+                    // If no patient selected, navigate back to dashboard
+                    navigate('/dashboard');
+                  }
+                }}
+              >
+                ✕
+              </button>
             </div>
             
             <div className="patient-modal-body">
