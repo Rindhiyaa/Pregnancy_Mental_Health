@@ -10,7 +10,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 export default function App() {
   const location = useLocation();
 
-  const isDashboard = location.pathname.startsWith("/dashboard");
+  const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/patients");
 
   return (
     <ErrorBoundary>

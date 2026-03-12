@@ -343,7 +343,7 @@ body.dashboard-page {
   padding: 0.75rem 1.25rem;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: white;
+  background: rgb(214, 234, 242);
   color: var(--text-dark);
   font-size: 0.875rem;
   font-weight: 600;
@@ -1522,22 +1522,48 @@ body.dashboard-page {
 }
 
 .dp-view-btn svg {
-  stroke: #7c3aed;
+  stroke: #7c3aed !important;
+  stroke-width: 2.5 !important;
+  fill: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* Download button */
 .dp-export-btn {
-  color: #0284c7;
-  border-color: #bae6fd;
-  background: #f0f9ff;
+  color: #041b26 !important;
+  border-color: #bae6fd !important;
+  background: #f0f9ff !important;
+  padding: 0.5rem !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .dp-export-btn:hover {
-  background: #e0f2fe;
+  background: #e0f2fe !important;
+}
+
+.dp-export-btn:hover svg {
+  stroke: #0369a1 !important;
+  stroke-width: 3 !important;
+  transform: scale(1.1) !important;
 }
 
 .dp-export-btn svg {
-  stroke: #0284c7;
+  stroke: #0284c7 !important;
+  stroke-width: 2.5 !important;
+  fill: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* Delete button */
@@ -1552,7 +1578,14 @@ body.dashboard-page {
 }
 
 .dp-delete-btn svg {
-  stroke: #dc2626;
+  stroke: #dc2626 !important;
+  stroke-width: 2.5 !important;
+  fill: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* ==================== NAVBAR NOTIFICATION BUTTON ==================== */
@@ -1603,4 +1636,26 @@ body.dashboard-page {
   justify-content: center;
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+/* Enhanced hover effects for action buttons */
+.dp-view-btn:hover svg {
+  stroke: #6d28d9 !important;
+  stroke-width: 3 !important;
+  transform: scale(1.1) !important;
+}
+
+.dp-delete-btn:hover svg {
+  stroke: #b91c1c !important;
+  stroke-width: 3 !important;
+  transform: scale(1.1) !important;
+}
+
+/* Ensure all action buttons have proper sizing */
+.dp-view-btn, .dp-delete-btn {
+  padding: 0.5rem !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }

@@ -285,6 +285,10 @@ const HistoryPage = () => {
           >
             History
           </NavLink>
+          <NavLink to="/patients" className={({isActive}) => 
+            `dp-nav-link ${isActive ? "dp-nav-link-active" : ""}`}>
+            Patients
+          </NavLink>
         </nav>
 
         <div className="dp-nav-right">
@@ -360,7 +364,7 @@ const HistoryPage = () => {
             </div>
             <div className="history-header-actions">
               <button 
-                className="new-assessment-btn"
+                className="pp-btn-new"
                 onClick={() => navigate('/dashboard/new-assessment')}
               >
                 + New Assessment
@@ -543,7 +547,7 @@ const HistoryPage = () => {
                           <h3>No assessments found</h3>
                           <p>Start by creating your first postpartum depression assessment.</p>
                           <button 
-                            className="create-first-btn"
+                            className="pp-btn-new"
                             onClick={() => navigate('/dashboard/new-assessment')}
                           >
                             Create First Assessment

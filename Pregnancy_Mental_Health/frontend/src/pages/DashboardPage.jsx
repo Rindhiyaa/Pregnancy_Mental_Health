@@ -572,6 +572,10 @@ const DashboardPage = () => {
     >
       History
     </NavLink>
+    <NavLink to="/patients" className={({isActive}) => 
+      `dp-nav-link ${isActive ? "dp-nav-link-active" : ""}`}>
+      Patients
+    </NavLink>
   </nav>
 
   <div className="dp-nav-right">
@@ -761,7 +765,7 @@ const DashboardPage = () => {
                 <div className="dp-no-data">
                   <p>No assessment data available</p>
                   <button 
-                    className="dp-qa-primary"
+                    className="pp-btn-new"
                     onClick={() => navigate('/dashboard/new-assessment')}
                   >
                     Create First Assessment

@@ -109,6 +109,7 @@ class AssessmentResult(BaseModel):
 
 class AssessmentSave(BaseModel):
     patient_name: str
+    patient_id: Optional[int] = None
     risk_level: str
     score: float
     clinician_risk: Optional[str] = None
@@ -135,3 +136,26 @@ class HistoryItem(BaseModel):
     name: str
     date: str
     risk: str
+
+
+class PatientCreate(BaseModel):
+    name: str
+    age: Optional[int] = None
+    phone: Optional[str] = None
+
+
+class PatientOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    name: str
+    age: Optional[int] = None
+    phone: Optional[str] = None
+    clinician_email: Optional[str] = None
+    created_at: datetime
+
+
+class PatientUpdate(BaseModel):
+    name: Optional[str] = None
+    age: Optional[int] = None
+    phone: Optional[str] = None

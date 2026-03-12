@@ -12,6 +12,7 @@ import NotFoundPage from "../pages/NotFoundPage";
 import HistoryPage from "../pages/HistoryPage";
 import ProfilePage from "../pages/ProfilePage";
 import NewAssessment from "../pages/NewAssessment";
+import PatientsPage from "../pages/PatientsPage";
 
 export default function AppRouter() {
   return (
@@ -54,6 +55,14 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <NewAssessment />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/patients" 
+        element={
+          <ProtectedRoute>
+            <PatientsPage />
           </ProtectedRoute>
         } 
       />

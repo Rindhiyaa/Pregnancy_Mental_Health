@@ -133,6 +133,7 @@ def save_assessment(
 ):
     assessment = models.Assessment(
         patient_name=payload.patient_name,
+        patient_id=payload.patient_id,
         raw_data=payload.raw_data,
         risk_score=payload.score,
         risk_level=payload.risk_level,

@@ -37,6 +37,7 @@ export default function NewAssessment() {
 
   // Get patient name from URL params if provided
   const prefilledPatientName = searchParams.get('patient') || '';
+  const prefilledPatientId = searchParams.get('id') || null;
 
   // 🔹 PRENATAL ASSESSMENT - All fields match backend requirements
   const [formData, setFormData] = useState({
@@ -85,6 +86,18 @@ export default function NewAssessment() {
   // 🔹 RESULT FROM BACKEND
   const [result, setResult] = useState(null);
   const [showSafetyAlert, setShowSafetyAlert] = useState(false);
+
+  // 🔹 PATIENT MANAGEMENT
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [patients, setPatients] = useState([]);
+  const [patientSearch, setPatientSearch] = useState('');
+  const [showCreatePatient, setShowCreatePatient] = useState(false);
+  const [showPatientModal, setShowPatientModal] = useState(true); // Auto-show modal on page load
+  const [newPatientData, setNewPatientData] = useState({
+    name: '',
+    age: '',
+    phone: ''
+  });
 
   // 🔹 AUTO-SAVE FUNCTIONALITY (using localStorage)
   const autoSaveDraft = async (data) => {
@@ -182,6 +195,143 @@ export default function NewAssessment() {
     setStep(newStep);
   };
 
+  // 🔹 PATIENT MANAGEMENT FUNCTIONS (localStorage-based)
+  const loadPatients = () => {
+    try {
+      console.log('🔍 Loading patients from localStorage...');
+      
+      // Seed initial patients if none exist, then load them
+      const patients = seedInitialPatients();
+      setPatients(patients);
+      
+      console.log(`📋 Loaded ${patients.length} patients from localStorage`);
+    } catch (error) {
+      console.error('Failed to load patients from localStorage:', error);
+      setPatients([]);
+    }
+  };
+
+  const savePatients = (patients) => {
+    try {
+      localStorage.setItem('ppd_patients', JSON.stringify(patients));
+      console.log(`💾 Saved ${patients.length} patients to localStorage`);
+    } catch (error) {
+      console.error('Failed to save patients to localStorage:', error);
+    }
+  };
+
+  const generatePatientId = () => {
+    // Generate a unique ID based on timestamp and random number
+    return Date.now() + Math.floor(Math.random() * 1000);
+  };
+
+  // Seed initial patients if none exist
+  const seedInitialPatients = () => {
+    const storedPatients = localStorage.getItem('ppd_patients');
+    if (!storedPatients || JSON.parse(storedPatients).length === 0) {
+      const initialPatients = [
+        {
+          id: generatePatientId(),
+          name: "Sarah Johnson",
+          age: 28,
+          phone: "555-0123",
+          clinician_email: user?.email || null,
+          created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days ago
+        },
+        {
+          id: generatePatientId(),
+          name: "Maria Garcia",
+          age: 32,
+          phone: "555-0456",
+          clinician_email: user?.email || null,
+          created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days ago
+        },
+        {
+          id: generatePatientId(),
+          name: "Emily Chen",
+          age: 25,
+          phone: null,
+          clinician_email: user?.email || null,
+          created_at: new Date().toISOString()
+        }
+      ];
+      
+      savePatients(initialPatients);
+      console.log('🌱 Seeded initial patients:', initialPatients);
+      return initialPatients;
+    }
+    return JSON.parse(storedPatients);
+  };
+
+  const createNewPatient = () => {
+    if (!newPatientData.name.trim()) {
+      alert('Patient name is required');
+      return;
+    }
+
+    try {
+      // Check if patient with same name already exists
+      const existingPatient = patients.find(
+        p => p.name.toLowerCase() === newPatientData.name.trim().toLowerCase()
+      );
+
+      if (existingPatient) {
+        alert(`Patient with name "${newPatientData.name}" already exists`);
+        return;
+      }
+
+      // Create new patient with auto-generated ID
+      const newPatient = {
+        id: generatePatientId(),
+        name: newPatientData.name.trim(),
+        age: newPatientData.age ? parseInt(newPatientData.age) : null,
+        phone: newPatientData.phone.trim() || null,
+        clinician_email: user?.email || null,
+        created_at: new Date().toISOString()
+      };
+
+      const updatedPatients = [newPatient, ...patients];
+      setPatients(updatedPatients);
+      savePatients(updatedPatients);
+      
+      selectPatient(newPatient);
+      setShowCreatePatient(false);
+      setNewPatientData({ name: '', age: '', phone: '' });
+      
+      console.log(`✅ Created patient: ${newPatient.name} (ID: ${newPatient.id})`);
+    } catch (error) {
+      console.error('Failed to create patient:', error);
+      alert(`Failed to create patient: ${error.message}`);
+    }
+  };
+
+  const selectPatient = (patient) => {
+    setSelectedPatient(patient);
+    setFormData(prev => ({ ...prev, patient_name: patient.name }));
+    setPatientSearch('');
+  };
+
+  // Load patients on component mount and handle URL params
+  useEffect(() => {
+    loadPatients(); // Now synchronous localStorage call
+  }, []);
+
+  // Auto-select patient if ID is provided in URL
+  useEffect(() => {
+    if (prefilledPatientId && patients.length > 0) {
+      const patient = patients.find(p => p.id.toString() === prefilledPatientId.toString());
+      if (patient) {
+        selectPatient(patient);
+        console.log(`🎯 Auto-selected patient from URL: ${patient.name} (ID: ${patient.id})`);
+      }
+    }
+  }, [prefilledPatientId, patients]);
+
+  // Filter patients based on search
+  const filteredPatients = patients.filter(patient =>
+    patient.name.toLowerCase().includes(patientSearch.toLowerCase())
+  );
+
   // 🔹 FINAL SUBMIT - All 34 required fields organized by section
   const REQUIRED_FIELDS = [
     // Demographics (7 fields)
@@ -269,7 +419,7 @@ export default function NewAssessment() {
 
 
   return (
-    <>
+    <div className="new-assessment-page">
       {/* Safety Alert - Modal popup when critical risk detected */}
       {showSafetyAlert && (
         <SafetyAlert 
@@ -314,6 +464,10 @@ export default function NewAssessment() {
             }
           >
             History
+          </NavLink>
+          <NavLink to="/patients" className={({isActive}) => 
+            `dp-nav-link ${isActive ? "dp-nav-link-active" : ""}`}>
+            Patients
           </NavLink>
         </nav>
 
@@ -440,6 +594,35 @@ export default function NewAssessment() {
           {/* Show card for steps 1-5 and step 7 (not step 6) */}
           {step >= 1 && step <= 7 && step !== 6 && (
             <section className="card">
+              
+              {/* Selected Patient Info Bar */}
+              {selectedPatient && (
+                <div className="selected-patient-info-bar">
+                  <div className="patient-info-content">
+                    <div className="patient-avatar-small">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                    </div>
+                    <div className="patient-details-small">
+                      <span className="patient-name-small">{selectedPatient.name}</span>
+                      <span className="patient-meta-small">
+                        ID: #{selectedPatient.id}
+                        {selectedPatient.age && ` • Age: ${selectedPatient.age}`}
+                        {selectedPatient.phone && ` • ${selectedPatient.phone}`}
+                      </span>
+                    </div>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setShowPatientModal(true)}
+                    className="change-patient-small-btn"
+                  >
+                    Change Patient
+                  </button>
+                </div>
+              )}
               
               {/* Auto-save Status Indicator */}
               {autoSaveStatus && (
@@ -1074,6 +1257,7 @@ export default function NewAssessment() {
 
                         const payload = {
                           patient_name: formData.patient_name,
+                          patient_id: selectedPatient?.id || prefilledPatientId || null,
                           risk_level: riskLevel,
                           score: result.score,
                           clinician_risk: formData.clinician_risk, // "Low" | "Medium" | "High"
@@ -1143,7 +1327,7 @@ export default function NewAssessment() {
                     </button>
 
                     <button
-                      className="new-assessment-btn"
+                      className="pp-btn-new"
                       onClick={() => {
                         // Reset form and start new assessment
                         window.location.reload();
@@ -1253,6 +1437,202 @@ export default function NewAssessment() {
           </div>
         </div>
       )}
-    </>
+
+      {/* Patient Selection Modal */}
+      {showPatientModal && (
+        <div className="patient-modal-overlay" onClick={(e) => {
+          // Prevent closing if no patient is selected
+          if (!selectedPatient) {
+            e.preventDefault();
+            return;
+          }
+          setShowPatientModal(false);
+        }}>
+          <div className="patient-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="patient-modal-header">
+              <h2>Select Patient to Continue</h2>
+              {selectedPatient && (
+                <button className="patient-modal-close" onClick={() => setShowPatientModal(false)}>✕</button>
+              )}
+            </div>
+            
+            <div className="patient-modal-body">
+              {!selectedPatient && (
+                <div className="patient-selection-required">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <h3>Patient Selection Required</h3>
+                  <p>Please select an existing patient or create a new one to start the assessment.</p>
+                </div>
+              )}
+              
+              {/* Search Bar */}
+              <div className="patient-search-section">
+                <div className="search-input-container">
+                 
+                  <input
+                    type="text"
+                    placeholder="Search patients by name..."
+                    value={patientSearch}
+                    onChange={(e) => setPatientSearch(e.target.value)}
+                    className="patient-search-modal-input"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Patient List */}
+              <div className="patient-list-section">
+                <div className="patient-list-header">
+                  <span>Available Patients ({filteredPatients.length})</span>
+                </div>
+                
+                <div className="patient-list-container">
+                  {filteredPatients.length > 0 ? (
+                    filteredPatients.map((patient) => (
+                      <div
+                        key={patient.id}
+                        className={`patient-list-item ${selectedPatient?.id === patient.id ? 'selected' : ''}`}
+                        onClick={() => {
+                          selectPatient(patient);
+                          setShowPatientModal(false);
+                          setPatientSearch('');
+                        }}
+                      >
+                        <div className="patient-avatar">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                          </svg>
+                        </div>
+                        <div className="patient-list-info">
+                          <div className="patient-list-name">{patient.name}</div>
+                          <div className="patient-list-meta">
+                            <span className="patient-list-id">ID: #{patient.id}</span>
+                            {patient.age && <span className="patient-list-age">Age: {patient.age}</span>}
+                            {patient.phone && <span className="patient-list-phone">📞 {patient.phone}</span>}
+                          </div>
+                        </div>
+                        {selectedPatient?.id === patient.id && (
+                          <div className="selected-checkmark">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="no-patients-found">
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                      </svg>
+                      <p>No patients found</p>
+                      <span>Try adjusting your search or create a new patient</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Create New Patient Section */}
+              <div className="create-patient-modal-section">
+                {!showCreatePatient ? (
+                  <button 
+                    type="button"
+                    onClick={() => setShowCreatePatient(true)}
+                    className="create-new-patient-btn"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="16"/>
+                      <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    Create New Patient
+                  </button>
+                ) : (
+                  <div className="create-patient-form-modal">
+                    <div className="create-form-header">
+                      <h3>Add New Patient</h3>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setShowCreatePatient(false);
+                          setNewPatientData({ name: '', age: '', phone: '' });
+                        }}
+                        className="cancel-create-btn"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    
+                    <div className="create-form-fields">
+                      <div className="modal-form-group">
+                        <label>Full Name *</label>
+                        <input
+                          type="text"
+                          placeholder="Enter patient full name"
+                          value={newPatientData.name}
+                          onChange={(e) => setNewPatientData({...newPatientData, name: e.target.value})}
+                        />
+                      </div>
+                      <div className="modal-form-row">
+                        <div className="modal-form-group">
+                          <label>Age</label>
+                          <input
+                            type="number"
+                            placeholder="e.g. 24"
+                            value={newPatientData.age}
+                            min="10" max="70"
+                            onChange={(e) => setNewPatientData({...newPatientData, age: e.target.value})}
+                          />
+                        </div>
+                        <div className="modal-form-group">
+                          <label>Phone</label>
+                          <input
+                            type="tel"
+                            placeholder="e.g. 9876543210"
+                            value={newPatientData.phone}
+                            onChange={(e) => setNewPatientData({...newPatientData, phone: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="create-form-actions">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCreatePatient(false);
+                          setNewPatientData({ name: '', age: '', phone: '' });
+                        }}
+                        className="modal-cancel-btn"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          createNewPatient();
+                          setShowPatientModal(false);
+                          setPatientSearch('');
+                        }}
+                        disabled={!newPatientData.name.trim()}
+                        className="modal-create-btn"
+                      >
+                        Create Patient
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
   );
 }

@@ -183,21 +183,20 @@
 }
 
 .clear-history-btn {
-  padding: 0.75rem 1.5rem;
-  background: #ffffff;
-  color: #ef4444;
-  border: 2px solid #ef4444;
-  border-radius: 12px;
-  font-weight: 600;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  background: #f0f9ff;
+  color: #0284c7;
   font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
 .clear-history-btn:hover {
-  background: #ef4444;
-  color: white;
-  transform: translateY(-1px);
+  background: #e0f2fe;
 }
 
 /* Enhanced Card */
@@ -496,20 +495,20 @@
 }
 
 .clear-filters-btn {
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #6b7280, #9ca3af);
-  color: white;
-  border: none;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid #bae6fd;
   border-radius: 8px;
-  font-weight: 600;
+  background: #f0f9ff;
+  color: #0284c7;
   font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
 .clear-filters-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background: #e0f2fe;
 }
 
 /* No Data State */
@@ -1019,7 +1018,14 @@
 }
 
 .history-export-btn svg {
-  stroke: #0284c7;
+  stroke: #0284c7 !important;
+  stroke-width: 2.5 !important;
+  fill: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* Modal Primary Button */
@@ -1042,4 +1048,21 @@
 .modal-btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+/* Blue export button styling for New Assessment */
+.pp-btn-new {
+  padding: 0.75rem 1.25rem;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  background: #f0f9ff;
+  color: #0284c7;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.pp-btn-new:hover {
+  background: #e0f2fe;
 }

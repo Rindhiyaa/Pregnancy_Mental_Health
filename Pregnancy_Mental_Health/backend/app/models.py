@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, DateTime, func, String, Boolean, JSON
+from sqlalchemy import Column, Integer, Float, DateTime, func, String, Boolean, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -30,6 +30,7 @@ class Assessment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     patient_name = Column(String, nullable=False)
+    patient_id = Column(Integer, ForeignKey('patients.id'), nullable=True)
     
     raw_data = Column(JSON, nullable=False)           # full formData as JSON
     risk_score = Column(Float, nullable=False)
@@ -40,5 +41,16 @@ class Assessment(Base):
     clinician_email = Column(String, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now()) 
+
+
+class Patient(Base):
+    __tablename__ = "patients"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    age = Column(Integer, nullable=True)
+    phone = Column(String, nullable=True)
+    clinician_email = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

@@ -177,6 +177,14 @@ const ProfilePage = () => {
           >
             History
           </NavLink>
+          <NavLink
+            to="/patients"
+            className={({ isActive }) =>
+              "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
+            }
+          >
+            Patients
+          </NavLink>
         </nav>
 
         <div className="dp-nav-right">

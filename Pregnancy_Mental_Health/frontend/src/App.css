@@ -96,3 +96,20 @@ body {
     padding: 0 1.5rem;
   }
 }
+/* Global New Assessment Button Style */
+.pp-btn-new {
+  padding: 0.5rem 1rem;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pp-btn-new:hover {
+  background: #2563eb;
+  color: white;
+}
