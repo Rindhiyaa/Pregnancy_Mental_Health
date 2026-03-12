@@ -50,8 +50,9 @@ export default function PatientsPage() {
     try {
       console.log('🔍 Loading patients from localStorage...');
       
-      // Seed initial patients if none exist
-      const patientsList = seedInitialPatients();
+      // Load patients from localStorage without seeding
+      const storedPatients = localStorage.getItem('ppd_patients');
+      const patientsList = storedPatients ? JSON.parse(storedPatients) : [];
       
       // Load assessments from localStorage to calculate stats
       const storedAssessments = localStorage.getItem('assessmentHistory');
@@ -133,21 +134,6 @@ export default function PatientsPage() {
     } catch (error) {
       console.error('Failed to save patients to localStorage:', error);
     }
-  };
-
-  // Seed initial patients if none exist
-  const seedInitialPatients = () => {
-    const storedPatients = localStorage.getItem('ppd_patients');
-    if (!storedPatients || JSON.parse(storedPatients).length === 0) {
-      const initialPatients = [
-       
-      ];
-      
-      savePatients(initialPatients);
-      console.log('🌱 Seeded initial patients:', initialPatients);
-      return initialPatients;
-    }
-    return JSON.parse(storedPatients);
   };
 
   const createPatient = () => {

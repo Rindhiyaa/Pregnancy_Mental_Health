@@ -200,8 +200,9 @@ export default function NewAssessment() {
     try {
       console.log('🔍 Loading patients from localStorage...');
       
-      // Seed initial patients if none exist, then load them
-      const patients = seedInitialPatients();
+      // Load patients from localStorage without seeding
+      const storedPatients = localStorage.getItem('ppd_patients');
+      const patients = storedPatients ? JSON.parse(storedPatients) : [];
       setPatients(patients);
       
       console.log(`📋 Loaded ${patients.length} patients from localStorage`);
@@ -223,21 +224,6 @@ export default function NewAssessment() {
   const generatePatientId = () => {
     // Generate a unique ID based on timestamp and random number
     return Date.now() + Math.floor(Math.random() * 1000);
-  };
-
-  // Seed initial patients if none exist
-  const seedInitialPatients = () => {
-    const storedPatients = localStorage.getItem('ppd_patients');
-    if (!storedPatients || JSON.parse(storedPatients).length === 0) {
-      const initialPatients = [
-        
-      ];
-      
-      savePatients(initialPatients);
-      console.log('🌱 Seeded initial patients:', initialPatients);
-      return initialPatients;
-    }
-    return JSON.parse(storedPatients);
   };
 
   const createNewPatient = () => {
