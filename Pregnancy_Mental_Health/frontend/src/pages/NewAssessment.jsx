@@ -278,7 +278,7 @@ export default function NewAssessment() {
 
   // Load patients on component mount and handle URL params
   useEffect(() => {
-    loadPatients(); // Now synchronous localStorage call
+    loadPatients(); // Now synchronous localStorage calll
   }, []);
 
   // Auto-select patient if ID is provided in URL

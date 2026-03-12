@@ -39,18 +39,40 @@ def predict_assessment(payload: AssessmentCreate):
         low_prob = class_to_prob.get("Low", 0.0)
 
         # Pick max-probability risk level and original model_score (0–100)
+        # Choose max-probability risk class
         if high_prob >= med_prob and high_prob >= low_prob:
-            risk_level_from_model = "High Risk"
-            model_score = 70 + high_prob * 30
+            model_risk = "High Risk"
         elif med_prob >= low_prob:
-            risk_level_from_model = "Moderate Risk"
-            model_score = 40 + med_prob * 30
+            model_risk = "Moderate Risk"
         else:
-            risk_level_from_model = "Low Risk"
-            model_score = low_prob * 40
+            model_risk = "Low Risk"
+
+        # Map to base scores with wider gaps
+        if model_risk == "High Risk":
+            base_score = 85.0
+        elif model_risk == "Moderate Risk":
+            base_score = 55.0
+        else:  # Low Risk
+            base_score = 25.0
+
+        # Add a small adjustment based on confidence of the chosen class
+        if model_risk == "High Risk":
+            confidence = high_prob
+        elif model_risk == "Moderate Risk":
+            confidence = med_prob
+        else:
+            confidence = low_prob
+
+        model_score = base_score + (confidence - 0.5) * 20.0  # ±10 around base
+        model_score = max(0.0, min(100.0, model_score))
 
         logger.info(f"CatBoost prediction - classes: {cat_classes}, probs: {proba}")
-        logger.info(f"Model risk: {risk_level_from_model}, score: {model_score:.1f}")
+        logger.info(
+            f"CatBoost model risk: {model_risk}, "
+            f"base_score: {base_score:.1f}, "
+            f"confidence: {confidence:.3f}, "
+            f"model_score: {model_score:.1f}"
+        )
 
         # 5) EPDS total and scaled (0–100)
         epds_items = [
@@ -72,12 +94,13 @@ def predict_assessment(payload: AssessmentCreate):
         final_score = 0.7 * model_score + 0.3 * epds_scaled
 
         # 7) Map final_score → final risk level (based on combined score)
-        if final_score >= 66:
+        if final_score >= 70:
             final_risk = "High Risk"
-        elif final_score >= 33:
+        elif final_score >= 40:
             final_risk = "Moderate Risk"
         else:
             final_risk = "Low Risk"
+
 
         logger.info(
             f"EPDS total: {epds_total}, scaled: {epds_scaled:.1f}, "

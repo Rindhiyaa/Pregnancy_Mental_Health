@@ -41,7 +41,7 @@ def create_patient(
             detail=f"Patient with name '{patient_data.name}' already exists"
         )
     
-    # Create new patient
+    # Create new patientt
     db_patient = Patient(
         name=patient_data.name,
         age=patient_data.age,
