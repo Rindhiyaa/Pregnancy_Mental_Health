@@ -10,6 +10,15 @@ from .routers.patients import router as patients_router
 from .rate_limiter import rate_limiter
 from .config import ALLOWED_ORIGINS, TRUSTED_HOSTS, IS_PRODUCTION
 import asyncio
+import logging
+import sys
+
+logging.basicConfig(
+    level=logging.INFO,  # show info+
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

@@ -31,15 +31,15 @@ def predict_assessment(payload: AssessmentCreate):
         if isinstance(pred_class, (int, float)):
             label_map = {0: "High", 1: "Low", 2: "Medium"}
             pred_class = label_map.get(int(pred_class), "Medium")
-        proba = model.predict_proba(X_aligned)[0]
+        proba = model.predict_proba(X_aligned)[0]  # e.g. [p0, p1, p2]
 
-        class_to_prob = {cls: p for cls, p in zip(cat_classes, proba)}
-        high_prob = class_to_prob.get("High", 0.0)
-        med_prob = class_to_prob.get("Medium", 0.0)
-        low_prob = class_to_prob.get("Low", 0.0)
+    # Using the LabelEncoder order ['High', 'Low', 'Medium'] -> 0,1,2
+        # so:
+        high_prob = float(proba[0])
+        low_prob = float(proba[1])
+        med_prob = float(proba[2])
 
-        # Pick max-probability risk level and original model_score (0–100)
-        # Choose max-probability risk class
+        # Choose model_risk by max probability
         if high_prob >= med_prob and high_prob >= low_prob:
             model_risk = "High Risk"
         elif med_prob >= low_prob:
@@ -47,15 +47,15 @@ def predict_assessment(payload: AssessmentCreate):
         else:
             model_risk = "Low Risk"
 
-        # Map to base scores with wider gaps
+        # Base scores
         if model_risk == "High Risk":
             base_score = 85.0
         elif model_risk == "Moderate Risk":
             base_score = 55.0
-        else:  # Low Risk
+        else:
             base_score = 25.0
 
-        # Add a small adjustment based on confidence of the chosen class
+        # Confidence of chosen class
         if model_risk == "High Risk":
             confidence = high_prob
         elif model_risk == "Moderate Risk":
@@ -63,16 +63,20 @@ def predict_assessment(payload: AssessmentCreate):
         else:
             confidence = low_prob
 
-        model_score = base_score + (confidence - 0.5) * 20.0  # ±10 around base
+        model_score = base_score + (confidence - 0.5) * 20.0
         model_score = max(0.0, min(100.0, model_score))
 
-        logger.info(f"CatBoost prediction - classes: {cat_classes}, probs: {proba}")
+        logger.info(
+            f"CatBoost prediction - probs: {proba}"
+        )
         logger.info(
             f"CatBoost model risk: {model_risk}, "
             f"base_score: {base_score:.1f}, "
             f"confidence: {confidence:.3f}, "
             f"model_score: {model_score:.1f}"
         )
+
+
 
         # 5) EPDS total and scaled (0–100)
         epds_items = [
@@ -103,8 +107,9 @@ def predict_assessment(payload: AssessmentCreate):
 
 
         logger.info(
-            f"EPDS total: {epds_total}, scaled: {epds_scaled:.1f}, "
-            f"final_score: {final_score:.1f}, final_risk: {final_risk}"
+            f"FINAL OUTPUT -> model_risk={model_risk}, model_score={model_score:.1f}, "
+            f"epds_total={epds_total}, epds_scaled={epds_scaled:.1f}, "
+            f"final_score={final_score:.1f}, final_risk={final_risk}"
         )
 
     except Exception as e:
