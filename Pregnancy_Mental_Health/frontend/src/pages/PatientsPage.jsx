@@ -108,7 +108,7 @@ export default function PatientsPage() {
     setHistoryLoading(true);
 
     try {
-      // Call backend assessments list, filtered by clinician (already done server‑side)
+      // Call backend assessments list, filtered by clinician 
       const res = await api.get("/assessments");
       if (!res.ok) {
         const body = await res.json().catch(() => null);

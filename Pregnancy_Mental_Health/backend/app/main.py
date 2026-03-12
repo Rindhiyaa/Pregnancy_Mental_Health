@@ -13,7 +13,7 @@ import asyncio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Start background cleanup task
+    # Startup: Start background cleanup taskk
     cleanup_task = asyncio.create_task(rate_limiter.cleanup_old_entries())
     yield
     # Shutdown: Cancel cleanup task
