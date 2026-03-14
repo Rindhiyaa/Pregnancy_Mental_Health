@@ -1049,20 +1049,35 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
 }
-/* Blue export button styling for New Assessment */
+/* Teal export button styling for New Assessment */
 .pp-btn-new {
-  padding: 0.75rem 1.25rem;
-  border: 1px solid #bae6fd;
-  border-radius: 8px;
-  background: #f0f9ff;
-  color: #0284c7;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
+  padding: 0.75rem 1.25rem !important;
+  border: 1px solid #14b8a6 !important;
+  border-radius: 8px !important;
+  background: #622d81 !important;
+  color: white !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
 }
 
 .pp-btn-new:hover {
-  background: #e0f2fe;
+  background: #033834 !important;
+  border-color: #0f766e !important;
+  color: white !important;
+}
+
+/* More specific selector for History page New Assessment button */
+.history-header-actions .pp-btn-new {
+  background: #14b8a6 !important;
+  color: white !important;
+  border: 1px solid #14b8a6 !important;
+}
+
+.history-header-actions .pp-btn-new:hover {
+  background: #0f766e !important;
+  border-color: #0f766e !important;
+  color: white !important;
 }

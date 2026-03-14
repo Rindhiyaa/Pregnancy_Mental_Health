@@ -18,6 +18,7 @@ export default function PatientsPage() {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patientHistory, setPatientHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [modalError, setModalError] = useState("");
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -152,9 +153,37 @@ export default function PatientsPage() {
 
 
 
+  // Phone validation function
+  const validatePhone = (phone) => {
+    if (!phone || phone.trim() === '') return true; // Phone is optional
+    
+    // Remove all non-digit characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Check if it's a valid length (at least 10 digits)
+    if (cleanPhone.length < 10) {
+      return false;
+    }
+    
+    // Check if it's not just repeated digits (like 1111111111)
+    if (/^(\d)\1{9,}$/.test(cleanPhone)) {
+      return false;
+    }
+    
+    return true;
+  };
+
   const createPatient = async () => {
+    setModalError(""); // Clear any previous errors
+    
     if (!newPatient.name.trim()) {
-      alert("Patient name is required");
+      setModalError("Patient name is required");
+      return;
+    }
+
+    // Validate phone number if provided
+    if (newPatient.phone && !validatePhone(newPatient.phone)) {
+      setModalError("Please enter a valid phone number (at least 10 digits)");
       return;
     }
 
@@ -164,7 +193,7 @@ export default function PatientsPage() {
         (p) => p.name.toLowerCase() === newPatient.name.trim().toLowerCase()
       );
       if (existingPatient) {
-        alert(`Patient with name "${newPatient.name}" already exists`);
+        setModalError(`Patient with name "${newPatient.name}" already exists`);
         return;
       }
 
@@ -178,7 +207,7 @@ export default function PatientsPage() {
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         console.error("Create patient failed:", res.status, body);
-        alert(body?.detail || "Failed to create patient");
+        setModalError(body?.detail || "Failed to create patient");
         return;
       }
 
@@ -188,11 +217,12 @@ export default function PatientsPage() {
       setPatients((prev) => [created, ...prev]);
       setShowNewPatient(false);
       setNewPatient({ name: "", age: "", phone: "" });
+      setModalError(""); // Clear error on success
 
       console.log(`🆕 Created patient: ${created.name} (ID: ${created.id})`);
     } catch (err) {
       console.error("Failed to create patient", err);
-      alert("Failed to create patient. Please try again.");
+      setModalError("Failed to create patient. Please try again.");
     }
   };
 
@@ -555,15 +585,26 @@ export default function PatientsPage() {
       {/* ── NEW PATIENT MODAL ── */}
       {showNewPatient && (
         <div className="pp-modal-overlay"
-          onClick={() => setShowNewPatient(false)}>
+          onClick={() => {
+            setShowNewPatient(false);
+            setModalError("");
+          }}>
           <div className="pp-modal"
             onClick={(e) => e.stopPropagation()}>
             <div className="pp-modal-header">
               <h2>Add New Patient</h2>
               <button className="pp-modal-close"
-                onClick={() => setShowNewPatient(false)}>✕</button>
+                onClick={() => {
+                  setShowNewPatient(false);
+                  setModalError("");
+                }}>✕</button>
             </div>
             <div className="pp-modal-body">
+              {modalError && (
+                <div className="pp-error-message">
+                  {modalError}
+                </div>
+              )}
               <div className="pp-form-group">
                 <label>Full Name *</label>
                 <input
@@ -604,7 +645,10 @@ export default function PatientsPage() {
             </div>
             <div className="pp-modal-footer">
               <button className="pp-btn-secondary"
-                onClick={() => setShowNewPatient(false)}>
+                onClick={() => {
+                  setShowNewPatient(false);
+                  setModalError("");
+                }}>
                 Cancel
               </button>
               <button

@@ -386,18 +386,28 @@
 }
 
 .save-to-history-btn {
-  background: linear-gradient(135deg, #f472b6, #ec4899);
-  color: white;
+  padding: 0.75rem 1.25rem !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  min-width: auto !important;
+  width: auto !important;
 }
 
 .save-to-history-btn:hover {
-  background: linear-gradient(135deg, #ec4899, #db2777);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35) !important;
 }
 
 .new-assessment-btn {
-  background: linear-gradient(135deg, #06b6d4, #0891b2);
-  color: white;
+  background: linear-gradient(135deg, #c8f0f7, #0891b2);
+  color: rgb(36, 36, 40);
 }
 
 .new-assessment-btn:hover {
@@ -1151,22 +1161,26 @@ RESULT CARD – MEDICAL GRADE UI
 .cancel-btn:hover {
   background: #4b5563;
 }
-/* Blue export button styling for New Assessment */
+/* Beautiful gradient button styling for New Assessment */
 .pp-btn-new {
-  padding: 0.75rem 1.25rem;
-  border: 1px solid #bae6fd;
-  border-radius: 8px;
-  background: #f0f9ff;
-  color: #0284c7;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
+  padding: 0.75rem 1.25rem !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+  min-width: auto !important;
+  width: auto !important;
 }
 
 .pp-btn-new:hover {
-  background: #e0f2fe;
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35) !important;
 }
 /* New Patient Modal */
 .pp-modal-overlay {
@@ -1977,4 +1991,47 @@ RESULT CARD – MEDICAL GRADE UI
   margin: 0;
   font-size: 0.875rem;
   color: #a16207;
+}
+/* Force both buttons to have same size and beautiful gradient - override any parent styles */
+.actions .save-to-history-btn,
+.actions .pp-btn-new {
+  padding: 0.75rem 1.25rem !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  min-width: 140px !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+}
+
+.actions .save-to-history-btn:hover,
+.actions .pp-btn-new:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35) !important;
+}
+
+/* Ensure consistent button sizing and gradient in clinician summary actions */
+.clinician-summary-actions .save-to-history-btn,
+.clinician-summary-actions .pp-btn-new {
+  padding: 0.75rem 1.25rem !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  min-width: 140px !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+}
+
+.clinician-summary-actions .save-to-history-btn:hover,
+.clinician-summary-actions .pp-btn-new:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35) !important;
 }

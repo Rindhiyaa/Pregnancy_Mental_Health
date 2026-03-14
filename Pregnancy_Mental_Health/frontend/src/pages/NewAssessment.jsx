@@ -227,9 +227,35 @@ export default function NewAssessment() {
     return Date.now() + Math.floor(Math.random() * 1000);
   };
 
+  // Phone validation function
+  const validatePhone = (phone) => {
+    if (!phone || phone.trim() === '') return true; // Phone is optional
+    
+    // Remove all non-digit characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Check if it's a valid length (at least 10 digits)
+    if (cleanPhone.length < 10) {
+      return false;
+    }
+    
+    // Check if it's not just repeated digits (like 1111111111)
+    if (/^(\d)\1{9,}$/.test(cleanPhone)) {
+      return false;
+    }
+    
+    return true;
+  };
+
   const createNewPatient = async () => {
     if (!newPatientData.name.trim()) {
       alert("Patient name is required");
+      return;
+    }
+
+    // Validate phone number if provided
+    if (newPatientData.phone && !validatePhone(newPatientData.phone)) {
+      alert("Please enter a valid phone number (at least 10 digits)");
       return;
     }
   
