@@ -49,7 +49,7 @@ export default function PatientsPage() {
     setLoading(true);
     try {
       // 1) Load patients from backend
-      const res = await api.get("/patients"); // this is /api/patients on FastAPI
+      const res = await api.get("/patients/"); // this is /api/patients/ on FastAPI
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         console.error("Failed to load patients:", res.status, body);
@@ -169,7 +169,7 @@ export default function PatientsPage() {
       }
 
       // Create patient in backend
-      const res = await api.post("/patients", {
+      const res = await api.post("/patients/", {
         name: newPatient.name.trim(),
         age: newPatient.age ? parseInt(newPatient.age) : null,
         phone: newPatient.phone.trim() || null,

@@ -5,6 +5,9 @@ Single source of truth for environment variables and settings
 """
 import os
 
+# Add this line after import os
+DATABASE_URL = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
+
 # Environment
 IS_PRODUCTION = os.getenv("ENVIRONMENT") == "production"
 
@@ -29,7 +32,8 @@ JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 JWT_REFRESH_SECRET = os.getenv("JWT_REFRESH_SECRET")
 
 # Database
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./ppd_predictor.db")
+DATABASE_URL = f"postgresql://mluser:mlpass@localhost/ml_db"
+
 
 # API Configuration
 API_HOST = os.getenv("API_HOST", "0.0.0.0")

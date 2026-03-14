@@ -198,7 +198,7 @@ export default function NewAssessment() {
   // 🔹 PATIENT MANAGEMENT FUNCTIONS (localStorage-based)
   const loadPatients = async () => {
     try {
-      const res = await api.get("/patients");
+      const res = await api.get("/patients/");
       if (!res.ok) {
         console.error("Failed to load patients:", res.status);
         setPatients([]);
@@ -242,7 +242,7 @@ export default function NewAssessment() {
         return;
       }
   
-      const res = await api.post("/patients", {
+      const res = await api.post("/patients/", {
         name: newPatientData.name.trim(),
         age: newPatientData.age ? parseInt(newPatientData.age) : null,
         phone: newPatientData.phone.trim() || null,
