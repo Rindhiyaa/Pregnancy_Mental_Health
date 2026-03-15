@@ -7,7 +7,7 @@ import "../styles/PatientsPage.css";
 export default function PatientsPage() {
   const [patients, setPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [riskFilter, setRiskFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [sortBy, setSortBy] = useState("latest");
   const [loading, setLoading] = useState(true);
   const [showNewPatient, setShowNewPatient] = useState(false);
@@ -18,6 +18,7 @@ export default function PatientsPage() {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patientHistory, setPatientHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [patientAssessments, setPatientAssessments] = useState({});
   const [modalError, setModalError] = useState("");
   const [notifications, setNotifications] = useState([
     {
@@ -50,7 +51,7 @@ export default function PatientsPage() {
     setLoading(true);
     try {
       // 1) Load patients from backend
-      const res = await api.get("/patients/"); // this is /api/patients/ on FastAPI
+      const res = await api.get("/patients/");
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         console.error("Failed to load patients:", res.status, body);
@@ -63,37 +64,57 @@ export default function PatientsPage() {
       const patientsList = await res.json();
       setPatients(patientsList);
   
-      // 2) For now, reuse local assessmentHistory to compute stats
-      const storedAssessments = localStorage.getItem("assessmentHistory");
-      const assessments = storedAssessments ? JSON.parse(storedAssessments) : [];
-  
-      let high = 0, moderate = 0, low = 0;
-  
-      // Group assessments by patient_id
-      const patientAssessments = {};
-      assessments.forEach((assessment) => {
-        const key = assessment.patient_id || assessment.patient_name;
-        if (!patientAssessments[key]) {
-          patientAssessments[key] = [];
+      // 2) Load assessments from backend to compute risk stats and store for filtering
+      try {
+        const assessmentsRes = await api.get("/assessments");
+        if (assessmentsRes.ok) {
+          const allAssessments = await assessmentsRes.json();
+          
+          let high = 0, moderate = 0, low = 0;
+          
+          // Group assessments by patient_id for filtering and stats
+          const patientAssessmentMap = {};
+          allAssessments.forEach((assessment) => {
+            const patientId = assessment.patient_id;
+            if (patientId) {
+              if (!patientAssessmentMap[patientId]) {
+                patientAssessmentMap[patientId] = [];
+              }
+              patientAssessmentMap[patientId].push(assessment);
+            }
+          });
+          
+          // Store for filtering use
+          setPatientAssessments(patientAssessmentMap);
+          
+          // Calculate risk stats based on latest assessment per patient
+          patientsList.forEach((patient) => {
+            const patientAssmts = patientAssessmentMap[patient.id] || [];
+            if (patientAssmts.length > 0) {
+              // Get latest assessment
+              const latest = patientAssmts.sort(
+                (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+              )[0];
+              
+              if (latest?.risk_level === "High Risk") high++;
+              else if (latest?.risk_level === "Moderate Risk") moderate++;
+              else if (latest?.risk_level === "Low Risk") low++;
+            }
+          });
+          
+          setStats({ total: patientsList.length, high, moderate, low });
+        } else {
+          // Fallback: just show total patients
+          setPatientAssessments({});
+          setStats({ total: patientsList.length, high: 0, moderate: 0, low: 0 });
         }
-        patientAssessments[key].push(assessment);
-      });
-  
-      patientsList.forEach((patient) => {
-        const patientAssmts =
-          patientAssessments[patient.id] || patientAssessments[patient.name] || [];
-        if (patientAssmts.length > 0) {
-          const latest = patientAssmts.sort(
-            (a, b) =>
-              new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date)
-          )[0];
-          if (latest?.risk_level === "High Risk") high++;
-          else if (latest?.risk_level === "Moderate Risk") moderate++;
-          else if (latest?.risk_level === "Low Risk") low++;
-        }
-      });
-  
-      setStats({ total: patientsList.length, high, moderate, low });
+      } catch (assessmentError) {
+        console.error("Failed to load assessments for stats:", assessmentError);
+        // Fallback: just show total patients
+        setPatientAssessments({});
+        setStats({ total: patientsList.length, high: 0, moderate: 0, low: 0 });
+      }
+      
     } catch (err) {
       console.error("Failed to load patients:", err);
       setPatients([]);
@@ -145,7 +166,7 @@ export default function PatientsPage() {
   const savePatients = (patients) => {
     try {
       localStorage.setItem('ppd_patients', JSON.stringify(patients));
-      console.log(`💾 Saved ${patients.length} patients to localStorage`);
+      console.log(`Saved ${patients.length} patients to localStorage`);
     } catch (error) {
       console.error('Failed to save patients to localStorage:', error);
     }
@@ -253,15 +274,57 @@ export default function PatientsPage() {
 
 
   const filteredPatients = patients
-    .filter((p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter((p) => {
+      // Search by name
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Filter by status
+      let matchesStatus = true;
+      if (statusFilter === "Active") {
+        // Active patients: have assessments in last 60 days
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        
+        const assessments = patientAssessments[p.id] || [];
+        matchesStatus = assessments.some(assessment => 
+          new Date(assessment.timestamp) >= sixtyDaysAgo
+        );
+      } else if (statusFilter === "Recent") {
+        // Patients added in last 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        matchesStatus = p.created_at && new Date(p.created_at) >= thirtyDaysAgo;
+      } else if (statusFilter === "Needs Follow-up") {
+        // Patients who need follow-up: no assessments in last 90 days OR never had assessment
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        
+        const assessments = patientAssessments[p.id] || [];
+        if (assessments.length === 0) {
+          // Never had assessment - definitely needs follow-up
+          matchesStatus = true;
+        } else {
+          // Has assessments - check if latest is older than 90 days
+          const latestAssessment = assessments.sort(
+            (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+          )[0];
+          matchesStatus = new Date(latestAssessment.timestamp) < ninetyDaysAgo;
+        }
+      }
+      
+      return matchesSearch && matchesStatus;
+    })
     .sort((a, b) => {
       if (sortBy === "latest")
         return new Date(b.created_at) - new Date(a.created_at);
       if (sortBy === "oldest")
         return new Date(a.created_at) - new Date(b.created_at);
       if (sortBy === "name") return a.name.localeCompare(b.name);
+      if (sortBy === "age") {
+        const ageA = a.age || 0;
+        const ageB = b.age || 0;
+        return ageB - ageA; // Descending age
+      }
       return 0;
     });
 
@@ -465,12 +528,12 @@ export default function PatientsPage() {
             />
           </div>
           <select className="pp-filter-select"
-            value={riskFilter}
-            onChange={(e) => setRiskFilter(e.target.value)}>
-            <option value="All">All Risk Levels</option>
-            <option value="High Risk">High Risk</option>
-            <option value="Moderate Risk">Moderate Risk</option>
-            <option value="Low Risk">Low Risk</option>
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="All">All Patients</option>
+            <option value="Active">Active Patients</option>
+            <option value="Recent">Recent (30 days)</option>
+            <option value="Needs Follow-up">Needs Follow-up</option>
           </select>
           <select className="pp-filter-select"
             value={sortBy}
@@ -478,6 +541,7 @@ export default function PatientsPage() {
             <option value="latest">Latest First</option>
             <option value="oldest">Oldest First</option>
             <option value="name">Name A–Z</option>
+            <option value="age">Age (High to Low)</option>
           </select>
         </div>
 
@@ -492,10 +556,7 @@ export default function PatientsPage() {
             <div className="pp-empty-icon">👥</div>
             <h3>No patients found</h3>
             <p>Create your first patient or adjust your search</p>
-            <button className="dp-export-btn"
-              onClick={() => setShowNewPatient(true)}>
-              + Add First Patient
-            </button>
+           
           </div>
         ) : (
           <div className="pp-table-wrapper">
@@ -694,16 +755,89 @@ export default function PatientsPage() {
                 </div>
               ) : patientHistory.length === 0 ? (
                 <div className="pp-history-empty">
-                  <p>📋 No assessments yet for this patient.</p>
-                  <button className="dp-export-btn"
-                    onClick={() => {
-                      setSelectedPatient(null);
-                      navigate(
-                        `/dashboard/new-assessment?patient=${encodeURIComponent(selectedPatient.name)}&id=${selectedPatient.id}`
-                      );
-                    }}>
-                    + Start First Assessment
-                  </button>
+                  {/* Enhanced Patient Info Card */}
+                  <div className="pp-patient-info-card">
+                    <div className="pp-patient-header">
+                      <div className="pp-avatar-large">
+                        {selectedPatient.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="pp-patient-details">
+                        <h3>{selectedPatient.name}</h3>
+                        <div className="pp-patient-meta">
+                          {selectedPatient.age && (
+                            <span className="pp-meta-item">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                              </svg>
+                              Age: {selectedPatient.age}
+                            </span>
+                          )}
+                          <span className="pp-meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                            </svg>
+                            ID: #{selectedPatient.id}
+                          </span>
+                          {selectedPatient.phone && (
+                            <span className="pp-meta-item">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                              </svg>
+                              {selectedPatient.phone}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Assessment Status Section */}
+                  <div className="pp-assessment-status">
+                    <h4>Assessment Status</h4>
+                    <div className="pp-status-grid">
+                      <div className="pp-status-item">
+                        <span className="pp-status-label">First Assessment</span>
+                        <span className="pp-status-badge pp-status-pending">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12,6 12,12 16,14"/>
+                          </svg>
+                          Not Started
+                        </span>
+                      </div>
+                      <div className="pp-status-item">
+                        <span className="pp-status-label">Last Assessment</span>
+                        <span className="pp-status-value">—</span>
+                      </div>
+                      <div className="pp-status-item">
+                        <span className="pp-status-label">Risk Level</span>
+                        <span className="pp-status-value">Not Available</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Primary Action */}
+                  <div className="pp-action-section">
+                    <button className="pp-btn-primary-large"
+                      onClick={() => {
+                        setSelectedPatient(null);
+                        navigate(
+                          `/dashboard/new-assessment?patient=${encodeURIComponent(selectedPatient.name)}&id=${selectedPatient.id}`
+                        );
+                      }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10,9 9,9 8,9"/>
+                      </svg>
+                      Start First Assessment
+                    </button>
+                    <p className="pp-action-subtitle">Begin comprehensive postpartum depression screening</p>
+                  </div>
                 </div>
               ) : (
                 <>
@@ -760,21 +894,7 @@ export default function PatientsPage() {
               )}
             </div>
 
-            {/* Modal Footer */}
-            <div className="pp-modal-footer">
-              <button className="pp-btn-secondary" onClick={() => setSelectedPatient(null)}>
-                Close
-              </button>
-              <button className="dp-export-btn"
-                onClick={() => {
-                  setSelectedPatient(null);
-                  navigate(
-                    `/dashboard/new-assessment?patient=${encodeURIComponent(selectedPatient.name)}&id=${selectedPatient.id}`
-                  );
-                }}>
-                + New Assessment
-              </button>
-            </div>
+            {/* Modal Footer - Removed Close Button */}
           </div>
         </div>
       )}

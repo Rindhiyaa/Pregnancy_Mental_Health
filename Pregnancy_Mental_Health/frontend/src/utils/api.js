@@ -55,7 +55,7 @@ const onTokenRefreshed = (newToken) => {
  */
 const refreshAccessToken = async () => {
   try {
-    console.log('🔄 Attempting token refresh...');
+    console.log(' Attempting token refresh...');
     const response = await fetch(`${API_BASE_URL}/refresh`, {
       method: 'POST',
       credentials: 'include',  // Send httpOnly cookie
@@ -68,17 +68,17 @@ const refreshAccessToken = async () => {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.log('❌ Refresh failed:', errorText);
+      console.log(' Refresh failed:', errorText);
       throw new Error('Token refresh failed');
     }
     
     const data = await response.json();
-    console.log('✅ Token refresh successful');
+    console.log('Token refresh successful');
     localStorage.setItem('ppd_access_token', data.access_token);
     return data.access_token;
   } catch (error) {
     // Refresh failed - perform complete logout
-    console.log('❌ Token refresh failed, performing complete logout...', error.message);
+    console.log(' Token refresh failed, performing complete logout...', error.message);
     
     // Clear localStorage
     localStorage.removeItem('ppd_access_token');
