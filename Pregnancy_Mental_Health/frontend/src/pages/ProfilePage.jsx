@@ -162,7 +162,7 @@ const ProfilePage = () => {
             Dashboard
           </NavLink>
           <NavLink
-            to="/dashboard/new-assessment"
+            to="/new-assessment"
             className={({ isActive }) =>
               "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
             }
@@ -170,7 +170,7 @@ const ProfilePage = () => {
             New Assessment
           </NavLink>
           <NavLink
-            to="/dashboard/history"
+            to="/history"
             className={({ isActive }) =>
               "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
             }
@@ -221,7 +221,7 @@ const ProfilePage = () => {
                 <div 
                   className="dp-dropdown-item"
                   onClick={() => {
-                    navigate('/dashboard/profile');
+                    navigate('/profile');
                     setShowProfileMenu(false);
                   }}
                 >

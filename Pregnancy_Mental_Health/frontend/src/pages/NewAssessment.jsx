@@ -440,7 +440,7 @@ export default function NewAssessment() {
           </NavLink>
 
           <NavLink
-            to="/dashboard/new-assessment"
+            to="/new-assessment"
             className={({ isActive }) =>
               "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
             }
@@ -449,7 +449,7 @@ export default function NewAssessment() {
           </NavLink>
 
           <NavLink
-            to="/dashboard/history"
+            to="/history"
             className={({ isActive }) =>
               "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
             }
@@ -496,7 +496,7 @@ export default function NewAssessment() {
                 <div 
                   className="dp-dropdown-item"
                   onClick={() => {
-                    navigate('/dashboard/profile');
+                    navigate('/profile');
                     setShowProfileMenu(false);
                   }}
                 >

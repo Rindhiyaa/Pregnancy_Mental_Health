@@ -555,7 +555,7 @@ const DashboardPage = () => {
     </NavLink>
 
     <NavLink
-      to="/dashboard/new-assessment"
+      to="/new-assessment"
       className={({ isActive }) =>
         "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
       }
@@ -565,7 +565,7 @@ const DashboardPage = () => {
     </NavLink>
 
     <NavLink
-      to="/dashboard/history"
+      to="/history"
       className={({ isActive }) =>
         "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
       }
@@ -612,7 +612,7 @@ const DashboardPage = () => {
           <div 
             className="dp-dropdown-item"
             onClick={() => {
-              navigate('/dashboard/profile');
+              navigate('/profile');
               setShowProfileMenu(false);
             }}
           >
@@ -766,7 +766,7 @@ const DashboardPage = () => {
                   <p>No assessment data available</p>
                   <button 
                     className="pp-btn-new"
-                    onClick={() => navigate('/dashboard/new-assessment')}
+                    onClick={() => navigate('/new-assessment')}
                   >
                     Create First Assessment
                   </button>

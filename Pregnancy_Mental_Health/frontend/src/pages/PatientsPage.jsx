@@ -354,7 +354,7 @@ export default function PatientsPage() {
             Dashboard
           </NavLink>
           <NavLink
-            to="/dashboard/new-assessment"
+            to="/new-assessment"
             className={({ isActive }) =>
               "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
             }
@@ -362,7 +362,7 @@ export default function PatientsPage() {
             New Assessment
           </NavLink>
           <NavLink
-            to="/dashboard/history"
+            to="/history"
             className={({ isActive }) =>
               "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
             }
@@ -413,7 +413,7 @@ export default function PatientsPage() {
                 <div 
                   className="dp-dropdown-item"
                   onClick={() => {
-                    navigate('/dashboard/profile');
+                    navigate('/profile');
                     setShowProfileMenu(false);
                   }}
                 >
@@ -612,7 +612,7 @@ export default function PatientsPage() {
                         <button
                           className="pp-action-btn pp-export-btn"
                           onClick={() => navigate(
-                            `/dashboard/new-assessment?patient=${encodeURIComponent(patient.name)}&id=${patient.id}`
+                            `/new-assessment?patient=${encodeURIComponent(patient.name)}&id=${patient.id}`
                           )}
                           title="New Assessment"
                         >
@@ -824,7 +824,7 @@ export default function PatientsPage() {
                       onClick={() => {
                         setSelectedPatient(null);
                         navigate(
-                          `/dashboard/new-assessment?patient=${encodeURIComponent(selectedPatient.name)}&id=${selectedPatient.id}`
+                          `/new-assessment?patient=${encodeURIComponent(selectedPatient.name)}&id=${selectedPatient.id}`
                         );
                       }}>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
