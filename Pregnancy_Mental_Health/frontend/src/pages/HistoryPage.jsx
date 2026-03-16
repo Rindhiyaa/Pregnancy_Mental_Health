@@ -392,6 +392,14 @@ const HistoryPage = () => {
           >
             History
           </NavLink>
+          <NavLink
+            to="/schedule"
+            className={({ isActive }) =>
+              "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
+            }
+          >
+            Schedule
+          </NavLink>
           <NavLink to="/patients" className={({isActive}) => 
             `dp-nav-link ${isActive ? "dp-nav-link-active" : ""}`}>
             Patients

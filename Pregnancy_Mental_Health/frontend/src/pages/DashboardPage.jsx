@@ -46,6 +46,7 @@ const DashboardPage = () => {
   const [urgentCases, setUrgentCases] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [followUps, setFollowUps] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [completionRate, setCompletionRate] = useState(0);
   
@@ -412,28 +413,50 @@ const DashboardPage = () => {
       // Fetch real notifications from backend
       if (user?.email) {
         try {
-          const [notifRes, unreadRes] = await Promise.all([
-            api.get('/notifications'),
-            api.get('/notifications/unread-count')
-          ]);
-          
-          if (notifRes.ok) {
-            const notifData = await notifRes.json();
-            setNotifications(notifData.map(n => ({
-              id: n.id,
-              type: n.type,
-              title: n.title,
-              message: n.message,
-              time: new Date(n.created_at).toLocaleString(),
-              priority: n.priority,
-              is_read: n.is_read
-            })));
-          }
-          
-          if (unreadRes.ok) {
-            const unreadData = await unreadRes.json();
-            setUnreadCount(unreadData.count);
-          }
+          const [notifRes, unreadRes, followUpRes] = await Promise.all([
+        api.get('/notifications'),
+        api.get('/notifications/unread-count'),
+        api.get('/follow-ups/today')
+      ]);
+      
+      if (notifRes.ok) {
+        const notifData = await notifRes.json();
+        setNotifications(notifData.map(n => ({
+          id: n.id,
+          type: n.type,
+          title: n.title,
+          message: n.message,
+          time: new Date(n.created_at).toLocaleString(),
+          priority: n.priority,
+          is_read: n.is_read
+        })));
+      }
+      
+      if (unreadRes.ok) {
+        const unreadData = await unreadRes.json();
+        setUnreadCount(unreadData.count);
+      }
+
+      if (followUpRes.ok) {
+        const followUpData = await followUpRes.json();
+        setFollowUps(followUpData);
+        
+        // --- START: Follow-up Toast Notification ---
+        if (followUpData.length > 0) {
+          const names = followUpData.map(f => f.patient?.name).filter(Boolean).slice(0, 2);
+          const nameStr = names.join(", ") + (followUpData.length > 2 ? ` and ${followUpData.length - 2} others` : "");
+          toast(`📅 ${followUpData.length} Follow-up${followUpData.length > 1 ? 's' : ''} due today for: ${nameStr}`, {
+            duration: 6000,
+            icon: '📅',
+            style: {
+              borderRadius: '10px',
+              background: '#10b981',
+              color: '#fff',
+            },
+          });
+        }
+        // --- END: Follow-up Toast Notification ---
+      }
         } catch (e) {
           console.warn("Notifications backend unavailable");
         }
@@ -588,7 +611,7 @@ const DashboardPage = () => {
       if (res.ok) {
         const data = await res.json();
         setSentReferrals(prev => ({ ...prev, [payload.assessment_id]: true }));
-        toast.success(data.message || "✅ Referral sent! Email delivered to patient.");
+        toast.success(`Referral sent to Psychiatry! 📧 Report emailed to ${payload.patient_name}`, { duration: 5000 });
       } else {
         // Try to get detailed error from backend
         let errorMsg = "Failed to send referral.";
@@ -706,6 +729,14 @@ const DashboardPage = () => {
       }
     >
       History
+    </NavLink>
+    <NavLink
+      to="/schedule"
+      className={({ isActive }) =>
+        "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
+      }
+    >
+      Schedule
     </NavLink>
     <NavLink to="/patients" className={({isActive}) => 
       `dp-nav-link ${isActive ? "dp-nav-link-active" : ""}`}>
@@ -1119,6 +1150,12 @@ const DashboardPage = () => {
                 >
                   Referral Queue
                 </button>
+                <button 
+                  className={`dp-tab ${activeTab === 'followups' ? 'dp-tab-active' : ''}`}
+                  onClick={() => setActiveTab('followups')}
+                >
+                  Follow-up Queue ({followUps.length})
+                </button>
               </div>
               
               {activeTab === 'recent' && (
@@ -1335,6 +1372,69 @@ const DashboardPage = () => {
                     ) : (
                       <div className="dp-no-referrals">
                         <p>No high-risk patients currently require referrals.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'followups' && (
+                  <div className="dp-referrals-panel">
+                    {followUps.length > 0 ? (
+                      <div className="dp-referral-list">
+                        <div className="dp-referral-info-banner" style={{ background: '#ecfdf5', border: '1px solid #10b981', color: '#065f46' }}>
+                          <p>The following patients have follow-up check-ins scheduled for today.</p>
+                        </div>
+                        {followUps.map((fup) => (
+                          <div key={fup.id} className="dp-referral-item">
+                            <div className="dp-referral-patient">
+                              <div className="dp-patient-avatar" style={{ background: '#10b981' }}>
+                                {fup.patient?.name?.charAt(0)?.toUpperCase() || 'P'}
+                              </div>
+                              <div className="dp-patient-details">
+                                <span className="dp-patient-name">{fup.patient?.name}</span>
+                                <span className="dp-patient-meta">
+                                  {fup.type.toUpperCase()} Follow-up • {new Date(fup.scheduled_date).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button 
+                                className="dp-referral-action-btn"
+                                style={{ background: '#10b981', borderColor: '#10b981' }}
+                                onClick={async () => {
+                                  try {
+                                    await api.post(`/follow-ups/${fup.id}/status?status=completed`);
+                                    toast.success("Follow-up marked as completed");
+                                    setFollowUps(prev => prev.filter(item => item.id !== fup.id));
+                                  } catch (e) {
+                                    toast.error("Failed to update status");
+                                  }
+                                }}
+                              >
+                                <span>Complete</span>
+                              </button>
+                              <button 
+                                className="dp-referral-action-btn"
+                                style={{ background: '#ef4444', borderColor: '#ef4444' }}
+                                onClick={async () => {
+                                  try {
+                                    await api.post(`/follow-ups/${fup.id}/status?status=missed`);
+                                    toast.success("Follow-up marked as missed");
+                                    setFollowUps(prev => prev.filter(item => item.id !== fup.id));
+                                  } catch (e) {
+                                    toast.error("Failed to update status");
+                                  }
+                                }}
+                              >
+                                <span>Missed</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="dp-no-referrals">
+                        <p>No follow-ups scheduled for today.</p>
                       </div>
                     )}
                   </div>

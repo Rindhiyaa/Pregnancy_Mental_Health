@@ -246,7 +246,7 @@ export default function NewAssessment() {
       if (res.ok) {
         const data = await res.json();
         setIsReferralSent(true);
-        toast.success(data.message || "✅ Referral sent! Email delivered to patient.");
+        toast.success(`Referral sent to Psychiatry! 📧 Report emailed to ${formData.patient_name}`, { duration: 5000 });
       } else {
         // Try to get detailed error from backend
         let errorMsg = "Failed to send referral.";
@@ -543,6 +543,14 @@ export default function NewAssessment() {
             }
           >
             History
+          </NavLink>
+          <NavLink
+            to="/schedule"
+            className={({ isActive }) =>
+              "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
+            }
+          >
+            Schedule
           </NavLink>
           <NavLink to="/patients" className={({isActive}) => 
             `dp-nav-link ${isActive ? "dp-nav-link-active" : ""}`}>
@@ -1388,6 +1396,11 @@ export default function NewAssessment() {
                           toast.success(
                             `Assessment for ${formData.patient_name} saved to history successfully!`
                           );
+                          
+                          if (saved.patient_email) {
+                            toast.success(`Care plan email sent to ${saved.patient_email}`, { icon: '📧', duration: 5000 });
+                          }
+                          
                           navigate("/history");
                         } catch (err) {
                           console.error("Error saving assessment", err);

@@ -59,6 +59,7 @@ class Patient(Base):
 
     # Relationship to Assessments
     assessments = relationship("Assessment", back_populates="patient", cascade="all, delete-orphan", passive_deletes=True)
+    follow_ups = relationship("FollowUp", back_populates="patient", cascade="all, delete-orphan", passive_deletes=True)
 
 
 class Notification(Base):
@@ -72,5 +73,23 @@ class Notification(Base):
     is_read = Column(Boolean, default=False)
     clinician_email = Column(String, index=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class FollowUp(Base):
+    __tablename__ = "follow_ups"
+
+    id = Column(Integer, primary_key=True, index=True)
+    patient_id = Column(BigInteger, ForeignKey('patients.id', ondelete='CASCADE'), nullable=False)
+    assessment_id = Column(Integer, ForeignKey('assessments.id', ondelete='CASCADE'), nullable=True)
+    
+    scheduled_date = Column(DateTime(timezone=True), nullable=False)
+    status = Column(String, default="pending") # pending, completed, missed
+    type = Column(String, default="check-in") # first, second, discharge
+    notes = Column(String, nullable=True)
+    
+    clinician_email = Column(String, index=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationship to Patient
+    patient = relationship("Patient", back_populates="follow_ups")
 
 

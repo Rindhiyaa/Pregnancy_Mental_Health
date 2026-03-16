@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status, UploadFile
+from fastapi import APIRouter, Depends, Query, HTTPException, status, UploadFile, BackgroundTasks
 from sqlalchemy.orm import Session
 import pandas as pd
 from typing import List, Optional
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from reportlab.lib.pagesizes import letter
@@ -17,6 +17,7 @@ from ..schemas import AssessmentCreate, AssessmentResult, AssessmentSave, Referr
 from ..ml_model import model, feature_columns, build_model_input_from_form
 from .. import models, config
 from ..jwt_handler import get_current_user_email, get_current_user
+from ..utils.email_utils import send_followup_email
 
 router = APIRouter(prefix="/api", tags=["assessments"])
 logger = logging.getLogger(__name__)
@@ -177,6 +178,7 @@ def calculate_weighted_risk_score(features) -> float:
 @router.post("/assessments")
 def save_assessment(
     payload: AssessmentSave,
+    background_tasks: BackgroundTasks,
     current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db)
 ):
@@ -215,7 +217,7 @@ def save_assessment(
     db.commit()
     db.refresh(assessment)
 
-    # --- START: Trigger Notifications ---
+    # --- START: Trigger Notifications & Auto-Scheduling ---
     try:
         # 1. High Risk Notification
         if assessment.risk_level == "High Risk":
@@ -240,13 +242,72 @@ def save_assessment(
         )
         db.add(comp_notif)
         
-        # 3. Follow-up Due (Optional/Future logic could go here)
+        # 3. Auto-Scheduling Logic (Expo Feature)
+        if assessment.patient_id:
+            # Schedule rules based on risk
+            plans = []
+            if assessment.risk_level == "High Risk":
+                plans = [
+                    (3, "first", "Urgent follow-up check-in"),
+                    (7, "second", "Weekly stability review"),
+                    (30, "discharge", "One-month final assessment")
+                ]
+            elif assessment.risk_level == "Moderate Risk":
+                plans = [
+                    (7, "first", "One-week follow-up"),
+                    (14, "second", "Two-week status check"),
+                    (90, "discharge", "Three-month discharge assessment")
+                ]
+            else: # Low Risk
+                plans = [
+                    (30, "first", "One-month check-in"),
+                    (90, "second", "Three-month routine review"),
+                    (180, "discharge", "Six-month final follow-up")
+                ]
+            
+            # Create follow-up records
+            for i, (days, ftype, fnotes) in enumerate(plans):
+                scheduled_date = datetime.now() + timedelta(days=days)
+                fup = models.FollowUp(
+                    patient_id=assessment.patient_id,
+                    assessment_id=assessment.id,
+                    scheduled_date=scheduled_date,
+                    status="pending",
+                    type=ftype,
+                    notes=fnotes,
+                    clinician_email=assessment.clinician_email
+                )
+                db.add(fup)
+                
+                # Send email for the first follow-up in the sequence
+                if i == 0:
+                    patient = db.query(models.Patient).filter(models.Patient.id == assessment.patient_id).first()
+                    if patient and patient.email:
+                        background_tasks.add_task(
+                            send_followup_email,
+                            patient_email=patient.email,
+                            patient_name=patient.name,
+                            scheduled_date=scheduled_date,
+                            ftype=ftype
+                        )
+            
+            # 4. Schedule Confirmation Notification
+            first_date = (datetime.now() + timedelta(days=plans[0][0])).strftime("%d %b")
+            fup_notif = models.Notification(
+                title="📅 Follow-up Scheduled & Email Sent",
+                message=f"The first follow-up for {assessment.patient_name} is automatically scheduled for {first_date} and a confirmation email has been sent to the patient.",
+                type="success",
+                priority="medium",
+                clinician_email=assessment.clinician_email,
+                is_read=False
+            )
+            db.add(fup_notif)
         
         db.commit()
     except Exception as e:
-        logger.error(f"Failed to create notifications for assessment: {e}")
+        logger.error(f"Failed to process post-assessment triggers: {e}")
         db.rollback()
-    # --- END: Trigger Notifications ---
+    # --- END: Trigger Notifications & Auto-Scheduling ---
 
     created_at = getattr(assessment, "created_at", None)
     timestamp = created_at.isoformat() if created_at else None
@@ -558,9 +619,15 @@ async def send_referral_email(
         assessment_id=assessment_id
     )
 
-    # Create attachment
+    # Create attachment using UploadFile for FastAPI-Mail v2 compatibility
     date_str = datetime.now().strftime("%Y-%m-%d")
     filename = f"PPD_Referral_{patient_name.replace(' ', '_')}_{date_str}.pdf"
+    
+    attachment = UploadFile(
+        filename=filename,
+        file=io.BytesIO(pdf_content),
+        headers={"content-type": "application/pdf"}
+    )
 
     message = MessageSchema(
         subject=f"[{'URGENT' if 'High' in risk_level else 'REFERRAL'}] PPD {risk_level} - Patient: {patient_name}",
@@ -568,7 +635,7 @@ async def send_referral_email(
         body=html_body,
         subtype=MessageType.html,
         reply_to=[reply_to],
-        attachments=[(filename, io.BytesIO(pdf_content), "application/pdf")]
+        attachments=[attachment]
     )
     
     fm = FastMail(dynamic_mail_conf)
@@ -631,6 +698,18 @@ async def create_referral(
             recipients=[patient.email],  # 👈 TO patient.email
             reply_to=current_user.email  # 👈 reply_to clinician
         )
+        
+        # Create persistent notification for referral email
+        ref_notif = models.Notification(
+            title="📧 Referral Email Sent",
+            message=f"Clinical referral report for {patient.name} has been emailed to {patient.email}.",
+            type="info",
+            priority="medium",
+            clinician_email=current_user.email,
+            is_read=False
+        )
+        db.add(ref_notif)
+        db.commit()
         
         # --- START: Trigger Referral Notification ---
         try:

@@ -24,6 +24,7 @@ export default function PatientsPage() {
   const [stats, setStats] = useState({ total: 0, high: 0, moderate: 0, low: 0 });
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patientHistory, setPatientHistory] = useState([]);
+  const [patientFollowUps, setPatientFollowUps] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [patientAssessments, setPatientAssessments] = useState({});
   const [modalError, setModalError] = useState("");
@@ -217,29 +218,28 @@ export default function PatientsPage() {
     setHistoryLoading(true);
 
     try {
-      // Call backend assessments list, filtered by clinician 
-      const res = await api.get("/assessments");
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        console.error("Failed to load history from API:", res.status, body);
-        setPatientHistory([]);
-        setHistoryLoading(false);
-        return;
+      // Call backend assessments and follow-ups
+      const [assessRes, followUpRes] = await Promise.all([
+        api.get("/assessments"),
+        api.get(`/follow-ups/patient/${patient.id}`)
+      ]);
+      
+      if (assessRes.ok) {
+        const allAssessments = await assessRes.json();
+        // Filter for this patient
+        const filtered = allAssessments.filter(
+          (a) => a.patient_id === patient.id || a.patient_name === patient.name
+        );
+        setPatientHistory(filtered);
       }
-
-      const allAssessments = await res.json();
-
-      // Filter for this patient using patient_id (preferred) or name as fallback
-      const patientAssessments = allAssessments.filter(
-        (assessment) =>
-          assessment.patient_id === patient.id ||
-          assessment.patient_name === patient.name
-      );
-
-      setPatientHistory(patientAssessments);
+      
+      if (followUpRes.ok) {
+        const fuData = await followUpRes.json();
+        setPatientFollowUps(fuData);
+      }
     } catch (err) {
-      console.error("Failed to load history", err);
-      setPatientHistory([]);
+      console.error("Failed to load history/follow-ups", err);
+      toast.error("Failed to load complete patient history");
     } finally {
       setHistoryLoading(false);
     }
@@ -520,6 +520,14 @@ export default function PatientsPage() {
             }
           >
             History
+          </NavLink>
+          <NavLink
+            to="/schedule"
+            className={({ isActive }) =>
+              "dp-nav-link" + (isActive ? " dp-nav-link-active" : "")
+            }
+          >
+            Schedule
           </NavLink>
           <NavLink
             to="/patients"
@@ -1228,6 +1236,50 @@ export default function PatientsPage() {
                               ))}
                             </tbody>
                           </table>
+                          
+                          {/* Follow-up Timeline Section */}
+                          <div className="pp-followup-timeline" style={{ marginTop: '30px', padding: '15px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', maxHeight: '300px', overflowY: 'auto' }}>
+                            <h3 style={{ fontSize: '1.1rem', color: '#1e293b', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px', position: 'sticky', top: 0, background: '#f8fafc', paddingBottom: '10px', zIndex: 1 }}>
+                              📅 Care Follow-up Timeline
+                            </h3>
+                            {patientFollowUps.length === 0 ? (
+                              <p style={{ color: '#64748b', fontSize: '0.9rem', fontStyle: 'italic' }}>No follow-ups scheduled for this patient.</p>
+                            ) : (
+                              <div className="pp-timeline-list" style={{ display: 'grid', gap: '12px' }}>
+                                {patientFollowUps.map((fup, idx) => (
+                                  <div key={fup.id} className="pp-timeline-item" style={{ 
+                                    display: 'flex', 
+                                    gap: '15px', 
+                                    padding: '12px', 
+                                    background: 'white', 
+                                    borderRadius: '8px', 
+                                    borderLeft: `4px solid ${fup.status === 'completed' ? '#10b981' : fup.status === 'missed' ? '#ef4444' : '#6366f1'}`,
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                  }}>
+                                    <div className="pp-timeline-date" style={{ minWidth: '80px', fontSize: '0.85rem', fontWeight: '700', color: '#64748b' }}>
+                                      {new Date(fup.scheduled_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                    </div>
+                                    <div className="pp-timeline-content" style={{ flex: 1 }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1e293b' }}>{fup.type.toUpperCase()} CHECK-IN</span>
+                                        <span style={{ 
+                                          fontSize: '0.75rem', 
+                                          padding: '2px 8px', 
+                                          borderRadius: '12px', 
+                                          background: fup.status === 'completed' ? '#ecfdf5' : fup.status === 'missed' ? '#fef2f2' : '#eef2ff',
+                                          color: fup.status === 'completed' ? '#059669' : fup.status === 'missed' ? '#dc2626' : '#4f46e5',
+                                          fontWeight: '700'
+                                        }}>
+                                          {fup.status.toUpperCase()}
+                                        </span>
+                                      </div>
+                                      <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#475569' }}>{fup.notes}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                 </>
               )}
             </div>

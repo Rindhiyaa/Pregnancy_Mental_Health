@@ -13,6 +13,7 @@ import HistoryPage from "../pages/HistoryPage";
 import ProfilePage from "../pages/ProfilePage";
 import NewAssessment from "../pages/NewAssessment";
 import PatientsPage from "../pages/PatientsPage";
+import SchedulePage from "../pages/SchedulePage";
 
 export default function AppRouter() {
   return (
@@ -63,6 +64,14 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <PatientsPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/schedule" 
+        element={
+          <ProtectedRoute>
+            <SchedulePage />
           </ProtectedRoute>
         } 
       />

@@ -15,6 +15,7 @@ export default function App() {
                     location.pathname.startsWith("/patients") ||
                     location.pathname.startsWith("/history") ||
                     location.pathname.startsWith("/new-assessment") ||
+                    location.pathname.startsWith("/schedule") ||
                     location.pathname.startsWith("/profile");
 
   return (
