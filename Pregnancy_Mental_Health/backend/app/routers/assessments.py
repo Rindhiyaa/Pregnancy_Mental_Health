@@ -355,6 +355,7 @@ def list_assessments(
                 "plan": getattr(a, "plan", None),
                 "notes": getattr(a, "notes", None),
                 "clinician_email": getattr(a, "clinician_email", None),
+                "raw_data": getattr(a, "raw_data", {}),
             })
 
         return result_list

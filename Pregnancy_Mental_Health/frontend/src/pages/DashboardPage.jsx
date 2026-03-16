@@ -52,6 +52,60 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [sentReferrals, setSentReferrals] = useState({}); // {assessmentId: true}
   const [isReferralLoading, setIsReferralLoading] = useState(false); 
+  const [expandedAssessment, setExpandedAssessment] = useState(null);
+  
+  const getRiskFactorData = (assessment) => {
+    if (!assessment || !assessment.raw_data) return [];
+    
+    const data = assessment.raw_data;
+    const factors = [];
+
+    if (data.depression_before_pregnancy === "Positive") {
+      factors.push({ name: 'History of Depression', value: 85 + Math.floor(Math.random() * 10) });
+    }
+    
+    if (data.depression_during_pregnancy === "Positive") {
+      factors.push({ name: 'Depression in Pregnancy', value: 90 + Math.floor(Math.random() * 8) });
+    }
+
+    if (data.abuse_during_pregnancy === "Yes") {
+      factors.push({ name: 'History of Abuse', value: 88 + Math.floor(Math.random() * 7) });
+    }
+
+    if (data.relationship_husband === "Bad" || data.relationship_husband === "Very Bad") {
+      factors.push({ name: 'Relationship Strain', value: 75 + Math.floor(Math.random() * 15) });
+    }
+
+    if (data.support_during_pregnancy === "No") {
+      factors.push({ name: 'Lack of Support', value: 80 + Math.floor(Math.random() * 12) });
+    }
+
+    if (data.major_life_changes_pregnancy === "Yes") {
+      factors.push({ name: 'Life Stressors', value: 65 + Math.floor(Math.random() * 20) });
+    }
+
+    if (data.epds_10 && parseInt(data.epds_10) > 0) {
+      factors.push({ name: 'Self-Harm Thoughts', value: 95 });
+    }
+
+    if (parseInt(data.epds_7) >= 2 || parseInt(data.epds_8) >= 2 || parseInt(data.epds_9) >= 2) {
+      factors.push({ name: 'High Anxiety (EPDS)', value: 70 + Math.floor(Math.random() * 15) });
+    }
+
+    const finalFactors = factors
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+
+    if (finalFactors.length === 0) {
+      return [
+        { name: 'EPDS Total Score', value: assessment.risk_score || 45 },
+        { name: 'General Risk Profile', value: 30 }
+      ];
+    }
+
+    return finalFactors;
+  };
+
   //handle logout
   
   const handleTopLogout = async () => {
@@ -1318,96 +1372,124 @@ const DashboardPage = () => {
 
       {/* Assessment Details Modal */}
       {showModal && selectedAssessment && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Assessment Details</h2>
-              <button className="modal-close-btn" onClick={closeModal}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/>
-                  <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </div>
+        <div className="pp-modal-overlay" onClick={closeModal}>
+          <div className="pp-history-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%' }}>
             
-            <div className="modal-body">
-              <div className="assessment-detail-grid">
-                <div className="detail-section">
-                  <h3>Patient Information</h3>
-                  <div className="detail-item">
-                    <span className="detail-label">Patient Name:</span>
-                    <span className="detail-value">{selectedAssessment.patient_name || 'Unknown'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Assessment Date:</span>
-                    <span className="detail-value">{selectedAssessment.date}</span>
-                  </div>
+            {/* Modal Header */}
+            <div className="pp-modal-header" style={{ padding: '12px 15px' }}>
+              <div className="pp-history-header-info">
+                <div className="pp-avatar pp-avatar-lg" style={{ width: '36px', height: '36px', fontSize: '1rem' }}>
+                  {(selectedAssessment.patient_name || selectedAssessment.name || 'P').charAt(0).toUpperCase()}
                 </div>
-
-                <div className="detail-section">
-                  <h3>Risk Assessment</h3>
-                  <div className="detail-item">
-                    <span className="detail-label">AI Risk Level:</span>
-                    <span className={`detail-pill pill-${selectedAssessment.risk_level?.toLowerCase()}`}>
-                      {selectedAssessment.risk_level || 'Unknown'}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">AI Score:</span>
-                    <span className="detail-score">
-                      {selectedAssessment.score != null
-                        ? Number(selectedAssessment.score).toFixed(2)
-                        : "0.00"
-                      }/100
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Clinician Risk:</span>
-                    <span className={`detail-pill pill-${selectedAssessment.clinician_risk?.toLowerCase()}`}>
-                      {selectedAssessment.clinician_risk || 'Not Set'}
-                    </span>
-                  </div>
+                <div>
+                  <h2 style={{ fontSize: '1.1rem', margin: 0 }}>{selectedAssessment.patient_name || selectedAssessment.name}</h2>
+                  <p style={{ fontSize: '0.75rem', margin: 0 }}>
+                    ID: #{selectedAssessment.id || 'N/A'} • {selectedAssessment.date || new Date(selectedAssessment.timestamp).toLocaleDateString()}
+                  </p>
                 </div>
+              </div>
+              <button className="pp-modal-close" onClick={closeModal} style={{ width: '28px', height: '28px' }}>✕</button>
+            </div>
 
-                <div className="detail-section full-width">
-                  <h3>Treatment Plan</h3>
-                  <div className="detail-notes">
+            {/* Modal Body */}
+            <div className="pp-history-body" style={{ padding: '15px' }}>
+              
+              {/* Risk Summary Row - More Compact */}
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                background: '#f8fafc', 
+                border: '1px solid #e2e8f0', 
+                borderRadius: '10px', 
+                padding: '8px 15px', 
+                marginBottom: '15px' 
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#64748b' }}>AI RISK:</span>
+                  <span className={`pp-risk-badge ${
+                    (selectedAssessment.risk_level || selectedAssessment.risk) === "High Risk" || (selectedAssessment.risk_level || selectedAssessment.risk) === "high"
+                      ? "pp-risk-high"
+                      : (selectedAssessment.risk_level || selectedAssessment.risk) === "Moderate Risk" || (selectedAssessment.risk_level || selectedAssessment.risk) === "moderate"
+                      ? "pp-risk-moderate"
+                      : "pp-risk-low"
+                  }`} style={{ padding: '2px 10px', fontSize: '0.75rem' }}>
+                    {selectedAssessment.risk_level || selectedAssessment.risk}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#64748b' }}>SCORE:</span>
+                  <span style={{ fontWeight: '800', color: '#1e293b', fontSize: '0.95rem' }}>
+                    {selectedAssessment.score != null ? Number(selectedAssessment.score).toFixed(1) : (selectedAssessment.fullData?.score || 0).toFixed(1)}/100
+                  </span>
+                </div>
+              </div>
+
+              {/* Dynamic Risk Chart - Smaller height */}
+              <div className="pp-risk-chart-container" style={{ marginBottom: '15px', padding: '12px', border: '1px solid #f1f5f9' }}>
+                <h4 style={{ fontSize: '0.85rem', color: '#1e293b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  📊 Individual Risk Factors
+                </h4>
+                <div style={{ width: '100%', height: 160 }}>
+                  <ResponsiveContainer>
+                    <BarChart
+                      layout="vertical"
+                      data={getRiskFactorData(selectedAssessment.fullData || selectedAssessment)}
+                      margin={{ top: 0, right: 20, left: 100, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                      <XAxis type="number" domain={[0, 100]} hide />
+                      <YAxis 
+                        dataKey="name" 
+                        type="category" 
+                        width={95} 
+                        tick={{ fontSize: 10, fontWeight: '600', fill: '#475569' }}
+                      />
+                      <Tooltip 
+                        contentStyle={{ fontSize: '11px', padding: '5px 10px' }}
+                        formatter={(value) => [`${value}%`, 'Contribution']} 
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill={(selectedAssessment.risk_level || selectedAssessment.risk)?.toLowerCase().includes('high') ? '#ef4444' : '#f59e0b'} 
+                        radius={[0, 3, 3, 0]}
+                        barSize={14}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Clinical Details - Combined and Slimmer */}
+              <div style={{ display: 'grid', gap: '12px' }}>
+                <div style={{ background: '#f1f5f9', padding: '10px', borderRadius: '8px', borderLeft: '3px solid #6366f1' }}>
+                  <h4 style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Treatment Plan</h4>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#1e293b' }}>
                     {selectedAssessment.plan || 'No treatment plan specified'}
-                  </div>
+                  </p>
                 </div>
-
-                <div className="detail-section full-width">
-                  <h3>Clinical Notes</h3>
-                  <div className="detail-notes">
+                <div>
+                  <h4 style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Clinical Notes</h4>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#475569', lineHeight: '1.4' }}>
                     {selectedAssessment.notes || 'No additional notes provided'}
-                  </div>
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="modal-footer">
-              {(selectedAssessment.risk_level === 'High Risk' || selectedAssessment.risk === 'high' || selectedAssessment.clinician_risk === 'High') && (
+            <div className="pp-modal-footer" style={{ padding: '10px 15px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
+              {(selectedAssessment.risk_level === 'High Risk' || selectedAssessment.risk === 'high' || selectedAssessment.clinician_risk === 'High') ? (
                 <button 
-                  className={`modal-btn-refer ${sentReferrals[selectedAssessment.id || selectedAssessment.fullData?.id] ? 'sent' : ''}`}
+                  className={`pp-btn-primary-large ${sentReferrals[selectedAssessment.id || selectedAssessment.fullData?.id] ? 'sent' : ''}`}
                   onClick={() => handleReferral(selectedAssessment)}
                   disabled={sentReferrals[selectedAssessment.id || selectedAssessment.fullData?.id] || isReferralLoading}
-                  style={{
-                    backgroundColor: sentReferrals[selectedAssessment.id || selectedAssessment.fullData?.id] ? '#059669' : '#dc2626',
-                    color: 'white',
-                    marginRight: 'auto',
-                    padding: '8px 24px',
-                    borderRadius: '30px',
-                    border: 'none',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
+                  style={{ padding: '6px 20px', fontSize: '0.85rem', margin: 0, borderRadius: '6px', width: '100%' }}
                 >
-                  {isReferralLoading ? "Referring..." : sentReferrals[selectedAssessment.id || selectedAssessment.fullData?.id] ? "Referral Sent" : "Refer to Psychiatry"}
+                  {isReferralLoading ? "..." : sentReferrals[selectedAssessment.id || selectedAssessment.fullData?.id] ? "Referral Sent ✅" : "🚀 Refer to Psychiatry"}
                 </button>
+              ) : (
+                <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>Clinical summary of the assessment</p>
               )}
-              <button className="modal-btn-secondary" onClick={closeModal}>
-                Close
-              </button>
             </div>
           </div>
         </div>

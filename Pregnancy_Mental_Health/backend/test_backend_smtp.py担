@@ -1,0 +1,45 @@
+import os
+import smtplib
+from email.message import EmailMessage
+import sys
+
+# Add backend/app to path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    from app import config
+    print("✅ Config imported successfully.")
+    
+    username = config.MAIL_USERNAME
+    password = config.MAIL_PASSWORD
+    server = config.MAIL_SERVER
+    port = config.MAIL_PORT
+
+    print(f"📧 Testing credentials from config.py:")
+    print(f"   - User: {username}")
+    print(f"   - Server: {server}:{port}")
+    print(f"   - Password set: {'Yes' if password else 'No'}")
+    print(f"   - Password length: {len(password) if password else 0}")
+
+    if not password:
+        print("❌ Error: MAIL_PASSWORD is empty in config.py")
+        sys.exit(1)
+
+    msg = EmailMessage()
+    msg.set_content("This is a direct SMTP test from the PPD backend config logic.")
+    msg['Subject'] = "PPD Backend SMTP Test"
+    msg['From'] = username
+    msg['To'] = username
+
+    print("\nAttempting SMTP login...")
+    with smtplib.SMTP(server, port) as smtp:
+        smtp.starttls()
+        smtp.login(username, password)
+        smtp.send_message(msg)
+    print("\n✅ SUCCESS: SMTP login and send worked!")
+except Exception as e:
+    print(f"\n❌ FAILED: {str(e)}")
+    print("\nTroubleshooting tips:")
+    print("1. Ensure 2-Step Verification is ON in your Google Account.")
+    print("2. Ensure you are using a 16-character 'App Password', not your normal password.")
+    print("3. Check if your ISP or firewall is blocking port 587.")
