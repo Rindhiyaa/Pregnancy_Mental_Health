@@ -2,3 +2,9 @@
 Pregnancy_Mental_Health/backend/test.db
 Pregnancy_Mental_Health/backend/test_temp.db
 /docs
+
+# Environment variables - NEVER commit these
+.env
+*.env
+Pregnancy_Mental_Health/backend/.env
+# Pregnancy_Mental_Health/backend/app/config.py  <-- Remove this to allow committing config.py logic

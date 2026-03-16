@@ -19,24 +19,8 @@ const HistoryPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'alert',
-      title: 'High Risk Cases',
-      message: 'Review recent high-risk assessments requiring attention',
-      time: '30 minutes ago',
-      priority: 'high'
-    },
-    {
-      id: 2,
-      type: 'info',
-      title: 'History Updated',
-      message: 'Assessment history has been synchronized',
-      time: '1 hour ago',
-      priority: 'low'
-    }
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
 
   //handle top logout
@@ -92,6 +76,36 @@ const HistoryPage = () => {
         );
         setRows(sortedData);
         setFilteredRows(sortedData);
+
+        // 3) Load real notifications
+        if (user?.email) {
+          try {
+            const [notifRes, unreadRes] = await Promise.all([
+              api.get('/notifications'),
+              api.get('/notifications/unread-count')
+            ]);
+            
+            if (notifRes.ok) {
+              const notifData = await notifRes.json();
+              setNotifications(notifData.map(n => ({
+                id: n.id,
+                type: n.type,
+                title: n.title,
+                message: n.message,
+                time: new Date(n.created_at).toLocaleString(),
+                priority: n.priority,
+                is_read: n.is_read
+              })));
+            }
+            
+            if (unreadRes.ok) {
+              const unreadData = await unreadRes.json();
+              setUnreadCount(unreadData.count);
+            }
+          } catch (e) {
+            console.warn("Notifications backend unavailable");
+          }
+        }
       } catch (err) {
         console.error("Failed to load history", err);
         setRows([]);
@@ -333,13 +347,23 @@ const HistoryPage = () => {
         <div className="dp-nav-right">
           <button 
             className="dp-notifications-btn" 
-            onClick={() => setShowNotifications(!showNotifications)}
+            onClick={async () => {
+              setShowNotifications(!showNotifications);
+              if (!showNotifications && unreadCount > 0) {
+                try {
+                  await api.post('/notifications/read-all');
+                  setUnreadCount(0);
+                } catch (e) {
+                  console.error("Failed to mark notifications as read", e);
+                }
+              }
+            }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
-            {notifications.length > 0 && <span className="dp-notification-badge">{notifications.length}</span>}
+            {unreadCount > 0 && <span className="dp-notification-badge">{unreadCount}</span>}
           </button>
           
           <div className="dp-profile-wrapper">

@@ -215,6 +215,39 @@ def save_assessment(
     db.commit()
     db.refresh(assessment)
 
+    # --- START: Trigger Notifications ---
+    try:
+        # 1. High Risk Notification
+        if assessment.risk_level == "High Risk":
+            high_risk_notif = models.Notification(
+                title="🚨 High Risk Patient Detected",
+                message=f"AI predicts High Risk for {assessment.patient_name}. Immediate review of clinical notes and referral recommended.",
+                type="alert",
+                priority="high",
+                clinician_email=assessment.clinician_email,
+                is_read=False
+            )
+            db.add(high_risk_notif)
+        
+        # 2. Assessment Completed Notification
+        comp_notif = models.Notification(
+            title="📋 Assessment Completed",
+            message=f"New assessment submitted for {assessment.patient_name} (Risk: {assessment.risk_level}).",
+            type="info",
+            priority="low",
+            clinician_email=assessment.clinician_email,
+            is_read=False
+        )
+        db.add(comp_notif)
+        
+        # 3. Follow-up Due (Optional/Future logic could go here)
+        
+        db.commit()
+    except Exception as e:
+        logger.error(f"Failed to create notifications for assessment: {e}")
+        db.rollback()
+    # --- END: Trigger Notifications ---
+
     created_at = getattr(assessment, "created_at", None)
     timestamp = created_at.isoformat() if created_at else None
     date_str = created_at.date().isoformat() if created_at else None
@@ -528,18 +561,13 @@ async def send_referral_email(
     date_str = datetime.now().strftime("%Y-%m-%d")
     filename = f"PPD_Referral_{patient_name.replace(' ', '_')}_{date_str}.pdf"
 
-    attachment = UploadFile(
-        filename=filename,
-        file=io.BytesIO(pdf_content),
-    )
-
     message = MessageSchema(
         subject=f"[{'URGENT' if 'High' in risk_level else 'REFERRAL'}] PPD {risk_level} - Patient: {patient_name}",
         recipients=recipients,
         body=html_body,
         subtype=MessageType.html,
         reply_to=[reply_to],
-        attachments=[attachment]
+        attachments=[(filename, io.BytesIO(pdf_content), "application/pdf")]
     )
     
     fm = FastMail(dynamic_mail_conf)
@@ -602,6 +630,22 @@ async def create_referral(
             recipients=[patient.email],  # 👈 TO patient.email
             reply_to=current_user.email  # 👈 reply_to clinician
         )
+        
+        # --- START: Trigger Referral Notification ---
+        try:
+            referral_notif = models.Notification(
+                title="📧 Referral Sent",
+                message=f"A professional referral for {payload.patient_name} has been sent successfully to {payload.referral_department}.",
+                type="success",
+                priority="medium",
+                clinician_email=current_user.email,
+                is_read=False
+            )
+            db.add(referral_notif)
+            db.commit()
+        except Exception as e:
+            logger.error(f"Failed to create referral notification: {e}")
+        # --- END: Trigger Referral Notification ---
         
         return {
             "status": "success",

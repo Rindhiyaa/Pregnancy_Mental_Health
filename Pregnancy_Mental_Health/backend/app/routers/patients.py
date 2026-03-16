@@ -53,6 +53,23 @@ def create_patient(
     db.add(db_patient)
     db.commit()
     db.refresh(db_patient)
+
+    # --- START: Trigger New Patient Notification ---
+    try:
+        from .. import models
+        new_patient_notif = models.Notification(
+            title="👤 New Patient Added",
+            message=f"A new patient record for {db_patient.name} has been created.",
+            type="info",
+            priority="low",
+            clinician_email=current_user_email,
+            is_read=False
+        )
+        db.add(new_patient_notif)
+        db.commit()
+    except Exception as e:
+        print(f"Failed to create new patient notification: {e}")
+    # --- END: Trigger New Patient Notification ---
     
     return db_patient
 

@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from .database import engine
 from . import models
-from .routers import predictions, auth, assessments
+from .routers import predictions, auth, assessments, notifications
 from .routers.patients import router as patients_router
 from .rate_limiter import rate_limiter
 from .config import ALLOWED_ORIGINS, TRUSTED_HOSTS, IS_PRODUCTION
@@ -93,6 +93,7 @@ app.include_router(predictions.router)
 app.include_router(auth.router)
 app.include_router(assessments.router)
 app.include_router(patients_router)
+app.include_router(notifications.router)
 
 @app.get("/")
 def root():

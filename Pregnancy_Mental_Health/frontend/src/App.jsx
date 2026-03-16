@@ -6,6 +6,7 @@ import AppRouter from "./components/AppRouter";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { Toaster } from 'react-hot-toast';
 
 export default function App() {
   const location = useLocation();
@@ -19,6 +20,28 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
+        <Toaster 
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              borderRadius: '10px',
+              fontFamily: 'inherit',
+            },
+            success: {
+              style: {
+                background: '#059669',
+                color: 'white',
+              },
+            },
+            error: {
+              style: {
+                background: '#dc2626',
+                color: 'white',
+              },
+            },
+          }}
+        />
         {!isDashboard && <Navbar />}
         <AppRouter />
         {!isDashboard && <Footer />}

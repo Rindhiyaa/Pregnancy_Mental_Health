@@ -6,6 +6,7 @@ import { api } from "../utils/api";
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from 'recharts';
 import jsPDF from 'jspdf';
 import { exportAssessmentToPDF } from "../utils/pdfExport";
+import toast from 'react-hot-toast';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -44,6 +45,7 @@ const DashboardPage = () => {
   const [demographicsData, setDemographicsData] = useState([]);
   const [urgentCases, setUrgentCases] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [recentActivity, setRecentActivity] = useState([]);
   const [completionRate, setCompletionRate] = useState(0);
   
@@ -353,34 +355,35 @@ const DashboardPage = () => {
       ];
       setDemographicsData(ageGroups);
 
-      // Generate notifications
-      const newNotifications = [
-        {
-          id: 1,
-          type: 'alert',
-          title: 'High Risk Cases',
-          message: `${highRiskCount} high-risk cases require immediate attention`,
-          time: '2 hours ago',
-          priority: 'high'
-        },
-        {
-          id: 2,
-          type: 'info',
-          title: 'Weekly Summary',
-          message: `${thisWeekData.length} assessments completed this week`,
-          time: '1 day ago',
-          priority: 'medium'
-        },
-        {
-          id: 3,
-          type: 'success',
-          title: 'System Update',
-          message: 'Dashboard analytics have been updated with new features',
-          time: '2 days ago',
-          priority: 'low'
+      // Fetch real notifications from backend
+      if (user?.email) {
+        try {
+          const [notifRes, unreadRes] = await Promise.all([
+            api.get('/notifications'),
+            api.get('/notifications/unread-count')
+          ]);
+          
+          if (notifRes.ok) {
+            const notifData = await notifRes.json();
+            setNotifications(notifData.map(n => ({
+              id: n.id,
+              type: n.type,
+              title: n.title,
+              message: n.message,
+              time: new Date(n.created_at).toLocaleString(),
+              priority: n.priority,
+              is_read: n.is_read
+            })));
+          }
+          
+          if (unreadRes.ok) {
+            const unreadData = await unreadRes.json();
+            setUnreadCount(unreadData.count);
+          }
+        } catch (e) {
+          console.warn("Notifications backend unavailable");
         }
-      ];
-      setNotifications(newNotifications);
+      }
 
       // Generate recent activity
       const activities = historyData.slice(0, 8).map((assessment, index) => ({
@@ -480,7 +483,7 @@ const DashboardPage = () => {
     // Check if it's a numeric ID (backend ID)
     const assessmentId = assessment.id || assessment.fullData?.id;
     if (!assessmentId || isNaN(Number(assessmentId))) {
-      alert("This assessment is not synced with the server yet. Please refresh the page or wait for sync.");
+      toast.error("This assessment is not synced with the server yet. Please refresh the page or wait for sync.");
       return;
     }
 
@@ -488,9 +491,9 @@ const DashboardPage = () => {
     const pEmail = assessment.patient_email || assessment.fullData?.patient_email;
     if (!pEmail) {
       if (!assessment.patient_id) {
-        alert(`This assessment for '${assessment.name || assessment.patient_name}' is not linked to any patient in the database. \n\nPlease create a new patient with this name and email, then submit a new assessment to refer.`);
+        toast.error(`This assessment for '${assessment.name || assessment.patient_name}' is not linked to any patient in the database. \n\nPlease create a new patient with this name and email, then submit a new assessment to refer.`);
       } else {
-        alert(`Patient email not found for ${assessment.name || assessment.patient_name} (Patient ID: ${assessment.patient_id}). \n\nTo send a referral, please go to the 'Patients' section and update the email for this patient.`);
+        toast.error(`Patient email not found for ${assessment.name || assessment.patient_name} (Patient ID: ${assessment.patient_id}). \n\nTo send a referral, please go to the 'Patients' section and update the email for this patient.`);
       }
       return;
     }
@@ -531,7 +534,7 @@ const DashboardPage = () => {
       if (res.ok) {
         const data = await res.json();
         setSentReferrals(prev => ({ ...prev, [payload.assessment_id]: true }));
-        alert(data.message || "Referral successfully sent!");
+        toast.success(data.message || "✅ Referral sent! Email delivered to patient.");
       } else {
         // Try to get detailed error from backend
         let errorMsg = "Failed to send referral.";
@@ -545,7 +548,7 @@ const DashboardPage = () => {
       }
     } catch (err) {
       console.error("Referral failed:", err);
-      alert(`Referral error: ${err.message}`);
+      toast.error(`❌ Referral failed: ${err.message}`);
     } finally {
       setIsReferralLoading(false);
     }
@@ -599,7 +602,7 @@ const DashboardPage = () => {
     }
   
     const deletedAssessment = rows.find((row) => row.fullData?.id === assessmentId);
-    alert(
+    toast.success(
       `Assessment for ${deletedAssessment?.name || 'Patient'} has been deleted successfully.`
     );
   };
@@ -659,13 +662,23 @@ const DashboardPage = () => {
   <div className="dp-nav-right">
     <button 
       className="dp-notifications-btn" 
-      onClick={() => setShowNotifications(!showNotifications)}
+      onClick={async () => {
+        setShowNotifications(!showNotifications);
+        if (!showNotifications && unreadCount > 0) {
+          try {
+            await api.post('/notifications/read-all');
+            setUnreadCount(0);
+          } catch (e) {
+            console.error("Failed to mark notifications as read", e);
+          }
+        }
+      }}
     >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
       </svg>
-      {notifications.length > 0 && <span className="dp-notification-badge">{notifications.length}</span>}
+      {unreadCount > 0 && <span className="dp-notification-badge">{unreadCount}</span>}
     </button>
     
     <div className="dp-profile-wrapper">

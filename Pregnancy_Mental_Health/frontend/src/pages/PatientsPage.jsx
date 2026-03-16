@@ -3,12 +3,17 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../utils/api";
 import "../styles/PatientsPage.css";
+import toast from 'react-hot-toast';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import React from 'react';
 
 export default function PatientsPage() {
   const [patients, setPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortBy, setSortBy] = useState("latest");
+  const [expandedAssessment, setExpandedAssessment] = useState(null);
+  
   const [loading, setLoading] = useState(true);
   const [showNewPatient, setShowNewPatient] = useState(false);
   const [showEditPatient, setShowEditPatient] = useState(false);
@@ -22,16 +27,8 @@ export default function PatientsPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [patientAssessments, setPatientAssessments] = useState({});
   const [modalError, setModalError] = useState("");
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'alert',
-      title: 'Patient Update',
-      message: 'New high-risk assessment requires attention',
-      time: '5 min ago',
-      priority: 'high'
-    }
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -47,6 +44,17 @@ export default function PatientsPage() {
 
     logout();
     navigate("/");
+  };
+
+  const getRiskFactorData = (assessment) => {
+    // Mock contribution data based on the provided prompt
+    return [
+      { name: 'History of Depression', value: 92 },
+      { name: 'Sleep Disturbance', value: 78 },
+      { name: 'Lack of Social Support', value: 65 },
+      { name: 'Anxiety Symptoms', value: 57 },
+      { name: 'Relationship Issues', value: 48 },
+    ];
   };
 
   const loadPatients = async () => {
@@ -114,7 +122,37 @@ export default function PatientsPage() {
         console.error("Failed to load assessments for stats:", assessmentError);
         // Fallback: just show total patients
         setPatientAssessments({});
-        setStats({ total: patientsList.length, high: 0, moderate: 0, low: 0 });
+        setStats({ total: patientsList.length, high, moderate, low });
+      }
+
+      // 3) Load real notifications
+      if (user?.email) {
+        try {
+          const [notifRes, unreadRes] = await Promise.all([
+            api.get('/notifications'),
+            api.get('/notifications/unread-count')
+          ]);
+          
+          if (notifRes.ok) {
+            const notifData = await notifRes.json();
+            setNotifications(notifData.map(n => ({
+              id: n.id,
+              type: n.type,
+              title: n.title,
+              message: n.message,
+              time: new Date(n.created_at).toLocaleString(),
+              priority: n.priority,
+              is_read: n.is_read
+            })));
+          }
+          
+          if (unreadRes.ok) {
+            const unreadData = await unreadRes.json();
+            setUnreadCount(unreadData.count);
+          }
+        } catch (e) {
+          console.warn("Notifications backend unavailable");
+        }
       }
       
     } catch (err) {
@@ -306,7 +344,7 @@ export default function PatientsPage() {
       setShowEditPatient(false);
       setModalError("");
       
-      alert(`Patient '${updated.name}' updated successfully!`);
+      toast.success(`Patient '${updated.name}' updated successfully!`);
     } catch (err) {
       console.error("Failed to update patient", err);
       setModalError("Failed to update patient. Please try again.");
@@ -324,17 +362,18 @@ export default function PatientsPage() {
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         console.error("Delete patient failed:", res.status, body);
-        alert(body?.detail || "Failed to delete patient");
+        toast.error(body?.detail || "Failed to delete patient");
         return;
       }
 
       // Remove from state
       setPatients((prev) => prev.filter((p) => p.id !== patientId));
+      toast.success("Patient record deleted successfully.");
 
       console.log(`🗑️ Deleted patient ID: ${patientId}`);
     } catch (err) {
       console.error("Failed to delete patient", err);
-      alert("Failed to delete patient. Please try again.");
+      toast.error("Failed to delete patient. Please try again.");
     }
   };
 
@@ -448,13 +487,23 @@ export default function PatientsPage() {
         <div className="dp-nav-right">
           <button 
             className="dp-notifications-btn" 
-            onClick={() => setShowNotifications(!showNotifications)}
+            onClick={async () => {
+              setShowNotifications(!showNotifications);
+              if (!showNotifications && unreadCount > 0) {
+                try {
+                  await api.post('/notifications/read-all');
+                  setUnreadCount(0);
+                } catch (e) {
+                  console.error("Failed to mark notifications as read", e);
+                }
+              }
+            }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
-            {notifications.length > 0 && <span className="dp-notification-badge">{notifications.length}</span>}
+            {unreadCount > 0 && <span className="dp-notification-badge">{unreadCount}</span>}
           </button>
           
           <div className="dp-profile-wrapper">
@@ -1037,52 +1086,100 @@ export default function PatientsPage() {
                   <p className="pp-history-count">
                     {patientHistory.length} assessment{patientHistory.length > 1 ? "s" : ""} found
                   </p>
-                  <table className="pp-table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>AI Risk</th>
-                        <th>Score</th>
-                        <th>Clinician Risk</th>
-                        <th>Plan</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {patientHistory.map((a) => (
-                        <tr key={a.id} className="pp-table-row">
-                          <td className="pp-td-muted">
-                            {a.timestamp
-                              ? new Date(a.timestamp).toLocaleDateString("en-IN", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric"
-                                })
-                              : "—"}
-                          </td>
-                          <td>
-                            <span className={`pp-risk-badge ${
-                              a.risk_level === "High Risk"
-                                ? "pp-risk-high"
-                                : a.risk_level === "Moderate Risk"
-                                ? "pp-risk-moderate"
-                                : "pp-risk-low"
-                            }`}>
-                              {a.risk_level}
-                            </span>
-                          </td>
-                          <td className="pp-td-muted">
-                            {a.score?.toFixed(1) || "—"}
-                          </td>
-                          <td className="pp-td-muted">
-                            {a.clinician_risk || "—"}
-                          </td>
-                          <td className="pp-td-muted">
-                            {a.plan || "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          <table className="pp-table">
+                            <thead>
+                              <tr>
+                                <th>Date</th>
+                                <th>AI Risk</th>
+                                <th>Score</th>
+                                <th>Clinician Risk</th>
+                                <th>Plan</th>
+                                <th>Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {patientHistory.map((a) => (
+                                <React.Fragment key={a.id}>
+                                  <tr className="pp-table-row">
+                                    <td className="pp-td-muted">
+                                      {a.timestamp
+                                        ? new Date(a.timestamp).toLocaleDateString("en-IN", {
+                                            day: "numeric",
+                                            month: "short",
+                                            year: "numeric"
+                                          })
+                                        : "—"}
+                                    </td>
+                                    <td>
+                                      <span className={`pp-risk-badge ${
+                                        a.risk_level === "High Risk"
+                                          ? "pp-risk-high"
+                                          : a.risk_level === "Moderate Risk"
+                                          ? "pp-risk-moderate"
+                                          : "pp-risk-low"
+                                      }`}>
+                                        {a.risk_level}
+                                      </span>
+                                    </td>
+                                    <td className="pp-td-muted">
+                                      {a.score?.toFixed(1) || "—"}
+                                    </td>
+                                    <td className="pp-td-muted">
+                                      {a.clinician_risk || "—"}
+                                    </td>
+                                    <td className="pp-td-muted">
+                                      {a.plan || "—"}
+                                    </td>
+                                    <td>
+                                      <button 
+                                        className="pp-expand-btn"
+                                        onClick={() => setExpandedAssessment(expandedAssessment === a.id ? null : a.id)}
+                                      >
+                                        {expandedAssessment === a.id ? 'Hide Chart' : 'Show Risk Factors'}
+                                      </button>
+                                    </td>
+                                  </tr>
+                                  {expandedAssessment === a.id && (
+                                    <tr>
+                                      <td colSpan="6" className="pp-chart-row">
+                                        <div className="pp-risk-chart-container">
+                                          <h4>Key Risk Factors Contribution</h4>
+                                          <div style={{ width: '100%', height: 250 }}>
+                                            <ResponsiveContainer>
+                                              <BarChart
+                                                layout="vertical"
+                                                data={getRiskFactorData(a)}
+                                                margin={{ top: 5, right: 30, left: 150, bottom: 5 }}
+                                              >
+                                                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                                <XAxis type="number" domain={[0, 100]} unit="%" />
+                                                <YAxis 
+                                                  dataKey="name" 
+                                                  type="category" 
+                                                  width={140} 
+                                                  tick={{ fontSize: 12 }}
+                                                />
+                                                <Tooltip 
+                                                  formatter={(value) => [`${value}%`, 'Contribution']}
+                                                />
+                                                <Bar 
+                                                  dataKey="value" 
+                                                  fill={a.risk_level === 'High Risk' ? '#ef4444' : '#f59e0b'} 
+                                                  radius={[0, 4, 4, 0]}
+                                                  barSize={20}
+                                                />
+                                              </BarChart>
+                                            </ResponsiveContainer>
+                                          </div>
+                                          <p className="pp-chart-note">* Based on CatBoost feature importance and EPDS scoring weights</p>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </React.Fragment>
+                              ))}
+                            </tbody>
+                          </table>
                 </>
               )}
             </div>

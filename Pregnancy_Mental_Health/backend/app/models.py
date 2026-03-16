@@ -61,3 +61,16 @@ class Patient(Base):
     assessments = relationship("Assessment", back_populates="patient", cascade="all, delete-orphan", passive_deletes=True)
 
 
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    type = Column(String, default="info") # alert, success, info
+    priority = Column(String, default="medium") # high, medium, low
+    is_read = Column(Boolean, default=False)
+    clinician_email = Column(String, index=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+

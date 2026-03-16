@@ -5,6 +5,7 @@ import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import SafetyAlert from "../components/SafetyAlert";
 import { api } from "../utils/api";
+import toast from 'react-hot-toast';
 
 
 export default function NewAssessment() {
@@ -208,18 +209,18 @@ export default function NewAssessment() {
 
   const handleReferral = async (assessmentId = null) => {
     if (!formData.patient_name || !result) {
-      alert("Please complete the assessment before referring.");
+      toast.error("Please complete the assessment before referring.");
       return;
     }
 
     const finalAssessmentId = assessmentId || savedAssessmentId;
     if (!finalAssessmentId) {
-      alert("Please save the assessment to history first before sending a referral. This ensures all clinical notes and risk factors are correctly recorded.");
+      toast.error("Please save the assessment to history first before sending a referral. This ensures all clinical notes and risk factors are correctly recorded.");
       return;
     }
 
     if (!patientEmail && !selectedPatient?.email) {
-      alert("Patient email is missing. Please update the patient's details with an email address to send a referral.");
+      toast.error("Patient email is missing. Please update the patient's details with an email address to send a referral.");
       return;
     }
 
@@ -245,7 +246,7 @@ export default function NewAssessment() {
       if (res.ok) {
         const data = await res.json();
         setIsReferralSent(true);
-        alert(data.message || "Referral successfully sent!");
+        toast.success(data.message || "✅ Referral sent! Email delivered to patient.");
       } else {
         // Try to get detailed error from backend
         let errorMsg = "Failed to send referral.";
@@ -259,7 +260,7 @@ export default function NewAssessment() {
       }
     } catch (err) {
       console.error("Referral failed:", err);
-      alert(`Referral error: ${err.message}`);
+      toast.error(`❌ Referral failed: ${err.message}`);
     } finally {
       setIsReferralLoading(false);
     }
@@ -328,18 +329,18 @@ export default function NewAssessment() {
 
   const createNewPatient = async () => {
     if (!newPatientData.name.trim()) {
-      alert("Patient name is required");
+      toast.error("Patient name is required");
       return;
     }
 
     if (!newPatientData.email.trim()) {
-      alert("Patient email is required for clinical referrals");
+      toast.error("Patient email is required for clinical referrals");
       return;
     }
 
     // Validate phone number if provided
     if (newPatientData.phone && !validatePhone(newPatientData.phone)) {
-      alert("Please enter a valid phone number (at least 10 digits)");
+      toast.error("Please enter a valid phone number (at least 10 digits)");
       return;
     }
   
@@ -348,7 +349,7 @@ export default function NewAssessment() {
         (p) => p.name.toLowerCase() === newPatientData.name.trim().toLowerCase()
       );
       if (existingPatient) {
-        alert(`Patient with name "${newPatientData.name}" already exists`);
+        toast.error(`Patient with name "${newPatientData.name}" already exists`);
         return;
       }
   
@@ -362,7 +363,7 @@ export default function NewAssessment() {
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         console.error("Failed to create patient:", res.status, body);
-        alert(body?.detail || "Failed to create patient");
+        toast.error(body?.detail || "Failed to create patient");
         return;
       }
   
@@ -373,11 +374,12 @@ export default function NewAssessment() {
       selectPatient(newPatient);
       setShowCreatePatient(false);
       setNewPatientData({ name: "", email: "", age: "", phone: "" });
+      toast.success("Patient created successfully!");
   
       console.log(`✅ Created patient: ${newPatient.name} (ID: ${newPatient.id})`);
     } catch (error) {
       console.error("Failed to create patient:", error);
-      alert(`Failed to create patient: ${error.message}`);
+      toast.error(`Failed to create patient: ${error.message}`);
     }
   };
 
@@ -439,7 +441,7 @@ export default function NewAssessment() {
     for (const f of REQUIRED_FIELDS) {
       const v = formData[f];
       if (!v) {
-        alert(`Please answer all questions before generating risk. Missing: ${f}`);
+        toast.error(`Please answer all questions before generating risk. Missing: ${f.replace(/_/g, ' ')}`);
         return;
       }
     }
@@ -453,7 +455,7 @@ export default function NewAssessment() {
       if (!res.ok) {
         const errorText = await res.text().catch(() => 'Unknown error');
         console.error("Prediction error:", res.status, errorText);
-        alert(`Could not generate risk score. Server error: ${res.status} - ${errorText}`);
+        toast.error(`Could not generate risk score. Server error: ${res.status}`);
         return;
       }
   
@@ -461,6 +463,7 @@ export default function NewAssessment() {
       console.log("Prediction response:", data);
       
       setResult({ risk: data.risk_level, score: data.score });
+      toast.success("AI risk assessment generated successfully!");
       
       // Show safety alert only for High Risk
       if (data.risk_level === "High Risk") {
@@ -470,7 +473,7 @@ export default function NewAssessment() {
       setStep(6);
     } catch (err) {
       console.error("Backend error:", err);
-      alert(`Could not generate risk score. Network error: ${err.message}`);
+      toast.error(`Could not generate risk score. Network error: ${err.message}`);
     }
   };
   
@@ -1302,29 +1305,29 @@ export default function NewAssessment() {
                       onClick={async () => {
                         // Check if user is authenticated
                         if (!user?.isAuthenticated || !user?.email) {
-                          alert("You must be signed in to save assessments. Please sign in and try again.");
+                          toast.error("You must be signed in to save assessments. Please sign in and try again.");
                           navigate("/signin");
                           return;
                         }
 
                         // Validate required fields
                         if (!formData.patient_name) {
-                          alert("Please enter patient name before saving.");
+                          toast.error("Please enter patient name before saving.");
                           return;
                         }
 
                         if (!formData.clinician_risk) {
-                          alert("Please select clinician risk level before saving.");
+                          toast.error("Please select clinician risk level before saving.");
                           return;
                         }
 
                         if (!formData.plan) {
-                          alert("Please select a recommended plan before saving.");
+                          toast.error("Please select a recommended plan before saving.");
                           return;
                         }
 
                         if (!result) {
-                          alert("Please generate the result before saving.");
+                          toast.error("Please generate the result before saving.");
                           return;
                         }
 
@@ -1354,7 +1357,7 @@ export default function NewAssessment() {
                             console.error("Save assessment failed:", res.status, errorText);
                             
                             if (res.status === 401) {
-                              alert("Your session has expired. Please sign in again to save the assessment.");
+                              toast.error("Your session has expired. Please sign in again to save the assessment.");
                               navigate("/signin");
                               return;
                             }
@@ -1382,7 +1385,7 @@ export default function NewAssessment() {
                             );
                           }
 
-                          alert(
+                          toast.success(
                             `Assessment for ${formData.patient_name} saved to history successfully!`
                           );
                           navigate("/history");
@@ -1391,12 +1394,12 @@ export default function NewAssessment() {
                           console.error("Payload sent:", payload);
                           
                           if (err.message && err.message.includes("401")) {
-                            alert("Your session has expired. Please sign in again to save the assessment.");
+                            toast.error("Your session has expired. Please sign in again to save the assessment.");
                             navigate("/signin");
                           } else if (err.message && err.message.includes("Network")) {
-                            alert("Network error. Please check your connection and try again.");
+                            toast.error("Network error. Please check your connection and try again.");
                           } else {
-                            alert(`Could not save assessment: ${err.message}`);
+                            toast.error(`Could not save assessment: ${err.message}`);
                           }
                         }
                       }}
