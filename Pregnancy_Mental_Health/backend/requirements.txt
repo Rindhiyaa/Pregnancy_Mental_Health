@@ -9,3 +9,4 @@ python-dotenv==1.0.1
 catboost==1.2.7
 pydantic[email]==2.10.3
 joblib==1.5.3
+fastapi-mail==1.4.1

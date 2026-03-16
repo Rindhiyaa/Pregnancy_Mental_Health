@@ -11,9 +11,11 @@ export default function PatientsPage() {
   const [sortBy, setSortBy] = useState("latest");
   const [loading, setLoading] = useState(true);
   const [showNewPatient, setShowNewPatient] = useState(false);
+  const [showEditPatient, setShowEditPatient] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [newPatient, setNewPatient] = useState({ name: "", age: "", phone: "" });
+  const [newPatient, setNewPatient] = useState({ name: "", email: "", age: "", phone: "" });
+  const [editPatientData, setEditPatientData] = useState({ id: "", name: "", email: "", age: "", phone: "" });
   const [stats, setStats] = useState({ total: 0, high: 0, moderate: 0, low: 0 });
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patientHistory, setPatientHistory] = useState([]);
@@ -51,7 +53,7 @@ export default function PatientsPage() {
     setLoading(true);
     try {
       // 1) Load patients from backend
-      const res = await api.get("/patients/");
+      const res = await api.get("/patients");
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         console.error("Failed to load patients:", res.status, body);
@@ -202,6 +204,11 @@ export default function PatientsPage() {
       return;
     }
 
+    if (!newPatient.email.trim()) {
+      setModalError("Patient email is required for clinical referrals");
+      return;
+    }
+
     // Validate phone number if provided
     if (newPatient.phone && !validatePhone(newPatient.phone)) {
       setModalError("Please enter a valid phone number (at least 10 digits)");
@@ -219,8 +226,9 @@ export default function PatientsPage() {
       }
 
       // Create patient in backend
-      const res = await api.post("/patients/", {
+      const res = await api.post("/patients", {
         name: newPatient.name.trim(),
+        email: newPatient.email.trim(),
         age: newPatient.age ? parseInt(newPatient.age) : null,
         phone: newPatient.phone.trim() || null,
       });
@@ -237,13 +245,71 @@ export default function PatientsPage() {
       // Update local state
       setPatients((prev) => [created, ...prev]);
       setShowNewPatient(false);
-      setNewPatient({ name: "", age: "", phone: "" });
+      setNewPatient({ name: "", email: "", age: "", phone: "" });
       setModalError(""); // Clear error on success
 
       console.log(`🆕 Created patient: ${created.name} (ID: ${created.id})`);
     } catch (err) {
       console.error("Failed to create patient", err);
       setModalError("Failed to create patient. Please try again.");
+    }
+  };
+
+  const openEditModal = (patient) => {
+    setEditPatientData({
+      id: patient.id,
+      name: patient.name,
+      email: patient.email || "",
+      age: patient.age || "",
+      phone: patient.phone || ""
+    });
+    setModalError("");
+    setShowEditPatient(true);
+  };
+
+  const updatePatient = async () => {
+    setModalError("");
+    
+    if (!editPatientData.name.trim()) {
+      setModalError("Patient name is required");
+      return;
+    }
+
+    if (!editPatientData.email.trim()) {
+      setModalError("Patient email is required for clinical referrals");
+      return;
+    }
+
+    if (editPatientData.phone && !validatePhone(editPatientData.phone)) {
+      setModalError("Please enter a valid phone number");
+      return;
+    }
+
+    try {
+      const res = await api.put(`/patients/${editPatientData.id}`, {
+        name: editPatientData.name.trim(),
+        email: editPatientData.email.trim(),
+        age: editPatientData.age ? parseInt(editPatientData.age) : null,
+        phone: editPatientData.phone.trim() || null,
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setModalError(body?.detail || "Failed to update patient");
+        return;
+      }
+
+      const updated = await res.json();
+
+      // Update local state
+      setPatients((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      setShowEditPatient(false);
+      setModalError("");
+      
+      alert(`Patient '${updated.name}' updated successfully!`);
+    } catch (err) {
+      console.error("Failed to update patient", err);
+      setModalError("Failed to update patient. Please try again.");
     }
   };
 
@@ -566,6 +632,7 @@ export default function PatientsPage() {
                   <th>Patient</th>
                   <th>Age</th>
                   <th>Phone</th>
+                  <th>Email</th>
                   <th>Registered</th>
                   <th>Actions</th>
                 </tr>
@@ -591,6 +658,9 @@ export default function PatientsPage() {
                       {patient.phone || "—"}
                     </td>
                     <td className="pp-td-muted">
+                      {patient.email || "—"}
+                    </td>
+                    <td className="pp-td-muted">
                       {patient.created_at
                         ? new Date(patient.created_at).toLocaleDateString(
                             "en-IN", { day: "numeric", month: "short", year: "numeric" }
@@ -607,6 +677,17 @@ export default function PatientsPage() {
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                             <circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        </button>
+                        <button
+                          className="pp-action-btn pp-edit-btn"
+                          onClick={() => openEditModal(patient)}
+                          title="Edit Patient"
+                          style={{ backgroundColor: '#f59e0b', color: 'white' }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                           </svg>
                         </button>
                         <button
@@ -678,6 +759,17 @@ export default function PatientsPage() {
                   autoFocus
                 />
               </div>
+              <div className="pp-form-group">
+                <label>Email Address *</label>
+                <input
+                  type="email"
+                  placeholder="e.g. patient@example.com"
+                  value={newPatient.email}
+                  onChange={(e) =>
+                    setNewPatient({ ...newPatient, email: e.target.value })
+                  }
+                />
+              </div>
               <div className="pp-form-row">
                 <div className="pp-form-group">
                   <label>Age</label>
@@ -723,6 +815,97 @@ export default function PatientsPage() {
         </div>
       )}
 
+      {/* ── EDIT PATIENT MODAL ── */}
+      {showEditPatient && (
+        <div className="pp-modal-overlay"
+          onClick={() => {
+            setShowEditPatient(false);
+            setModalError("");
+          }}>
+          <div className="pp-modal"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="pp-modal-header">
+              <h2>Edit Patient Details</h2>
+              <button className="pp-modal-close"
+                onClick={() => {
+                  setShowEditPatient(false);
+                  setModalError("");
+                }}>✕</button>
+            </div>
+            <div className="pp-modal-body">
+              {modalError && (
+                <div className="pp-error-message">
+                  {modalError}
+                </div>
+              )}
+              <div className="pp-form-group">
+                <label>Full Name *</label>
+                <input
+                  type="text"
+                  placeholder="Enter patient full name"
+                  value={editPatientData.name}
+                  onChange={(e) =>
+                    setEditPatientData({ ...editPatientData, name: e.target.value })
+                  }
+                  autoFocus
+                />
+              </div>
+              <div className="pp-form-group">
+                <label>Email Address *</label>
+                <input
+                  type="email"
+                  placeholder="e.g. patient@example.com"
+                  value={editPatientData.email}
+                  onChange={(e) =>
+                    setEditPatientData({ ...editPatientData, email: e.target.value })
+                  }
+                />
+              </div>
+              <div className="pp-form-row">
+                <div className="pp-form-group">
+                  <label>Age</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 24"
+                    value={editPatientData.age}
+                    onChange={(e) =>
+                      setEditPatientData({ ...editPatientData, age: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="pp-form-group">
+                  <label>Phone Number</label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. 9876543210"
+                    value={editPatientData.phone}
+                    onChange={(e) =>
+                      setEditPatientData({ ...editPatientData, phone: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="pp-modal-footer">
+              <button className="pp-btn-secondary"
+                onClick={() => {
+                  setShowEditPatient(false);
+                  setModalError("");
+                }}>
+                Cancel
+              </button>
+              <button
+                className="pp-btn-primary"
+                onClick={updatePatient}
+                style={{ backgroundColor: '#f59e0b' }}
+                disabled={!editPatientData.name.trim()}>
+                Update Patient
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── PATIENT HISTORY MODAL ── */}
       {selectedPatient && (
         <div className="pp-modal-overlay" onClick={() => setSelectedPatient(null)}>
@@ -739,6 +922,7 @@ export default function PatientsPage() {
                   <p>
                     {selectedPatient.age && `Age: ${selectedPatient.age}`}
                     {selectedPatient.phone && ` • ${selectedPatient.phone}`}
+                    {selectedPatient.email && ` • ${selectedPatient.email}`}
                     {` • ID: #${selectedPatient.id}`}
                   </p>
                 </div>
@@ -786,6 +970,15 @@ export default function PatientsPage() {
                                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                               </svg>
                               {selectedPatient.phone}
+                            </span>
+                          )}
+                          {selectedPatient.email && (
+                            <span className="pp-meta-item">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                              </svg>
+                              {selectedPatient.email}
                             </span>
                           )}
                         </div>

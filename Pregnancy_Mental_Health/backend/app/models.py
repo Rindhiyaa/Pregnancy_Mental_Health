@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, DateTime, func, String, Boolean, JSON, ForeignKey
+from sqlalchemy import Column, Integer, Float, DateTime, func, String, Boolean, JSON, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -30,7 +30,7 @@ class Assessment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     patient_name = Column(String, nullable=False)
-    patient_id = Column(Integer, ForeignKey('patients.id'), nullable=True)
+    patient_id = Column(BigInteger, ForeignKey('patients.id', ondelete='CASCADE'), nullable=True)
     
     raw_data = Column(JSON, nullable=False)           # full formData as JSON
     risk_score = Column(Float, nullable=False)
@@ -42,15 +42,22 @@ class Assessment(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    # Relationship to Patient
+    patient = relationship("Patient", back_populates="assessments")
+
 
 class Patient(Base):
     __tablename__ = "patients"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(BigInteger, primary_key=True, index=True)
     name = Column(String, nullable=False)
     age = Column(Integer, nullable=True)
     phone = Column(String, nullable=True)
+    email = Column(String, nullable=True)
     clinician_email = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationship to Assessments
+    assessments = relationship("Assessment", back_populates="patient", cascade="all, delete-orphan", passive_deletes=True)
 
 

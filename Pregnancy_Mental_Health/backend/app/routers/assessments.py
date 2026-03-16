@@ -1,17 +1,38 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, UploadFile
 from sqlalchemy.orm import Session
 import pandas as pd
 from typing import List, Optional
 import logging
+from datetime import datetime
+import io
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
 
 from ..database import get_db
-from ..schemas import AssessmentCreate, AssessmentResult, AssessmentSave
+from ..schemas import AssessmentCreate, AssessmentResult, AssessmentSave, ReferralRequest
 from ..ml_model import model, feature_columns, build_model_input_from_form
-from .. import models
-from ..jwt_handler import get_current_user_email
+from .. import models, config
+from ..jwt_handler import get_current_user_email, get_current_user
 
 router = APIRouter(prefix="/api", tags=["assessments"])
 logger = logging.getLogger(__name__)
+
+# Email configuration
+mail_conf = ConnectionConfig(
+    MAIL_USERNAME=config.MAIL_USERNAME,
+    MAIL_PASSWORD=config.MAIL_PASSWORD,
+    MAIL_FROM=config.MAIL_FROM,
+    MAIL_FROM_NAME=config.MAIL_FROM_NAME,
+    MAIL_PORT=config.MAIL_PORT,
+    MAIL_SERVER=config.MAIL_SERVER,
+    MAIL_STARTTLS=config.MAIL_STARTTLS,
+    MAIL_SSL_TLS=config.MAIL_SSL_TLS,
+    USE_CREDENTIALS=True
+)
 
 
 @router.post("/assessments/predict", response_model=AssessmentResult)
@@ -159,9 +180,29 @@ def save_assessment(
     current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db)
 ):
+    # --- START FIX: Robust linkage ---
+    # 1. If patient_id is a temporary ID (frontend timestamp), it won't exist in DB
+    final_patient_id = payload.patient_id
+    if final_patient_id:
+        exists = db.query(models.Patient).filter(models.Patient.id == final_patient_id).first()
+        if not exists:
+            logger.info(f"Provided patient_id {final_patient_id} not found in DB. Treating as temporary.")
+            final_patient_id = None
+    
+    # 2. Try to link by name if ID is missing/invalid
+    if not final_patient_id and payload.patient_name:
+        patient = db.query(models.Patient).filter(
+            models.Patient.name == payload.patient_name,
+            models.Patient.clinician_email == current_user_email
+        ).first()
+        if patient:
+            final_patient_id = patient.id
+            logger.info(f"Auto-linked assessment for '{payload.patient_name}' to patient ID: {final_patient_id}")
+    # --- END FIX ---
+
     assessment = models.Assessment(
         patient_name=payload.patient_name,
-        patient_id=payload.patient_id,
+        patient_id=final_patient_id,
         raw_data=payload.raw_data,
         risk_score=payload.score,
         risk_level=payload.risk_level,
@@ -187,9 +228,18 @@ def save_assessment(
     logger.info(f"Clinician: {assessment.clinician_email}")
     logger.info("="*80)
 
+    # Get patient email for immediate use in frontend referral
+    patient_email = None
+    if assessment.patient_id:
+        patient = db.query(models.Patient).filter(models.Patient.id == assessment.patient_id).first()
+        if patient:
+            patient_email = patient.email
+
     return {
         "id": assessment.id,
         "patient_name": assessment.patient_name,
+        "patient_id": assessment.patient_id,
+        "patient_email": patient_email,
         "date": date_str,
         "timestamp": timestamp,
         "risk_level": assessment.risk_level,
@@ -206,30 +256,79 @@ def list_assessments(
     clinician_email: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    # Use provided clinician_email or fall back to current user
-    email_filter = clinician_email or current_user_email
-    
-    query = db.query(models.Assessment)
-    if email_filter:
-        query = query.filter(models.Assessment.clinician_email == email_filter)
+    try:
+        # Use provided clinician_email or fall back to current user
+        email_filter = clinician_email or current_user_email
+        
+        # Simple query first to verify
+        query = db.query(models.Assessment)
+        if email_filter:
+            query = query.filter(models.Assessment.clinician_email == email_filter)
+        
+        records = query.order_by(models.Assessment.created_at.desc()).all()
+        
+        # Get all patient emails in one go to avoid N+1 and join issues
+        patient_ids = [r.patient_id for r in records if r.patient_id]
+        patient_names = [r.patient_name for r in records if not r.patient_id]
 
-    records = query.order_by(models.Assessment.created_at.desc()).all()
+        patient_emails = {}
+        if patient_ids:
+            patients = db.query(models.Patient.id, models.Patient.email).filter(models.Patient.id.in_(patient_ids)).all()
+            patient_emails = {p.id: p.email for p in patients}
+            logger.info(f"Fetched emails for {len(patient_emails)} patients by ID.")
 
-    return [
-        {
-            "id": a.id,
-            "patient_name": a.patient_name,
-            "date": a.created_at.date().isoformat(),
-            "timestamp": a.created_at.isoformat(),
-            "risk_level": a.risk_level,
-            "score": a.risk_score,
-            "clinician_risk": a.clinician_risk,
-            "plan": a.plan,
-            "notes": a.notes,
-            "clinician_email": a.clinician_email,
-        }
-        for a in records
-    ]
+        # Also fetch by name for those missing IDs
+        patient_emails_by_name = {}
+        if patient_names:
+            patients_by_name = db.query(models.Patient.name, models.Patient.email).filter(
+                models.Patient.name.in_(patient_names),
+                models.Patient.clinician_email == email_filter
+            ).all()
+            patient_emails_by_name = {p.name: p.email for p in patients_by_name}
+            logger.info(f"Fetched emails for {len(patient_emails_by_name)} patients by name.")
+
+        result_list = []
+        for a in records:
+            created_at = getattr(a, "created_at", None)
+            
+            # Safe formatting of dates
+            date_str = None
+            timestamp_str = None
+            if created_at:
+                try:
+                    date_str = created_at.date().isoformat()
+                    timestamp_str = created_at.isoformat()
+                except Exception:
+                    pass
+
+            # Try to find email by ID first, then by name
+            p_email = None
+            if a.patient_id:
+                p_email = patient_emails.get(a.patient_id)
+            
+            if not p_email and a.patient_name:
+                p_email = patient_emails_by_name.get(a.patient_name)
+            
+            result_list.append({
+                "id": getattr(a, "id", None),
+                "patient_name": getattr(a, "patient_name", "Unknown Patient"),
+                "patient_id": getattr(a, "patient_id", None),
+                "patient_email": p_email,
+                "date": date_str,
+                "timestamp": timestamp_str,
+                "risk_level": getattr(a, "risk_level", "Unknown"),
+                "score": getattr(a, "risk_score", 0.0),
+                "clinician_risk": getattr(a, "clinician_risk", None),
+                "plan": getattr(a, "plan", None),
+                "notes": getattr(a, "notes", None),
+                "clinician_email": getattr(a, "clinician_email", None),
+            })
+
+        return result_list
+    except Exception as e:
+        logger.error(f"CRITICAL ERROR in list_assessments: {str(e)}")
+        # Fallback: return empty list instead of 500 to avoid CORS issues
+        return []
 
 @router.delete("/assessments/clear", status_code=status.HTTP_204_NO_CONTENT)
 def clear_assessments_for_clinician(
@@ -265,3 +364,254 @@ def delete_assessment(
     db.delete(assessment)
     db.commit()
     return
+
+
+def get_risk_color(risk_level: str) -> str:
+    """Helper to get hex color for email based on risk level"""
+    level = risk_level.replace(" Risk", "")
+    return {"High": "#FF4444", "Moderate": "#FF8800", "Low": "#00AA44"}.get(level, "#888888")
+
+
+def generate_referral_pdf(patient_name, risk_score, risk_level, risk_factors, clinician_notes, assessment_id):
+    """Generates a professional PDF report for the referral"""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        alignment=1, # Center
+        spaceAfter=30,
+        textColor=colors.HexColor("#1F3A5F")
+    )
+    
+    section_header_style = ParagraphStyle(
+        'SectionHeader',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor("#333333"),
+        borderBottomWidth=1,
+        borderBottomColor=colors.grey,
+        spaceBefore=12,
+        spaceAfter=6
+    )
+
+    # Risk badge color
+    color_map = {"High": "#FF4444", "Moderate": "#FF8800", "Low": "#00AA44"}
+    risk_color = colors.HexColor(color_map.get(risk_level.replace(" Risk", ""), "#888888"))
+
+    story = []
+
+    # Title
+    story.append(Paragraph("PPD Risk Assessment Report", title_style))
+    story.append(Paragraph("Postpartum Risk Insight | Clinical Referral Document", styles['Normal']))
+    story.append(Spacer(1, 0.2 * inch))
+
+    # Patient Information Table
+    data = [
+        ["Patient Name:", patient_name],
+        ["Assessment ID:", f"#{assessment_id}"],
+        ["Assessment Date:", datetime.now().strftime("%d %B %Y, %I:%M %p")]
+    ]
+    t = Table(data, colWidths=[2*inch, 3*inch])
+    t.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('ALIGN', (0,0), (0,-1), 'LEFT'),
+        ('TEXTCOLOR', (0,0), (0,-1), colors.grey),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 0.3 * inch))
+
+    # Risk Level Badge
+    risk_table_data = [[Paragraph(f"<font color='white' size='14'><b>{risk_level.upper()} — {risk_score:.1f}%</b></font>", styles['Normal'])]]
+    risk_table = Table(risk_table_data, colWidths=[4*inch])
+    risk_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), risk_color),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('LEFTPADDING', (0,0), (-1,-1), 20),
+        ('RIGHTPADDING', (0,0), (-1,-1), 20),
+        ('TOPPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+    ]))
+    story.append(risk_table)
+    story.append(Spacer(1, 0.4 * inch))
+
+    # Key Risk Factors
+    story.append(Paragraph("Key Risk Factors Identified", section_header_style))
+    if risk_factors:
+        for factor in risk_factors:
+            story.append(Paragraph(f"• {factor}", styles['Normal']))
+    else:
+        story.append(Paragraph("No specific factors identified.", styles['Normal']))
+    story.append(Spacer(1, 0.3 * inch))
+
+    # Clinician Notes
+    story.append(Paragraph("Clinician Notes", section_header_style))
+    story.append(Paragraph(clinician_notes if clinician_notes else "No additional notes provided.", styles['Normal']))
+    story.append(Spacer(1, 0.3 * inch))
+
+    # Recommended Action
+    action_text = "Immediate psychiatric consultation recommended within 24 hours." if "High" in risk_level else "Schedule psychiatric evaluation within 1 week."
+    story.append(Paragraph("Recommended Action", section_header_style))
+    story.append(Paragraph(f"<b>{action_text}</b>", styles['Normal']))
+    story.append(Spacer(1, 0.5 * inch))
+
+    # Footer
+    story.append(Spacer(1, 1 * inch))
+    footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=colors.grey, alignment=1)
+    story.append(Paragraph("Confidential Clinical Communication - For Clinical Use Only", footer_style))
+    story.append(Paragraph("This report was generated by the PPD Risk Insight AI platform.", footer_style))
+
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes
+
+
+async def send_referral_email(
+    patient_name: str,
+    risk_level: str,
+    risk_score: float,
+    clinician_name: str,
+    clinician_notes: str,
+    assessment_id: int,
+    top_risk_factors: list,
+    recipients: list,
+    reply_to: str
+):
+    """
+    Sends a professional clinical referral email to the specified recipients with a PDF attachment.
+    """
+    # Create dynamic config to show clinician name as sender
+    dynamic_mail_conf = ConnectionConfig(
+        MAIL_USERNAME=config.MAIL_USERNAME,
+        MAIL_PASSWORD=config.MAIL_PASSWORD,
+        MAIL_FROM=config.MAIL_FROM,
+        MAIL_FROM_NAME=clinician_name,
+        MAIL_PORT=config.MAIL_PORT,
+        MAIL_SERVER=config.MAIL_SERVER,
+        MAIL_STARTTLS=config.MAIL_STARTTLS,
+        MAIL_SSL_TLS=config.MAIL_SSL_TLS,
+        USE_CREDENTIALS=True
+    )
+
+    color = get_risk_color(risk_level)
+    
+    html_body = f"""
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: {color};">PPD Referral Report - {patient_name}</h2>
+      <p>Please find the professional clinical referral report attached as a PDF document.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="font-size: 12px; color: #666;">
+        This is a confidential clinical communication from the PPD Risk Insight platform.<br>
+        Referred by: {clinician_name}
+      </p>
+    </div>
+    """
+
+    # Generate PDF
+    pdf_content = generate_referral_pdf(
+        patient_name=patient_name,
+        risk_score=risk_score,
+        risk_level=risk_level,
+        risk_factors=top_risk_factors,
+        clinician_notes=clinician_notes,
+        assessment_id=assessment_id
+    )
+
+    # Create attachment
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    filename = f"PPD_Referral_{patient_name.replace(' ', '_')}_{date_str}.pdf"
+
+    attachment = UploadFile(
+        filename=filename,
+        file=io.BytesIO(pdf_content),
+    )
+
+    message = MessageSchema(
+        subject=f"[{'URGENT' if 'High' in risk_level else 'REFERRAL'}] PPD {risk_level} - Patient: {patient_name}",
+        recipients=recipients,
+        body=html_body,
+        subtype=MessageType.html,
+        reply_to=[reply_to],
+        attachments=[attachment]
+    )
+    
+    fm = FastMail(dynamic_mail_conf)
+    await fm.send_message(message)
+
+
+@router.post("/referrals")
+async def create_referral(
+    payload: ReferralRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Processes a referral and sends a real email notification.
+    """
+    # 1) Fetch patient email
+    assessment = db.query(models.Assessment).filter(models.Assessment.id == payload.assessment_id).first()
+    if not assessment:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+    
+    patient = db.query(models.Patient).filter(models.Patient.id == assessment.patient_id).first()
+    
+    # --- START FIX: Fallback linkage for referrals ---
+    if not patient and assessment.patient_name:
+        logger.info(f"Patient not found by ID {assessment.patient_id}. Attempting search by name: {assessment.patient_name}")
+        patient = db.query(models.Patient).filter(
+            models.Patient.name == assessment.patient_name,
+            models.Patient.clinician_email == current_user.email
+        ).first()
+        
+        if patient:
+            # Update the assessment with the correct ID for future
+            assessment.patient_id = patient.id
+            db.commit()
+            logger.info(f"Fixed assessment #{assessment.id} linkage - linked to patient '{patient.name}' (ID: {patient.id})")
+    # --- END FIX ---
+
+    if not patient or not patient.email:
+        raise HTTPException(status_code=400, detail="Patient email not found. Please update patient details.")
+
+    clinician_full_name = f"{current_user.first_name} {current_user.last_name or ''}".strip()
+
+    logger.info("="*80)
+    logger.info("NEW CLINICAL REFERRAL GENERATED")
+    logger.info(f"From: {current_user.email} (Name: {clinician_full_name})")
+    logger.info(f"To Patient: {patient.email}")
+    logger.info(f"Risk Level: {payload.risk_level}, Score: {payload.risk_score}")
+    logger.info("="*80)
+
+    try:
+        # Trigger real email dynamically
+        await send_referral_email(
+            patient_name=payload.patient_name,
+            risk_level=payload.risk_level,
+            risk_score=payload.risk_score,
+            clinician_name=clinician_full_name,
+            clinician_notes=payload.clinician_notes,
+            assessment_id=payload.assessment_id,
+            top_risk_factors=payload.top_risk_factors,
+            recipients=[patient.email],  # 👈 TO patient.email
+            reply_to=current_user.email  # 👈 reply_to clinician
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Referral for {payload.patient_name} successfully sent to {payload.referral_department}.",
+            "referral_id": f"REF-{payload.assessment_id}-{datetime.now().strftime('%M')}",
+        }
+    except Exception as e:
+        logger.error(f"CRITICAL: Failed to send real referral email: {e}", exc_info=True)
+        # 🚨 THROW REAL ERROR so frontend sees it failed
+        raise HTTPException(
+            status_code=500,
+            detail=f"Real Email Error: {str(e)}. (Hint: Check your MAIL_PASSWORD in config.py)"
+        )

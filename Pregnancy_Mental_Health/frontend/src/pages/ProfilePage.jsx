@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { api } from "../utils/api";
 import "../styles/DashboardPage.css";
 import "../styles/ProfilePage.css";
 
@@ -48,18 +49,8 @@ const ProfilePage = () => {
   //handle logout
   const handleTopLogout = async () => {
     try {
-      const token = localStorage.getItem('ppd_access_token');
-      if (user?.email && token) {
-        await fetch(
-          `http://127.0.0.1:8000/api/logout-status`,
-          {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-            },
-          }
-        );
+      if (user?.email) {
+        await api.post('/logout-status');
       }
     } catch (e) {
       console.error("Failed to update logout status", e);
@@ -113,15 +104,7 @@ const ProfilePage = () => {
     }
   
     try {
-      const res = await fetch(
-        `http://127.0.0.1:8000/api/me`,
-        { 
-          method: "DELETE",
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        }
-      );
+      const res = await api.delete("/me");
   
       if (!res.ok) {
         const msg = await res.text();

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from ..database import get_db
-from ..models import Patient
+from ..models import Patient, Assessment
 from ..schemas import PatientCreate, PatientOut, PatientUpdate
 from ..jwt_handler import get_current_user_email
 
@@ -46,6 +46,7 @@ def create_patient(
         name=patient_data.name,
         age=patient_data.age,
         phone=patient_data.phone,
+        email=patient_data.email,
         clinician_email=current_user_email
     )
     
@@ -80,7 +81,7 @@ def get_patient(
 @router.put("/{patient_id}", response_model=PatientOut)
 def update_patient(
     patient_id: int,
-    patient_data: PatientUpdate,
+    patient_update: PatientUpdate,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user_email)
 ):
@@ -89,39 +90,16 @@ def update_patient(
         Patient.id == patient_id,
         Patient.clinician_email == current_user_email
     ).first()
-    
+
     if not patient:
-        raise HTTPException(
-            status_code=404,
-            detail="Patient not found"
-        )
-    
-    # Update fields if provided
-    if patient_data.name is not None:
-        # Check for duplicate names
-        existing_patient = db.query(Patient).filter(
-            Patient.name == patient_data.name,
-            Patient.clinician_email == current_user_email,
-            Patient.id != patient_id
-        ).first()
-        
-        if existing_patient:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Patient with name '{patient_data.name}' already exists"
-            )
-        
-        patient.name = patient_data.name
-    
-    if patient_data.age is not None:
-        patient.age = patient_data.age
-    
-    if patient_data.phone is not None:
-        patient.phone = patient_data.phone
-    
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Update fields
+    for key, value in patient_update.dict(exclude_unset=True).items():
+        setattr(patient, key, value)
+
     db.commit()
     db.refresh(patient)
-    
     return patient
 
 
@@ -143,7 +121,10 @@ def delete_patient(
             detail="Patient not found"
         )
     
+    # Manually delete all assessments linked to this patient for data integrity
+    db.query(Assessment).filter(Assessment.patient_id == patient_id).delete()
+    
     db.delete(patient)
     db.commit()
     
-    return {"message": f"Patient '{patient.name}' deleted successfully"}
+    return {"message": "Patient and all related data deleted successfully"}

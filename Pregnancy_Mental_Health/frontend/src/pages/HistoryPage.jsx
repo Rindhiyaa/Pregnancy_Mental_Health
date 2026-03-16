@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { api } from "../utils/api";
 import { exportAssessmentToPDF } from "../utils/pdfExport";
 import "../styles/HistoryPage.css";
 
@@ -10,6 +11,8 @@ const HistoryPage = () => {
   const [rows, setRows] = useState([]);
   const [filteredRows, setFilteredRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sentReferrals, setSentReferrals] = useState({}); // {assessmentId: true}
+  const [isReferralLoading, setIsReferralLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRisk, setFilterRisk] = useState("all");
   const [selectedAssessment, setSelectedAssessment] = useState(null);
@@ -39,18 +42,8 @@ const HistoryPage = () => {
   //handle top logout
   const handleTopLogout = async () => {
     try {
-      const token = localStorage.getItem('ppd_access_token');
-      if (user?.email && token) {
-        await fetch(
-          `http://127.0.0.1:8000/api/logout-status`,
-          {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-            },
-          }
-        );
+      if (user?.email) {
+        await api.post('/logout-status');
       }
     } catch (e) {
       console.error("Failed to update logout status", e);
@@ -71,16 +64,7 @@ const HistoryPage = () => {
         // 1) try backend if clinician email is known
         if (user?.email) {
           try {
-            const token = localStorage.getItem('ppd_access_token');
-            const res = await fetch(
-              `http://127.0.0.1:8000/api/assessments`,
-              {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                }
-              }
-            );
+            const res = await api.get('/assessments');
             if (res.ok) {
               historyData = await res.json(); 
   
@@ -170,17 +154,7 @@ const HistoryPage = () => {
     // 1) try backend clear for this clinician (if you add such endpoint)
     if (user?.email) {
       try {
-        const token = localStorage.getItem('ppd_access_token');
-        await fetch(
-          `http://127.0.0.1:8000/api/assessments/clear`,
-          {
-            method: "DELETE",
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
+        await api.delete('/assessments/clear');
       } catch (e) {
         console.warn("Failed to clear history on backend, clearing local cache only", e);
       }
@@ -196,6 +170,78 @@ const HistoryPage = () => {
     setFilteredRows([]);
   };
       
+  const handleReferral = async (assessment) => {
+    if (!assessment) return;
+
+    // Check if it's a numeric ID (backend ID)
+    const assessmentId = assessment.id;
+    if (!assessmentId || isNaN(Number(assessmentId))) {
+      alert("This assessment is not synced with the server yet. Please refresh the page or wait for sync.");
+      return;
+    }
+
+    // Check for patient email
+    const pEmail = assessment.patient_email;
+    if (!pEmail) {
+      alert(`Patient email not found for ${assessment.patient_name}. \n\nTo send a referral, please go to the 'Patients' section and ensure this patient has a valid email address.`);
+      return;
+    }
+
+    if (!window.confirm(`Refer ${assessment.patient_name} to the Psychiatry Department? This will send a secure clinical message with the assessment results.`)) {
+      return;
+    }
+
+    setIsReferralLoading(true);
+    try {
+      const getTopRiskFactors = (data) => {
+        if (!data) return ["AI-identified risk patterns"];
+        const factors = [];
+        if (data.depression_before_pregnancy === "Positive") factors.push("History of depression before pregnancy");
+        if (data.depression_during_pregnancy === "Positive") factors.push("Experience of depression during pregnancy");
+        if (data.epds_10 && parseInt(data.epds_10) > 0) factors.push("Thoughts of self-harm (EPDS Question 10)");
+        if (data.relationship_husband === "Bad") factors.push("Poor relationship with partner");
+        if (data.support_during_pregnancy === "No") factors.push("Lack of social support");
+        
+        if (factors.length === 0) factors.push("AI-identified risk patterns", "Clinician-assessed risk factors");
+        return factors.slice(0, 3);
+      };
+
+      const payload = {
+        assessment_id: Number(assessmentId),
+        patient_name: assessment.patient_name,
+        risk_level: assessment.risk_level,
+        risk_score: assessment.score || 0.0,
+        clinician_name: user?.fullName || "Clinician",
+        clinician_notes: assessment.notes,
+        referral_department: "Psychiatry",
+        top_risk_factors: getTopRiskFactors(assessment.raw_data)
+      };
+
+      const res = await api.post('/referrals', payload);
+      
+      if (res.ok) {
+        const data = await res.json();
+        setSentReferrals(prev => ({ ...prev, [assessment.id]: true }));
+        alert(data.message || "Referral successfully sent!");
+      } else {
+        // Try to get detailed error from backend
+        let errorMsg = "Failed to send referral.";
+        try {
+          const errData = await res.json();
+          errorMsg = errData.detail || errorMsg;
+        } catch (e) {
+          errorMsg = `Server error (${res.status})`;
+        }
+        throw new Error(errorMsg);
+      }
+    } catch (err) {
+      console.error("Referral failed:", err);
+      alert(`Referral error: ${err.message}`);
+    } finally {
+      setIsReferralLoading(false);
+    }
+  };
+
   const deleteAssessment = async (assessmentId) => {
     if (
       !window.confirm(
@@ -206,14 +252,7 @@ const HistoryPage = () => {
     }
   
     try {
-      const token = localStorage.getItem('ppd_access_token');
-      await fetch(`http://127.0.0.1:8000/api/assessments/${assessmentId}`, {
-        method: "DELETE",
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      await api.delete(`/assessments/${assessmentId}`);
     } catch (e) {
       console.warn("Failed to delete on backend, removing from local cache only", e);
     }
@@ -632,6 +671,25 @@ const HistoryPage = () => {
               </div>
 
               <div className="modal-footer">
+                {(selectedAssessment.risk_level === 'High Risk' || selectedAssessment.clinician_risk === 'High') && (
+                  <button 
+                    className={`modal-btn-refer ${sentReferrals[selectedAssessment.id] ? 'sent' : ''}`}
+                    onClick={() => handleReferral(selectedAssessment)}
+                    disabled={sentReferrals[selectedAssessment.id] || isReferralLoading}
+                    style={{
+                      backgroundColor: sentReferrals[selectedAssessment.id] ? '#059669' : '#dc2626',
+                      color: 'white',
+                      marginRight: 'auto',
+                      borderRadius: '30px',
+                      padding: '8px 24px',
+                      border: 'none',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {isReferralLoading ? "Referring..." : sentReferrals[selectedAssessment.id] ? "Referral Sent" : "Refer to Psychiatry"}
+                  </button>
+                )}
                 <button className="modal-btn-secondary" onClick={closeModal}>
                   Close
                 </button>

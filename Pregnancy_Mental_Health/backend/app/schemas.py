@@ -48,6 +48,17 @@ class ResetPasswordRequest(BaseModel):
     new_password: str
 
 
+class ReferralRequest(BaseModel):
+    assessment_id: int
+    patient_name: str
+    risk_level: str
+    risk_score: float = 0.0
+    clinician_name: str = "Clinician"
+    clinician_notes: Optional[str] = None
+    referral_department: str = "Psychiatry"
+    top_risk_factors: List[str] = []
+
+
 class AssessmentCreate(BaseModel):
     patient_name: str
 
@@ -142,19 +153,20 @@ class PatientBase(BaseModel):
     name: str
     age: Optional[int] = None
     phone: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 class PatientCreate(PatientBase):
     pass
 
 class PatientOut(PatientBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     clinician_email: Optional[str] = None
     created_at: Optional[datetime] = None
-
-    class Config:
-        orm_mode = True
 
 class PatientUpdate(BaseModel):
     name: Optional[str] = None
     age: Optional[int] = None
     phone: Optional[str] = None
+    email: Optional[EmailStr] = None

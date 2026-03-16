@@ -3,10 +3,13 @@ from typing import Optional
 from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends, Response, Cookie
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
 import secrets
 
 # Import from centralized config
 from .config import JWT_SECRET_KEY, JWT_REFRESH_SECRET, IS_PRODUCTION
+from .database import get_db
+from . import models
 
 # Validate secrets on startup
 if not JWT_SECRET_KEY:
@@ -122,6 +125,22 @@ def get_current_user_email(credentials: HTTPAuthorizationCredentials = Depends(s
         )
     
     return email
+
+
+def get_current_user(
+    db: Session = Depends(get_db),
+    email: str = Depends(get_current_user_email)
+) -> models.User:
+    """
+    Dependency to get current user object from DB
+    """
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+    return user
 
 
 # Optional: For endpoints that don't require auth but can use it if present

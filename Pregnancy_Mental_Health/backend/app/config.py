@@ -38,3 +38,17 @@ DATABASE_URL = f"postgresql://mluser:mlpass@localhost/ml_db"
 # API Configuration
 API_HOST = os.getenv("API_HOST", "0.0.0.0")
 API_PORT = int(os.getenv("API_PORT", "8000"))
+
+# Email Configuration (IMPORTANT FOR EXPO PRESENTATION)
+# 1. Use your own Gmail for MAIL_USERNAME
+# 2. Generate an "App Password" (16 chars) from Google Account Security
+# 3. Put your phone's email in MAIL_RECIPIENT to see it arrive live!
+MAIL_USERNAME = os.getenv("MAIL_USERNAME", "rindhiyaasathish@gmail.com")
+MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "evmnfhjigahweftd")
+MAIL_FROM = os.getenv("MAIL_FROM", "rindhiyaasathish@gmail.com")
+MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME", "PPD Risk Insight System")
+MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
+MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+MAIL_STARTTLS = os.getenv("MAIL_STARTTLS", "True").lower() == "true"
+MAIL_SSL_TLS = os.getenv("MAIL_SSL_TLS", "False").lower() == "true"
+MAIL_RECIPIENT = os.getenv("MAIL_RECIPIENT", "your_email@gmail.com")

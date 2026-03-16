@@ -15,6 +15,8 @@ export default function NewAssessment() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
+  const [isReferralSent, setIsReferralSent] = useState(false);
+  const [isReferralLoading, setIsReferralLoading] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState(''); // 'saving', 'saved', 'error'
   const [notifications, setNotifications] = useState([
     {
@@ -85,6 +87,8 @@ export default function NewAssessment() {
 
   // 🔹 RESULT FROM BACKEND
   const [result, setResult] = useState(null);
+  const [savedAssessmentId, setSavedAssessmentId] = useState(null);
+  const [patientEmail, setPatientEmail] = useState(null);
   const [showSafetyAlert, setShowSafetyAlert] = useState(false);
 
   // 🔹 PATIENT MANAGEMENT
@@ -95,6 +99,7 @@ export default function NewAssessment() {
   const [showPatientModal, setShowPatientModal] = useState(true); // Auto-show modal on page load
   const [newPatientData, setNewPatientData] = useState({
     name: '',
+    email: '',
     age: '',
     phone: ''
   });
@@ -186,6 +191,80 @@ export default function NewAssessment() {
   };
 
   // 🔹 HANDLE STEP CHANGE - Clear result when going back from step 6
+  const getTopRiskFactors = (data) => {
+    const factors = [];
+    if (data.depression_before_pregnancy === "Positive") factors.push("History of depression before pregnancy");
+    if (data.depression_during_pregnancy === "Positive") factors.push("Experience of depression during pregnancy");
+    if (data.abuse_during_pregnancy === "Yes") factors.push("History of abuse during pregnancy");
+    if (data.epds_10 && parseInt(data.epds_10) > 0) factors.push("Thoughts of self-harm (EPDS Question 10)");
+    if (data.relationship_husband === "Bad") factors.push("Poor relationship with partner");
+    if (data.support_during_pregnancy === "No") factors.push("Lack of social support");
+    if (data.major_life_changes_pregnancy === "Yes") factors.push("Major life changes during pregnancy");
+    
+    // Default if none identified
+    if (factors.length === 0) factors.push("High EPDS total score", "AI-identified risk patterns");
+    return factors.slice(0, 3);
+  };
+
+  const handleReferral = async (assessmentId = null) => {
+    if (!formData.patient_name || !result) {
+      alert("Please complete the assessment before referring.");
+      return;
+    }
+
+    const finalAssessmentId = assessmentId || savedAssessmentId;
+    if (!finalAssessmentId) {
+      alert("Please save the assessment to history first before sending a referral. This ensures all clinical notes and risk factors are correctly recorded.");
+      return;
+    }
+
+    if (!patientEmail && !selectedPatient?.email) {
+      alert("Patient email is missing. Please update the patient's details with an email address to send a referral.");
+      return;
+    }
+
+    if (!window.confirm(`Refer ${formData.patient_name} to the Psychiatry Department? This will send a secure clinical message with the current assessment results.`)) {
+      return;
+    }
+
+    setIsReferralLoading(true);
+    try {
+      const payload = {
+        assessment_id: finalAssessmentId,
+        patient_name: formData.patient_name,
+        risk_level: result.risk,
+        risk_score: result.score,
+        clinician_name: user?.fullName || "Clinician",
+        clinician_notes: formData.notes || "",
+        referral_department: "Psychiatry",
+        top_risk_factors: getTopRiskFactors(formData)
+      };
+
+      const res = await api.post('/referrals', payload);
+      
+      if (res.ok) {
+        const data = await res.json();
+        setIsReferralSent(true);
+        alert(data.message || "Referral successfully sent!");
+      } else {
+        // Try to get detailed error from backend
+        let errorMsg = "Failed to send referral.";
+        try {
+          const errData = await res.json();
+          errorMsg = errData.detail || errorMsg;
+        } catch (e) {
+          errorMsg = `Server error (${res.status})`;
+        }
+        throw new Error(errorMsg);
+      }
+    } catch (err) {
+      console.error("Referral failed:", err);
+      alert(`Referral error: ${err.message}`);
+    } finally {
+      setIsReferralLoading(false);
+    }
+  };
+
   const handleStepChange = (newStep) => {
     if (step === 6 && newStep < 6) {
       // Clear result when going back from result page
@@ -198,7 +277,7 @@ export default function NewAssessment() {
   // 🔹 PATIENT MANAGEMENT FUNCTIONS (localStorage-based)
   const loadPatients = async () => {
     try {
-      const res = await api.get("/patients/");
+      const res = await api.get("/patients");
       if (!res.ok) {
         console.error("Failed to load patients:", res.status);
         setPatients([]);
@@ -253,6 +332,11 @@ export default function NewAssessment() {
       return;
     }
 
+    if (!newPatientData.email.trim()) {
+      alert("Patient email is required for clinical referrals");
+      return;
+    }
+
     // Validate phone number if provided
     if (newPatientData.phone && !validatePhone(newPatientData.phone)) {
       alert("Please enter a valid phone number (at least 10 digits)");
@@ -268,8 +352,9 @@ export default function NewAssessment() {
         return;
       }
   
-      const res = await api.post("/patients/", {
+      const res = await api.post("/patients", {
         name: newPatientData.name.trim(),
+        email: newPatientData.email.trim(),
         age: newPatientData.age ? parseInt(newPatientData.age) : null,
         phone: newPatientData.phone.trim() || null,
       });
@@ -287,7 +372,7 @@ export default function NewAssessment() {
   
       selectPatient(newPatient);
       setShowCreatePatient(false);
-      setNewPatientData({ name: "", age: "", phone: "" });
+      setNewPatientData({ name: "", email: "", age: "", phone: "" });
   
       console.log(`✅ Created patient: ${newPatient.name} (ID: ${newPatient.id})`);
     } catch (error) {
@@ -1278,6 +1363,8 @@ export default function NewAssessment() {
                           }
 
                           const saved = await res.json(); // contains id, dates, etc.
+                          setSavedAssessmentId(saved.id);
+                          setPatientEmail(saved.patient_email);
 
                           // Mirror into localStorage as cache
                           const existingHistory = JSON.parse(
@@ -1298,7 +1385,7 @@ export default function NewAssessment() {
                           alert(
                             `Assessment for ${formData.patient_name} saved to history successfully!`
                           );
-                          navigate("/dashboard/history");
+                          navigate("/history");
                         } catch (err) {
                           console.error("Error saving assessment", err);
                           console.error("Payload sent:", payload);
@@ -1561,7 +1648,7 @@ export default function NewAssessment() {
                         type="button"
                         onClick={() => {
                           setShowCreatePatient(false);
-                          setNewPatientData({ name: '', age: '', phone: '' });
+                          setNewPatientData({ name: '', email: '', age: '', phone: '' });
                         }}
                         className="cancel-create-btn"
                       >
@@ -1577,6 +1664,15 @@ export default function NewAssessment() {
                           placeholder="Enter patient full name"
                           value={newPatientData.name}
                           onChange={(e) => setNewPatientData({...newPatientData, name: e.target.value})}
+                        />
+                      </div>
+                      <div className="modal-form-group">
+                        <label>Email Address *</label>
+                        <input
+                          type="email"
+                          placeholder="e.g. patient@example.com"
+                          value={newPatientData.email}
+                          onChange={(e) => setNewPatientData({...newPatientData, email: e.target.value})}
                         />
                       </div>
                       <div className="modal-form-row">
@@ -1607,7 +1703,7 @@ export default function NewAssessment() {
                         type="button"
                         onClick={() => {
                           setShowCreatePatient(false);
-                          setNewPatientData({ name: '', age: '', phone: '' });
+                          setNewPatientData({ name: '', email: '', age: '', phone: '' });
                         }}
                         className="modal-cancel-btn"
                       >

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "../styles/DashboardPage.css";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { api } from "../utils/api";
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from 'recharts';
 import jsPDF from 'jspdf';
 import { exportAssessmentToPDF } from "../utils/pdfExport";
@@ -46,7 +47,9 @@ const DashboardPage = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [completionRate, setCompletionRate] = useState(0);
   
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
+  const [sentReferrals, setSentReferrals] = useState({}); // {assessmentId: true}
+  const [isReferralLoading, setIsReferralLoading] = useState(false); 
   //handle logout
   
   const handleTopLogout = async () => {
@@ -144,321 +147,319 @@ const DashboardPage = () => {
     doc.save(fileName);
   };
 
-  // fetch data from localStorage (same as History page)
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-    
-        let historyData = [];
-    
-        // 1) try backend
-        if (user?.email) {
-          try {
-            const res = await api.get('/assessments');
-            if (res.ok) {
-              historyData = await res.json();
-              // mirror to localStorage cache
-              localStorage.setItem(
-                "assessmentHistory",
-                JSON.stringify(historyData)
-              );
-              localStorage.setItem(
-                `assessmentHistory_${user.email}`,
-                JSON.stringify(historyData)
-              );
-            }
-          } catch (e) {
-            console.warn("Backend unavailable, using localStorage cache instead");
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+
+      let historyData = [];
+
+      // 1) try backend
+      if (user?.email) {
+        try {
+          const res = await api.get('/assessments');
+          if (res.ok) {
+            historyData = await res.json();
+            // mirror to localStorage cache
+            localStorage.setItem(
+              "assessmentHistory",
+              JSON.stringify(historyData)
+            );
+            localStorage.setItem(
+              `assessmentHistory_${user.email}`,
+              JSON.stringify(historyData)
+            );
           }
+        } catch (e) {
+          console.warn("Backend unavailable, using localStorage cache instead");
         }
-    
-        // 2) if no backend data, use localStorage
-        if (!historyData.length) {
-          const savedHistory = localStorage.getItem("assessmentHistory");
-          historyData = savedHistory ? JSON.parse(savedHistory) : [];
-        }
+      }
 
-        setAllAssessments(historyData);
-    
-        // your existing sorting + transformedRows + stats logic, but using historyData
-        const sortedData = historyData.sort(
-          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-        );
-        // Show all assessments, not just 10
-        const recentAssessments = sortedData;
-    
-        const transformedRows = recentAssessments.map((assessment) => {
-          const aiLevel = assessment.risk_level?.toLowerCase();
-          let clinicianLevel = assessment.clinician_risk?.toLowerCase();
-          if (clinicianLevel === "medium") clinicianLevel = "moderate";
-          const level = clinicianLevel || aiLevel;
-    
-          let risk = "low";
-          if (level === "high") risk = "high";
-          else if (level === "moderate") risk = "moderate";
-    
-          return {
-            id: String(assessment.id || `${assessment.patient_name}-${assessment.timestamp}`),
-            name: assessment.patient_name || "Unknown Patient",
-            date:
-              assessment.date ||
-              new Date(assessment.timestamp).toLocaleDateString(),
-            risk,
-            timestamp: assessment.timestamp,
-            fullData: assessment
-          };
-        });
- 
+      // 2) if no backend data, use localStorage
+      if (!historyData.length) {
+        const savedHistory = localStorage.getItem("assessmentHistory");
+        historyData = savedHistory ? JSON.parse(savedHistory) : [];
+      }
 
-    
-        const totalAssessments = historyData.length;
-        const highRiskCount = historyData.filter((a) => {
+      setAllAssessments(historyData);
+
+      // your existing sorting + transformedRows + stats logic, but using historyData
+      const sortedData = [...historyData].sort(
+        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+      );
+      // Show all assessments, not just 10
+      const recentAssessments = sortedData;
+
+      const transformedRows = recentAssessments.map((assessment) => {
+        const aiLevel = assessment.risk_level?.toLowerCase();
+        let clinicianLevel = assessment.clinician_risk?.toLowerCase();
+        if (clinicianLevel === "medium") clinicianLevel = "moderate";
+        const level = clinicianLevel || aiLevel;
+
+        let risk = "low";
+        if (level === "high") risk = "high";
+        else if (level === "moderate") risk = "moderate";
+
+        return {
+          id: String(assessment.id || `${assessment.patient_name}-${assessment.timestamp}`),
+          name: assessment.patient_name || "Unknown Patient",
+          date:
+            assessment.date ||
+            new Date(assessment.timestamp).toLocaleDateString(),
+          risk,
+          timestamp: assessment.timestamp,
+          patient_email: assessment.patient_email,
+          patient_id: assessment.patient_id,
+          fullData: assessment
+        };
+      });
+
+      const totalAssessments = historyData.length;
+      const highRiskCount = historyData.filter((a) => {
+        const l1 = a.risk_level?.toLowerCase();
+        let l2 = a.clinician_risk?.toLowerCase();
+        if (l2 === "medium") l2 = "moderate";
+        return l1 === "high" || l2 === "high";
+      }).length;
+      const moderateRiskCount = historyData.filter((a) => {
+        const l1 = a.risk_level?.toLowerCase();
+        let l2 = a.clinician_risk?.toLowerCase();
+        if (l2 === "medium") l2 = "moderate";
+        return l1 === "moderate" || l2 === "moderate";
+      }).length;
+      const lowRiskCount = historyData.filter((a) => {
+        const l1 = a.risk_level?.toLowerCase();
+        const l2 = a.clinician_risk?.toLowerCase();
+        return l1 === "low" || l2 === "low";
+      }).length;
+
+      const today = new Date().toDateString();
+      const todayCount = historyData.filter((a) => {
+        const assessmentDate = new Date(a.timestamp || a.date).toDateString();
+        return assessmentDate === today;
+      }).length;
+
+      // Calculate weekly comparison
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      const thisWeekData = historyData.filter(a => new Date(a.timestamp || a.date) >= oneWeekAgo);
+      const lastWeekData = historyData.filter(a => {
+        const date = new Date(a.timestamp || a.date);
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        return date >= twoWeeksAgo && date < oneWeekAgo;
+      });
+
+      const calculateChange = (current, previous) => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return Math.round(((current - previous) / previous) * 100);
+      };
+
+      setWeeklyComparison({
+        totalChange: calculateChange(thisWeekData.length, lastWeekData.length),
+        highChange: calculateChange(
+          thisWeekData.filter(a => a.risk_level?.toLowerCase() === 'high').length,
+          lastWeekData.filter(a => a.risk_level?.toLowerCase() === 'high').length
+        ),
+        moderateChange: calculateChange(
+          thisWeekData.filter(a => a.risk_level?.toLowerCase() === 'moderate').length,
+          lastWeekData.filter(a => a.risk_level?.toLowerCase() === 'moderate').length
+        ),
+        lowChange: calculateChange(
+          thisWeekData.filter(a => a.risk_level?.toLowerCase() === 'low').length,
+          lastWeekData.filter(a => a.risk_level?.toLowerCase() === 'low').length
+        ),
+      });
+
+      // Calculate monthly comparison
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      
+      const thisMonthData = historyData.filter(a => new Date(a.timestamp || a.date) >= oneMonthAgo);
+      const lastMonthData = historyData.filter(a => {
+        const date = new Date(a.timestamp || a.date);
+        const twoMonthsAgo = new Date();
+        twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+        return date >= twoMonthsAgo && date < oneMonthAgo;
+      });
+
+      setMonthlyComparison({
+        totalChange: calculateChange(thisMonthData.length, lastMonthData.length),
+        highChange: calculateChange(
+          thisMonthData.filter(a => a.risk_level?.toLowerCase() === 'high').length,
+          lastMonthData.filter(a => a.risk_level?.toLowerCase() === 'high').length
+        ),
+        moderateChange: calculateChange(
+          thisMonthData.filter(a => a.risk_level?.toLowerCase() === 'moderate').length,
+          lastMonthData.filter(a => a.risk_level?.toLowerCase() === 'moderate').length
+        ),
+        lowChange: calculateChange(
+          thisMonthData.filter(a => a.risk_level?.toLowerCase() === 'low').length,
+          lastMonthData.filter(a => a.risk_level?.toLowerCase() === 'low').length
+        ),
+      });
+
+      // Find urgent cases (high risk cases from last 7 days)
+      const urgentCasesData = historyData
+        .filter(a => {
           const l1 = a.risk_level?.toLowerCase();
           let l2 = a.clinician_risk?.toLowerCase();
           if (l2 === "medium") l2 = "moderate";
           return l1 === "high" || l2 === "high";
-        }).length;
-        const moderateRiskCount = historyData.filter((a) => {
-          const l1 = a.risk_level?.toLowerCase();
-          let l2 = a.clinician_risk?.toLowerCase();
-          if (l2 === "medium") l2 = "moderate";
-          return l1 === "moderate" || l2 === "moderate";
-        }).length;
-        const lowRiskCount = historyData.filter((a) => {
-          const l1 = a.risk_level?.toLowerCase();
-          const l2 = a.clinician_risk?.toLowerCase();
-          return l1 === "low" || l2 === "low";
-        }).length;
-    
-        const today = new Date().toDateString();
-        const todayCount = historyData.filter((a) => {
-          const assessmentDate = new Date(a.timestamp || a.date).toDateString();
-          return assessmentDate === today;
-        }).length;
+        })
+        .map(a => {
+          const assessmentDate = new Date(a.timestamp || a.date);
+          const daysAgo = Math.floor((new Date() - assessmentDate) / (1000 * 60 * 60 * 24));
+          return {
+            id: String(a.id || `${a.patient_name}-${a.timestamp}`),
+            name: a.patient_name || 'Unknown Patient',
+            risk: 'High',
+            daysAgo: daysAgo,
+            date: assessmentDate.toLocaleDateString(),
+            fullData: a
+          };
+        })
+        .sort((a, b) => a.daysAgo - b.daysAgo)
+        .slice(0, 5);
 
-        // Calculate weekly comparison
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      setUrgentCases(urgentCasesData);
+
+      // Generate demographics data (based on actual assessments if available)
+      const ageGroups = [
+        { 
+          name: '18-25', 
+          value: Math.floor(totalAssessments * 0.25), 
+          color: '#8b5cf6',
+          description: 'Young adults (first pregnancies common)'
+        },
+        { 
+          name: '26-30', 
+          value: Math.floor(totalAssessments * 0.40), 
+          color: '#ec4899',
+          description: 'Peak childbearing age group'
+        },
+        { 
+          name: '31-35', 
+          value: Math.floor(totalAssessments * 0.25), 
+          color: '#06b6d4',
+          description: 'Established adults (career-family balance)'
+        },
+        { 
+          name: '36+', 
+          value: Math.floor(totalAssessments * 0.10), 
+          color: '#10b981',
+          description: 'Advanced maternal age group'
+        }
+      ];
+      setDemographicsData(ageGroups);
+
+      // Generate notifications
+      const newNotifications = [
+        {
+          id: 1,
+          type: 'alert',
+          title: 'High Risk Cases',
+          message: `${highRiskCount} high-risk cases require immediate attention`,
+          time: '2 hours ago',
+          priority: 'high'
+        },
+        {
+          id: 2,
+          type: 'info',
+          title: 'Weekly Summary',
+          message: `${thisWeekData.length} assessments completed this week`,
+          time: '1 day ago',
+          priority: 'medium'
+        },
+        {
+          id: 3,
+          type: 'success',
+          title: 'System Update',
+          message: 'Dashboard analytics have been updated with new features',
+          time: '2 days ago',
+          priority: 'low'
+        }
+      ];
+      setNotifications(newNotifications);
+
+      // Generate recent activity
+      const activities = historyData.slice(0, 8).map((assessment, index) => ({
+        id: index,
+        type: 'assessment',
+        description: `Assessment completed for ${assessment.patient_name || 'Patient'}`,
+        risk: assessment.risk_level?.toLowerCase() || 'low',
+        time: new Date(assessment.timestamp || assessment.date).toLocaleString(),
+        user: user?.fullName || 'Clinician'
+      }));
+      setRecentActivity(activities);
+
+      // Calculate completion rate (mock calculation)
+      const completionRateVal = totalAssessments > 0 ? Math.min(95, 70 + (totalAssessments * 2)) : 0;
+      setCompletionRate(completionRateVal);
+  
+      setRows(transformedRows);
+      setStats({
+        total: totalAssessments,
+        high: highRiskCount,
+        moderate: moderateRiskCount,
+        low: lowRiskCount,
+        today: todayCount,
+      });
+
+      // Calculate risk distribution for pie chart
+      setRiskDistribution([
+        { name: 'High Risk', value: highRiskCount, color: '#ef4444' },
+        { name: 'Moderate Risk', value: moderateRiskCount, color: '#f59e0b' },
+        { name: 'Low Risk', value: lowRiskCount, color: '#10b981' }
+      ]);
+
+      // Calculate trend data (last 7 days)
+      const last7Days = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         
-        const thisWeekData = historyData.filter(a => new Date(a.timestamp || a.date) >= oneWeekAgo);
-        const lastWeekData = historyData.filter(a => {
-          const date = new Date(a.timestamp || a.date);
-          const twoWeeksAgo = new Date();
-          twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-          return date >= twoWeeksAgo && date < oneWeekAgo;
+        const dayAssessments = historyData.filter(a => {
+          const assessmentDate = new Date(a.timestamp || a.date);
+          return assessmentDate.toDateString() === date.toDateString();
         });
 
-        const calculateChange = (current, previous) => {
-          if (previous === 0) return current > 0 ? 100 : 0;
-          return Math.round(((current - previous) / previous) * 100);
-        };
-
-        setWeeklyComparison({
-          totalChange: calculateChange(thisWeekData.length, lastWeekData.length),
-          highChange: calculateChange(
-            thisWeekData.filter(a => a.risk_level?.toLowerCase() === 'high').length,
-            lastWeekData.filter(a => a.risk_level?.toLowerCase() === 'high').length
-          ),
-          moderateChange: calculateChange(
-            thisWeekData.filter(a => a.risk_level?.toLowerCase() === 'moderate').length,
-            lastWeekData.filter(a => a.risk_level?.toLowerCase() === 'moderate').length
-          ),
-          lowChange: calculateChange(
-            thisWeekData.filter(a => a.risk_level?.toLowerCase() === 'low').length,
-            lastWeekData.filter(a => a.risk_level?.toLowerCase() === 'low').length
-          ),
-        });
-
-        // Calculate monthly comparison
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-        
-        const thisMonthData = historyData.filter(a => new Date(a.timestamp || a.date) >= oneMonthAgo);
-        const lastMonthData = historyData.filter(a => {
-          const date = new Date(a.timestamp || a.date);
-          const twoMonthsAgo = new Date();
-          twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-          return date >= twoMonthsAgo && date < oneMonthAgo;
-        });
-
-        setMonthlyComparison({
-          totalChange: calculateChange(thisMonthData.length, lastMonthData.length),
-          highChange: calculateChange(
-            thisMonthData.filter(a => a.risk_level?.toLowerCase() === 'high').length,
-            lastMonthData.filter(a => a.risk_level?.toLowerCase() === 'high').length
-          ),
-          moderateChange: calculateChange(
-            thisMonthData.filter(a => a.risk_level?.toLowerCase() === 'moderate').length,
-            lastMonthData.filter(a => a.risk_level?.toLowerCase() === 'moderate').length
-          ),
-          lowChange: calculateChange(
-            thisMonthData.filter(a => a.risk_level?.toLowerCase() === 'low').length,
-            lastMonthData.filter(a => a.risk_level?.toLowerCase() === 'low').length
-          ),
-        });
-
-        // Find urgent cases (high risk cases from last 7 days)
-        const urgentCasesData = historyData
-          .filter(a => {
+        last7Days.push({
+          date: dateStr,
+          total: dayAssessments.length,
+          high: dayAssessments.filter(a => {
             const l1 = a.risk_level?.toLowerCase();
             let l2 = a.clinician_risk?.toLowerCase();
             if (l2 === "medium") l2 = "moderate";
             return l1 === "high" || l2 === "high";
-          })
-          .map(a => {
-            const assessmentDate = new Date(a.timestamp || a.date);
-            const daysAgo = Math.floor((new Date() - assessmentDate) / (1000 * 60 * 60 * 24));
-            return {
-              id: String(a.id || `${a.patient_name}-${a.timestamp}`),
-              name: a.patient_name || 'Unknown Patient',
-              risk: 'High',
-              daysAgo: daysAgo,
-              date: assessmentDate.toLocaleDateString(),
-              fullData: a
-            };
-          })
-          .sort((a, b) => a.daysAgo - b.daysAgo)
-          .slice(0, 5);
-
-        setUrgentCases(urgentCasesData);
-
-        // Generate demographics data (based on actual assessments if available)
-        const ageGroups = [
-          { 
-            name: '18-25', 
-            value: Math.floor(totalAssessments * 0.25), 
-            color: '#8b5cf6',
-            description: 'Young adults (first pregnancies common)'
-          },
-          { 
-            name: '26-30', 
-            value: Math.floor(totalAssessments * 0.40), 
-            color: '#ec4899',
-            description: 'Peak childbearing age group'
-          },
-          { 
-            name: '31-35', 
-            value: Math.floor(totalAssessments * 0.25), 
-            color: '#06b6d4',
-            description: 'Established adults (career-family balance)'
-          },
-          { 
-            name: '36+', 
-            value: Math.floor(totalAssessments * 0.10), 
-            color: '#10b981',
-            description: 'Advanced maternal age group'
-          }
-        ];
-        setDemographicsData(ageGroups);
-
-        // Generate notifications
-        const newNotifications = [
-          {
-            id: 1,
-            type: 'alert',
-            title: 'High Risk Cases',
-            message: `${highRiskCount} high-risk cases require immediate attention`,
-            time: '2 hours ago',
-            priority: 'high'
-          },
-          {
-            id: 2,
-            type: 'info',
-            title: 'Weekly Summary',
-            message: `${thisWeekData.length} assessments completed this week`,
-            time: '1 day ago',
-            priority: 'medium'
-          },
-          {
-            id: 3,
-            type: 'success',
-            title: 'System Update',
-            message: 'Dashboard analytics have been updated with new features',
-            time: '2 days ago',
-            priority: 'low'
-          }
-        ];
-        setNotifications(newNotifications);
-
-        // Generate recent activity
-        const activities = historyData.slice(0, 8).map((assessment, index) => ({
-          id: index,
-          type: 'assessment',
-          description: `Assessment completed for ${assessment.patient_name || 'Patient'}`,
-          risk: assessment.risk_level?.toLowerCase() || 'low',
-          time: new Date(assessment.timestamp || assessment.date).toLocaleString(),
-          user: user?.fullName || 'Clinician'
-        }));
-        setRecentActivity(activities);
-
-        // Calculate completion rate (mock calculation)
-        const completionRate = totalAssessments > 0 ? Math.min(95, 70 + (totalAssessments * 2)) : 0;
-        setCompletionRate(completionRate);
-    
-        setRows(transformedRows);
-        setStats({
-          total: totalAssessments,
-          high: highRiskCount,
-          moderate: moderateRiskCount,
-          low: lowRiskCount,
-          today: todayCount,
+          }).length,
+          moderate: dayAssessments.filter(a => {
+            const l1 = a.risk_level?.toLowerCase();
+            let l2 = a.clinician_risk?.toLowerCase();
+            if (l2 === "medium") l2 = "moderate";
+            return l1 === "moderate" || l2 === "moderate";
+          }).length,
+          low: dayAssessments.filter(a => {
+            const l1 = a.risk_level?.toLowerCase();
+            const l2 = a.clinician_risk?.toLowerCase();
+            return l1 === "low" || l2 === "low";
+          }).length,
         });
-
-        // Calculate risk distribution for pie chart
-        setRiskDistribution([
-          { name: 'High Risk', value: highRiskCount, color: '#ef4444' },
-          { name: 'Moderate Risk', value: moderateRiskCount, color: '#f59e0b' },
-          { name: 'Low Risk', value: lowRiskCount, color: '#10b981' }
-        ]);
-
-        // Calculate trend data (last 7 days)
-        const last7Days = [];
-        for (let i = 6; i >= 0; i--) {
-          const date = new Date();
-          date.setDate(date.getDate() - i);
-          const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          
-          const dayAssessments = historyData.filter(a => {
-            const assessmentDate = new Date(a.timestamp || a.date);
-            return assessmentDate.toDateString() === date.toDateString();
-          });
-
-          last7Days.push({
-            date: dateStr,
-            total: dayAssessments.length,
-            high: dayAssessments.filter(a => {
-              const l1 = a.risk_level?.toLowerCase();
-              let l2 = a.clinician_risk?.toLowerCase();
-              if (l2 === "medium") l2 = "moderate";
-              return l1 === "high" || l2 === "high";
-            }).length,
-            moderate: dayAssessments.filter(a => {
-              const l1 = a.risk_level?.toLowerCase();
-              let l2 = a.clinician_risk?.toLowerCase();
-              if (l2 === "medium") l2 = "moderate";
-              return l1 === "moderate" || l2 === "moderate";
-            }).length,
-            low: dayAssessments.filter(a => {
-              const l1 = a.risk_level?.toLowerCase();
-              const l2 = a.clinician_risk?.toLowerCase();
-              return l1 === "low" || l2 === "low";
-            }).length,
-          });
-        }
-        setTrendData(last7Days);
-      } catch (err) {
-        console.error("Failed to load dashboard data", err);
-        setRows([]);
-        setStats({ total: 0, high: 0, low: 0, today: 0 });
-      } finally {
-        setLoading(false);
       }
-    };
-    
+      setTrendData(last7Days);
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to load dashboard data", err);
+      setRows([]);
+      setStats({ total: 0, high: 0, moderate: 0, low: 0, today: 0 });
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
-  }, []);
+  }, [user]);
 
   const filteredRows = rows.filter((row) => {
     const s = search.toLowerCase();
@@ -472,6 +473,83 @@ const DashboardPage = () => {
 
     return matchesSearch && matchesRisk;
   });
+
+  const handleReferral = async (assessment) => {
+    if (!assessment) return;
+
+    // Check if it's a numeric ID (backend ID)
+    const assessmentId = assessment.id || assessment.fullData?.id;
+    if (!assessmentId || isNaN(Number(assessmentId))) {
+      alert("This assessment is not synced with the server yet. Please refresh the page or wait for sync.");
+      return;
+    }
+
+    // Check for patient email
+    const pEmail = assessment.patient_email || assessment.fullData?.patient_email;
+    if (!pEmail) {
+      if (!assessment.patient_id) {
+        alert(`This assessment for '${assessment.name || assessment.patient_name}' is not linked to any patient in the database. \n\nPlease create a new patient with this name and email, then submit a new assessment to refer.`);
+      } else {
+        alert(`Patient email not found for ${assessment.name || assessment.patient_name} (Patient ID: ${assessment.patient_id}). \n\nTo send a referral, please go to the 'Patients' section and update the email for this patient.`);
+      }
+      return;
+    }
+
+    if (!window.confirm(`Refer ${assessment.name || assessment.patient_name} to the Psychiatry Department? This will send a secure clinical message with the assessment results.`)) {
+      return;
+    }
+
+    setIsReferralLoading(true);
+    try {
+      const getTopRiskFactors = (data) => {
+        if (!data) return ["AI-identified risk patterns"];
+        const factors = [];
+        if (data.depression_before_pregnancy === "Positive") factors.push("History of depression before pregnancy");
+        if (data.depression_during_pregnancy === "Positive") factors.push("Experience of depression during pregnancy");
+        if (data.abuse_during_pregnancy === "Yes") factors.push("History of abuse during pregnancy");
+        if (data.epds_10 && parseInt(data.epds_10) > 0) factors.push("Thoughts of self-harm (EPDS Question 10)");
+        if (data.relationship_husband === "Bad") factors.push("Poor relationship with partner");
+        if (data.support_during_pregnancy === "No") factors.push("Lack of social support");
+        
+        if (factors.length === 0) factors.push("AI-identified risk patterns", "Clinician-assessed risk factors");
+        return factors.slice(0, 3);
+      };
+
+      const payload = {
+        assessment_id: Number(assessmentId),
+        patient_name: assessment.name || assessment.patient_name,
+        risk_level: assessment.risk || assessment.risk_level,
+        risk_score: assessment.score || assessment.fullData?.score || 0.0,
+        clinician_name: user?.fullName || "Clinician",
+        clinician_notes: assessment.notes || assessment.fullData?.notes || "",
+        referral_department: "Psychiatry",
+        top_risk_factors: getTopRiskFactors(assessment.fullData?.raw_data)
+      };
+
+      const res = await api.post('/referrals', payload);
+      
+      if (res.ok) {
+        const data = await res.json();
+        setSentReferrals(prev => ({ ...prev, [payload.assessment_id]: true }));
+        alert(data.message || "Referral successfully sent!");
+      } else {
+        // Try to get detailed error from backend
+        let errorMsg = "Failed to send referral.";
+        try {
+          const errData = await res.json();
+          errorMsg = errData.detail || errorMsg;
+        } catch (e) {
+          errorMsg = `Server error (${res.status})`;
+        }
+        throw new Error(errorMsg);
+      }
+    } catch (err) {
+      console.error("Referral failed:", err);
+      alert(`Referral error: ${err.message}`);
+    } finally {
+      setIsReferralLoading(false);
+    }
+  };
 
   // Modal functions
   const viewAssessmentDetails = (assessment) => {
@@ -653,6 +731,30 @@ const DashboardPage = () => {
               <p>Overview of assessments and risk levels.</p>
             </div>
             <div className="dp-header-right">
+              <button 
+                className="dp-refresh-btn" 
+                onClick={fetchData} 
+                disabled={loading}
+                style={{
+                  marginRight: '12px',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #e5e7eb',
+                  backgroundColor: '#f9fafb',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#4b5563',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }}>
+                  <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+                {loading ? 'Updating...' : 'Refresh'}
+              </button>
               <button className="dp-export-btn" onClick={exportDashboardToPDF}>
                 ▣ Export Report
               </button>
@@ -944,6 +1046,12 @@ const DashboardPage = () => {
                 >
                   Recent Activity
                 </button>
+                <button 
+                  className={`dp-tab ${activeTab === 'referrals' ? 'dp-tab-active' : ''}`}
+                  onClick={() => setActiveTab('referrals')}
+                >
+                  Referral Queue
+                </button>
               </div>
               
               {activeTab === 'recent' && (
@@ -1111,6 +1219,59 @@ const DashboardPage = () => {
                     ))}
                   </div>
                 )}
+
+                {activeTab === 'referrals' && (
+                  <div className="dp-referrals-panel">
+                    {urgentCases.length > 0 ? (
+                      <div className="dp-referral-list">
+                        <div className="dp-referral-info-banner">
+                          <p>The following high-risk cases are eligible for psychiatry referral.</p>
+                        </div>
+                        {urgentCases.map((urgentCase) => (
+                          <div key={urgentCase.id} className="dp-referral-item">
+                            <div className="dp-referral-patient">
+                              <div className="dp-patient-avatar">
+                                {urgentCase.name?.charAt(0)?.toUpperCase()}
+                              </div>
+                              <div className="dp-patient-details">
+                                <span className="dp-patient-name">{urgentCase.name}</span>
+                                <span className="dp-patient-meta">Score: {urgentCase.score}/100 • {urgentCase.date}</span>
+                              </div>
+                            </div>
+                            <button 
+                              className={`dp-referral-action-btn ${sentReferrals[urgentCase.id] ? 'sent' : ''}`}
+                              onClick={() => handleReferral(urgentCase)}
+                              disabled={sentReferrals[urgentCase.id] || isReferralLoading}
+                            >
+                              {sentReferrals[urgentCase.id] ? (
+                                <>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                  </svg>
+                                  <span>Referral Sent</span>
+                                </>
+                              ) : (
+                                <>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="8.5" cy="7" r="4"/>
+                                    <line x1="18" y1="8" x2="23" y2="13"/>
+                                    <line x1="23" y1="8" x2="18" y2="13"/>
+                                  </svg>
+                                  <span>Send Referral</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="dp-no-referrals">
+                        <p>No high-risk patients currently require referrals.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -1212,6 +1373,25 @@ const DashboardPage = () => {
             </div>
 
             <div className="modal-footer">
+              {(selectedAssessment.risk_level === 'High Risk' || selectedAssessment.risk === 'high' || selectedAssessment.clinician_risk === 'High') && (
+                <button 
+                  className={`modal-btn-refer ${sentReferrals[selectedAssessment.id || selectedAssessment.fullData?.id] ? 'sent' : ''}`}
+                  onClick={() => handleReferral(selectedAssessment)}
+                  disabled={sentReferrals[selectedAssessment.id || selectedAssessment.fullData?.id] || isReferralLoading}
+                  style={{
+                    backgroundColor: sentReferrals[selectedAssessment.id || selectedAssessment.fullData?.id] ? '#059669' : '#dc2626',
+                    color: 'white',
+                    marginRight: 'auto',
+                    padding: '8px 24px',
+                    borderRadius: '30px',
+                    border: 'none',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {isReferralLoading ? "Referring..." : sentReferrals[selectedAssessment.id || selectedAssessment.fullData?.id] ? "Referral Sent" : "Refer to Psychiatry"}
+                </button>
+              )}
               <button className="modal-btn-secondary" onClick={closeModal}>
                 Close
               </button>
