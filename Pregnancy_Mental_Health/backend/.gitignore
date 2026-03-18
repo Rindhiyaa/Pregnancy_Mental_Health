@@ -1,7 +1,6 @@
 # Environment variables - NEVER commit these
 .env
 *.env
-app/config.py
 __pycache__/
 *.py[cod]
 *$py.class
