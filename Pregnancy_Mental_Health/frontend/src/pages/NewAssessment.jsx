@@ -6,6 +6,8 @@ import { useAuth } from "../contexts/AuthContext";
 import SafetyAlert from "../components/SafetyAlert";
 import { api } from "../utils/api";
 import toast from 'react-hot-toast';
+import logo from "../../public/logo.png"
+
 
 
 export default function NewAssessment() {
@@ -510,7 +512,9 @@ export default function NewAssessment() {
       
       <header className="dp-navbar">
         <div className="dp-nav-left">
-          <div className="dp-logo-mark"></div>
+          {/* <div className="dp-logo-mark"></div> */}
+                        <img src={logo} alt="Postpartum Risk Insight" className="dp-logo-mark"/>
+
           <div className="dp-logo-text">
             <span>Postpartum Risk Insight</span>
             <span>Clinician dashboard</span>

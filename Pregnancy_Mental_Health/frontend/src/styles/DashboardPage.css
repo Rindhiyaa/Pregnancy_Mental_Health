@@ -50,9 +50,9 @@ body.dashboard-page {
 }
 
 .dp-logo-mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
+  width: 54px;
+  height: 54px;
+  /* border-radius: 999px;
   background: conic-gradient(from 150deg, #ec4899, #8b5cf6, #38bdf8, #ec4899);
   display: flex;
   align-items: center;
@@ -60,13 +60,13 @@ body.dashboard-page {
   color: white;
   font-weight: 700;
   font-size: 1.1rem;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25); */
 }
 
-.dp-logo-mark::before {
+/* .dp-logo-mark::before {
   content: '❤';
   font-size: 1.2rem;
-}
+} */
 
 .dp-logo-text {
   display: flex;

@@ -6,6 +6,8 @@ import "../styles/PatientsPage.css";
 import toast from 'react-hot-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import React from 'react';
+import logo from "../../public/logo.png"
+
 
 export default function PatientsPage() {
   const [patients, setPatients] = useState([]);
@@ -489,7 +491,9 @@ export default function PatientsPage() {
       {/* ── NAVBAR (same as other dashboard pages) ── */}
       <header className="dp-navbar">
         <div className="dp-nav-left">
-          <div className="dp-logo-mark"></div>
+          {/* <div className="dp-logo-mark"></div>
+           */}              <img src={logo} alt="Postpartum Risk Insight" className="dp-logo-mark"/>
+
           <div className="dp-logo-text">
             <span>Postpartum Risk Insight</span>
             <span>Clinician dashboard</span>

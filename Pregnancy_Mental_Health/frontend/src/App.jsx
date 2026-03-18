@@ -45,7 +45,7 @@ export default function App() {
         />
         {!isDashboard && <Navbar />}
         <AppRouter />
-        {!isDashboard && <Footer />}
+        {/* {!isDashboard && <Footer />} */}
       </AuthProvider>
     </ErrorBoundary>
   );

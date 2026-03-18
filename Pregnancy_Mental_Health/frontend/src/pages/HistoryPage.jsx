@@ -6,6 +6,9 @@ import { exportAssessmentToPDF } from "../utils/pdfExport";
 import "../styles/HistoryPage.css";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import React from 'react';
+import logo from "../../public/logo.png"
+
+
 
 const HistoryPage = () => {
   const navigate = useNavigate();
@@ -360,7 +363,9 @@ const HistoryPage = () => {
       {/* same navbar */}
       <header className="dp-navbar">
         <div className="dp-nav-left">
-          <div className="dp-logo-mark"></div>
+          {/* <div className="dp-logo-mark"></div> */}
+                        <img src={logo} alt="Postpartum Risk Insight" className="dp-logo-mark"/>
+
           <div className="dp-logo-text">
             <span>Postpartum Risk Insight</span>
             <span>Clinician dashboard</span>

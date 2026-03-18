@@ -7,6 +7,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis
 import jsPDF from 'jspdf';
 import { exportAssessmentToPDF } from "../utils/pdfExport";
 import toast from 'react-hot-toast';
+import logo from "../../public/logo.png"
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -695,7 +696,9 @@ const DashboardPage = () => {
       {/* NAVBAR */}
 <header className="dp-navbar">
   <div className="dp-nav-left">
-    <div className="dp-logo-mark"></div>
+    {/* <div className="dp-logo-mark"></div> */}
+              <img src={logo} alt="Postpartum Risk Insight" className="dp-logo-mark"/>
+    
     <div className="dp-logo-text">
       <span>Postpartum Risk Insight</span>
       <span>Clinician dashboard</span>

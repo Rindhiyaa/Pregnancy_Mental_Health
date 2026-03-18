@@ -8,7 +8,7 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   return (
-    <main>
+    <main className="">
       
       <section className="hero">
         <div>

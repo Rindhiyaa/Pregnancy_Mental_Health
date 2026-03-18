@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import logo from "../../public/logo.png";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,7 +15,8 @@ export default function Navbar() {
       <div className="nav-inner">
         {/* Logo on left */}
         <Link to="/" className="nav-left" onClick={() => setIsMenuOpen(false)}>
-          <div className="logo-mark"></div>
+          {/* <div className="logo-mark"></div> */}
+          <img src={logo} alt="Postpartum Risk Insight" className="logo-mark"/>
           <span className="logo-text">Postpartum Risk Insight</span>
         </Link>
 
