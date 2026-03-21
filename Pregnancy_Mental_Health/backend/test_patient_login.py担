@@ -1,0 +1,24 @@
+
+import sys
+import os
+sys.path.append(os.getcwd())
+
+from app.database import SessionLocal
+from app import models
+from app.security import verify_password
+
+def test_patient_login(phone, password):
+    db = SessionLocal()
+    try:
+        user = db.query(models.User).filter(models.User.phone_number == phone).first()
+        if not user:
+            print(f"User with phone {phone} NOT FOUND")
+            return
+        
+        is_valid = verify_password(password, user.hashed_password)
+        print(f"Login for {phone}: {'SUCCESS' if is_valid else 'FAILED'}")
+    finally:
+        db.close()
+
+if __name__ == "__main__":
+    test_patient_login("8148282009", "Patient@123")

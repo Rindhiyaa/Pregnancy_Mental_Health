@@ -13,17 +13,35 @@ router = APIRouter(prefix="/api/follow-ups", tags=["follow-ups"])
 logger = logging.getLogger(__name__)
 
 @router.get("/")
+@router.get("")
 def get_follow_ups(
     current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db)
 ):
     """Get all upcoming follow-ups for the clinician"""
-    return db.query(models.FollowUp).options(
-        joinedload(models.FollowUp.patient)
-    ).filter(
-        models.FollowUp.clinician_email == current_user_email,
-        models.FollowUp.status == "pending"
-    ).order_by(models.FollowUp.scheduled_date.asc()).all()
+    try:
+        from .. import models
+        current_user = db.query(models.User).filter(models.User.email == current_user_email).first()
+        
+        if current_user and current_user.role == "nurse":
+            # Nurses see follow-ups for patients they created
+            return db.query(models.FollowUp).options(
+                joinedload(models.FollowUp.patient)
+            ).join(models.Patient).filter(
+                models.Patient.created_by_nurse_id == current_user.id,
+                models.FollowUp.status == "pending"
+            ).order_by(models.FollowUp.scheduled_date.asc()).all()
+        else:
+            # Doctors see their own follow-ups
+            return db.query(models.FollowUp).options(
+                joinedload(models.FollowUp.patient)
+            ).filter(
+                models.FollowUp.clinician_email == current_user_email,
+                models.FollowUp.status == "pending"
+            ).order_by(models.FollowUp.scheduled_date.asc()).all()
+    except Exception as e:
+        logger.error(f"Error fetching follow-ups: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/today")
 def get_today_follow_ups(
@@ -72,6 +90,9 @@ async def create_manual_follow_up(
 ):
     """Manually schedule a follow-up"""
     try:
+        # Fetch patient details for email
+        patient = db.query(models.Patient).filter(models.Patient.id == fup_data["patient_id"]).first()
+        
         scheduled_date = datetime.fromisoformat(fup_data["scheduled_date"])
         new_fup = models.FollowUp(
             patient_id=fup_data["patient_id"],
@@ -83,8 +104,6 @@ async def create_manual_follow_up(
         )
         db.add(new_fup)
         
-        # Fetch patient details for email
-        patient = db.query(models.Patient).filter(models.Patient.id == fup_data["patient_id"]).first()
         if patient and patient.email:
             background_tasks.add_task(
                 send_followup_email,

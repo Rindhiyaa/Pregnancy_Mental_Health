@@ -34,11 +34,9 @@ body.dashboard-page {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0.9),
-    rgba(248, 250, 252, 0.9)
-  );
+  background: linear-gradient(to right,
+      rgba(255, 255, 255, 0.9),
+      rgba(248, 250, 252, 0.9));
   border-bottom: 1px solid rgba(148, 163, 184, 0.3);
   backdrop-filter: blur(18px);
 }
@@ -195,6 +193,7 @@ body.dashboard-page {
     opacity: 0;
     transform: translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -259,8 +258,8 @@ body.dashboard-page {
 }
 
 .dp-header-left h1 {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: 800;
   color: var(--text-dark);
   margin: 0 0 0.5rem 0;
 }
@@ -339,7 +338,8 @@ body.dashboard-page {
 }
 
 /* Header Buttons */
-.dp-export-btn, .dp-notifications-btn {
+.dp-export-btn,
+.dp-notifications-btn {
   padding: 0.75rem 1.25rem;
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -352,7 +352,8 @@ body.dashboard-page {
   position: relative;
 }
 
-.dp-export-btn:hover, .dp-notifications-btn:hover {
+.dp-export-btn:hover,
+.dp-notifications-btn:hover {
   background: #f9fafb;
   border-color: var(--primary-purple);
 }
@@ -476,7 +477,7 @@ body.dashboard-page {
 .dp-stat-card {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1.15rem;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
   transition: all 0.2s ease;
@@ -529,7 +530,7 @@ body.dashboard-page {
 }
 
 .dp-stat-value {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: var(--text-dark);
 }
@@ -641,7 +642,7 @@ body.dashboard-page {
 }
 
 .dp-chart-header h3 {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--text-dark);
   margin: 0 0 0.25rem 0;
@@ -697,7 +698,7 @@ body.dashboard-page {
 .dp-card {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1.15rem;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
 }
@@ -712,7 +713,7 @@ body.dashboard-page {
 }
 
 .dp-card-title {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-dark);
 }
@@ -853,6 +854,7 @@ body.dashboard-page {
 .modal-btn-refer.sent {
   opacity: 0.8;
 }
+
 .dp-alerts-panel {
   display: flex;
   flex-direction: column;
@@ -1073,9 +1075,12 @@ body.dashboard-page {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 90px;          /* fixed width — ALL same size */
-  height: 28px;         /* fixed height */
-  border-radius: 999px; /* fully rounded pill */
+  width: 90px;
+  /* fixed width — ALL same size */
+  height: 28px;
+  /* fixed height */
+  border-radius: 999px;
+  /* fully rounded pill */
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -1153,7 +1158,7 @@ body.dashboard-page {
   background: linear-gradient(135deg, #cfcad9, #ec4899);
   color: #ffffff;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 300;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
@@ -1338,7 +1343,8 @@ body.dashboard-page {
   color: #991b1b;
 }
 
-.pill-moderate, .pill-medium {
+.pill-moderate,
+.pill-medium {
   background: #fef3c7;
   color: #92400e;
 }
@@ -1395,7 +1401,7 @@ body.dashboard-page {
     grid-template-columns: repeat(5, 1fr);
     gap: 1rem;
   }
-  
+
   .dp-charts-section {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 1rem;
@@ -1415,7 +1421,7 @@ body.dashboard-page {
   .dp-bottom-row {
     grid-template-columns: 1fr;
   }
-  
+
   .dp-stats-row {
     grid-template-columns: repeat(5, 1fr);
     gap: 0.75rem;
@@ -1742,6 +1748,7 @@ body.dashboard-page {
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
 /* Enhanced hover effects for action buttons */
 .dp-view-btn:hover svg {
   stroke: #6d28d9 !important;
@@ -1756,7 +1763,8 @@ body.dashboard-page {
 }
 
 /* Ensure all action buttons have proper sizing */
-.dp-view-btn, .dp-delete-btn {
+.dp-view-btn,
+.dp-delete-btn {
   padding: 0.5rem !important;
   min-width: 36px !important;
   min-height: 36px !important;

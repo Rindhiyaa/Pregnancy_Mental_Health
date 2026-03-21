@@ -10,6 +10,7 @@ export default function SignUpPage() {
     firstName: "",
     lastName: "",
     email: "",
+    phone: "",          // ✅ added phone 
     password: "",
     role: "",
     terms: false,
@@ -28,7 +29,7 @@ export default function SignUpPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-  
+
     if (!form.firstName || !form.email || !form.password) {
       setError("Please fill in first name, email, and password.");
       return;
@@ -37,73 +38,85 @@ export default function SignUpPage() {
       setError("Password must be at least 8 characters.");
       return;
     }
+    if (!form.role) {
+      setError("Please select your role.");              // ✅ validate role 
+      return;
+    }
     if (!form.terms) {
       setError("You must agree to the guidelines to continue.");
       return;
     }
-  
+
     try {
-      // First, try to signup with the backend
-      const res = await api.post('/signup', {
+      const res = await api.post("/signup", {
         first_name: form.firstName,
         last_name: form.lastName,
         email: form.email,
+        phone_number: form.phone,                       // ✅ send phone 
         password: form.password,
-        role: form.role,
+        role: form.role,                        // ✅ from select only 
       });
-  
+
       if (!res.ok) {
-        // Handle HTTP error responses (400, 500, etc.)
         let errorMessage = "Signup failed";
         try {
           const data = await res.json();
           errorMessage = data?.detail || errorMessage;
-        } catch (e) {
-          // If response isn't JSON, use status text
+        } catch {
           errorMessage = res.statusText || errorMessage;
         }
-        
-        // Show specific error for duplicate email
-        if (errorMessage.includes("already exists") || errorMessage.includes("already registered")) {
-          setError("This email is already registered. Please use a different email or sign in instead.");
+        if (
+          errorMessage.includes("already exists") ||
+          errorMessage.includes("already registered")
+        ) {
+          setError(
+            "This email is already registered. Please sign in instead."
+          );
         } else {
           setError(errorMessage);
         }
-        return; // Stop here, don't login
+        return;
       }
 
-      // Success - get the response data
       const data = await res.json();
-      
-      // Only if signup was successful, create profile data and login
+
       const profileData = {
         fullName: `${form.firstName} ${form.lastName}`.trim(),
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
-        phone: "", // Will be filled in ProfilePage
+        phone: form.phone,
         role: form.role,
-        department: "", // Will be filled in ProfilePage
+        department: "",
         memberSince: new Date().toLocaleDateString(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
-      // Store JWT token if provided
+
       if (data.access_token) {
-        localStorage.setItem('ppd_access_token', data.access_token);
+        localStorage.setItem("ppd_access_token", data.access_token);
+        localStorage.setItem("ppd_user_role", form.role);
       }
-      
-      // Use auth context to login the user
+
       login(profileData);
-      
-      // success → go to dashboard
-      navigate("/dashboard");
+
+      // ── Role-based redirect ── 
+      const role = form.role.toLowerCase();
+      if (data.role?.toLowerCase() === 'admin') {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (data.role?.toLowerCase() === 'nurse') {
+        navigate("/nurse/dashboard", { replace: true });
+      } else if (data.role?.toLowerCase() === 'doctor') {
+        navigate("/doctor/dashboard", { replace: true });
+      } else { // Default for patient or any other role
+        navigate("/patient/dashboard", { replace: true });
+      }
+
     } catch (err) {
       console.error("Signup error:", err);
       setError("Network error. Please check your connection and try again.");
     }
   };
-  
+
 
   return (
     <main className="page auth-page">
@@ -114,10 +127,9 @@ export default function SignUpPage() {
             <span className="logo-text">Postpartum Risk Insight</span>
           </div>
 
-          <h1>Create your clinician account</h1>
+          <h1>Create your account</h1>
           <p className="lead">
-            Set up a secure workspace to screen pregnancy and postpartum depression risk for your
-            patients.
+            Set up your secure portal to access postpartum depression risk monitoring.
           </p>
 
           <p className="switch-auth">
@@ -152,14 +164,37 @@ export default function SignUpPage() {
             </div>
 
             <label>
-              Work email
+              Email address
               <input
                 type="email"
                 name="email"
-                placeholder="you@hospital.org"
+                placeholder="ananya.sharma@hospital.com"
                 value={form.email}
                 onChange={handleChange}
               />
+            </label>
+
+            <label>
+              Role
+              <select
+                name="role"
+                value={form.role}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid #e2e8f0',
+                  marginTop: '8px',
+                  backgroundColor: 'white',
+                  fontSize: '1rem'
+                }}
+              >
+                <option value="">Select your role</option>
+                <option value="doctor">Doctor</option>
+                <option value="nurse">Nurse</option>
+                <option value="patient">Patient</option>
+              </select>
             </label>
 
             <label>
@@ -180,13 +215,13 @@ export default function SignUpPage() {
                 >
                   {showPassword ? (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                      <line x1="1" y1="1" x2="23" y2="23"/>
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
                     </svg>
                   ) : (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
                     </svg>
                   )}
                 </button>

@@ -126,6 +126,7 @@
   border-radius: 8px;
   border: 1px solid #e5e7eb;
 }
+
 .history-header {
   margin-bottom: 2rem;
 }
@@ -269,7 +270,9 @@
 }
 
 .history-table td {
-  padding: 1rem;
+  padding: 1rem 1.25rem;
+  font-size: 0.85rem;
+  color: #334155;
   border-bottom: 1px solid #f3f4f6;
   vertical-align: middle;
   text-align: center;
@@ -329,9 +332,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 90px;          /* fixed width — ALL same size */
-  height: 28px;         /* fixed height */
-  border-radius: 999px; /* fully rounded pill */
+  width: 90px;
+  /* fixed width — ALL same size */
+  height: 28px;
+  /* fixed height */
+  border-radius: 999px;
+  /* fully rounded pill */
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -566,31 +572,31 @@
   .history-shell {
     padding: 1.5rem 1rem 3rem;
   }
-  
+
   .history-header-content {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .history-header-actions {
     width: 100%;
     justify-content: flex-start;
   }
-  
+
   .history-filters {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
   }
-  
+
   .search-container {
     min-width: auto;
   }
-  
+
   .filter-container {
     justify-content: space-between;
   }
-  
+
   .results-count {
     text-align: center;
   }
@@ -600,56 +606,58 @@
   .history-header h1 {
     font-size: 1.5rem;
   }
-  
+
   .history-table {
     font-size: 0.75rem;
   }
-  
+
   .history-table th,
   .history-table td {
     padding: 0.75rem 0.5rem;
   }
-  
+
   .patient-name {
     flex-direction: column;
+    align-items: flex-start;
     gap: 0.5rem;
-    text-align: center;
+    text-align: left;
   }
-  
+
   .patient-avatar {
     width: 32px;
     height: 32px;
     font-size: 0.875rem;
   }
-  
+
   .plan-cell {
     max-width: 150px;
   }
-  
+
   .history-header-actions {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .new-assessment-btn,
   .clear-history-btn {
     width: 100%;
     justify-content: center;
   }
-  
+
   .action-buttons {
     flex-direction: column;
     gap: 0.25rem;
   }
-  
+
   .history-view-btn,
   .history-delete-btn {
     width: 28px;
     height: 28px;
   }
-  
+
   .search-input {
-    font-size: 16px; /* Prevent zoom on iOS */
+    font-size: 16px;
+    /* Prevent zoom on iOS */
   }
 }
 
@@ -657,21 +665,21 @@
   .history-table-container {
     overflow-x: scroll;
   }
-  
+
   .history-table {
     min-width: 900px;
   }
-  
+
   .history-filters {
     padding: 1rem;
   }
-  
+
   .filter-container {
     flex-direction: column;
     align-items: stretch;
     gap: 0.5rem;
   }
-  
+
   .filter-select {
     width: 100%;
   }
@@ -698,6 +706,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -719,6 +728,7 @@
     opacity: 0;
     transform: translateY(-20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -745,10 +755,10 @@
   border-radius: 1px;
 }
 
-.modal-header h2 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #000000;
+.modal-.history-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1e293b;
   margin: 0;
 }
 
@@ -918,29 +928,29 @@
     max-height: calc(100vh - 2rem);
     max-width: 500px;
   }
-  
+
   .assessment-detail-grid {
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
-  
+
   .modal-header,
   .modal-body,
   .modal-footer {
     padding-left: 1rem;
     padding-right: 1rem;
   }
-  
+
   .modal-body {
     padding: 1rem;
   }
-  
+
   .detail-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.25rem;
   }
-  
+
   .detail-label {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -952,41 +962,41 @@
   .modal-overlay {
     padding: 0.5rem;
   }
-  
+
   .modal-content {
     max-width: 350px;
     max-height: 80vh;
   }
-  
+
   .modal-header h2 {
     font-size: 1.1rem;
   }
-  
+
   .modal-header {
     padding: 1rem 1rem 0.5rem;
   }
-  
+
   .modal-body {
     padding: 0.75rem;
   }
-  
+
   .modal-footer {
     padding: 0.5rem 1rem 1rem;
   }
-  
+
   .detail-section {
     padding: 0.75rem;
   }
-  
+
   .detail-section h3 {
     font-size: 0.85rem;
     margin-bottom: 0.5rem;
   }
-  
+
   .detail-item {
     margin-bottom: 0.4rem;
   }
-  
+
   .detail-notes {
     min-height: 50px;
     max-height: 60px;
@@ -1049,6 +1059,7 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
 }
+
 /* Teal export button styling for New Assessment */
 .pp-btn-new {
   padding: 0.75rem 1.25rem !important;

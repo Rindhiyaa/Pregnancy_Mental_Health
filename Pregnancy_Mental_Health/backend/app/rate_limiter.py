@@ -21,11 +21,11 @@ class RateLimiter:
         
         # Rate limits: (max_requests, time_window_seconds)
         self.limits = {
-            "/api/login": (5, 300),  # 5 attempts per 5 minutes
-            "/api/signup": (3, 3600),  # 3 signups per hour
-            "/api/forgot-password": (3, 3600),  # 3 attempts per hour
-            "/api/reset-password": (3, 3600),  # 3 resets per hour
-            "default": (100, 60),  # 100 requests per minute for other endpoints
+            "/api/login": (20, 60),  # 20 attempts per minute
+            "/api/signup": (10, 3600),  # 10 signups per hour
+            "/api/forgot-password": (10, 3600),  # 10 attempts per hour
+            "/api/reset-password": (10, 3600),  # 10 resets per hour
+            "default": (200, 60),  # 200 requests per minute for other endpoints
         }
     
     async def check_rate_limit(self, request: Request):

@@ -8,19 +8,21 @@ import Footer from "./components/Footer";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Toaster } from 'react-hot-toast';
 
+import { ThemeProvider } from "./ThemeContext";
+
 export default function App() {
   const location = useLocation();
 
-  const isDashboard = location.pathname.startsWith("/dashboard") || 
-                    location.pathname.startsWith("/patients") ||
-                    location.pathname.startsWith("/history") ||
-                    location.pathname.startsWith("/new-assessment") ||
-                    location.pathname.startsWith("/schedule") ||
-                    location.pathname.startsWith("/profile");
+  const isDashboard = location.pathname.startsWith("/patient/") || 
+                    location.pathname.startsWith("/nurse/") || 
+                    location.pathname.startsWith("/doctor/") || 
+                    location.pathname.startsWith("/admin/") ||
+                    location.pathname === "/profile";
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
         <Toaster 
           position="top-right"
           toastOptions={{
@@ -47,6 +49,7 @@ export default function App() {
         <AppRouter />
         {/* {!isDashboard && <Footer />} */}
       </AuthProvider>
-    </ErrorBoundary>
-  );
+    </ThemeProvider>
+  </ErrorBoundary>
+);
 }

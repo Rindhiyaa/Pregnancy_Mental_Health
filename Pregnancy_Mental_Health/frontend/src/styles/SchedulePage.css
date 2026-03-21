@@ -18,8 +18,8 @@
 }
 
 .schedule-title {
-  font-size: 1.875rem;
-  font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: 800;
   color: #1e293b;
   margin: 0;
 }
@@ -228,9 +228,17 @@
   cursor: pointer;
 }
 
-.event-high { background: #ef4444; }
-.event-moderate { background: #f59e0b; }
-.event-low { background: #10b981; }
+.event-high {
+  background: #ef4444;
+}
+
+.event-moderate {
+  background: #f59e0b;
+}
+
+.event-low {
+  background: #10b981;
+}
 
 @media (max-width: 1024px) {
   .schedule-grid {

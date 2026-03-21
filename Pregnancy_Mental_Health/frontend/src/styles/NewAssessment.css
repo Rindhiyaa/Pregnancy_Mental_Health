@@ -1,256 +1,794 @@
-/* Enhanced New Assessment Page - Professional Healthcare Theme */
+/* MODERN NEW ASSESSMENT REDESIGN - Teal Theme */
+:root {
+  --primary-teal: #2d6a75;
+  --primary-teal-light: #e6f0f1;
+  --text-dark: #1e293b;
+  --text-muted: #64748b;
+  --bg-light: #f1f5f9;
+  --white: #ffffff;
+  --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --radius-lg: 20px;
+  --radius-md: 12px;
+}
 
-/* Ensure NewAssessment styles take precedence */
 .new-assessment-page {
-  min-height: 100vh;
-  background: #ffffff;
+  background: var(--bg-light);
 }
 
-/* Layout */
-.new-assessment-page .layout {
-  display: flex !important;
-  min-height: 100vh !important;
-  background: #ffffff !important;
-  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif !important;
-  position: relative !important;
-}
-
-/* Enhanced Sidebar - Sticky and Professional */
-.new-assessment-page .sidebar {
-  width: 320px !important;
-  background: #ffffff !important;
-  padding: 2rem 1.5rem !important;
-  border-right: none !important;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05) !important;
-  position: sticky !important;
-  top: 0 !important;
-  height: 100vh !important;
-  overflow-y: auto !important;
-  z-index: 10 !important;
-}
-
-.new-assessment-page .logo {
-  font-size: 1.5rem !important;
-  font-weight: 700 !important;
-  margin-bottom: 2.5rem !important;
-  color: #1f2937 !important;
-  background: linear-gradient(135deg, #8b5cf6, #2dd4bf) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-  text-align: center !important;
-  padding: 1.5rem !important;
-  border-radius: 12px !important;
-  background-color: #f8fafc !important;
-}
-
-.new-assessment-page .step-nav {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 0.75rem !important;
-}
-
-.new-assessment-page .step-nav .step {
-  padding: 1rem 1.5rem !important;
-  border-radius: 8px !important;
-  color: #6b7280 !important;
-  font-weight: 500 !important;
-  font-size: 0.875rem !important;
-  transition: all 0.3s ease !important;
-  border: none !important;
-  background: transparent !important;
-  position: relative !important;
-  cursor: pointer !important;
-  text-align: left !important;
-}
-
-.new-assessment-page .step-nav .step:hover {
-  background: #f8fafc !important;
-  color: #374151 !important;
-}
-
-.new-assessment-page .step-nav .active {
-  background: #8b5cf6 !important;
-  color: white !important;
-  font-weight: 600 !important;
-  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2) !important;
-}
-
-/* Enhanced Main Content */
-.new-assessment-page .main {
-  flex: 1 !important;
-  padding: 2.5rem 3rem !important;
-  background: #ffffff !important;
-  position: relative !important;
-  overflow-y: auto !important;
-  min-height: 100vh !important;
-}
-
-/* Enhanced Page Header - Modern Professional */
-.new-assessment-page .page-header {
-  margin-bottom: 2rem !important;
-  text-align: left !important;
-  background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
-  padding: 2rem !important;
-  border-radius: 16px !important;
-  border: 1px solid #f1f5f9 !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-  position: relative !important;
-  overflow: hidden !important;
-}
-
-.new-assessment-page .page-header::before {
-  content: '' !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  height: 4px !important;
-  background: linear-gradient(90deg, #8b5cf6, #2dd4bf) !important;
-}
-
-.new-assessment-page .page-header h1 {
-  font-size: 2rem !important;
-  font-weight: 700 !important;
-  margin-bottom: 0.5rem !important;
-  color: #1f2937 !important;
-  background: linear-gradient(135deg, #1f2937, #374151) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-}
-
-.new-assessment-page .subtitle {
-  color: #6b7280 !important;
-  font-size: 1rem !important;
-  margin-bottom: 0 !important;
-  font-weight: 500 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.5rem !important;
-}
-
-.new-assessment-page .subtitle::before {
-  content: '📋' !important;
-  font-size: 1.2rem !important;
-}
-
-/* Enhanced Card - Modern and Optimal Width */
-.new-assessment-page .card {
-  background: #ffffff !important;
-  padding: 2rem !important;
-  border-radius: 12px !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  max-width: 900px !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-  border: none !important;
-  transition: all 0.3s ease !important;
-  position: relative !important;
-}
-
-.new-assessment-page .card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
-  transform: translateY(-1px) !important;
-}
-
-.new-assessment-page .card-header {
-  margin-bottom: 1.5rem !important;
-  text-align: left !important;
-  padding-bottom: 1rem !important;
-  border-bottom: none !important;
-  position: relative !important;
-}
-
-.new-assessment-page .card-header::after {
-  display: none !important;
-}
-
-.new-assessment-page .card-header h2 {
-  font-size: 1.5rem !important;
-  font-weight: 700 !important;
-  color: #1f2937 !important;
-  margin-bottom: 0.5rem !important;
-}
-
-.new-assessment-page .card-header p {
-  color: #374151 !important;
-  font-size: 0.95rem !important;
-  margin: 0 !important;
-  font-weight: 500 !important;
-}
-
-/* Enhanced Form - Modern Professional Layout */
-.new-assessment-page .form-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
-  gap: 1.25rem !important;
-  margin-bottom: 1.5rem !important;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  position: relative;
-}
-
-.form-group label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
+/* TOP HEADER BUTTONS (Patient Badge) */
+.active-patient-badge {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-}
-
-.form-group label.highlight {
-  color: #8b5cf6;
-  font-weight: 700;
-  position: relative;
-}
-
-.form-group label.highlight::after {
-  content: '*';
-  color: #ef4444;
-  margin-left: 4px;
-  font-size: 1rem;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: 2px solid #e5e7eb;
-  font-size: 0.875rem;
-  background: #ffffff;
-  transition: all 0.3s ease;
-  font-family: inherit;
-  position: relative;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-  background: #fefefe;
-}
-
-.form-group select {
+  gap: 12px;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid #e2e8f0;
+}
+
+.active-patient-badge:hover {
+  border-color: var(--primary-teal);
+  transform: translateY(-1px);
+}
+
+.avatar-xs-teal {
+  width: 24px;
+  height: 24px;
+  background: var(--primary-teal);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badge-patient-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.badge-patient-info .patient-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dark);
+  line-height: 1.2;
+}
+
+.badge-patient-info .patient-id {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.btn-change-patient {
+  background: var(--primary-teal-light);
+  color: var(--primary-teal);
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+/* CUSTOM MODERN STEPPER */
+.stepper-card-modern {
+  background: var(--white);
+  padding: 32px 40px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+
+.stepper-track {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.stepper-node-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stepper-node {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid #e2e8f0;
+  z-index: 2;
+}
+
+.stepper-node-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.3;
+  max-width: 90px;
+  word-break: break-word;
+}
+
+.stepper-node-group.active .stepper-node {
+  background: var(--primary-teal);
+  color: white;
+  border-color: var(--primary-teal);
+  box-shadow: 0 0 0 4px rgba(45, 106, 117, 0.15);
+}
+
+.stepper-node-group.active .stepper-node-label {
+  color: var(--primary-teal);
+  font-weight: 700;
+}
+
+.stepper-node-group.completed .stepper-node {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.stepper-node-line {
+  position: absolute;
+  top: 18px;
+  left: calc(50% + 20px);
+  width: calc(100% - 40px);
+  height: 2px;
+  background: #e2e8f0;
+  z-index: 0;
+}
+
+.stepper-node-line.completed {
+  background: linear-gradient(90deg, #0F766E, #14B8A6);
+}
+
+/* FORM CARD MODERN */
+.form-card-modern {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  min-height: 500px;
+}
+
+.form-head-section {
+  padding: 32px 40px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.form-head-section h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 8px 0;
+}
+
+.form-head-section p {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.form-body-scroll {
+  padding: 40px 40px 32px;
+  flex: 1;
+}
+
+.form-grid-modern {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px 32px;
+}
+
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 4px;
+}
+
+.form-field-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.field-label-modern {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.required-star {
+  color: #ef4444;
+}
+
+.modern-input,
+.modern-select,
+.modern-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid #e2e8f0;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+  background: #f8fafc;
+}
+
+.modern-input:focus,
+.modern-select:focus,
+.modern-textarea:focus {
+  border-color: var(--primary-teal);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(45, 106, 117, 0.05);
+}
+
+.custom-select-wrapper {
+  position: relative;
+}
+
+.modern-select {
   appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 0.75rem center;
-  background-repeat: no-repeat;
-  background-size: 1.25em 1.25em;
-  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.custom-select-wrapper::after {
+  content: '▼';
+  font-size: 10px;
+  color: #94a3b8;
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* FORM FOOTER */
+.form-footer-modern {
+  padding: 24px 40px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+}
+
+.btn-back-modern {
+  background: #f1f5f9;
+  color: #475569;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-next-modern {
+  background: var(--primary-teal);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(45, 106, 117, 0.2);
+}
+
+.btn-save-modern {
+  background: var(--primary-teal-light);
+  color: var(--primary-teal);
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.btn-submit-modern {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+/* INFO SIDEBAR */
+.info-sidebar-modern {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.side-card-modern {
+  background: linear-gradient(135deg, #ECFEFF, #F0FDFA);
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.side-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0 0 16px 0;
+}
+
+.progress-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.progress-bar-rail {
+  flex: 1;
+  height: 8px;
+  background: #E5E7EB;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-thumb {
+  height: 100%;
+  background: linear-gradient(90deg, #0F766E, #14B8A6);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-value-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary-teal);
+}
+
+.workflow-status-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0F172A;
+  margin-bottom: 20px;
+}
+
+.workflow-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.workflow-checklist li {
+  font-size: 13px;
+  color: #6B7280;
+  padding-left: 20px;
+  position: relative;
+}
+
+.workflow-checklist li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary-teal);
+}
+
+/* PATIENT MINI CARD */
+.patient-mini-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+}
+
+.patient-avatar-teal {
+  width: 40px;
+  height: 40px;
+  background: var(--primary-teal);
+  color: white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.patient-name-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.patient-id-text {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.patient-details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.detail-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+/* MODAL MODERN */
+.modal-overlay-modern {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content-modern {
+  background: var(--white);
+  width: 100%;
+  max-width: 500px;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.modal-header-modern {
+  padding: 32px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.modal-header-modern h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin: 0 0 8px 0;
+}
+
+.modal-header-modern p {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.modal-body-modern {
+  padding: 32px;
+}
+
+.modern-search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  font-size: 14px;
+  outline: none;
+  background: #f8fafc;
+}
+
+.patient-list-scroll-modern {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.patient-list-item-modern {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.patient-list-item-modern:hover {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.patient-list-item-modern.active {
+  background: var(--primary-teal-light);
+  border-color: var(--primary-teal);
+}
+
+.avatar-sm-teal {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--primary-teal-light);
+  color: var(--primary-teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.patient-item-info .name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.patient-item-info .id {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.modal-footer-modern {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-register-new {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary-teal);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn-cancel-modal {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* EMPTY STATE */
+.selection-empty-state {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 80px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.empty-icon-box {
+  font-size: 64px;
+  margin-bottom: 24px;
+}
+
+.selection-empty-state h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+}
+
+.selection-empty-state p {
+  color: var(--text-muted);
+  max-width: 400px;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.btn-primary-teal {
+  background: var(--primary-teal);
+  color: white;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(45, 106, 117, 0.2);
+}
+
+/* ─── EPDS Single Column Layout ─── */
+.form-grid-modern.single-col {
+  grid-template-columns: 1fr;
+}
+
+/* ─── Readonly Input ─── */
+.modern-input.input-readonly {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
+  font-weight: 600;
+}
+
+/* ─── Step 7: Nurse Submit Card ─── */
+.nurse-submit-card {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 8px 0;
+}
+
+.submit-patient-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #ECFEFF, #F0FDFA);
+  border-radius: 16px;
+  border: 1px solid #99f6e4;
+}
+
+.submit-patient-avatar {
+  width: 52px;
+  height: 52px;
+  background: var(--primary-teal);
+  color: white;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.submit-patient-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 4px;
+}
+
+.submit-patient-meta {
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-returning {
+  background: #d1fae5;
+  color: #065f46;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.badge-new {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+/* Auto-assign Notice */
+.auto-assign-notice {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 14px;
+  font-size: 14px;
+}
+
+.auto-assign-notice strong {
+  font-size: 15px;
+  color: #166534;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.auto-assign-notice p {
+  color: #166534;
+  margin: 0 0 10px 0;
+  line-height: 1.5;
+}
+
+.btn-link-teal {
+  background: none;
+  border: none;
+  color: var(--primary-teal);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* Doctor Assign Block */
+.doctor-assign-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Nurse scope notice */
+.nurse-scope-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  background: #fafafa;
+  border: 1px dashed #d1d5db;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
 }
 
 /* Modern Input Enhancement */
@@ -566,7 +1104,8 @@ RESULT CARD – MEDICAL GRADE UI
 }
 
 .result-card h3:before {
-  display: none; /* Remove the checkmark icon */
+  display: none;
+  /* Remove the checkmark icon */
 }
 
 /* Description */
@@ -602,8 +1141,13 @@ RESULT CARD – MEDICAL GRADE UI
 }
 
 @keyframes spin {
-  0% { transform: translate(-50%, -50%) rotate(0deg); }
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 @keyframes slideInUp {
@@ -611,6 +1155,7 @@ RESULT CARD – MEDICAL GRADE UI
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -732,27 +1277,27 @@ RESULT CARD – MEDICAL GRADE UI
     padding: 12px 20px;
     max-width: 280px;
   }
-  
+
   .result-card {
     padding: 20px 16px !important;
     margin: 1rem auto !important;
     min-height: 50vh !important;
   }
-  
+
   .score-display {
     font-size: 28px;
   }
-  
+
   .risk-level-display {
     font-size: 16px;
     padding: 8px 16px;
   }
-  
+
   .result-actions {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .save-result-btn {
     width: 100%;
     max-width: 240px;
@@ -783,35 +1328,35 @@ RESULT CARD – MEDICAL GRADE UI
   .layout {
     flex-direction: column;
   }
-  
+
   .sidebar {
     width: 100%;
     height: auto;
     position: relative;
     padding: 1.5rem;
   }
-  
+
   .step-nav {
     flex-direction: row;
     overflow-x: auto;
     gap: 0.5rem;
     padding-bottom: 0.5rem;
   }
-  
+
   .step-nav .step {
     white-space: nowrap;
     flex-shrink: 0;
     padding: 0.75rem 1rem;
   }
-  
+
   .main {
     padding: 2rem;
   }
-  
+
   .page-header h1 {
     font-size: 2rem;
   }
-  
+
   .card {
     padding: 2rem;
   }
@@ -822,29 +1367,29 @@ RESULT CARD – MEDICAL GRADE UI
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-  
+
   .actions {
     flex-direction: column-reverse;
     gap: 0.75rem;
   }
-  
+
   .actions button {
     width: 100%;
     justify-content: center;
   }
-  
+
   .page-header h1 {
     font-size: 1.75rem;
   }
-  
+
   .card-header h2 {
     font-size: 1.25rem;
   }
-  
+
   .epds-item {
     padding: 1rem;
   }
-  
+
   .main {
     padding: 1.5rem;
   }
@@ -854,20 +1399,20 @@ RESULT CARD – MEDICAL GRADE UI
   .main {
     padding: 1rem;
   }
-  
+
   .card {
     padding: 1.5rem;
   }
-  
+
   .sidebar {
     padding: 1rem;
   }
-  
+
   .step-nav .step {
     font-size: 0.75rem;
     padding: 0.5rem 0.75rem;
   }
-  
+
   .form-grid {
     gap: 1rem;
   }
@@ -877,13 +1422,15 @@ RESULT CARD – MEDICAL GRADE UI
 .step.clickable {
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #6b7280; /* Medium gray text for better visibility */
+  color: #6b7280;
+  /* Medium gray text for better visibility */
 }
 
 .step.clickable:hover {
   background: rgba(255, 255, 255, 0.9);
   transform: translateX(4px);
-  color: #374151; /* Darker gray on hover */
+  color: #374151;
+  /* Darker gray on hover */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -895,14 +1442,16 @@ RESULT CARD – MEDICAL GRADE UI
 /* Active step styling - white background */
 .step.active {
   background: rgba(255, 255, 255, 1);
-  color: #1f2937; /* Dark text for contrast on white background */
+  color: #1f2937;
+  /* Dark text for contrast on white background */
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Base step styling for better visibility */
 .step {
-  color: #9ca3af; /* Light gray for all steps */
+  color: #9ca3af;
+  /* Light gray for all steps */
   padding: 0.75rem 1rem;
   margin: 0.25rem 0;
   border-radius: 6px;
@@ -1161,6 +1710,7 @@ RESULT CARD – MEDICAL GRADE UI
 .cancel-btn:hover {
   background: #4b5563;
 }
+
 /* Beautiful gradient button styling for New Assessment */
 .pp-btn-new {
   padding: 0.75rem 1.25rem !important;
@@ -1182,6 +1732,7 @@ RESULT CARD – MEDICAL GRADE UI
   transform: translateY(-1px) !important;
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35) !important;
 }
+
 /* New Patient Modal */
 .pp-modal-overlay {
   position: fixed;
@@ -1199,7 +1750,7 @@ RESULT CARD – MEDICAL GRADE UI
   border-radius: 24px;
   width: 90%;
   max-width: 520px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
   overflow: hidden;
 }
 
@@ -1271,7 +1822,7 @@ RESULT CARD – MEDICAL GRADE UI
 .pp-form-group input:focus {
   outline: none;
   border-color: #6366f1;
-  box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
 .pp-form-row {
@@ -1304,7 +1855,7 @@ RESULT CARD – MEDICAL GRADE UI
 .pp-btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #4f46e5, #4338ca);
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
 }
 
 .pp-btn-primary:disabled {
@@ -1395,7 +1946,9 @@ RESULT CARD – MEDICAL GRADE UI
   font-weight: 400;
 }
 
-.user-icon, .change-icon, .arrow-icon {
+.user-icon,
+.change-icon,
+.arrow-icon {
   flex-shrink: 0;
   color: #6b7280;
 }
@@ -1426,7 +1979,7 @@ RESULT CARD – MEDICAL GRADE UI
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
-  box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1552,7 +2105,7 @@ RESULT CARD – MEDICAL GRADE UI
   background: #f8fafc;
   border-color: #e2e8f0;
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .patient-list-item.selected {
@@ -1605,7 +2158,8 @@ RESULT CARD – MEDICAL GRADE UI
   border-radius: 4px;
 }
 
-.patient-list-age, .patient-list-phone {
+.patient-list-age,
+.patient-list-phone {
   color: #059669;
 }
 
@@ -1629,10 +2183,10 @@ RESULT CARD – MEDICAL GRADE UI
   opacity: 0.5;
 }
 
-.no-patients-found p {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #374151;
+.na-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #334155;
   margin-bottom: 0.5rem;
 }
 
@@ -1708,6 +2262,12 @@ RESULT CARD – MEDICAL GRADE UI
   font-size: 1rem;
   font-weight: 600;
   color: #1f2937;
+}
+
+.na-header h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1e293b;
 }
 
 .cancel-create-btn {
@@ -1849,33 +2409,34 @@ RESULT CARD – MEDICAL GRADE UI
     max-width: calc(100vw - 1rem);
     max-height: calc(100vh - 1rem);
   }
-  
+
   .patient-modal-header {
     padding: 1rem 1rem 0;
   }
-  
+
   .patient-modal-body {
     padding: 1rem;
   }
-  
+
   .modal-form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .patient-list-meta {
     flex-direction: column;
     gap: 0.25rem;
   }
-  
+
   .create-form-actions {
     flex-direction: column;
   }
-  
+
   .modal-cancel-btn,
   .modal-create-btn {
     width: 100%;
   }
 }
+
 /* ================================
    SELECTED PATIENT INFO BAR
 ================================ */
@@ -1954,16 +2515,17 @@ RESULT CARD – MEDICAL GRADE UI
     gap: 1rem;
     align-items: stretch;
   }
-  
+
   .patient-info-content {
     justify-content: center;
   }
-  
+
   .change-patient-small-btn {
     width: 100%;
     text-align: center;
   }
 }
+
 /* Patient Selection Required Message */
 .patient-selection-required {
   text-align: center;
@@ -1992,6 +2554,7 @@ RESULT CARD – MEDICAL GRADE UI
   font-size: 0.875rem;
   color: #a16207;
 }
+
 /* Force both buttons to have same size and beautiful gradient - override any parent styles */
 .actions .save-to-history-btn,
 .actions .pp-btn-new {

@@ -7,8 +7,9 @@ class UserCreate(BaseModel):
     first_name: str
     last_name: str | None = None
     email: EmailStr
+    phone_number: str | None = None
     password: str
-    role: str | None = None
+    role: str # "doctor", "nurse", or "patient"
 
 
 class UserProfileOut(BaseModel):
@@ -17,6 +18,7 @@ class UserProfileOut(BaseModel):
     id: int
     full_name: str
     email: EmailStr
+    phone_number: str | None = None
     role: str | None = None
     member_since: str | None = None
 
@@ -33,12 +35,38 @@ class UserOut(BaseModel):
     first_name: str
     last_name: str | None = None
     email: EmailStr
+    phone_number: str | None = None
     role: str | None = None
+    first_login: bool = True
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: EmailStr | None = None
+    phone_number: str | None = None
     password: str
+
+
+class MoodEntryCreate(BaseModel):
+    mood_score: int
+    note: str | None = None
+
+
+class MoodEntryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    mood_score: int
+    note: str | None = None
+    created_at: datetime
+
+
+class MessageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    sender_id: int
+    receiver_id: int
+    content: str
+    is_read: bool
+    created_at: datetime
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
@@ -119,6 +147,8 @@ class AssessmentResult(BaseModel):
 
 
 class AssessmentSave(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     patient_name: str
     patient_id: Optional[int] = None
     risk_level: str
@@ -128,6 +158,20 @@ class AssessmentSave(BaseModel):
     notes: Optional[str] = None
     clinician_email: Optional[str] = None
     raw_data: Optional[Dict[str, Any]] = None
+    
+    # Nurse workflow fields
+    nurse_id: Optional[int] = None
+    doctor_id: Optional[int] = None
+    status: str = "submitted" # draft, submitted, reviewed, complete
+    timestamp: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+
+class AssessmentReview(BaseModel):
+    risk_level_final: str
+    override_reason: Optional[str] = None
+    plan: Optional[str] = None
+    notes: Optional[str] = None
+    status: str = "reviewed" # reviewed, complete
 
 
 class PredictRequest(BaseModel):
@@ -154,6 +198,17 @@ class PatientBase(BaseModel):
     age: Optional[int] = None
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
+    dob: Optional[datetime] = None
+    blood_group: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    emergency_name: Optional[str] = None
+    emergency_phone: Optional[str] = None
+    emergency_relation: Optional[str] = None
+    pregnancy_week: Optional[int] = None
+    due_date: Optional[datetime] = None
+    gravida: Optional[int] = None
+    para: Optional[int] = None
 
 class PatientCreate(PatientBase):
     pass
@@ -164,9 +219,25 @@ class PatientOut(PatientBase):
     id: int
     clinician_email: Optional[str] = None
     created_at: Optional[datetime] = None
+    created_by_nurse_id: Optional[int] = None
+    assigned_doctor_id: Optional[int] = None
+    status: str = "active"
 
 class PatientUpdate(BaseModel):
     name: Optional[str] = None
     age: Optional[int] = None
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
+    dob: Optional[datetime] = None
+    blood_group: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    emergency_name: Optional[str] = None
+    emergency_phone: Optional[str] = None
+    emergency_relation: Optional[str] = None
+    pregnancy_week: Optional[int] = None
+    due_date: Optional[datetime] = None
+    gravida: Optional[int] = None
+    para: Optional[int] = None
+    assigned_doctor_id: Optional[int] = None
+    status: Optional[str] = None

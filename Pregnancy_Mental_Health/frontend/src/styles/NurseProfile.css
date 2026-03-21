@@ -1,0 +1,290 @@
+/* Nurse Profile Modern Medical Theme */
+
+.np-page {
+    background: #F8FAFC;
+    min-height: 100vh;
+    font-family: Segoe UI, -apple-system, BlinkMacSystemFont, sans-serif !important;
+    display: flex;
+}
+
+.np-main {
+    flex: 1;
+    margin-left: 260px;
+    padding: 40px 48px;
+    box-sizing: border-box;
+}
+
+.np-container {
+    max-width: 1100px;
+    margin-top: 32px;
+}
+
+.np-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 32px;
+}
+
+.np-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.04);
+}
+
+.np-avatar-section {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.np-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #0F766E, #14B8A6);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
+}
+
+.np-name {
+    font-size: 24px;
+    font-weight: 500;
+    color: #0F172A;
+    margin-bottom: 6px;
+}
+
+.np-badge {
+    display: inline-block;
+    background: #D1FAE5;
+    color: #065F46;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 6px;
+}
+
+.np-id {
+    font-size: 13px;
+    color: #6B7280;
+    font-weight: 600;
+}
+
+.np-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    row-gap: 32px;
+}
+
+.np-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.np-info-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(20, 184, 166, 0.1);
+    color: #0F766E;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.np-info-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.np-info-label {
+    font-size: 12px;
+    color: #6B7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.np-info-value {
+    font-size: 15px;
+    font-weight: 300;
+    color: #0F172A;
+}
+
+.np-status-active {
+    color: #059669;
+    background: #D1FAE5;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 13px;
+    display: inline-block;
+    font-weight: 700;
+}
+
+.np-pwd-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0F766E;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.np-pwd-subtitle {
+    font-size: 14px;
+    color: #6B7280;
+    margin-bottom: 24px;
+}
+
+.np-input-group {
+    margin-bottom: 20px;
+}
+
+.np-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 8px;
+}
+
+.np-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid #E5E7EB;
+    background: #ffffff;
+    color: #0F172A;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.np-input:focus {
+    border-color: #0F766E;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+}
+
+.np-btn-submit {
+    width: 100%;
+    padding: 14px 24px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #0F766E, #14B8A6);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
+    margin-top: 12px;
+}
+
+.np-btn-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(15, 118, 110, 0.3);
+}
+
+.np-btn-submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.np-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 32px;
+}
+
+.np-stat-card {
+    background: rgba(20, 184, 166, 0.05);
+    /* very light teal */
+    border: 1px solid rgba(20, 184, 166, 0.15);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.2s;
+}
+
+.np-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: rgba(15, 118, 110, 0.1);
+    color: #0F766E;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.np-stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.np-stat-label {
+    font-size: 13px;
+    color: #6B7280;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.np-stat-val {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0F172A;
+}
+
+.np-footer {
+    margin-top: 40px;
+    display: flex;
+    justify-content: flex-end;
+    padding-bottom: 40px;
+}
+
+.np-btn-logout {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 1px solid #E5E7EB;
+    background: transparent;
+    color: #EF4444;
+    /* subtle red */
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.np-btn-logout:hover {
+    background: #FEF2F2;
+    /* light red tint */
+    border-color: #FECACA;
+}

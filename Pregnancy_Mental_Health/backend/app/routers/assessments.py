@@ -13,7 +13,7 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 
 from ..database import get_db
-from ..schemas import AssessmentCreate, AssessmentResult, AssessmentSave, ReferralRequest
+from ..schemas import AssessmentCreate, AssessmentResult, AssessmentSave, ReferralRequest, AssessmentReview
 from ..ml_model import model, feature_columns, build_model_input_from_form
 from .. import models, config
 from ..jwt_handler import get_current_user_email, get_current_user
@@ -185,9 +185,10 @@ def save_assessment(
     # --- START FIX: Robust linkage ---
     # 1. If patient_id is a temporary ID (frontend timestamp), it won't exist in DB
     final_patient_id = payload.patient_id
+    patient = None
     if final_patient_id:
-        exists = db.query(models.Patient).filter(models.Patient.id == final_patient_id).first()
-        if not exists:
+        patient = db.query(models.Patient).filter(models.Patient.id == final_patient_id).first()
+        if not patient:
             logger.info(f"Provided patient_id {final_patient_id} not found in DB. Treating as temporary.")
             final_patient_id = None
     
@@ -202,9 +203,14 @@ def save_assessment(
             logger.info(f"Auto-linked assessment for '{payload.patient_name}' to patient ID: {final_patient_id}")
     # --- END FIX ---
 
+    # Get current user
+    from .. import models
+    current_user = db.query(models.User).filter(models.User.email == current_user_email).first()
+
     assessment = models.Assessment(
         patient_name=payload.patient_name,
         patient_id=final_patient_id,
+        patient_email=patient.email if patient else None,
         raw_data=payload.raw_data,
         risk_score=payload.score,
         risk_level=payload.risk_level,
@@ -212,101 +218,94 @@ def save_assessment(
         plan=payload.plan,
         notes=payload.notes,
         clinician_email=payload.clinician_email or current_user_email,
+        # New Nurse Workflow Fields
+        nurse_id=current_user.id if current_user and current_user.role == "nurse" else payload.nurse_id,
+        doctor_id=payload.doctor_id,
+        status=payload.status, # draft, submitted, etc.
     )
     db.add(assessment)
     db.commit()
     db.refresh(assessment)
 
-    # --- START: Trigger Notifications & Auto-Scheduling ---
-    try:
-        # 1. High Risk Notification
-        if assessment.risk_level == "High Risk":
-            high_risk_notif = models.Notification(
-                title="🚨 High Risk Patient Detected",
-                message=f"AI predicts High Risk for {assessment.patient_name}. Immediate review of clinical notes and referral recommended.",
-                type="alert",
-                priority="high",
-                clinician_email=assessment.clinician_email,
-                is_read=False
-            )
-            db.add(high_risk_notif)
-        
-        # 2. Assessment Completed Notification
-        comp_notif = models.Notification(
-            title="📋 Assessment Completed",
-            message=f"New assessment submitted for {assessment.patient_name} (Risk: {assessment.risk_level}).",
-            type="info",
-            priority="low",
-            clinician_email=assessment.clinician_email,
-            is_read=False
-        )
-        db.add(comp_notif)
-        
-        # 3. Auto-Scheduling Logic (Expo Feature)
-        if assessment.patient_id:
-            # Schedule rules based on risk
-            plans = []
+    # Only trigger notifications/scheduling if submitted (not draft)
+    if assessment.status == "submitted":
+        # --- START: Trigger Notifications & Auto-Scheduling ---
+        try:
+            # 1. High Risk Notification
             if assessment.risk_level == "High Risk":
-                plans = [
-                    (3, "first", "Urgent follow-up check-in"),
-                    (7, "second", "Weekly stability review"),
-                    (30, "discharge", "One-month final assessment")
-                ]
-            elif assessment.risk_level == "Moderate Risk":
-                plans = [
-                    (7, "first", "One-week follow-up"),
-                    (14, "second", "Two-week status check"),
-                    (90, "discharge", "Three-month discharge assessment")
-                ]
-            else: # Low Risk
-                plans = [
-                    (30, "first", "One-month check-in"),
-                    (90, "second", "Three-month routine review"),
-                    (180, "discharge", "Six-month final follow-up")
-                ]
-            
-            # Create follow-up records
-            for i, (days, ftype, fnotes) in enumerate(plans):
-                scheduled_date = datetime.now() + timedelta(days=days)
-                fup = models.FollowUp(
-                    patient_id=assessment.patient_id,
-                    assessment_id=assessment.id,
-                    scheduled_date=scheduled_date,
-                    status="pending",
-                    type=ftype,
-                    notes=fnotes,
-                    clinician_email=assessment.clinician_email
+                high_risk_notif = models.Notification(
+                    title="🚨 High Risk Patient Detected",
+                    message=f"AI predicts High Risk for {assessment.patient_name}. Immediate review of clinical notes and referral recommended.",
+                    type="alert",
+                    priority="high",
+                    clinician_email=assessment.clinician_email,
+                    is_read=False
                 )
-                db.add(fup)
-                
-                # Send email for the first follow-up in the sequence
-                if i == 0:
-                    patient = db.query(models.Patient).filter(models.Patient.id == assessment.patient_id).first()
-                    if patient and patient.email:
-                        background_tasks.add_task(
-                            send_followup_email,
-                            patient_email=patient.email,
-                            patient_name=patient.name,
-                            scheduled_date=scheduled_date,
-                            ftype=ftype
-                        )
+                db.add(high_risk_notif)
             
-            # 4. Schedule Confirmation Notification
-            first_date = (datetime.now() + timedelta(days=plans[0][0])).strftime("%d %b")
-            fup_notif = models.Notification(
-                title="📅 Follow-up Scheduled & Email Sent",
-                message=f"The first follow-up for {assessment.patient_name} is automatically scheduled for {first_date} and a confirmation email has been sent to the patient.",
-                type="success",
-                priority="medium",
+            # 2. Assessment Submitted Notification for Doctor
+            if assessment.doctor_id:
+                doctor = db.query(models.User).filter(models.User.id == assessment.doctor_id).first()
+                if doctor:
+                    doc_notif = models.Notification(
+                        title="📋 New Assessment for Review",
+                        message=f"Nurse {current_user.first_name} submitted an assessment for {assessment.patient_name}.",
+                        type="info",
+                        priority="medium",
+                        clinician_email=doctor.email,
+                        is_read=False
+                    )
+                    db.add(doc_notif)
+            
+            # 3. Assessment Completed Notification
+            comp_notif = models.Notification(
+                title="📋 Assessment Completed",
+                message=f"New assessment submitted for {assessment.patient_name} (Risk: {assessment.risk_level}).",
+                type="info",
+                priority="low",
                 clinician_email=assessment.clinician_email,
                 is_read=False
             )
-            db.add(fup_notif)
-        
-        db.commit()
-    except Exception as e:
-        logger.error(f"Failed to process post-assessment triggers: {e}")
-        db.rollback()
+            db.add(comp_notif)
+            
+            # 4. Auto-Scheduling Logic (Only if not assigning to a doctor for review first, or as a baseline)
+            if assessment.patient_id and not assessment.doctor_id:
+                # Schedule rules based on risk
+                plans = []
+                if assessment.risk_level == "High Risk":
+                    plans = [
+                        (3, "first", "Urgent follow-up check-in"),
+                        (7, "second", "Weekly stability review"),
+                        (30, "discharge", "One-month final assessment")
+                    ]
+                elif assessment.risk_level == "Moderate Risk":
+                    plans = [
+                        (7, "first", "One-week follow-up"),
+                        (14, "second", "Two-week status check"),
+                        (90, "discharge", "Three-month discharge assessment")
+                    ]
+                else: # Low Risk
+                    plans = [
+                        (30, "first", "One-month check-in"),
+                        (90, "second", "Three-month routine review"),
+                        (180, "discharge", "Six-month final follow-up")
+                    ]
+                
+                for days, tag, notes in plans:
+                    scheduled = assessment.created_at + timedelta(days=days)
+                    new_fu = models.FollowUp(
+                        patient_id=assessment.patient_id,
+                        scheduled_date=scheduled,
+                        type="clinical",
+                        notes=f"{notes} (Auto-scheduled based on {assessment.risk_level})",
+                        status="scheduled"
+                    )
+                    db.add(new_fu)
+            
+            db.commit()
+        except Exception as e:
+            logger.error(f"Post-assessment trigger failed: {e}")
+            db.rollback()
     # --- END: Trigger Notifications & Auto-Scheduling ---
 
     created_at = getattr(assessment, "created_at", None)
@@ -348,16 +347,28 @@ def save_assessment(
 def list_assessments(
     current_user_email: str = Depends(get_current_user_email),
     clinician_email: str | None = Query(None),
+    status: Optional[str] = Query(None),
+    doctor_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
 ):
     try:
         # Use provided clinician_email or fall back to current user
         email_filter = clinician_email or current_user_email
         
-        # Simple query first to verify
         query = db.query(models.Assessment)
+        
+        # Apply filters
         if email_filter:
-            query = query.filter(models.Assessment.clinician_email == email_filter)
+            # If it's a nurse, they see their own. If a doctor, they see their own.
+            # However, for the queue, we might want to filter by doctor_id explicitly.
+            if not doctor_id and not status:
+                query = query.filter(models.Assessment.clinician_email == email_filter)
+        
+        if status:
+            query = query.filter(models.Assessment.status == status)
+            
+        if doctor_id:
+            query = query.filter(models.Assessment.doctor_id == doctor_id)
         
         records = query.order_by(models.Assessment.created_at.desc()).all()
         
@@ -424,6 +435,55 @@ def list_assessments(
         logger.error(f"CRITICAL ERROR in list_assessments: {str(e)}")
         # Fallback: return empty list instead of 500 to avoid CORS issues
         return []
+
+@router.get("/assessments/{assessment_id}")
+def get_assessment(
+    assessment_id: int,
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user_email)
+):
+    assessment = db.query(models.Assessment).filter(models.Assessment.id == assessment_id).first()
+    if not assessment:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+    return assessment
+
+@router.put("/assessments/{assessment_id}/review")
+def review_assessment(
+    assessment_id: int,
+    review_data: AssessmentReview,
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user_email)
+):
+    assessment = db.query(models.Assessment).filter(models.Assessment.id == assessment_id).first()
+    if not assessment:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+    
+    # Get reviewer info
+    reviewer = db.query(models.User).filter(models.User.email == current_user_email).first()
+    
+    # Check if it's an override
+    if review_data.risk_level_final != assessment.risk_level:
+        assessment.overridden_by = reviewer.id
+        assessment.override_reason = review_data.override_reason
+        logger.info(f"Assessment {assessment_id} overridden by Doctor {reviewer.email}")
+    
+    assessment.risk_level_final = review_data.risk_level_final
+    assessment.plan = review_data.plan
+    assessment.notes = review_data.notes
+    assessment.status = review_data.status
+    assessment.reviewed_at = datetime.now()
+    
+    db.commit()
+    db.refresh(assessment)
+    
+    # If completed or approved, notify patient or nurse
+    if assessment.status in ["complete", "approved"]:
+        # Notification for patient
+        if assessment.patient_id:
+            # Add notification logic here
+            pass
+            
+    return assessment
 
 @router.delete("/assessments/clear", status_code=status.HTTP_204_NO_CONTENT)
 def clear_assessments_for_clinician(

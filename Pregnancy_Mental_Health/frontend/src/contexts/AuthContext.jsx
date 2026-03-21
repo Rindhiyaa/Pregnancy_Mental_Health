@@ -199,16 +199,19 @@ export const AuthProvider = ({ children }) => {
   
 
   const login = (userData) => {
-    // Store JWT access token only 
+    // Store core identity in session storage to ensure availability across refresh
     if (userData.access_token) {
       localStorage.setItem('ppd_access_token', userData.access_token);
     }
-    
-    // clear session-level keys (not per-user profiles)
-    localStorage.removeItem('ppd_user_full_name');
-    localStorage.removeItem('ppd_user_email');
-    localStorage.removeItem('ppd_user_role');
-    localStorage.removeItem('assessmentHistory');
+    if (userData.email) {
+      localStorage.setItem('ppd_user_email', userData.email);
+    }
+    if (userData.role) {
+      localStorage.setItem('ppd_user_role', userData.role);
+    }
+    if (userData.fullName) {
+      localStorage.setItem('ppd_user_full_name', userData.fullName);
+    }
   
     let userProfile = {
       ...userData,
