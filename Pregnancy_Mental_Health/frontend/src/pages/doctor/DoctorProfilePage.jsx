@@ -240,7 +240,7 @@ export default function DoctorProfilePage() {
                             </form>
                         </Card>
 
-                        <button
+                        {/* <button
                             onClick={logout}
                             style={{
                                 width: '100%', padding: 18, borderRadius: 18,
@@ -253,7 +253,7 @@ export default function DoctorProfilePage() {
                             onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.borderColor = theme.glassBorder; }}
                         >
                             <LogOut size={20} /> Terminate Clinical Session
-                        </button>
+                        </button> */}
                     </div>
                 </div>
             </main>

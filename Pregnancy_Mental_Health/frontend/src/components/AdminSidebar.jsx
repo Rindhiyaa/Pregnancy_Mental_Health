@@ -46,10 +46,10 @@ export default function AdminSidebar() {
 
       <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.08)",
+          width: 40, height: 40, borderRadius: 10, background: "rgba(255, 255, 255, 0.84)",
           display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.1)"
         }}>
-          <img src={logo} alt="Logo" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
+          <img src={logo} alt="Logo" style={{ width: "66px", height: "66px", objectFit: "contain" }} />
         </div>
         <div>
           <div style={{ fontSize: 16, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>PPD Risk Insight</div>
@@ -80,7 +80,7 @@ export default function AdminSidebar() {
 
 
       <div style={{ padding: "12px 16px", borderTop: `1px solid ${theme.sidebarBorder}` }}>
-        <button
+        {/* <button
           onClick={handleLogout}
           style={{
             width: "100%", padding: "10.5px", borderRadius: 10, border: "none",
@@ -90,8 +90,41 @@ export default function AdminSidebar() {
           }}
         >
           <LogOut size={16} /> Logout
+        </button> */}
+        <button
+          style={{ ...S.logoutBtn, color: theme.sidebarText }}
+          onClick={handleLogout}
+        >
+          <span style={S.navIcon}><LogOut size={18} /></span>
+          <span style={S.navLabel}>Logout</span>
         </button>
       </div>
     </aside>
   );
+}
+
+const S = {
+  logoutBtn: {
+    display: "flex", alignItems: "center",
+    gap: 10,
+    padding: "10px 20px",
+    margin: "2px 12px",
+    borderRadius: 10,
+    textDecoration: "none",
+    transition: "all 0.18s ease",
+    boxSizing: "border-box",
+    cursor: "pointer",
+    border: "none",
+    width: "calc(100% - 24px)",
+    background: "transparent",
+    fontWeight: 600,
+    fontSize: 13,
+  },
+  navIcon: {
+    display: "flex",
+    opacity: 0.9,
+  },
+  navLabel: {
+    fontSize: 13,
+  },
 }

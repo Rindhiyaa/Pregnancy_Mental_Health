@@ -40,10 +40,10 @@ export default function PatientSidebar() {
 
       <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.08)",
+          width: 40, height: 40, borderRadius: 10, background: "rgba(255, 255, 255, 0.84)",
           display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.1)"
         }}>
-          <img src={logo} alt="Logo" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
+          <img src={logo} alt="Logo" style={{ width: "66px", height: "66px", objectFit: "contain" }} />
         </div>
         <div>
           <div style={{ fontSize: 16, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>PPD Risk Insight</div>
@@ -54,7 +54,7 @@ export default function PatientSidebar() {
       <div style={{ ...S.topDivider, background: theme.sidebarBorder, marginBottom: 8 }} />
 
       {/* ── NAV ── */}
-      <nav style={S.nav}>
+      <nav style={{ flex: 1, padding: "10px 16px" }}>
         {NAV_ITEMS.map(({ to, icon, label }) => (
           <NavLink
             key={to}

@@ -28,6 +28,8 @@ export default function Navbar() {
     return "/signin";
   };
 
+  console.log("User:",user);
+
   return (
     <header className="navbar">
       <div className="nav-inner">
@@ -60,7 +62,7 @@ export default function Navbar() {
 
         {/* Right side: Profile or Auth buttons */}
         <div className="nav-right">
-          {user && user.isAuthenticated ? (
+          {/* {user && user.isAuthenticated ? (
             // Profile icon for logged-in users
             <div className="profile-section">
               <Link to="/profile" className="profile-icon" title="Profile" onClick={() => setIsMenuOpen(false)}>
@@ -74,20 +76,29 @@ export default function Navbar() {
                 Logout
               </button>
             </div>
-          ) : (
-            // Sign In and Sign Up buttons
-            <>
+          ) : ( */}
+            {/* // Sign In and Sign Up buttons */}
+            {/* <>
               <Link to="/signin">
                 <button className="btn-signin">Sign In</button>
               </Link>
               <Link to="/signup">
                 <button className="btn-signup">Sign Up</button>
               </Link>
-            </>
-          )}
+            </> */}
+            {!user && (
+              <>
+                <Link to="/signin">
+                  <button className="btn-signin">Sign In</button>
+                </Link>
+                <Link to="/signup">
+                  <button className="btn-signup">Sign Up</button>
+                </Link>
+              </>
+            )}
+          {/* )} */}
         </div>
       </div>
     </header>
   );
 }
-

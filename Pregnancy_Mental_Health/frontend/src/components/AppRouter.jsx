@@ -102,7 +102,7 @@ export default function AppRouter() {
       <Route path="/patient/change-password" element={<ProtectedRoute requiredRole="patient"><PatientChangePassword /></ProtectedRoute>} />
 
       {/* Catch-all */}
-      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+      {/* <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} /> */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

@@ -16,8 +16,8 @@ export default function App() {
   const isDashboard = location.pathname.startsWith("/patient/") || 
                     location.pathname.startsWith("/nurse/") || 
                     location.pathname.startsWith("/doctor/") || 
-                    location.pathname.startsWith("/admin/") ||
-                    location.pathname === "/profile";
+                    location.pathname.startsWith("/admin/")
+                    // location.pathname === "/profile";
 
   return (
     <ErrorBoundary>
