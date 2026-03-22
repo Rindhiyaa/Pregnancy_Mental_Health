@@ -123,7 +123,7 @@ export default function DoctorPatientProfile() {
                                 <Badge variant={patient.status === 'Critical' ? 'danger' : 'success'} size="lg">
                                     {patient.status || "Clinically Stable"}
                                 </Badge>
-                                <Badge variant="info" size="lg">ID: P-{patient.id?.toString().slice(-6).toUpperCase() || 'NEW'}</Badge>
+                                <Badge variant="warning" size="lg">ID: P-{patient.id?.toString().slice(-6).toUpperCase() || 'NEW'}</Badge>
                             </div>
                         </div>
                     </div>
@@ -169,7 +169,7 @@ export default function DoctorPatientProfile() {
                             <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.textPrimary, display: 'flex', alignItems: 'center', gap: 12 }}>
                                 <ClipboardList size={22} color={theme.primary} /> Assessment Historical Matrix
                             </h3>
-                            <Badge variant="info" size="lg">{history.length} Diagnostic Cycles</Badge>
+                            <Badge variant="warning" size="lg">{history.length} Diagnostic Cycles</Badge>
                         </div>
 
                         {history.length > 0 ? (

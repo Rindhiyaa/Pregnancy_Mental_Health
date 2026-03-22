@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
-import { PageTitle, Card, Badge, Loader2 } from "../../components/UI";
+import { PageTitle, Card, Badge, Loader2, Pagination } from "../../components/UI";
 import { api } from "../../utils/api";
 import { dummyApi, USE_DUMMY_DATA } from "../../utils/dummyData";
 import toast from "react-hot-toast";
@@ -50,15 +50,23 @@ export default function NurseAssessmentHistory() {
     return matchesSearch && statusLower === filterLower;
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+  const totalPages = Math.ceil(filteredAssessments.length / itemsPerPage);
+  const paginatedAssessments = filteredAssessments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const tabStyle = (active) => ({
     padding: '10px 20px',
     borderRadius: 30,
     fontWeight: 700,
     fontSize: 13,
     cursor: 'pointer',
-    background: active ? theme.primary : '#F9FAFB',
+    background: active ? theme.primary : theme.cardBg,
     color: active ? 'white' : theme.textSecondary,
-    border: active ? 'none' : `1.5px solid #E5E7EB`,
+    border: active ? 'none' : `1.5px solid ${theme.border}`,
     transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
@@ -69,11 +77,11 @@ export default function NurseAssessmentHistory() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'Draft': return <Badge variant="warning">Draft</Badge>;
-      case 'Pending': return <Badge variant="info">Pending</Badge>;
-      case 'Submitted': return <Badge variant="info">Submitted</Badge>;
+      case 'Pending': return <Badge variant="warning">Pending</Badge>;
+      case 'Submitted': return <Badge variant="warning">Submitted</Badge>;
       case 'Reviewed': return <Badge variant="success">Reviewed</Badge>;
       case 'Complete': return <Badge variant="success">Complete</Badge>;
-      default: return <Badge variant="primary">Active</Badge>;
+      default: return <Badge variant="success">Active</Badge>;
     }
   };
 
@@ -83,10 +91,11 @@ export default function NurseAssessmentHistory() {
     textAlign: 'left',
     fontSize: 13,
     fontWeight: 800,
-    color: theme.textMuted,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    borderBottom: `1px solid #E5E7EB`
+    borderBottom: `1px solid ${theme.border}`,
+    background: theme.tableHeaderBg || theme.innerBg
   };
 
   const AVATAR_COLORS = [
@@ -104,8 +113,8 @@ export default function NurseAssessmentHistory() {
   const tableCellStyle = {
     padding: '20px 24px',
     fontSize: 14,
-    color: theme.text,
-    borderBottom: `1px solid #E5E7EB`,
+    color: theme.textPrimary,
+    borderBottom: `1px solid ${theme.border}`,
     verticalAlign: 'middle'
   };
 
@@ -129,15 +138,16 @@ export default function NurseAssessmentHistory() {
             <input
               style={{
                 width: '100%', padding: '12px 16px 12px 48px', borderRadius: 24,
-                border: `1.5px solid #E5E7EB`, background: '#F9FAFB',
+                border: `1.5px solid ${theme.border}`, background: theme.cardBg,
                 fontSize: 14, outline: 'none', fontFamily: theme.fontBody,
+                color: theme.textPrimary,
                 transition: 'all 0.2s ease'
               }}
               placeholder="Search by patient name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={(e) => e.target.style.borderColor = theme.primary}
-              onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+              onBlur={(e) => e.target.style.borderColor = theme.border}
             />
           </div>
         </div>
@@ -145,7 +155,7 @@ export default function NurseAssessmentHistory() {
         <Card style={{ padding: 0, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#F3F4F6' }}>
+              <tr style={{ background: theme.innerBg }}>
                 <th style={tableHeaderStyle}>S.No</th>
                 <th style={tableHeaderStyle}>Patient</th>
                 <th style={tableHeaderStyle}>Date</th>
@@ -162,8 +172,13 @@ export default function NurseAssessmentHistory() {
                     <div style={{ color: theme.textMuted, fontWeight: 600 }}>Loading history...</div>
                   </td>
                 </tr>
-              ) : filteredAssessments.length > 0 ? filteredAssessments.map((a, idx) => (
-                <tr key={idx} style={{ transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F0FDF4'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+              ) : filteredAssessments.length > 0 ? paginatedAssessments.map((a, idx) => (
+                <tr 
+                  key={idx} 
+                  style={{ transition: 'background 0.2s' }} 
+                  onMouseEnter={(e) => e.currentTarget.style.background = theme.tableHover || (theme.isDark ? 'rgba(255, 255, 255, 0.03)' : '#F0FDF4')} 
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
                   <td style={tableCellStyle}>
                     <span style={{ fontWeight: 600, color: theme.textMuted }}>{idx + 1}</span>
                   </td>
@@ -179,8 +194,8 @@ export default function NurseAssessmentHistory() {
                         {a.patient_name?.charAt(0)}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 15, color: theme.textPrimary }}>{a.patient_name}</div>
-                        <div style={{ fontSize: 11, color: theme.textMuted }}>ID: #{a.patient_id}</div>
+                        <div style={{ fontSize: 13, color: theme.textSecondary, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{a.patient_name}</div>
+                        <div style={{ fontSize: 11, color: theme.textMuted }}>Patient ID: {a.patient_id || 'P-' + Math.floor(1000 + Math.random() * 9000)}</div>
                       </div>
                     </div>
                   </td>
@@ -252,6 +267,14 @@ export default function NurseAssessmentHistory() {
               )}
             </tbody>
           </table>
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </Card>
       </main>
     </div>

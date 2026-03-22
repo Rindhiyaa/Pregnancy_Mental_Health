@@ -78,21 +78,29 @@ export default function NursePatientsPage() {
     fontWeight: 700,
     fontSize: 14,
     cursor: 'pointer',
-    background: active ? theme.primary : 'white',
+    background: active ? theme.primary : theme.cardBg,
     color: active ? 'white' : theme.textMuted,
     border: active ? 'none' : `1.5px solid ${theme.border}`,
     transition: 'all 0.2s'
   });
 
+  const labelStyle = {
+    fontSize: 13,
+    fontWeight: 800,
+    color: theme.isDark ? "#FFFFFF" : theme.textSecondary,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    marginBottom: 4
+  };
   const tableHeaderStyle = {
     padding: '16px 20px',
     textAlign: 'left',
-    fontSize: 13,
-    fontWeight: 800,
-    color: theme.textMuted,
-    textTransform: 'uppercase',
     letterSpacing: 1,
-    borderBottom: `1px solid ${theme.border}`
+    borderBottom: `1px solid ${theme.border}`,
+    background: theme.tableHeaderBg || theme.cardBgSecondary
   };
 
   const tableRowStyle = {
@@ -141,7 +149,7 @@ export default function NursePatientsPage() {
             <input
               style={{
                 width: '100%', padding: '12px 16px 12px 48px', borderRadius: 14,
-                border: `1.5px solid ${theme.border}`, background: 'white',
+                border: `1.5px solid ${theme.border}`, background: theme.inputBg, color: theme.text,
                 fontSize: 15, outline: 'none', fontFamily: theme.fontBody
               }}
               placeholder="Search by name or phone..."
@@ -188,8 +196,8 @@ export default function NursePatientsPage() {
         <Card padding="0">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: theme.cardBgSecondary }}>
-                <th style={{ ...tableHeaderStyle, width: '60px' }}>S.No</th>
+              <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : theme.cardBgSecondary) }}>
+                <th style={{ ...tableHeaderStyle, width: '60px', borderBottom: 'none' }}>S.No</th>
                 <th style={tableHeaderStyle}>Patient Name</th>
                 <th style={tableHeaderStyle}>Phone / Week</th>
                 <th style={tableHeaderStyle}>Assigned Doctor</th>
@@ -207,7 +215,7 @@ export default function NursePatientsPage() {
                   </td>
                 </tr>
               ) : paginatedPatients.length > 0 ? paginatedPatients.map((p, idx) => (
-                <tr key={`${p.id}-${idx}`} style={tableRowStyle} onMouseEnter={(e) => e.currentTarget.style.background = theme.pageBg} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'} onClick={() => navigate(`/nurse/patients/${p.id}`)}>
+                <tr key={`${p.id}-${idx}`} style={tableRowStyle} onMouseEnter={(e) => e.currentTarget.style.background = theme.tableHover || (theme.isDark ? 'rgba(255,255,255,0.03)' : theme.pageBg)} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'} onClick={() => navigate(`/nurse/patients/${p.id}`)}>
                   <td style={{ ...tableCellStyle, fontWeight: 700, color: theme.textMuted }}>
                     {(currentPage - 1) * itemsPerPage + idx + 1}
                   </td>
@@ -278,8 +286,8 @@ export default function NursePatientsPage() {
                 onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.max(prev - 1, 1)); }}
                 disabled={currentPage === 1}
                 style={{ 
-                  padding: '8px 16px', borderRadius: 8, border: `1px solid ${theme.border}`, 
-                  background: currentPage === 1 ? 'transparent' : 'white', 
+                  padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${theme.border}`, 
+                  background: currentPage === 1 ? 'transparent' : theme.cardBg, 
                   cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
                   color: currentPage === 1 ? theme.textMuted : theme.text,
                   fontWeight: 600, fontSize: 13
@@ -294,8 +302,8 @@ export default function NursePatientsPage() {
                 onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.min(prev + 1, totalPages)); }}
                 disabled={currentPage === totalPages}
                 style={{ 
-                  padding: '8px 16px', borderRadius: 8, border: `1px solid ${theme.border}`, 
-                  background: currentPage === totalPages ? 'transparent' : 'white', 
+                  padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${theme.border}`, 
+                  background: currentPage === totalPages ? 'transparent' : theme.cardBg, 
                   cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
                   color: currentPage === totalPages ? theme.textMuted : theme.text,
                   fontWeight: 600, fontSize: 13

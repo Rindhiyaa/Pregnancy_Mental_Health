@@ -7,11 +7,34 @@
 @import './responsive.css';
 
 /* Global and base styles */
+:root {
+  --ppd-bg: #F9FAFB;
+  --ppd-card-bg: #FFFFFF;
+  --ppd-card-border: #E5E7EB;
+  --ppd-text-primary: #1F2937;
+  --ppd-text-secondary: #4B5563;
+  --ppd-text-muted: #9CA3AF;
+  --ppd-input-bg: #FFFFFF;
+  --ppd-input-border: #E5E7EB;
+}
+
+.dark {
+  --ppd-bg: #0A0F1A;
+  --ppd-card-bg: #1A2433;
+  --ppd-card-border: #2D3748;
+  --ppd-text-primary: #F1F5F9;
+  --ppd-text-secondary: #CBD5E1;
+  --ppd-text-muted: #94A3B8;
+  --ppd-input-bg: #1F2937;
+  --ppd-input-border: #2D3748;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   font-family: 'Inter', 'Poppins', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 html {
@@ -20,11 +43,115 @@ html {
 
 body {
   margin: 0;
-  background: #F9FAFB;
-  color: #1F2937;
+  background: var(--ppd-bg);
+  color: var(--ppd-text-primary);
   font-family: 'Inter', 'Poppins', sans-serif;
   font-size: 16px;
   overflow-x: hidden;
+}
+
+/* ── Global Dark Mode Overrides for Tables & Modals ── */
+
+.dark .pp-table-wrapper,
+.dark .dp-card,
+.dark .dp-chart-card,
+.dark .dp-stat-card,
+.dark .pp-stat-card,
+.dark .pp-modal,
+.dark .pp-history-modal,
+.dark .pp-assessment-status,
+.dark .pp-referral-item,
+.dark .pp-referrals-panel,
+.dark .history-card,
+.dark .history-filters,
+.dark .modal-content,
+.dark .detail-section,
+.dark .pp-patient-info-card,
+.dark .results-count,
+.dark .info-card,
+.dark .mood-card,
+.dark .care-plan-card,
+.dark .resource-card,
+.dark .appointments-strip,
+.dark .trend-card,
+.dark .appointment-item,
+.dark .status-banner {
+  background: var(--ppd-card-bg) !important;
+  color: var(--ppd-text-primary) !important;
+  border-color: var(--ppd-card-border) !important;
+}
+
+.dark .pp-table thead tr,
+.dark .pp-modal-header,
+.dark .pp-modal-footer,
+.dark .pp-history-header-info,
+.dark .history-table th,
+.dark .modal-header {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: var(--ppd-card-border) !important;
+}
+
+.dark .pp-table-row {
+  border-color: var(--ppd-card-border) !important;
+}
+
+.dark .pp-table-row:hover {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.dark .pp-table td,
+.dark .history-table td,
+.dark .pp-modal-header h2,
+.dark .pp-patient-name,
+.dark .patient-name,
+.dark .pp-title,
+.dark .dp-card-title,
+.dark .dp-stat-value,
+.dark .modal-header h2 {
+  color: var(--ppd-text-primary) !important;
+}
+
+.dark .pp-td-muted,
+.dark .pp-subtitle,
+.dark .pp-stat-label,
+.dark .dp-stat-label,
+.dark .pp-meta-item,
+.dark .pp-description {
+  color: var(--ppd-text-secondary) !important;
+}
+
+.dark .pp-form-group input,
+.dark .pp-search-input,
+.dark .pp-filter-select,
+.dark .dp-global-search-input,
+.dark .search-input,
+.dark .filter-select {
+  background: var(--ppd-input-bg) !important;
+  border-color: var(--ppd-input-border) !important;
+  color: var(--ppd-text-primary) !important;
+}
+
+.dark .pp-modal-overlay {
+  background: rgba(0, 0, 0, 0.8) !important;
+}
+
+.dark .pp-patient-header {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--ppd-card-border) !important;
+}
+
+.dark .pp-patient-details h3 {
+  color: var(--ppd-text-primary) !important;
+}
+
+.dark .pp-btn-secondary {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--ppd-card-border) !important;
+  color: var(--ppd-text-primary) !important;
+}
+
+.dark .pp-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 a {

@@ -221,6 +221,8 @@ export default function NurseAppointmentsPage() {
     padding: '12px 16px',
     borderRadius: 12,
     border: `1.5px solid ${theme.border}`,
+    background: theme.inputBg,
+    color: theme.text,
     fontSize: 15,
     fontFamily: theme.fontBody,
     outline: 'none',
@@ -229,12 +231,15 @@ export default function NurseAppointmentsPage() {
   };
 
   const labelStyle = {
-    fontSize: 14,
-    fontWeight: 700,
-    color: theme.text,
+    fontSize: 13,
+    fontWeight: 800,
+    color: theme.isDark ? "#FFFFFF" : theme.textSecondary,
     display: 'flex',
     alignItems: 'center',
-    gap: 8
+    gap: 8,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    marginBottom: 4
   };
 
   return (
@@ -250,9 +255,9 @@ export default function NurseAppointmentsPage() {
               onClick={() => setShowCalendarModal(true)}
               style={{
                 padding: '12px 20px', borderRadius: 12, border: `1.5px solid ${theme.border}`,
-                background: 'white', color: theme.text, fontWeight: 700,
+                background: theme.cardBg, color: theme.text, fontWeight: 700,
                 display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-                transition: 'border-color 0.2s'
+                transition: 'all 0.2s'
               }}
               onMouseEnter={e => e.currentTarget.style.borderColor = theme.primary}
               onMouseLeave={e => e.currentTarget.style.borderColor = theme.border}
@@ -288,8 +293,8 @@ export default function NurseAppointmentsPage() {
               {instructions.map(inst => (
                 <Card key={inst.id} padding="24px" style={{ 
                   border: `1px solid ${theme.border}`, 
-                  background: 'white',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+                  background: theme.cardBg,
+                  boxShadow: theme.isDark ? '0 8px 32px rgba(0,0,0,0.4)' : '0 4px 20px rgba(0,0,0,0.03)',
                   borderRadius: '16px',
                   display: 'flex', flexDirection: 'column'
                 }}>
@@ -349,7 +354,7 @@ export default function NurseAppointmentsPage() {
             <select 
               value={filter} 
               onChange={(e) => setFilter(e.target.value)}
-              style={{ ...inputStyle, marginTop: 0, width: 'auto', padding: '8px 16px', fontWeight: 600 }}
+              style={{ ...inputStyle, marginTop: 0, width: 'auto', padding: '8px 16px', fontWeight: 600, background: theme.tableHeaderBg || theme.cardBgSecondary }}
             >
               <option value="Today">Today's Schedule</option>
               <option value="Week">Next 7 Days</option>
@@ -363,7 +368,7 @@ export default function NurseAppointmentsPage() {
             <select 
               value={selectedDoctorFilter} 
               onChange={(e) => setSelectedDoctorFilter(e.target.value)}
-              style={{ ...inputStyle, marginTop: 0, width: 'auto', padding: '8px 16px' }}
+              style={{ ...inputStyle, marginTop: 0, width: 'auto', padding: '8px 16px', background: theme.tableHeaderBg || theme.cardBgSecondary }}
             >
               <option value="All Doctors">All Doctors</option>
               {doctors.map(d => <option key={d.id} value={d.fullName}>{d.fullName}</option>)}
@@ -409,21 +414,21 @@ export default function NurseAppointmentsPage() {
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button 
                       onClick={() => handleStatusUpdate(app.id, 'Completed')}
-                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}
+                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: theme.cardBg, cursor: 'pointer' }}
                       title="Mark as Completed"
                     >
                       <CheckCircle size={16} color="#10b981" />
                     </button>
                     <button 
                       onClick={() => handleStatusUpdate(app.id, 'Cancelled')}
-                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}
+                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: theme.cardBg, cursor: 'pointer' }}
                       title="Cancel Appointment"
                     >
                       <XCircle size={16} color="#f59e0b" />
                     </button>
                     <button 
                       onClick={() => handleDelete(app.id)}
-                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}
+                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: theme.cardBg, cursor: 'pointer' }}
                       title="Delete Appointment"
                     >
                       <Trash2 size={16} color="#ef4444" />
@@ -519,7 +524,7 @@ export default function NurseAppointmentsPage() {
                             }}
                             style={{
                               padding: '12px', borderRadius: 10, border: `1.5px solid ${theme.border}`,
-                              background: 'white', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s',
+                              background: theme.cardBg, textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s',
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.borderColor = theme.primary}
                             onMouseLeave={(e) => e.currentTarget.style.borderColor = theme.border}
@@ -573,7 +578,7 @@ export default function NurseAppointmentsPage() {
                         onClick={() => setConfirmationStep(false)}
                         style={{ 
                           flex: 1, padding: '14px', borderRadius: 12, border: `1.5px solid ${theme.border}`, 
-                          background: 'white', fontWeight: 700, cursor: 'pointer', color: theme.textMuted
+                          background: theme.cardBg, fontWeight: 700, cursor: 'pointer', color: theme.textMuted
                         }}
                       >
                         No, Change
@@ -626,9 +631,9 @@ export default function NurseAppointmentsPage() {
                   {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                 </span>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} style={{ padding: 6, borderRadius: 6, border: `1px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}><ChevronLeft size={16} /></button>
-                  <button onClick={() => setCurrentDate(new Date())} style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${theme.border}`, background: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Today</button>
-                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} style={{ padding: 6, borderRadius: 6, border: `1px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}><ChevronRight size={16} /></button>
+                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} style={{ padding: 6, borderRadius: 6, border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.text, cursor: 'pointer' }}><ChevronLeft size={16} /></button>
+                  <button onClick={() => setCurrentDate(new Date())} style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.text, cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Today</button>
+                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} style={{ padding: 6, borderRadius: 6, border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.text, cursor: 'pointer' }}><ChevronRight size={16} /></button>
                 </div>
               </div>
 

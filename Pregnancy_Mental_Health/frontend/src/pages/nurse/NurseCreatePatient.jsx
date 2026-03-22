@@ -80,10 +80,12 @@ export default function NurseCreatePatient() {
           <button
             onClick={() => navigate(-1)}
             style={{
-              background: 'white',
+              background: theme.cardBg,
               border: `1px solid ${theme.border}`,
               padding: '10px 20px',
               borderRadius: 10,
+              color: theme.text,
+              color: theme.textPrimary,
               fontWeight: 600,
               cursor: 'pointer'
             }}
@@ -101,61 +103,61 @@ export default function NurseCreatePatient() {
                   Personal Details
                 </h3>
                 <div style={S.field}>
-                  <label style={S.label}>Full Name *</label>
-                  <input type="text" name="name" value={form.name} onChange={handleChange} required style={S.input} />
+                  <label style={S.label(theme)}>Full Name *</label>
+                  <input type="text" name="name" value={form.name} onChange={handleChange} required style={S.input(theme)} />
                 </div>
                 <div style={S.field}>
-                  <label style={S.label}>Phone Number *</label>
-                  <input type="tel" name="phone" value={form.phone} onChange={handleChange} required style={S.input} />
+                  <label style={S.label(theme)}>Phone Number *</label>
+                  <input type="tel" name="phone" value={form.phone} onChange={handleChange} required style={S.input(theme)} />
                 </div>
                 <div style={S.field}>
-                  <label style={S.label}>Email Address</label>
-                  <input type="email" name="email" value={form.email} onChange={handleChange} style={S.input} />
+                  <label style={S.label(theme)}>Email Address</label>
+                  <input type="email" name="email" value={form.email} onChange={handleChange} style={S.input(theme)} />
                 </div>
                 <div style={S.field}>
-                  <label style={S.label}>Date of Birth</label>
-                  <input type="date" name="dob" value={form.dob} onChange={handleChange} style={S.input} />
+                  <label style={S.label(theme)}>Date of Birth</label>
+                  <input type="date" name="dob" value={form.dob} onChange={handleChange} style={S.input(theme)} />
                 </div>
               </section>
-
-              {/* Pregnancy Info */}
-              <section>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: theme.secondary, marginBottom: 24, borderBottom: `2px solid ${theme.secondaryBg}`, paddingBottom: 8 }}>
-                  Pregnancy Status
-                </h3>
-                <div style={S.field}>
-                  <label style={S.label}>Current Week</label>
-                  <input type="number" name="pregnancy_week" value={form.pregnancy_week} onChange={handleChange} style={S.input} />
-                </div>
-                <div style={{ display: 'flex', gap: 16 }}>
-                  <div style={{ ...S.field, flex: 1 }}>
-                    <label style={S.label}>Gravida</label>
-                    <input type="number" name="gravida" value={form.gravida} onChange={handleChange} style={S.input} />
-                  </div>
-                  <div style={{ ...S.field, flex: 1 }}>
-                    <label style={S.label}>Para</label>
-                    <input type="number" name="para" value={form.para} onChange={handleChange} style={S.input} />
-                  </div>
-                </div>
-              </section>
-
-              {/* Location & Emergency */}
-              <section>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: '#10b981', marginBottom: 24, borderBottom: '2px solid #ecfdf5', paddingBottom: 8 }}>
-                  Emergency Contact
-                </h3>
-                <div style={S.field}>
-                  <label style={S.label}>Contact Name</label>
-                  <input type="text" name="emergency_name" value={form.emergency_name} onChange={handleChange} style={S.input} />
-                </div>
-                <div style={S.field}>
-                  <label style={S.label}>Relationship</label>
-                  <input type="text" name="emergency_relation" value={form.emergency_relation} onChange={handleChange} style={S.input} />
-                </div>
-                <div style={S.field}>
-                  <label style={S.label}>Contact Phone</label>
-                  <input type="tel" name="emergency_phone" value={form.emergency_phone} onChange={handleChange} style={S.input} />
-                </div>
+ 
+               {/* Pregnancy Info */}
+               <section>
+                 <h3 style={{ fontSize: 18, fontWeight: 700, color: theme.secondary, marginBottom: 24, borderBottom: `2px solid ${theme.secondaryBg}`, paddingBottom: 8 }}>
+                   Pregnancy Status
+                 </h3>
+                 <div style={S.field}>
+                   <label style={S.label(theme)}>Current Week</label>
+                   <input type="number" name="pregnancy_week" value={form.pregnancy_week} onChange={handleChange} style={S.input(theme)} />
+                 </div>
+                 <div style={{ display: 'flex', gap: 16 }}>
+                   <div style={{ ...S.field, flex: 1 }}>
+                     <label style={S.label(theme)}>Gravida</label>
+                     <input type="number" name="gravida" value={form.gravida} onChange={handleChange} style={S.input(theme)} />
+                   </div>
+                   <div style={{ ...S.field, flex: 1 }}>
+                     <label style={S.label(theme)}>Para</label>
+                     <input type="number" name="para" value={form.para} onChange={handleChange} style={S.input(theme)} />
+                   </div>
+                 </div>
+               </section>
+ 
+               {/* Location & Emergency */}
+               <section>
+                 <h3 style={{ fontSize: 18, fontWeight: 700, color: '#10b981', marginBottom: 24, borderBottom: '2px solid #ecfdf5', paddingBottom: 8 }}>
+                   Emergency Contact
+                 </h3>
+                 <div style={S.field}>
+                   <label style={S.label(theme)}>Contact Name</label>
+                   <input type="text" name="emergency_name" value={form.emergency_name} onChange={handleChange} style={S.input(theme)} />
+                 </div>
+                 <div style={S.field}>
+                   <label style={S.label(theme)}>Relationship</label>
+                   <input type="text" name="emergency_relation" value={form.emergency_relation} onChange={handleChange} style={S.input(theme)} />
+                 </div>
+                 <div style={S.field}>
+                   <label style={S.label(theme)}>Contact Phone</label>
+                   <input type="tel" name="emergency_phone" value={form.emergency_phone} onChange={handleChange} style={S.input(theme)} />
+                 </div>
               </section>
             </div>
 
@@ -187,16 +189,26 @@ export default function NurseCreatePatient() {
 
 const S = {
   field: { marginBottom: 20 },
-  label: { display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14, color: '#475569' },
-  input: {
+  label: (theme) => ({ 
+    display: 'block', 
+    marginBottom: 8, 
+    fontWeight: 800, 
+    fontSize: 13, 
+    color: theme.isDark ? "#FFFFFF" : theme.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em'
+  }),
+  input: (theme) => ({
     width: '100%',
     padding: '12px 16px',
     borderRadius: 10,
-    border: '1px solid #e2e8f0',
+    border: `1px solid ${theme.border}`,
+    background: theme.inputBg,
+    color: theme.textPrimary,
     fontSize: 15,
     outline: 'none',
     boxSizing: 'border-box'
-  }
+  })
 };
 
 

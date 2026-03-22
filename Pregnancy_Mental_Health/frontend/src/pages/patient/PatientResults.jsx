@@ -270,7 +270,7 @@ export default function PatientResults() {
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                       <span style={{ fontSize: 16, fontWeight: 700, color: theme.textPrimary }}>Assessment completed</span>
-                      {a.status === "finalized" && <Badge type="info" size="sm">Clinician Reviewed</Badge>}
+                      {a.status === "finalized" && <Badge type="warning" size="sm">Clinician Reviewed</Badge>}
                     </div>
                     <div style={{ fontSize: 13, color: theme.textMuted }}>
                       Completed on {a.date} • Reviewed by <strong>Dr. {a.doctor_name || "Care Team"}</strong>

@@ -91,8 +91,7 @@ table {
 }
 
 thead {
-  background: #F1F5F9;
-  color: #374151;
+  color: var(--dr-text-muted);
 }
 
 thead th {
@@ -114,8 +113,7 @@ tbody tr:nth-child(even) {
 }
 
 tbody tr:hover {
-  background: #F0FDF4;
-  /* soft green hover */
+  background: rgba(0, 0, 0, 0.02);
 }
 
 tbody td {

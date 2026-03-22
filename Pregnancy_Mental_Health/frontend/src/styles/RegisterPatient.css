@@ -1,6 +1,5 @@
-/* Register Patient Modern Medical Theme */
 .rp-page {
-    background: #F8FAFC;
+    background: var(--bg-light, #F8FAFC);
     min-height: 100vh;
     font-family: 'Inter', sans-serif;
     display: flex;
@@ -9,9 +8,20 @@
 .rp-main {
     flex: 1;
     margin-left: 260px;
-    /* Sidebar offset */
     padding: 40px 48px;
     box-sizing: border-box;
+    color: var(--text-dark, #0F172A);
+}
+
+.dark {
+    --bg-light: #0A0F1A;
+    --text-dark: #F1F5F9;
+    --text-muted: #94A3B8;
+    --white: #1A2433;
+    --border-color: #2D3748;
+    --input-bg: #1F2937;
+    --primary-teal: #2DD4BF;
+    --primary-teal-light: rgba(45, 212, 191, 0.1);
 }
 
 .rp-form-container {
@@ -26,13 +36,13 @@
 }
 
 .rp-card {
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--white, rgba(255, 255, 255, 0.7));
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.4));
     border-radius: 20px;
     padding: 32px;
-    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.04);
+    box-shadow: var(--shadow-sm, 0 8px 32px rgba(15, 23, 42, 0.04));
 }
 
 .rp-section-title {
@@ -41,9 +51,9 @@
     gap: 12px;
     font-size: 18px;
     font-weight: 700;
-    color: #0F766E;
+    color: var(--primary-teal, #0F766E);
     margin-bottom: 28px;
-    border-bottom: 1px solid #E5E7EB;
+    border-bottom: 1px solid var(--border-color, #E5E7EB);
     padding-bottom: 12px;
 }
 
@@ -53,10 +63,10 @@
     gap: 12px;
     font-size: 18px;
     font-weight: 700;
-    color: #0F766E;
+    color: var(--primary-teal, #0F766E);
     margin-top: 32px;
     margin-bottom: 28px;
-    border-bottom: 1px solid #E5E7EB;
+    border-bottom: 1px solid var(--border-color, #E5E7EB);
     padding-bottom: 12px;
 }
 
@@ -77,7 +87,7 @@
 .rp-label {
     font-size: 13px;
     font-weight: 600;
-    color: #0F172A;
+    color: var(--text-dark, #0F172A);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -88,9 +98,9 @@
     width: 100%;
     padding: 12px 16px;
     border-radius: 10px;
-    border: 1px solid #E5E7EB;
-    background: #ffffff;
-    color: #0F172A;
+    border: 1px solid var(--border-color, #E5E7EB);
+    background: var(--input-bg, #ffffff);
+    color: var(--text-dark, #0F172A);
     font-size: 14px;
     outline: none;
     transition: all 0.2s ease;
@@ -106,9 +116,8 @@
 /* System Generated Access */
 .rp-system-access {
     margin-top: 32px;
-    background: rgba(209, 250, 229, 0.3);
-    /* #D1FAE5 */
-    border: 1px dashed #14B8A6;
+    background: var(--primary-teal-light, rgba(209, 250, 229, 0.3));
+    border: 1px dashed var(--primary-teal, #14B8A6);
     border-radius: 16px;
     padding: 24px 32px;
     display: flex;
@@ -125,14 +134,14 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #0F766E;
+    color: var(--primary-teal, #0F766E);
     font-weight: 700;
     font-size: 16px;
     margin-bottom: 6px;
 }
 
 .rp-system-desc {
-    color: #475569;
+    color: var(--text-muted, #475569);
     font-size: 13px;
 }
 
@@ -151,7 +160,7 @@
 .rp-pwd-label {
     font-size: 11px;
     font-weight: 700;
-    color: #6B7280;
+    color: var(--text-muted, #6B7280);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 4px;
@@ -160,12 +169,12 @@
 .rp-pwd-value {
     font-size: 20px;
     font-weight: 800;
-    color: #0F172A;
+    color: var(--text-dark, #0F172A);
     letter-spacing: 2px;
-    background: #ffffff;
+    background: var(--input-bg, #ffffff);
     padding: 4px 12px;
     border-radius: 8px;
-    border: 1px solid #E5E7EB;
+    border: 1px solid var(--border-color, #E5E7EB);
 }
 
 /* Footer & Buttons */
@@ -180,9 +189,9 @@
 .rp-btn-cancel {
     padding: 14px 28px;
     border-radius: 12px;
-    border: 1px solid #E5E7EB;
-    background: #ffffff;
-    color: #6B7280;
+    border: 1px solid var(--border-color, #E5E7EB);
+    background: var(--input-bg, #ffffff);
+    color: var(--text-muted, #6B7280);
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -190,8 +199,8 @@
 }
 
 .rp-btn-cancel:hover {
-    background: #F1F5F9;
-    color: #0F172A;
+    background: var(--bg-light, #F1F5F9);
+    color: var(--text-dark, #0F172A);
 }
 
 .rp-btn-submit {

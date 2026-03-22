@@ -174,13 +174,13 @@ export default function NurseNewAssessment() {
 
 
   return (
-    <div className="new-assessment-page" style={{ display: "flex", minHeight: "100vh", background: "#f1f5f9", fontFamily: "'Inter', sans-serif" }}>
+    <div className={`new-assessment-page ${theme.isDark ? 'dark' : ''}`} style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       {user?.role === 'doctor' ? <DoctorSidebar /> : <NurseSidebar />}
 
       <main style={{ flex: 1, marginLeft: 260, padding: "40px", boxSizing: "border-box" }}>
         {/* TOP HEADER */}
         <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h1 style={{ fontSize: "28px", fontWeight: 700, color: "#1e293b", margin: 0 }}>
+          <h1 style={{ fontSize: "28px", fontWeight: 700, color: theme.textPrimary, margin: 0 }}>
             Nurse <span style={{ fontWeight: 400 }}>Workspace</span>
           </h1>
           {selectedPatient && (
@@ -305,9 +305,9 @@ export default function NurseNewAssessment() {
                       <div key={section.id} className={`form-grid-modern ${step === 5 ? 'single-col' : ''}`}>
                         {section.questions.map(q => (
                           <div key={q.name} className={`form-field-group ${q.type === 'textarea' ? 'full-width' : ''} ${step === 5 ? 'full-width' : ''}`}>
-                            <label className="field-label-modern">
-                              {q.label} {q.required && <span className="required-star">*</span>}
-                            </label>
+            <label className="field-label-modern" style={{ color: theme.isDark ? "#FFFFFF" : theme.textSecondary, fontWeight: 800 }}>
+              {q.label} {q.required && <span className="required-star">*</span>}
+            </label>
                             {q.type === "select" ? (
                               <div className="custom-select-wrapper">
                                 <select

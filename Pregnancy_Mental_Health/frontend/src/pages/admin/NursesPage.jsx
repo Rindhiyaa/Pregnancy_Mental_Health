@@ -115,7 +115,15 @@ export default function NursesPage() {
                                     <tr><td colSpan="5" style={loadingTdStyle(theme)}>No nurses found.</td></tr>
                                 ) : (
                                     paginatedNurses.map(nurse => (
-                                        <tr key={nurse.id} style={tableRowStyle(theme, nurse.status)}>
+                                        <tr 
+                                            key={nurse.id} 
+                                            style={{
+                                                ...tableRowStyle(theme, nurse.status),
+                                                transition: "background 0.2s"
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = theme.tableHover || (theme.isDark ? "rgba(255,255,255,0.03)" : "#f8fafc")}
+                                            onMouseLeave={e => e.currentTarget.style.background = nurse.status === 'suspended' ? (theme.isDark ? '#451a1a' : '#fef2f2') : theme.cardBg}
+                                        >
                                             <td style={tdStyle}>
                                                 <div style={{ fontWeight: 700, color: theme.textPrimary, fontSize: 14 }}>{nurse.name}</div>
                                                 <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 4 }}>ID: {nurse.id}</div>
@@ -127,15 +135,16 @@ export default function NursesPage() {
                                                 <div style={{ fontSize: 13, color: theme.textSecondary }}>{nurse.email}</div>
                                                 <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 4 }}>{nurse.phone}</div>
                                             </td>
-                                            <td style={tdStyle}>
-                                                <StatusBadge status={nurse.status} />
-                                            </td>
+                                             <td style={tdStyle}>
+                                                 <StatusBadge status={nurse.status} theme={theme} />
+                                             </td>
                                             <td style={{ ...tdStyle, textAlign: "right" }}>
                                                 <ActionButtons
                                                     onReset={() => handleResetPassword(nurse.name)}
                                                     onSuspend={() => handleSuspend(nurse.id, nurse.status)}
                                                     onDelete={() => handleDelete(nurse.id, nurse.name)}
                                                     status={nurse.status}
+                                                    theme={theme}
                                                 />
                                             </td>
                                         </tr>
@@ -157,20 +166,20 @@ export default function NursesPage() {
                     <form onSubmit={handleCreateNurse}>
                         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                             <div>
-                                <label style={labelStyle}>Full Name *</label>
+                                <label style={labelStyle(theme)}>Full Name *</label>
                                 <input required type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={inputStyle(theme)} placeholder="Jane Doe" />
                             </div>
                             <div>
-                                <label style={labelStyle}>Ward / Department</label>
+                                <label style={labelStyle(theme)}>Ward / Department</label>
                                 <input type="text" value={formData.ward} onChange={e => setFormData({ ...formData, ward: e.target.value })} style={inputStyle(theme)} placeholder="e.g. Maternity Ward B" />
                             </div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                                 <div>
-                                    <label style={labelStyle}>Email Address *</label>
+                                    <label style={labelStyle(theme)}>Email Address *</label>
                                     <input required type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} style={inputStyle(theme)} placeholder="jane@hospital.com" />
                                 </div>
                                 <div>
-                                    <label style={labelStyle}>Phone Number *</label>
+                                    <label style={labelStyle(theme)}>Phone Number *</label>
                                     <input required type="text" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} style={inputStyle(theme)} placeholder="+1 234 567 8900" />
                                 </div>
                             </div>
@@ -187,28 +196,28 @@ export default function NursesPage() {
 }
 
 // Reuse modular components/styles from DoctorsPage pattern
-const StatusBadge = ({ status }) => (
+const StatusBadge = ({ status, theme }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: status === "active" ? "#10B981" : "#EF4444" }} />
-        <span style={{ fontSize: 13, fontWeight: 600, color: status === "active" ? "#10B981" : "#EF4444" }}>
+        <div style={{ width: 8, height: 8, borderRadius: "50%", background: status === "active" ? theme.successText : theme.dangerText }} />
+        <span style={{ fontSize: 13, fontWeight: 600, color: status === "active" ? theme.successText : theme.dangerText }}>
             {status.charAt(0).toUpperCase() + status.slice(1)}
         </span>
     </div>
 );
 
-const ActionButtons = ({ onReset, onSuspend, onDelete, status }) => (
+const ActionButtons = ({ onReset, onSuspend, onDelete, status, theme }) => (
     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-        <button onClick={onReset} title="Reset Password" style={actionBtnStyle}><KeyRound size={16} /></button>
-        <button onClick={onSuspend} title={status === 'active' ? "Suspend" : "Activate"} style={actionBtnStyle}>
-            {status === 'active' ? <ShieldOff size={16} color="#F59E0B" /> : <CheckCircle size={16} color="#10B981" />}
+        <button onClick={onReset} title="Reset Password" style={actionBtnStyle(theme)}><KeyRound size={16} /></button>
+        <button onClick={onSuspend} title={status === 'active' ? "Suspend" : "Activate"} style={actionBtnStyle(theme)}>
+            {status === 'active' ? <ShieldOff size={16} color={theme.warningText} /> : <CheckCircle size={16} color={theme.successText} />}
         </button>
-        <button onClick={onDelete} title="Delete" style={{ ...actionBtnStyle, color: "#EF4444", borderColor: "#FECACA" }}><Trash2 size={16} /></button>
+        <button onClick={onDelete} title="Delete" style={{ ...actionBtnStyle(theme), color: theme.dangerText, borderColor: theme.dangerText + '40' }}><Trash2 size={16} /></button>
     </div>
 );
 
 const Modal = ({ children, title, onClose, theme }) => (
-    <div style={modalOverlayStyle}>
-        <div style={modalContentStyle}>
+    <div style={modalOverlayStyle(theme)}>
+        <div style={modalContentStyle(theme)}>
             <div style={modalHeaderStyle(theme)}>
                 <h2 style={{ margin: 0, fontSize: 18, color: theme.textPrimary }}>{title}</h2>
                 <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textMuted }}>
@@ -226,11 +235,11 @@ const primaryBtnStyle = (theme) => ({
 });
 
 const secondaryBtnStyle = (theme) => ({
-    padding: "10px 16px", borderRadius: 8, border: `1px solid ${theme.divider}`, background: "white", cursor: "pointer", fontWeight: 600
+    padding: "10px 16px", borderRadius: 8, border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.textPrimary, cursor: "pointer", fontWeight: 600
 });
 
 const toolbarStyle = (theme) => ({
-    padding: "20px 24px", borderBottom: `1px solid ${theme.divider}`, display: "flex", gap: 16, alignItems: "center", background: "#f8fafc"
+    padding: "20px 24px", borderBottom: `1px solid ${theme.border}`, display: "flex", gap: 16, alignItems: "center", background: theme.innerBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#f8fafc")
 });
 
 const searchIconStyle = (theme) => ({
@@ -239,18 +248,22 @@ const searchIconStyle = (theme) => ({
 
 const inputStyle = (theme, isSearch) => ({
     width: "100%", padding: isSearch ? "10px 12px 10px 40px" : "10px 12px", borderRadius: 8,
-    border: `1px solid ${theme.divider}`, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box"
+    border: `1px solid ${theme.border}`, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box",
+    background: theme.inputBg, color: theme.textPrimary
 });
 
 const tableStyle = { width: "100%", borderCollapse: "collapse", textAlign: "left" };
-const tableHeaderRowStyle = (theme) => ({ background: "white", borderBottom: `2px solid ${theme.divider}` });
-const thStyle = (theme) => ({ padding: "16px 24px", fontSize: 12, fontWeight: 700, color: theme.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left" });
+const tableHeaderRowStyle = (theme) => ({ background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : "#f8fafc"), borderBottom: `2px solid ${theme.border}` });
+const thStyle = (theme) => ({ padding: "16px 24px", fontSize: 12, fontWeight: 800, color: theme.textSecondary, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left" });
 const tdStyle = { padding: "16px 24px", verticalAlign: "middle" };
-const tableRowStyle = (theme, status) => ({ borderBottom: `1px solid ${theme.divider}`, background: status === 'suspended' ? '#fef2f2' : 'white' });
+const tableRowStyle = (theme, status) => ({ 
+    borderBottom: `1px solid ${theme.border}`, 
+    background: status === 'suspended' ? (theme.isDark ? '#451a1a' : '#fef2f2') : theme.cardBg 
+});
 const loadingTdStyle = (theme) => ({ padding: 40, textAlign: "center", color: theme.textMuted });
-const actionBtnStyle = { background: "white", border: "1px solid #E2E8F0", padding: 6, borderRadius: 6, color: "#64748B", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" };
-const labelStyle = { display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 };
-const modalOverlayStyle = { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 };
-const modalContentStyle = { background: "white", borderRadius: 16, width: "100%", maxWidth: 500, boxShadow: "0 24px 50px rgba(0,0,0,0.15)", overflow: "hidden" };
-const modalHeaderStyle = (theme) => ({ padding: "20px 24px", borderBottom: `1px solid ${theme.divider}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" });
+const actionBtnStyle = (theme) => ({ background: theme.cardBg, border: `1px solid ${theme.border}`, padding: 6, borderRadius: 6, color: theme.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" });
+const labelStyle = (theme) => ({ display: "block", fontSize: 13, fontWeight: 600, color: theme.textSecondary, marginBottom: 6 });
+const modalOverlayStyle = (theme) => ({ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 });
+const modalContentStyle = (theme) => ({ background: theme.cardBg, borderRadius: 16, width: "100%", maxWidth: 500, boxShadow: theme.shadowPremium, overflow: "hidden", border: `1px solid ${theme.border}` });
+const modalHeaderStyle = (theme) => ({ padding: "20px 24px", borderBottom: `1px solid ${theme.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: theme.innerBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#f8fafc") });
 const modalFooterStyle = { marginTop: 32, display: "flex", gap: 12, justifyContent: "flex-end" };

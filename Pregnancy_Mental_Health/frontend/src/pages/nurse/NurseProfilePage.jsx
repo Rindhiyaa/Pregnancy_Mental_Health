@@ -81,7 +81,7 @@ export default function NurseProfilePage() {
   );
 
   return (
-    <div className="np-page">
+    <div className={`np-page ${theme.isDark ? "dark" : ""}`}>
       <NurseSidebar />
 
       <main className="np-main">

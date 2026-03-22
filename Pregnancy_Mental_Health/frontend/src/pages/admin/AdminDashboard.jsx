@@ -18,7 +18,8 @@ import {
   UserPlus,
   X
 } from "lucide-react";
-import { PageTitle, Divider, Card, Badge, PrimaryBtn } from "../../components/UI";
+import { PageTitle, Divider, Card, Badge, PrimaryBtn, Pagination } from "../../components/UI";
+import ThemeToggle from "../../components/ThemeToggle";
 import { useTheme } from "../../ThemeContext";
 import toast from "react-hot-toast";
 
@@ -41,6 +42,10 @@ export default function AdminDashboard() {
   const [showFilter, setShowFilter] = useState(false);
   // FIX: Edit modal state
   const [editUser, setEditUser] = useState(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const navigate = useNavigate();
 
@@ -124,6 +129,13 @@ export default function AdminDashboard() {
     return matchSearch && matchRole;
   });
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const statCards = [
     { label: "Total Users", value: stats.totalUsers, icon: <Users size={20} />, trend: "+12%", up: true, color: "#14B8A6", link: "/admin/patients" },
     { label: "Clinicians", value: stats.totalClinicians, icon: <Shield size={20} />, trend: "+2", up: true, color: "#0D9488", link: "/admin/doctors" },
@@ -142,12 +154,37 @@ export default function AdminDashboard() {
         width: "calc(100% - 260px)",
         boxSizing: "border-box"
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <PageTitle
-            title="Admin Console"
-            subtitle="System-wide overview and user management"
-          />
-          <Badge type="info">System Version 1.2.0</Badge>
+        {/* Hero Header */}
+        <div style={{
+          background: theme.heroGradient,
+          padding: "40px",
+          borderRadius: 24,
+          color: "white",
+          marginBottom: 32,
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: theme.shadowPremium
+        }}>
+          {/* Decorative circles */}
+          <div style={{ position: "absolute", top: -20, right: -20, width: 150, height: 150, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
+          <div style={{ position: "absolute", bottom: -40, left: "40%", width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+          
+          <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <h1 style={{ 
+                fontFamily: theme.fontHeading, 
+                fontSize: 36, fontWeight: 800, 
+                margin: "0 0 8px 0" 
+              }}>
+                Welcome back, <span style={{ color: theme.isDark ? '#2DD4BF' : '#22D3EE' }}>Admin</span>
+              </h1>
+              <p style={{ margin: 0, opacity: 0.9, fontSize: 14 }}>System-wide overview and user management</p>
+            </div>
+            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+              <Badge variant="warning">System Version 1.2.0</Badge>
+              <ThemeToggle inHeader={true} />
+            </div>
+          </div>
         </div>
         <Divider />
 
@@ -180,7 +217,7 @@ export default function AdminDashboard() {
               <div style={{ fontSize: 28, fontWeight: 800, color: theme.textPrimary, marginBottom: 4 }}>
                 {stat.value}
               </div>
-              <div style={{ fontSize: 13, color: theme.textMuted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <div style={{ fontSize: 13, color: theme.textSecondary, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 {stat.label}
               </div>
             </Card>
@@ -216,29 +253,32 @@ export default function AdminDashboard() {
                     onClick={() => setShowFilter(f => !f)}
                     style={{
                       padding: "8px 12px", borderRadius: 8, border: `1px solid ${roleFilter !== "All" ? theme.primary : theme.divider}`,
-                      background: roleFilter !== "All" ? `${theme.primary}15` : "white",
+                      background: roleFilter !== "All" ? `${theme.primary}15` : theme.cardBg,
                       display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer",
-                      color: roleFilter !== "All" ? theme.primary : "inherit", fontWeight: roleFilter !== "All" ? 700 : 400
+                      color: roleFilter !== "All" ? theme.primary : theme.textPrimary, fontWeight: roleFilter !== "All" ? 700 : 400
                     }}
                   >
                     <Filter size={14} /> {roleFilter === "All" ? "Filter" : roleFilter}
                   </button>
                   {showFilter && (
                     <div style={{
-                      position: "absolute", right: 0, top: "110%", background: "white",
-                      border: `1px solid ${theme.divider}`, borderRadius: 8, zIndex: 100,
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.1)", minWidth: 140
+                      position: "absolute", right: 0, top: "110%", background: theme.cardBg,
+                      border: `1px solid ${theme.border}`, borderRadius: 8, zIndex: 100,
+                      boxShadow: theme.isDark ? "0 8px 32px rgba(0,0,0,0.4)" : "0 8px 24px rgba(0,0,0,0.1)", minWidth: 140
                     }}>
                       {["All", "Clinician", "Patient", "Doctor"].map(role => (
                         <button
                           key={role}
                           onClick={() => { setRoleFilter(role); setShowFilter(false); }}
+                          onMouseEnter={e => e.currentTarget.style.background = roleFilter === role ? `${theme.primary}25` : (theme.isDark ? "rgba(255,255,255,0.05)" : "#f8fafc")}
+                          onMouseLeave={e => e.currentTarget.style.background = roleFilter === role ? `${theme.primary}15` : theme.cardBg}
                           style={{
                             display: "block", width: "100%", textAlign: "left",
                             padding: "10px 16px", border: "none", cursor: "pointer",
-                            background: roleFilter === role ? `${theme.primary}15` : "white",
+                            background: roleFilter === role ? `${theme.primary}15` : theme.cardBg,
                             color: roleFilter === role ? theme.primary : theme.textPrimary,
-                            fontWeight: roleFilter === role ? 700 : 400, fontSize: 13
+                            fontWeight: roleFilter === role ? 700 : 400, fontSize: 13,
+                            transition: "background 0.2s"
                           }}
                         >
                           {role}
@@ -259,7 +299,7 @@ export default function AdminDashboard() {
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                 <thead>
-                  <tr style={{ background: theme.pageBg }}>
+                  <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#F1F5F9") }}>
                     <th style={tableHeaderStyle(theme)}>User</th>
                     <th style={tableHeaderStyle(theme)}>Role</th>
                     <th style={tableHeaderStyle(theme)}>Status</th>
@@ -271,14 +311,22 @@ export default function AdminDashboard() {
                   {filteredUsers.length === 0 ? (
                     <tr><td colSpan="5" style={{ padding: 32, textAlign: "center", color: theme.textMuted }}>No users found.</td></tr>
                   ) : (
-                    filteredUsers.map((user) => (
-                      <tr key={user.id} style={{ borderBottom: `1px solid ${theme.divider}` }}>
+                    paginatedUsers.map((user) => (
+                      <tr 
+                        key={user.id} 
+                        style={{ 
+                          borderBottom: `1px solid ${theme.divider}`,
+                          transition: "background 0.2s" 
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = theme.tableHover || (theme.isDark ? "rgba(255,255,255,0.03)" : "#f8fafc")}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                      >
                         <td style={tableCellStyle}>
                           <div style={{ fontWeight: 700, color: theme.textPrimary }}>{user.name}</div>
                           <div style={{ fontSize: 12, color: theme.textMuted }}>{user.email}</div>
                         </td>
                         <td style={tableCellStyle}>
-                          <Badge type={user.role === "Clinician" || user.role === "Doctor" ? "info" : "success"}>{user.role}</Badge>
+                          <Badge type={user.role === "Clinician" || user.role === "Doctor" ? "warning" : "success"}>{user.role}</Badge>
                         </td>
                         <td style={tableCellStyle}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -293,7 +341,7 @@ export default function AdminDashboard() {
                           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                             {/* FIX: Edit button now opens an edit modal */}
                             <button
-                              style={actionBtnStyle}
+                              style={actionBtnStyle(theme)}
                               title="Edit User"
                               onClick={() => handleEdit(user)}
                             >
@@ -301,7 +349,7 @@ export default function AdminDashboard() {
                             </button>
                             {/* FIX: Delete button now calls handleDelete, removes from localStorage */}
                             <button
-                              style={{ ...actionBtnStyle, color: "#EF4444", borderColor: "#FECACA" }}
+                              style={{ ...actionBtnStyle(theme), color: "#EF4444", borderColor: theme.isDark ? "#742A2A" : "#FECACA" }}
                               title="Delete User"
                               onClick={() => handleDelete(user)}
                             >
@@ -315,7 +363,14 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
-            <div style={{ padding: "16px 24px", textAlign: "center", borderTop: `1px solid ${theme.divider}` }}>
+            
+            <Pagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+
+            <div style={{ padding: "16px 24px", textAlign: "center", borderTop: `1px solid ${theme.border}` }}>
               <button onClick={() => navigate('/admin/doctors')} style={{ background: "none", border: "none", color: theme.primary, fontWeight: 700, cursor: "pointer", fontSize: 13 }}>
                 View All Doctors
               </button>
@@ -348,7 +403,7 @@ export default function AdminDashboard() {
                 onClick={handleReviewCredentials}
                 style={{
                   width: "100%", padding: "10px", borderRadius: 8,
-                  background: "white", color: theme.primary, border: "none",
+                  background: theme.cardBg, color: theme.primary, border: "none",
                   fontWeight: 700, cursor: "pointer"
                 }}
               >
@@ -362,33 +417,33 @@ export default function AdminDashboard() {
 
       {/* FIX: Edit User Modal */}
       {editUser && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "white", borderRadius: 16, width: "100%", maxWidth: 440, overflow: "hidden", boxShadow: "0 24px 50px rgba(0,0,0,0.2)" }}>
-            <div style={{ padding: "20px 24px", borderBottom: `1px solid ${theme.divider}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: 16, width: "100%", maxWidth: 440, overflow: "hidden", boxShadow: "0 24px 50px rgba(0,0,0,0.2)" }}>
+            <div style={{ padding: "20px 24px", borderBottom: `1px solid ${theme.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: theme.cardBgSecondary }}>
               <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: theme.textPrimary }}>Edit User</h3>
               <button onClick={() => setEditUser(null)} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textMuted }}><X size={20} /></button>
             </div>
             <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Full Name</label>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: theme.textSecondary, marginBottom: 6 }}>Full Name</label>
                 <input
                   type="text"
                   value={editUser.name}
                   onChange={e => setEditUser({ ...editUser, name: e.target.value })}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${theme.divider}`, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.textPrimary, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Email</label>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: theme.textSecondary, marginBottom: 6 }}>Email</label>
                 <input
                   type="email"
                   value={editUser.email}
                   onChange={e => setEditUser({ ...editUser, email: e.target.value })}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${theme.divider}`, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${theme.border}`, background: theme.inputBg, color: theme.textPrimary, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
                 />
               </div>
               <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
-                <button onClick={() => setEditUser(null)} style={{ padding: "10px 16px", borderRadius: 8, border: `1px solid ${theme.divider}`, background: "white", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+                <button onClick={() => setEditUser(null)} style={{ padding: "10px 16px", borderRadius: 8, border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.textPrimary, cursor: "pointer", fontWeight: 600 }}>Cancel</button>
                 <button onClick={handleEditSave} style={{ padding: "10px 16px", borderRadius: 8, border: "none", background: theme.primary, color: "white", cursor: "pointer", fontWeight: 600 }}>Save Changes</button>
               </div>
             </div>
@@ -402,10 +457,10 @@ export default function AdminDashboard() {
 const tableHeaderStyle = (theme) => ({
   padding: "16px 24px",
   fontSize: 12,
-  fontWeight: 700,
-  color: theme.textMuted,
+  fontWeight: 800,
+  color: theme.textSecondary,
   textTransform: "uppercase",
-  letterSpacing: "0.05em",
+  letterSpacing: "0.08em",
   borderBottom: `1px solid ${theme.divider}`,
   textAlign: "left"
 });
@@ -415,21 +470,24 @@ const tableCellStyle = {
   verticalAlign: "middle"
 };
 
-const actionBtnStyle = {
+const actionBtnStyle = (theme) => ({
   padding: "6px",
   borderRadius: "6px",
-  border: "1px solid #E5E7EB",
-  background: "white",
-  color: "#6B7280",
+  border: `1px solid ${theme.border}`,
+  background: theme.cardBg,
+  color: theme.textMuted,
   cursor: "pointer",
   display: "flex",
   alignItems: "center",
   justifyContent: "center"
-};
+});
 
-const StatusRow = ({ label, status, color }) => (
-  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-    <span style={{ fontSize: 14, fontWeight: 500, color: "#4B5563" }}>{label}</span>
-    <span style={{ fontSize: 13, fontWeight: 700, color: color }}>{status}</span>
-  </div>
-);
+const StatusRow = ({ label, status, color }) => {
+  const { theme } = useTheme();
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <span style={{ fontSize: 14, fontWeight: 500, color: theme.textSecondary }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 700, color: color }}>{status}</span>
+    </div>
+  );
+};

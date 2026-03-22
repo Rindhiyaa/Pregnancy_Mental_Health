@@ -1,4 +1,3 @@
-/* MODERN NEW ASSESSMENT REDESIGN - Teal Theme */
 :root {
   --primary-teal: #2d6a75;
   --primary-teal-light: #e6f0f1;
@@ -9,10 +8,25 @@
   --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.05);
   --radius-lg: 20px;
   --radius-md: 12px;
+  --border-color: #e2e8f0;
+  --input-bg: #f8fafc;
+}
+
+.dark {
+  --primary-teal: #3b82f6; /* Use primary blue for dark mode */
+  --primary-teal-light: rgba(59, 130, 246, 0.1);
+  --text-dark: #f1f5f9;
+  --text-muted: #94a3b8;
+  --bg-light: #0a101f;
+  --white: #1a2433;
+  --border-color: #2d3748;
+  --input-bg: #1f2937;
+  --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .new-assessment-page {
   background: var(--bg-light);
+  color: var(--text-dark);
 }
 
 /* TOP HEADER BUTTONS (Patient Badge) */
@@ -20,13 +34,13 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: white;
+  background: var(--white);
   padding: 8px 16px;
   border-radius: 999px;
   box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: all 0.2s;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .active-patient-badge:hover {
@@ -109,8 +123,8 @@
   min-height: 36px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: #f1f5f9;
-  color: #94a3b8;
+  background: var(--input-bg);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -118,14 +132,14 @@
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   z-index: 2;
 }
 
 .stepper-node-label {
   font-size: 11px;
   font-weight: 500;
-  color: #94a3b8;
+  color: var(--text-muted);
   text-align: center;
   white-space: normal;
   line-height: 1.3;
@@ -157,7 +171,7 @@
   left: calc(50% + 20px);
   width: calc(100% - 40px);
   height: 2px;
-  background: #e2e8f0;
+  background: var(--border-color);
   z-index: 0;
 }
 
@@ -177,7 +191,7 @@
 
 .form-head-section {
   padding: 32px 40px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .form-head-section h2 {
@@ -231,11 +245,12 @@
   width: 100%;
   padding: 12px 16px;
   border-radius: var(--radius-md);
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--border-color);
   font-size: 14px;
   outline: none;
   transition: all 0.2s;
-  background: #f8fafc;
+  background: var(--input-bg);
+  color: var(--text-dark);
 }
 
 .modern-input:focus,
@@ -269,15 +284,15 @@
 /* FORM FOOTER */
 .form-footer-modern {
   padding: 24px 40px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
 }
 
 .btn-back-modern {
-  background: #f1f5f9;
-  color: #475569;
-  border: none;
+  background: var(--input-bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
   padding: 12px 24px;
   border-radius: var(--radius-md);
   font-weight: 700;
@@ -338,16 +353,17 @@
 }
 
 .side-card-modern {
-  background: linear-gradient(135deg, #ECFEFF, #F0FDFA);
+  background: var(--white);
   padding: 20px;
   border-radius: 20px;
+  border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
 }
 
 .side-card-title {
   font-size: 16px;
   font-weight: 700;
-  color: #0F172A;
+  color: var(--text-dark);
   margin: 0 0 16px 0;
 }
 
@@ -361,7 +377,7 @@
 .progress-bar-rail {
   flex: 1;
   height: 8px;
-  background: #E5E7EB;
+  background: var(--input-bg);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -382,7 +398,7 @@
 .workflow-status-text {
   font-size: 13px;
   font-weight: 600;
-  color: #0F172A;
+  color: var(--text-dark);
   margin-bottom: 20px;
 }
 
@@ -397,7 +413,7 @@
 
 .workflow-checklist li {
   font-size: 13px;
-  color: #6B7280;
+  color: var(--text-muted);
   padding-left: 20px;
   position: relative;
 }
@@ -419,7 +435,8 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: #f8fafc;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   margin-bottom: 20px;
 }
@@ -497,7 +514,7 @@
 
 .modal-header-modern {
   padding: 32px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .modal-header-modern h2 {
@@ -521,10 +538,12 @@
   width: 100%;
   padding: 12px 16px;
   border-radius: 12px;
-  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  border: 1.5px solid var(--border-color);
   font-size: 14px;
   outline: none;
-  background: #f8fafc;
+  background: var(--input-bg);
+  color: var(--text-dark);
 }
 
 .patient-list-scroll-modern {
@@ -542,14 +561,14 @@
   gap: 12px;
   padding: 12px;
   border-radius: 12px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .patient-list-item-modern:hover {
-  background: #f8fafc;
-  border-color: #e2e8f0;
+  background: var(--input-bg);
+  border-color: var(--border-color);
 }
 
 .patient-list-item-modern.active {
@@ -657,9 +676,9 @@
 
 /* ─── Readonly Input ─── */
 .modern-input.input-readonly {
-  background: #f1f5f9;
-  color: #475569;
-  border-color: #e2e8f0;
+  background: var(--bg-light);
+  color: var(--text-muted);
+  border-color: var(--border-color);
   cursor: not-allowed;
   font-weight: 600;
 }
@@ -677,9 +696,9 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: linear-gradient(135deg, #ECFEFF, #F0FDFA);
+  background: var(--white);
   border-radius: 16px;
-  border: 1px solid #99f6e4;
+  border: 1px solid var(--border-color);
 }
 
 .submit-patient-avatar {
@@ -699,13 +718,13 @@
 .submit-patient-name {
   font-size: 18px;
   font-weight: 700;
-  color: #0F172A;
+  color: var(--text-dark);
   margin-bottom: 4px;
 }
 
 .submit-patient-meta {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -734,21 +753,21 @@
   display: flex;
   gap: 16px;
   padding: 20px;
-  background: #f0fdf4;
-  border: 1px solid #86efac;
+  background: var(--primary-teal-light);
+  border: 1px solid var(--primary-teal);
   border-radius: 14px;
   font-size: 14px;
 }
 
 .auto-assign-notice strong {
   font-size: 15px;
-  color: #166534;
+  color: var(--primary-teal);
   display: block;
   margin-bottom: 6px;
 }
 
 .auto-assign-notice p {
-  color: #166534;
+  color: var(--text-dark);
   margin: 0 0 10px 0;
   line-height: 1.5;
 }
@@ -783,11 +802,11 @@
   align-items: flex-start;
   gap: 10px;
   padding: 16px;
-  background: #fafafa;
-  border: 1px dashed #d1d5db;
+  background: var(--input-bg);
+  border: 1px dashed var(--border-color);
   border-radius: 12px;
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 

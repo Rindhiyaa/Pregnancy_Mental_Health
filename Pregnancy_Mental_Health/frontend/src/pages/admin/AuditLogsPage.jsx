@@ -52,7 +52,7 @@ export default function AuditLogsPage() {
         if (act.includes('delete') || act.includes('suspend') || act.includes('fail')) return 'error';
         if (act.includes('create') || act.includes('approve') || act.includes('success')) return 'success';
         if (act.includes('update') || act.includes('edit')) return 'warning';
-        return 'info';
+        return 'warning';
     };
 
     const handleExport = () => {
@@ -69,9 +69,10 @@ export default function AuditLogsPage() {
                     <button
                         onClick={handleExport}
                         style={{
-                            background: "white", color: theme.textPrimary, padding: "10px 16px",
-                            borderRadius: 8, border: `1px solid ${theme.divider}`, display: "flex", alignItems: "center", gap: 8,
-                            fontWeight: 600, cursor: "pointer", boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
+                            background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+                            color: "white", padding: "10px 18px", borderRadius: 10, border: "none",
+                            display: "flex", alignItems: "center", gap: 8, fontWeight: 700, cursor: "pointer",
+                            transition: "all 0.2s", boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)"
                         }}
                     >
                         <Download size={18} /> Export CSV
@@ -82,7 +83,7 @@ export default function AuditLogsPage() {
                 <Card style={{ padding: 0, overflow: "hidden" }}>
 
                     {/* Toolbar */}
-                    <div style={{ padding: "20px 24px", borderBottom: `1px solid ${theme.divider}`, display: "flex", gap: 16, alignItems: "center", background: "#f8fafc", flexWrap: "wrap" }}>
+                    <div style={{ padding: "20px 24px", borderBottom: `1px solid ${theme.divider}`, display: "flex", gap: 16, alignItems: "center", background: theme.innerBg, flexWrap: "wrap" }}>
 
                         <div style={{ position: "relative", flex: "1 1 250px" }}>
                             <Search size={18} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: theme.textMuted }} />
@@ -91,7 +92,7 @@ export default function AuditLogsPage() {
                                 placeholder="Search user or details..."
                                 value={searchUser}
                                 onChange={(e) => setSearchUser(e.target.value)}
-                                style={inputStyle}
+                                style={inputStyle(theme)}
                             />
                         </div>
 
@@ -100,7 +101,7 @@ export default function AuditLogsPage() {
                             <select
                                 value={actionFilter}
                                 onChange={(e) => setActionFilter(e.target.value)}
-                                style={selectStyle}
+                                style={selectStyle(theme)}
                             >
                                 <option value="all">All Actions</option>
                                 <option value="User Created">User Created</option>
@@ -117,7 +118,7 @@ export default function AuditLogsPage() {
                                 type="date"
                                 value={dateFilter}
                                 onChange={(e) => setDateFilter(e.target.value)}
-                                style={selectStyle}
+                                style={selectStyle(theme)}
                             />
                         </div>
 
@@ -135,7 +136,7 @@ export default function AuditLogsPage() {
                     <div style={{ overflowX: "auto" }}>
                         <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                             <thead>
-                                <tr style={{ background: "white", borderBottom: `2px solid ${theme.divider}` }}>
+                                <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : "white"), borderBottom: `2px solid ${theme.divider}` }}>
                                     <th style={thStyle(theme)}>Timestamp</th>
                                     <th style={thStyle(theme)}>User</th>
                                     <th style={thStyle(theme)}>Action Type</th>
@@ -155,7 +156,11 @@ export default function AuditLogsPage() {
                                         const formattedTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
                                         return (
-                                            <tr key={log.id} style={{ borderBottom: `1px solid ${theme.divider}`, transition: "background 0.2s" }} className="table-row-hover">
+                                            <tr key={log.id}
+                                                style={{ borderBottom: `1px solid ${theme.divider}`, transition: "background 0.2s" }}
+                                                onMouseEnter={e => e.currentTarget.style.background = theme.tableHover || (theme.isDark ? "rgba(255,255,255,0.03)" : "#f8fafc")}
+                                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                                            >
                                                 <td style={tdStyle}>
                                                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                                         <Clock size={14} color={theme.textMuted} />
@@ -173,7 +178,7 @@ export default function AuditLogsPage() {
                                                     <div style={{ fontSize: 13, color: theme.textSecondary }}>{log.details}</div>
                                                 </td>
                                                 <td style={tdStyle}>
-                                                    <code style={{ fontSize: 12, color: theme.textMuted, background: "#f1f5f9", padding: "4px 8px", borderRadius: 4 }}>
+                                                    <code style={{ fontSize: 12, color: theme.textMuted, background: theme.innerBg, border: `1px solid ${theme.border}`, padding: "4px 8px", borderRadius: 4 }}>
                                                         {log.ip}
                                                     </code>
                                                 </td>
@@ -184,7 +189,7 @@ export default function AuditLogsPage() {
                             </tbody>
                         </table>
                     </div>
-                    <Pagination 
+                    <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}
                         onPageChange={setCurrentPage}
@@ -193,32 +198,28 @@ export default function AuditLogsPage() {
 
             </main>
 
-            {/* Injecting simple hover style for rows */}
-            <style>{`
-        .table-row-hover:hover {
-          background-color: #f8fafc !important;
-        }
-      `}</style>
+            {/* Removed inline style */}
         </div>
     );
 }
 
 // Styles
 const thStyle = (theme) => ({
-    padding: "16px 24px", fontSize: 12, fontWeight: 700, color: theme.textMuted,
-    textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left"
+    padding: "16px 24px", fontSize: 12, fontWeight: 800, color: theme.textSecondary,
+    textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "left"
 });
 
 const tdStyle = {
     padding: "16px 24px", verticalAlign: "middle"
 };
 
-const inputStyle = {
+const inputStyle = (theme) => ({
     width: "100%", padding: "10px 12px 10px 40px", borderRadius: 8,
-    border: "1px solid #CBD5E1", fontSize: 14, fontFamily: "inherit", outline: "none"
-};
+    border: `1px solid ${theme.border}`, fontSize: 14, fontFamily: "inherit", outline: "none",
+    background: theme.inputBg, color: theme.textPrimary
+});
 
-const selectStyle = {
-    padding: "10px", borderRadius: 8, border: "1px solid #CBD5E1",
-    fontSize: 14, background: "white", cursor: "pointer", fontFamily: "inherit", outline: "none"
-};
+const selectStyle = (theme) => ({
+    padding: "10px", borderRadius: 8, border: `1px solid ${theme.border}`,
+    fontSize: 14, background: theme.inputBg, color: theme.textPrimary, cursor: "pointer", fontFamily: "inherit", outline: "none"
+});

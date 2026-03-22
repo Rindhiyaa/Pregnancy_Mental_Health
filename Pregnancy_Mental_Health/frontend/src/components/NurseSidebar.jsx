@@ -16,6 +16,7 @@ import { THEME } from "../theme";
 import { useTheme } from "../ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import logo from "../Images/Postpartum_Risk_Insight_Logo.png";
+import ThemeToggle from "./ThemeToggle";
 
 const NAV_ITEMS = [
   { to: "/nurse/dashboard", icon: <Home size={18} />, label: "Dashboard" },
@@ -48,11 +49,8 @@ export default function NurseSidebar() {
     <aside style={{ ...S.sidebar, background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}` }}>
 
       <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 10, background: "rgba(255, 255, 255, 0.84)",
-          display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.1)"
-        }}>
-          <img src={logo} alt="Logo" style={{ width: "66px", height: "66px", objectFit: "contain" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "-8px" }}>
+          <img src={logo} alt="Logo" style={{ width: "54px", height: "54px", objectFit: "contain" }} />
         </div>
         <div>
           <div style={{ fontSize: 16, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>PPD Risk Insight</div>
@@ -88,6 +86,8 @@ export default function NurseSidebar() {
       {/* ── BOTTOM ── */}
       <div style={S.bottomArea}>
         <div style={{ ...S.topDivider, background: theme.sidebarBorder }} />
+        
+
 
         <NavLink
           to="/nurse/profile"

@@ -55,7 +55,7 @@ export default function NurseDoctorsPage() {
             <input
               style={{
                 width: '100%', padding: '12px 16px 12px 48px', borderRadius: 14,
-                border: `1.5px solid ${theme.border}`, background: 'white',
+                border: `1.5px solid ${theme.border}`, background: theme.inputBg, color: theme.text,
                 fontSize: 15, outline: 'none', fontFamily: theme.fontBody
               }}
               placeholder="Search by name or specialization..."
@@ -120,7 +120,7 @@ export default function NurseDoctorsPage() {
                 <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
                   <button 
                     onClick={() => navigate(`/nurse/patients?doctor=${doc.id}`)}
-                    style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1.5px solid ${theme.border}`, background: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1.5px solid ${theme.border}`, background: theme.cardBg, color: theme.text, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
                   >
                     View Patients
                   </button>

@@ -5,7 +5,8 @@ import { api } from "../../utils/api";
 import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
-import { PageTitle, Divider, Card, Badge, Loader2 } from "../../components/UI";
+import { PageTitle, Card, Badge, Table, TableRow, TableCell, PrimaryBtn, Pagination, Loader2, Divider } from "../../components/UI";
+import ThemeToggle from "../../components/ThemeToggle";
 import toast from "react-hot-toast";
 
 import {
@@ -66,6 +67,17 @@ export default function NurseDashboard() {
     fetchDashboardData();
   }, []);
 
+  const labelStyle = {
+    fontSize: 13,
+    fontWeight: 800,
+    color: theme.isDark ? "#FFFFFF" : theme.textSecondary,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    marginBottom: 4
+  };
 
   const QuickAction = ({ icon, label, to, color }) => (
     <Link to={to} style={{ textDecoration: 'none', flex: 1 }}>
@@ -141,15 +153,23 @@ export default function NurseDashboard() {
           color: "white",
           marginBottom: 32,
           position: "relative",
+          overflow: "hidden",
           boxShadow: "0 10px 30px -10px rgba(79, 70, 229, 0.3)"
         }}>
-          <h1 style={{
-            fontFamily: theme.fontHeading,
-            fontSize: 36, fontWeight: 800,
-            margin: "0 0 12px 0"
-          }}>
-            Welcome back, {user?.fullName?.split(' ')[0]}! 👋
-          </h1>
+          {/* Decorative circles */}
+          <div style={{ position: "absolute", top: -20, right: -20, width: 150, height: 150, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
+          <div style={{ position: "absolute", bottom: -40, left: "40%", width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+          
+          <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <h1 style={{
+              fontFamily: theme.fontHeading,
+              fontSize: 36, fontWeight: 800,
+              margin: "0 0 8px 0"
+            }}>
+              Welcome back, <span style={{ color: theme.isDark ? '#2DD4BF' : '#22D3EE' }}>{user?.fullName?.split(' ')[0]}!</span>
+            </h1>
+            <ThemeToggle inHeader={true} />
+          </div>
           {/* <p style={{ color: "rgba(255,255,255,0.9)", fontSize: 18, maxWidth: 600, lineHeight: 1.6 }}>
             You have {stats.pending_assessments} pending drafts and {stats.waiting_review} assessments waiting for doctor review.
           </p> */}
@@ -172,8 +192,8 @@ export default function NurseDashboard() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div style={{ background: `${s.color}15`, color: s.color, padding: 8, borderRadius: 10 }}>{s.icon}</div>
               </div>
-              <div style={{ fontSize: 14, color: theme.textMuted, fontWeight: 600, marginBottom: 4 }}>{s.label}</div>
-              <div style={{ fontSize: 32, fontWeight: 800, color: theme.text }}>{s.value}</div>
+              <div style={{ fontSize: 13, color: theme.textSecondary, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{s.label}</div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: theme.textPrimary }}>{s.value}</div>
             </Card>
           ))}
         </div>
@@ -207,20 +227,22 @@ export default function NurseDashboard() {
                   alignItems: 'center',
                   padding: '16px',
                   borderRadius: 16,
-                  background: theme.cardBgSecondary,
-                  border: `1px solid ${theme.border}`,
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  cursor: 'pointer'
-                }}
-                onClick={() => navigate(`/nurse/patients/${p.id}`)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
+                   background: theme.cardBg,
+                   border: `1px solid ${theme.border}`,
+                   transition: 'all 0.25s ease',
+                   cursor: 'pointer'
+                 }}
+                 onClick={() => navigate(`/nurse/patients/${p.id}`)}
+                 onMouseEnter={(e) => {
+                   e.currentTarget.style.background = theme.tableHover || (theme.isDark ? 'rgba(255,255,255,0.03)' : theme.pageBg);
+                   e.currentTarget.style.transform = 'translateY(-2px)';
+                   e.currentTarget.style.boxShadow = theme.shadowPremium;
+                 }}
+                 onMouseLeave={(e) => {
+                   e.currentTarget.style.background = theme.cardBg;
+                   e.currentTarget.style.transform = 'translateY(0)';
+                   e.currentTarget.style.boxShadow = 'none';
+                 }}
                 >
                   <div style={{ fontWeight: 600, color: theme.textMuted }}>{(currentPage - 1) * itemsPerPage + idx + 1}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -256,37 +278,11 @@ export default function NurseDashboard() {
 
             {/* Pagination Controls */}
             {recentPatients.length > itemsPerPage && (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, marginTop: 32 }}>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.max(prev - 1, 1)); }}
-                  disabled={currentPage === 1}
-                  style={{ 
-                    padding: '8px 16px', borderRadius: 8, border: `1px solid ${theme.border}`, 
-                    background: currentPage === 1 ? theme.cardBgSecondary : 'white', 
-                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                    color: currentPage === 1 ? theme.textMuted : theme.text,
-                    fontWeight: 600, fontSize: 13
-                  }}
-                >
-                  Previous
-                </button>
-                <div style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>
-                   Page {currentPage} of {Math.ceil(recentPatients.length / itemsPerPage)}
-                </div>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.min(prev + 1, Math.ceil(recentPatients.length / itemsPerPage))); }}
-                  disabled={currentPage === Math.ceil(recentPatients.length / itemsPerPage)}
-                  style={{ 
-                    padding: '8px 16px', borderRadius: 8, border: `1px solid ${theme.border}`, 
-                    background: currentPage === Math.ceil(recentPatients.length / itemsPerPage) ? theme.cardBgSecondary : 'white', 
-                    cursor: currentPage === Math.ceil(recentPatients.length / itemsPerPage) ? 'not-allowed' : 'pointer',
-                    color: currentPage === Math.ceil(recentPatients.length / itemsPerPage) ? theme.textMuted : theme.text,
-                    fontWeight: 600, fontSize: 13
-                  }}
-                >
-                  Next
-                </button>
-              </div>
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={Math.ceil(recentPatients.length / itemsPerPage)}
+                onPageChange={setCurrentPage}
+              />
             )}
           </Card>
         </div>

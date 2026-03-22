@@ -89,6 +89,7 @@ export default function AppRouter() {
       <Route path="/doctor/review/:id" element={<ProtectedRoute requiredRole="doctor"><DoctorAssessmentReview /></ProtectedRoute>} />
       <Route path="/doctor/validate/:id" element={<ProtectedRoute requiredRole="doctor"><ClinicalValidation /></ProtectedRoute>} />
       <Route path="/doctor/history" element={<ProtectedRoute requiredRole="doctor"><HistoryPage /></ProtectedRoute>} />
+      <Route path="/doctor/messages" element={<ProtectedRoute requiredRole="doctor"><ClinicianMessages /></ProtectedRoute>} />
       <Route path="/doctor/profile" element={<ProtectedRoute requiredRole="doctor"><DoctorProfilePage /></ProtectedRoute>} />
 
       {/* Patient Routes */}

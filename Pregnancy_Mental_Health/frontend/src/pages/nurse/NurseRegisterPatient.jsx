@@ -66,6 +66,16 @@ export default function NurseRegisterPatient() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const labelStyle = (theme) => ({
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: 800,
+    fontSize: 13,
+    color: theme.isDark ? "#FFFFFF" : theme.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em'
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -104,10 +114,10 @@ export default function NurseRegisterPatient() {
   };
 
   return (
-    <div className="rp-page">
+    <div className={`rp-page ${theme.isDark ? 'dark' : ''}`}>
       <NurseSidebar />
 
-      <main className="rp-main">
+      <main className="rp-main" style={{ marginLeft: 260 }}>
         <PageTitle title="Register New Patient" subtitle="Create a new mother account and set up portal access" />
 
         <form onSubmit={handleSubmit} className="rp-form-container">

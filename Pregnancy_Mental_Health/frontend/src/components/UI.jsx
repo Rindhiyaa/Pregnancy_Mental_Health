@@ -73,7 +73,7 @@ export const Divider = () => {
   );
 };
 
-export const Card = ({ children, style = {}, glass = false, noPadding = false }) => {
+export const Card = ({ children, style = {}, glass = false, noPadding = false, hover = false }) => {
   const { theme, isDarkMode } = useTheme();
 
   const glassStyles = glass ? {
@@ -91,13 +91,29 @@ export const Card = ({ children, style = {}, glass = false, noPadding = false })
   };
 
   return (
-    <div style={{
-      borderRadius: 24,
-      padding: noPadding ? 0 : "24px",
-      transition: "all 0.3s ease",
-      ...glassStyles,
-      ...style,
-    }}>
+    <div 
+      style={{
+        borderRadius: 24,
+        padding: noPadding ? 0 : "24px",
+        transition: "all 0.3s ease",
+        ...glassStyles,
+        ...style,
+      }}
+      onMouseEnter={(e) => {
+        if (hover) {
+          e.currentTarget.style.transform = 'translateY(-4px)';
+          e.currentTarget.style.boxShadow = isDarkMode 
+            ? '0 15px 40px rgba(0,0,0,0.6)' 
+            : '0 10px 25px rgba(0,0,0,0.08)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (hover) {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = glassStyles.boxShadow;
+        }
+      }}
+    >
       {children}
     </div>
   );
@@ -149,7 +165,8 @@ export const StatCard = ({ title, value, icon, trend, trendValue, color = "prima
   );
 };
 
-export const Badge = ({ children, variant = "primary", size = "md" }) => {
+export const Badge = ({ children, variant, type, size = "md" }) => {
+  const badgeVariant = variant || type || "primary";
   const { theme } = useTheme();
   const configs = {
     primary: { bg: theme.primaryBg, color: theme.primary },
@@ -158,7 +175,7 @@ export const Badge = ({ children, variant = "primary", size = "md" }) => {
     danger: { bg: theme.dangerBg, color: theme.dangerText },
     info: { bg: theme.infoBg, color: theme.infoText },
   };
-  const cfg = configs[variant] || configs.primary;
+  const cfg = configs[badgeVariant] || configs.primary;
   return (
     <span style={{
       background: cfg.bg,
@@ -209,7 +226,7 @@ export const Table = ({ headers, children, loading, loadingMessage = "Loading da
     textTransform: 'uppercase',
     letterSpacing: 1,
     borderBottom: `1px solid ${theme.border}`,
-    background: theme.cardBgSecondary || 'rgba(0,0,0,0.02)'
+    background: theme.tableHeaderBg || theme.cardBgSecondary
   };
 
   return (
@@ -259,7 +276,7 @@ export const TableRow = ({ children, onClick, hover = true }) => {
         background: 'transparent'
       }}
       onMouseEnter={(e) => {
-        if (hover) e.currentTarget.style.background = `${theme.primary}05`;
+        if (hover) e.currentTarget.style.background = theme.tableHover || (theme.isDark ? 'rgba(255, 255, 255, 0.03)' : `${theme.primary}05`);
       }}
       onMouseLeave={(e) => {
         if (hover) e.currentTarget.style.background = 'transparent';
@@ -297,10 +314,10 @@ export const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const btnStyle = (disabled) => ({
     padding: '8px 16px',
     borderRadius: 8,
-    border: `1.5px solid ${theme.border}`,
-    background: disabled ? 'transparent' : 'white',
+    border: `1px solid ${theme.border}`,
+    background: disabled ? 'transparent' : theme.cardBg,
     cursor: disabled ? 'not-allowed' : 'pointer',
-    color: disabled ? theme.textMuted : theme.text,
+    color: disabled ? theme.textMuted : theme.textPrimary,
     fontWeight: 700,
     fontSize: 13,
     transition: 'all 0.2s',

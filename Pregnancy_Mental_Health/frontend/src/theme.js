@@ -41,9 +41,13 @@ export const LIGHT_THEME = {
   sidebarActiveBorder: "#E6F4F2",
 
   // ── Page & Cards ── 
+  isDark: false,
   pageBg: "#F9FAFB",
   cardBg: "#FFFFFF",
+  cardBgSecondary: "#F8FAF8",
+  innerBg: "#F9FAFB",
   cardBorder: "#E5E7EB",
+  border: "#E5E7EB",
 
   // ── Text ── 
   textPrimary: "#1F2937", // Dark Gray
@@ -58,6 +62,7 @@ export const LIGHT_THEME = {
 
   // ── Dividers / Borders ── 
   divider: "#F3F4F6",
+  inputBg: "#FFFFFF",
   inputBorder: "#E5E7EB",
 
   // ── Status Badges ── 
@@ -73,49 +78,57 @@ export const LIGHT_THEME = {
   // ── Fonts ── 
   fontHeading: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   fontBody: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+
+  // ── Tables ──
+  tableHover: "#F9FAFB",
+  tableHeaderBg: "#F1F5F9",
 };
 
 export const DARK_THEME = {
   ...SHARED_THEME,
   // ── Core Brand ── 
-  primary: "#E04C63",
-  primaryHover: "#F06277",
-  primaryLight: "#F28B9B",
-  primaryBg: "#3D1219",
-  primaryText: "#FCEEF2",
+  primary: "#1E3A8A",      // Royal Blue (User requested)
+  primaryHover: "#2563EB", 
+  primaryLight: "#3B82F6",
+  primaryBg: "#0D131C",    // Inner BG (User requested)
+  primaryText: "#F1F5F9",  // Foreground (User requested)
 
   // ── Glass & Effects ──
-  glassBg: "rgba(30, 41, 59, 0.7)",
+  glassBg: "rgba(26, 36, 51, 0.7)", // Based on Card BG
   glassBorder: "rgba(255, 255, 255, 0.1)",
   glassBlur: "blur(20px)",
   shadowPremium: "0 20px 50px -12px rgba(0,0,0,0.5)",
 
-  // ── Sidebar 
-  sidebarBg: "#1e737fff",
-  sidebarBorder: "rgba(255,255,255,0.05)",
-  sidebarText: "rgba(255,255,255,0.7)",
-  sidebarMuted: "rgba(255,255,255,0.5)",
-  sidebarActiveBg: "rgba(255,255,255,0.1)",
-  sidebarActiveText: "#FFFFFF",
-  sidebarActiveBorder: "#14B8A6",
+  // ── Sidebar ── 
+  sidebarBg: "#0A0F1A",    // Sidebar BG (User requested)
+  sidebarBorder: "#2D3748", // Card Border (User requested)
+  sidebarText: "rgba(241, 245, 249, 0.7)",
+  sidebarMuted: "rgba(241, 245, 249, 0.5)",
+  sidebarActiveBg: "rgba(255, 255, 255, 0.1)",
+  sidebarActiveText: "#F1F5F9",
+  sidebarActiveBorder: "#2DD4BF", // Accent (User requested)
 
-  // ── Page & Cards 
-  pageBg: "#110608",
-  cardBg: "#1D0C10",
-  cardBorder: "#2D1A1E",
+  isDark: true,
+  // ── Page & Cards ── 
+  pageBg: "#0A0F1A",       // Background (User requested)
+  cardBg: "#1A2433",       // Card BG (User requested)
+  cardBgSecondary: "#1F2937",
+  cardBorder: "#2D3748",   // Card Border (User requested)
+  border: "#2D3748",
 
   // ── Text ── 
-  textPrimary: "#F9FAFB",
-  textSecondary: "#D1D5DB",
-  textMuted: "#9CA3AF",
-  textLight: "#6B7280",
+  textPrimary: "#F1F5F9",  // Foreground (User requested)
+  textSecondary: "#CBD5E1", // Brighter Gray (Soft white)
+  textMuted: "#94A3B8",    // Brighter Muted (Slightly less bright white)
+  textLight: "#64748B",
 
   // ── Hero Gradient ── 
-  heroGradient: "linear-gradient(135deg, #7A1C2A 0%, #9B2335 100%)",
+  heroGradient: "linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%)",
 
   // ── Dividers / Borders ── 
-  divider: "#2D1A1E",
-  inputBorder: "#374151",
+  divider: "#2D3748",      // Card Border (User requested)
+  inputBg: "#1F2937",      // Input BG (User requested)
+  inputBorder: "#1F2937",  // Input BG (User requested)
 
   // ── Status Badges ── 
   successBg: "#064E3B",
@@ -128,8 +141,12 @@ export const DARK_THEME = {
   infoText: "#BFDBFE",
 
   // ── Fonts ── 
-  fontHeading: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  fontBody: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  fontHeading: "'Outfit', 'Inter', sans-serif", // Outfit for headings as requested
+  fontBody: "'Inter', sans-serif",
+
+  // ── Tables ──
+  tableHover: "rgba(255, 255, 255, 0.03)",
+  tableHeaderBg: "rgba(255, 255, 255, 0.05)",
 };
 
 // Default export for backwards compatibility (will point to light for now)

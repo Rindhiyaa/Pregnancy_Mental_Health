@@ -416,3 +416,68 @@ input:focus {
     border-radius: 0 0 24px 24px;
   }
 }
+
+/* ── DARK MODE OVERRIDES ── */
+.dark .auth-layout {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+}
+
+.dark .auth-main {
+  background: radial-gradient(circle at top left, #1a1a2e 0%, #0f172a 100%) !important;
+  color: #f1f5f9;
+}
+
+.dark .auth-main h1 {
+  color: #f1f5f9;
+}
+
+.dark .auth-main .lead {
+  color: #94a3b8;
+}
+
+.dark .auth-main label {
+  color: #cbd5e1;
+}
+
+.dark .auth-main input {
+  background: #1e2937;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark .auth-main input:focus {
+  border-color: #8b5cf6;
+}
+
+.dark .auth-side {
+  background: #1e293b !important;
+  color: #f1f5f9;
+  border-left-color: #334155;
+}
+
+.dark .side-title {
+  color: #f1f5f9;
+}
+
+.dark .side-text {
+  color: #94a3b8;
+}
+
+.dark .side-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.dark .side-card strong {
+  color: #f1f5f9;
+}
+
+.dark .logo-text {
+  color: #f1f5f9;
+}
+
+.dark .auth-brand .logo-text {
+  color: #f1f5f9;
+}

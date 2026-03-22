@@ -11,7 +11,7 @@ import {
   Heart,
   Info
 } from 'lucide-react';
-import { THEME } from "../../theme";
+import { useTheme } from "../../ThemeContext";
 import { PageTitle, Divider, Card, Badge, PrimaryBtn, OutlineBtn } from "../../components/UI";
 
 const RESOURCES = [
@@ -73,10 +73,11 @@ const HELPLINES = [
 ];
 
 export default function Resources() {
+  const { theme } = useTheme();
   const [expanded, setExpanded] = useState(null);
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: THEME.pageBg, fontFamily: THEME.fontBody }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
 
       <main style={{
@@ -98,19 +99,19 @@ export default function Resources() {
           {RESOURCES.map((r) => (
             <Card key={r.id} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: THEME.pageBg, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${THEME.cardBorder}` }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: theme.pageBg, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${theme.cardBorder}` }}>
                   {r.icon}
                 </div>
-                <Badge type="primary">{r.tag}</Badge>
+                <Badge type="warning">{r.tag}</Badge>
               </div>
 
               <div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: THEME.textPrimary, margin: "0 0 8px 0" }}>{r.title}</h3>
-                <p style={{ fontSize: 12, color: THEME.textSecondary, margin: 0, lineHeight: 1.5 }}>{r.desc}</p>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: theme.textPrimary, margin: "0 0 8px 0" }}>{r.title}</h3>
+                <p style={{ fontSize: 12, color: theme.textSecondary, margin: 0, lineHeight: 1.5 }}>{r.desc}</p>
               </div>
 
               {expanded === r.id && (
-                <div style={{ fontSize: 13, color: THEME.textPrimary, lineHeight: 1.6, padding: "12px", background: THEME.primaryBg, borderRadius: 8, border: `1px solid ${THEME.primaryLight}30` }}>
+                <div style={{ fontSize: 13, color: theme.textPrimary, lineHeight: 1.6, padding: "12px", background: theme.primaryBg, borderRadius: 8, border: `1px solid ${theme.primaryLight}30` }}>
                   {r.content}
                 </div>
               )}
@@ -128,21 +129,21 @@ export default function Resources() {
         {/* ── HELPLINE SECTION ── */}
         <div style={{ marginBottom: 40 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: THEME.dangerBg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Phone size={18} color={THEME.dangerText} />
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: theme.dangerBg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Phone size={18} color={theme.dangerText} />
             </div>
             <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: THEME.textPrimary, margin: 0 }}>Need Immediate Help?</h3>
-              <p style={{ fontSize: 13, color: THEME.textMuted, margin: 0 }}>Reach out — support is always available 24/7</p>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: theme.textPrimary, margin: 0 }}>Need Immediate Help?</h3>
+              <p style={{ fontSize: 13, color: theme.textMuted, margin: 0 }}>Reach out — support is always available 24/7</p>
             </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
             {HELPLINES.map((h) => (
               <Card key={h.name} style={{ textAlign: "center", padding: "24px 16px" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: THEME.textPrimary, marginBottom: 4 }}>{h.name}</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: THEME.primary, marginBottom: 4 }}>{h.number}</div>
-                <div style={{ fontSize: 11, color: THEME.textMuted, marginBottom: 16 }}>{h.lang}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: theme.textPrimary, marginBottom: 4 }}>{h.name}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: theme.primary, marginBottom: 4 }}>{h.number}</div>
+                <div style={{ fontSize: 11, color: theme.textMuted, marginBottom: 16 }}>{h.lang}</div>
                 <PrimaryBtn style={{ width: "100%", padding: "8px", fontSize: 11 }} onClick={() => window.location.href = `tel:${h.number}`}>
                   Call Now
                 </PrimaryBtn>
@@ -152,12 +153,12 @@ export default function Resources() {
         </div>
 
         {/* ── BOTTOM MESSAGE ── */}
-        <Card style={{ background: THEME.primaryBg, border: `1.5px dashed ${THEME.primary}`, textAlign: "center", padding: "32px" }}>
-          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "white", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-            <Heart size={24} color={THEME.primary} />
+        <Card style={{ background: theme.primaryBg, border: `1.5px dashed ${theme.primary}50`, textAlign: "center", padding: "32px" }}>
+          <div style={{ width: 48, height: 48, borderRadius: "50%", background: theme.cardBg, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+            <Heart size={24} color={theme.primary} />
           </div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: THEME.primary, marginBottom: 8 }}>You are taking a brave step</h3>
-          <p style={{ fontSize: 14, color: THEME.textSecondary, margin: 0 }}>By learning and seeking support, you are prioritizing your wellbeing. <strong style={{ color: THEME.primary }}>You are not alone.</strong></p>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: theme.primary, marginBottom: 8 }}>You are taking a brave step</h3>
+          <p style={{ fontSize: 14, color: theme.textSecondary, margin: 0 }}>By learning and seeking support, you are prioritizing your wellbeing. <strong style={{ color: theme.primary }}>You are not alone.</strong></p>
         </Card>
 
       </main>

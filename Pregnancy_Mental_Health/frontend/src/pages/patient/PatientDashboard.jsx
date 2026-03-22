@@ -1,17 +1,20 @@
+
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+
+import ThemeToggle from "../../components/ThemeToggle";
 import { api } from "../../utils/api";
 import { useNavigate, NavLink } from "react-router-dom";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
 } from 'recharts';
-import { 
+import {
   Phone,
   ArrowRight,
   Loader2,
@@ -69,35 +72,38 @@ export default function PatientDashboard() {
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
 
-      <main style={{ 
-        flex: 1, 
-        marginLeft: 260, 
-        padding: "40px 48px", 
-        width: "calc(100% - 260px)", 
+      <main style={{
+        flex: 1,
+        marginLeft: 260,
+        padding: "40px 48px",
+        width: "calc(100% - 260px)",
         boxSizing: "border-box",
         background: theme.pageBg
       }}>
         {/* Welcome Header */}
-        <div style={{ 
-          background: theme.heroGradient, 
-          padding: "32px 40px", 
-          borderRadius: 20, 
-          color: "white", 
+        <div style={{
+          background: theme.heroGradient,
+          padding: "40px",
+          borderRadius: 24,
+          color: "white",
           marginBottom: 32,
           position: "relative",
           overflow: "hidden"
         }}>
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <h1 style={{ 
-              fontFamily: theme.fontHeading, 
-              fontSize: 32, fontWeight: 800, 
-              margin: "0 0 8px 0" 
-            }}>
-              {dashboardData?.welcome_message?.split(',')[0] || "Welcome back"}, {user?.fullName?.split(' ')[0]}!
-            </h1>
-            <div style={{ display: "flex", gap: 16, alignItems: "center", opacity: 0.9, fontSize: 14 }}>
-              <span>Week {dashboardData?.pregnancy_week || 'N/A'} of Pregnancy</span>
+          <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <h1 style={{
+                fontFamily: theme.fontHeading,
+                fontSize: 36, fontWeight: 800,
+                margin: "0 0 8px 0"
+              }}>
+                {dashboardData?.welcome_message?.split(',')[0] || "Welcome back"}, <span style={{ color: theme.isDark ? '#2DD4BF' : '#22D3EE' }}>{user?.fullName?.split(' ')[0]}!</span>
+              </h1>
+              <div style={{ display: "flex", gap: 16, alignItems: "center", opacity: 0.9, fontSize: 14 }}>
+                <span>Week {dashboardData?.pregnancy_week || 'N/A'} of Pregnancy</span>
+              </div>
             </div>
+            <ThemeToggle inHeader={true} />
           </div>
           {/* Decorative circles */}
           <div style={{ position: "absolute", top: -20, right: -20, width: 150, height: 150, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
@@ -129,8 +135,8 @@ export default function PatientDashboard() {
           {/* Next Visit */}
           <Card>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: theme.isDarkMode ? "#1E3A8A" : "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Calendar size={18} color={theme.isDarkMode ? "#BFDBFE" : "#1D4ED8"} />
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: theme.isDark ? "#1E3A8A" : "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Calendar size={18} color={theme.isDark ? "#BFDBFE" : "#1D4ED8"} />
               </div>
               <h3 style={{ fontSize: 13, fontWeight: 700, color: theme.textMuted, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>Next Appointment</h3>
             </div>
@@ -152,8 +158,8 @@ export default function PatientDashboard() {
           {/* Wellness Status */}
           <Card>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: theme.isDarkMode ? "#064E3B" : "#F0FDF4", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <TrendingUp size={18} color={theme.isDarkMode ? "#A7F3D0" : "#047857"} />
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: theme.isDark ? "#064E3B" : "#F0FDF4", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <TrendingUp size={18} color={theme.isDark ? "#A7F3D0" : "#047857"} />
               </div>
               <h3 style={{ fontSize: 13, fontWeight: 700, color: theme.textMuted, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>Wellness Status</h3>
             </div>
@@ -179,7 +185,7 @@ export default function PatientDashboard() {
         <Card style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: theme.textPrimary, margin: 0 }}>My Mental Health Journey</h3>
-            <Badge type="info">Wellness Score Trend</Badge>
+            <Badge type="warning">Wellness Score Trend</Badge>
           </div>
           {dashboardData?.risk_trend?.length > 0 ? (
             <div style={{ width: '100%', height: 300 }}>
@@ -188,14 +194,14 @@ export default function PatientDashboard() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.divider} />
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: theme.textMuted, fontSize: 12 }} />
                   <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: theme.textMuted, fontSize: 12 }} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ background: theme.cardBg, color: theme.textPrimary, borderRadius: '12px', border: `1px solid ${theme.cardBorder}`, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontFamily: theme.fontBody }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="score" 
-                    stroke={theme.primary} 
-                    strokeWidth={4} 
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke={theme.primary}
+                    strokeWidth={4}
                     dot={{ r: 6, fill: theme.primary, strokeWidth: 0 }}
                     activeDot={{ r: 8, fill: theme.primary, stroke: '#fff', strokeWidth: 2 }}
                   />

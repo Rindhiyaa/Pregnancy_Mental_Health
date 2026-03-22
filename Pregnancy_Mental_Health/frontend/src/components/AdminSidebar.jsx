@@ -17,6 +17,7 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../ThemeContext";
 import logo from "../Images/Postpartum_Risk_Insight_Logo.png";
+import ThemeToggle from "./ThemeToggle";
 
 const ADMIN_NAV_ITEMS = [
   { to: "/admin/dashboard", icon: <LayoutDashboard size={18} />, label: "Dashboard" },
@@ -45,11 +46,8 @@ export default function AdminSidebar() {
     }}>
 
       <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 10, background: "rgba(255, 255, 255, 0.84)",
-          display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.1)"
-        }}>
-          <img src={logo} alt="Logo" style={{ width: "66px", height: "66px", objectFit: "contain" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "-8px" }}>
+          <img src={logo} alt="Logo" style={{ width: "54px", height: "54px", objectFit: "contain" }} />
         </div>
         <div>
           <div style={{ fontSize: 16, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>PPD Risk Insight</div>
@@ -78,8 +76,8 @@ export default function AdminSidebar() {
         ))}
       </nav>
 
-
       <div style={{ padding: "12px 16px", borderTop: `1px solid ${theme.sidebarBorder}` }}>
+
         {/* <button
           onClick={handleLogout}
           style={{

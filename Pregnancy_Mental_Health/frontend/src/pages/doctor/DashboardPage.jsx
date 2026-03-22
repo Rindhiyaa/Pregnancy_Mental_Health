@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -9,8 +10,10 @@ import {
     Badge,
     PageTitle,
     StatCard,
-    Loader2
+    Loader2,
+    Pagination
 } from "../../components/UI";
+import ThemeToggle from "../../components/ThemeToggle";
 import { getAvatarColor } from "../../utils/dummyData";
 import {
     AlertCircle,
@@ -89,7 +92,7 @@ export default function DashboardPage() {
 
             if (subRes.ok) {
                 const subData = await subRes.json();
-                setQueue(subData.slice(0, 5));
+                setQueue(subData);
             }
 
             if (appRes.ok) {
@@ -117,6 +120,11 @@ export default function DashboardPage() {
         return `${Math.floor(hours / 24)}d ago`;
     };
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+    const totalPages = Math.ceil(queue.length / itemsPerPage);
+    const paginatedQueue = queue.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
     if (loading) return (
         <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: theme.pageBg }}>
             <Loader2 size={48} className="animate-spin" color={theme.primary} />
@@ -128,44 +136,64 @@ export default function DashboardPage() {
             <DoctorSidebar />
 
             <main style={{ flex: 1, marginLeft: 260, padding: "40px", maxWidth: "1600px", boxSizing: 'border-box' }}>
-                {/* Header */}
-                <header style={{ marginBottom: "40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                        <PageTitle
-                            title={`Good morning, Dr. ${user?.lastName || 'Clinician'}`}
-                            subtitle={`Clinical Command Center — ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
-                        />
-                    </div>
-                    <div style={{ display: "flex", gap: "12px" }}>
-                        <div style={{ position: 'relative' }}>
-                            <Search size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: theme.textMuted }} />
-                            <input
-                                type="text"
-                                placeholder="Search clinical records..."
-                                style={{
-                                    padding: '10px 10px 10px 40px',
-                                    borderRadius: 12,
-                                    border: `1px solid ${theme.glassBorder}`,
-                                    background: theme.glassBg,
-                                    backdropFilter: theme.glassBlur,
-                                    color: theme.textPrimary,
-                                    width: 240,
-                                    outline: 'none'
-                                }}
-                            />
+                {/* Hero Header */}
+                <div style={{
+                    background: theme.heroGradient,
+                    padding: "40px",
+                    borderRadius: 24,
+                    color: "white",
+                    marginBottom: 32,
+                    position: "relative",
+                    overflow: "hidden",
+                    boxShadow: theme.shadowPremium
+                }}>
+                    {/* Decorative circles */}
+                    <div style={{ position: "absolute", top: -20, right: -20, width: 150, height: 150, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
+                    <div style={{ position: "absolute", bottom: -40, left: "40%", width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+                    
+                    <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                            <h1 style={{ 
+                                fontFamily: theme.fontHeading, 
+                                fontSize: 36, fontWeight: 800, 
+                                margin: "0 0 8px 0" 
+                            }}>
+                                Good morning, <span style={{ color: theme.isDark ? '#2DD4BF' : '#22D3EE' }}>Dr. {user?.lastName || 'Clinician'}</span>
+                            </h1>
+                            <p style={{ margin: 0, opacity: 0.9, fontSize: 14 }}>
+                                Clinical Command Center — {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                            </p>
                         </div>
-                        <button style={{
-                            padding: "10px 16px", borderRadius: "12px",
-                            border: `1px solid ${theme.glassBorder}`,
-                            background: theme.glassBg, color: theme.textPrimary,
-                            fontWeight: 700, fontSize: "13px", cursor: "pointer",
-                            display: "flex", alignItems: "center", gap: "8px",
-                            backdropFilter: theme.glassBlur
-                        }}>
-                            <Download size={16} /> Export Data
-                        </button>
+                        <div style={{ display: "flex", gap: "12px" }}>
+                            <div style={{ position: 'relative' }}>
+                                <Search size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: "rgba(255,255,255,0.7)" }} />
+                                <input
+                                    type="text"
+                                    placeholder="Search clinical records..."
+                                    style={{
+                                        padding: '10px 10px 10px 40px',
+                                        borderRadius: 12,
+                                        border: "1px solid rgba(255,255,255,0.2)",
+                                        background: "rgba(255,255,255,0.1)",
+                                        color: "white",
+                                        width: 240,
+                                        outline: 'none'
+                                    }}
+                                />
+                            </div>
+                            <button style={{
+                                padding: "10px 16px", borderRadius: "12px",
+                                border: "1px solid rgba(255,255,255,0.2)",
+                                background: "rgba(255,255,255,0.1)", color: "white",
+                                fontWeight: 700, fontSize: "13px", cursor: "pointer",
+                                display: "flex", alignItems: "center", gap: "8px"
+                            }}>
+                                <Download size={16} /> Export Data
+                            </button>
+                            <ThemeToggle inHeader={true} />
+                        </div>
                     </div>
-                </header>
+                </div>
 
                 {/* Primary Stats Grid */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px", marginBottom: "40px" }}>
@@ -259,7 +287,7 @@ export default function DashboardPage() {
 
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                                 <tbody>
-                                    {queue.length > 0 ? queue.map((a) => (
+                                    {paginatedQueue.length > 0 ? paginatedQueue.map((a) => (
                                         <tr key={a.id} style={{ background: 'rgba(255,255,255,0.02)', cursor: 'pointer' }} onClick={() => navigate(`/doctor/review/${a.id}`)}>
                                             <td style={{ padding: '16px', borderRadius: '12px 0 0 12px', border: `1px solid ${theme.glassBorder}`, borderRight: 'none' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -294,6 +322,13 @@ export default function DashboardPage() {
                                     )}
                                 </tbody>
                             </table>
+                            {totalPages > 1 && (
+                                <Pagination 
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={setCurrentPage}
+                                />
+                            )}
                         </Card>
                     </div>
 

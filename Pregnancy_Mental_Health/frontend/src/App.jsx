@@ -13,11 +13,8 @@ import { ThemeProvider } from "./ThemeContext";
 export default function App() {
   const location = useLocation();
 
-  const isDashboard = location.pathname.startsWith("/patient/") || 
-                    location.pathname.startsWith("/nurse/") || 
-                    location.pathname.startsWith("/doctor/") || 
-                    location.pathname.startsWith("/admin/")
-                    // location.pathname === "/profile";
+  const publicRoutes = ["/", "/about", "/signin", "/signup", "/forgot-password"];
+  const showNavbar = publicRoutes.includes(location.pathname);
 
   return (
     <ErrorBoundary>
@@ -45,7 +42,7 @@ export default function App() {
             },
           }}
         />
-        {!isDashboard && <Navbar />}
+        {showNavbar && <Navbar />}
         <AppRouter />
         {/* {!isDashboard && <Footer />} */}
       </AuthProvider>

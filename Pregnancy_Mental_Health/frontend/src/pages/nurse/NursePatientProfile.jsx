@@ -73,8 +73,8 @@ export default function NursePatientProfile() {
                 {icon}
             </div>
             <div>
-                <div style={{ fontSize: 13, color: theme.textMuted, fontWeight: 700, marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: theme.text }}>{value || "-"}</div>
+                <div style={{ fontSize: 13, color: theme.isDark ? "#FFFFFF" : theme.textSecondary, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: theme.textPrimary }}>{value || "-"}</div>
             </div>
         </div>
     );
@@ -109,14 +109,14 @@ export default function NursePatientProfile() {
                                 <Badge variant={patient.status === 'Draft' ? 'warning' : 'success'}>
                                     Status: {['Draft', 'Pending', 'Active'].includes(patient.status) ? patient.status : 'Active'}
                                 </Badge>
-                                <Badge variant="info">ID: {patient.id}</Badge>
+                                <Badge variant="warning">ID: {patient.id}</Badge>
                             </div>
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: 12 }}>
                         <button
                             onClick={() => navigate(`/nurse/assessment/new?patient=${patient.id}`)}
-                            style={{ padding: '10px 20px', borderRadius: 10, background: 'white', border: `1px solid ${theme.border}`, color: theme.text, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                            style={{ padding: '10px 20px', borderRadius: 10, background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.text, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                         >
                             <ClipboardList size={18} /> New Assessment
                         </button>
