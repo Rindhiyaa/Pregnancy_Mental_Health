@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
+import FilterToolbar from "../../components/FilterToolbar";
 import { PageTitle, Card, Badge, Loader2 } from "../../components/UI";
 import { api } from "../../utils/api";
 import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
+import { exportPatientsToPDF, exportPatientsToExcel, exportPatientsToCSV } from "../../utils/exportUtils";
 import toast from "react-hot-toast";
-import { Search, Filter, PlusCircle, User, Phone, Calendar, Stethoscope, MessageSquare, MoreHorizontal, ChevronRight, ClipboardList } from "lucide-react";
+import { Search, Filter, PlusCircle, User, Phone, Calendar, Stethoscope, MessageSquare, MoreHorizontal, ChevronRight, ClipboardList, Users, UserCheck, Clock, FileText } from "lucide-react";
 
 export default function NursePatientsPage() {
   const { theme } = useTheme();
@@ -65,6 +67,28 @@ export default function NursePatientsPage() {
     return matchesSearch;
   });
 
+  const filterOptions = [
+    { value: "All", label: "All Patients", icon: Users },
+    { value: "Assessed", label: "Assessed", icon: UserCheck },
+    { value: "Pending", label: "Pending", icon: Clock },
+    { value: "Draft", label: "Draft", icon: FileText }
+  ];
+
+  const handlePDFExport = () => {
+    exportPatientsToPDF(filteredPatients);
+    toast.success("PDF exported successfully!");
+  };
+
+  const handleExcelExport = () => {
+    exportPatientsToExcel(filteredPatients);
+    toast.success("Excel file exported successfully!");
+  };
+
+  const handleCSVExport = () => {
+    exportPatientsToCSV(filteredPatients);
+    toast.success("CSV exported successfully!");
+  };
+
   // Pagination Logic
   const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
   const paginatedPatients = filteredPatients.slice(
@@ -72,7 +96,7 @@ export default function NursePatientsPage() {
     currentPage * itemsPerPage
   );
 
-  const tabStyle = (active) => ({
+  const filterBtnStyle = (active) => ({
     padding: '10px 24px',
     borderRadius: 12,
     fontWeight: 700,
@@ -137,26 +161,18 @@ export default function NursePatientsPage() {
         </div>
 
         {/* Filters & Search */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 20 }}>
-          <div style={{ display: 'flex', gap: 12 }}>
-            {["All", "Assessed", "Pending", "Draft"].map(t => (
-              <button key={t} onClick={() => setFilter(t)} style={tabStyle(filter === t)}>{t}</button>
-            ))}
-          </div>
-
-          <div style={{ position: 'relative', flex: 1, maxWidth: 400 }}>
-            <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: theme.textMuted }} />
-            <input
-              style={{
-                width: '100%', padding: '12px 16px 12px 48px', borderRadius: 14,
-                border: `1.5px solid ${theme.border}`, background: theme.inputBg, color: theme.text,
-                fontSize: 15, outline: 'none', fontFamily: theme.fontBody
-              }}
-              placeholder="Search by name or phone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+        <div style={{ marginBottom: 24 }}>
+          <FilterToolbar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            filters={filterOptions}
+            activeFilter={filter}
+            onFilterChange={setFilter}
+            onPDFExport={handlePDFExport}
+            onExcelExport={handleExcelExport}
+            onCSVExport={handleCSVExport}
+            placeholder="Search by name or phone..."
+          />
         </div>
 
         {/* Doctor Filter Indicator */}

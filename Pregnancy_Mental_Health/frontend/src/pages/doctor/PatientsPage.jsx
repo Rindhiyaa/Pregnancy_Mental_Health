@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../ThemeContext";
 import { api } from "../../utils/api";
 import DoctorSidebar from "../../components/DoctorSidebar";
+import FilterToolbar from "../../components/FilterToolbar";
 import { 
     Card, 
     Badge, 
@@ -15,6 +16,7 @@ import {
     Loader2 
 } from "../../components/UI";
 import { getAvatarColor } from "../../utils/dummyData";
+import { exportPatientsToPDF, exportPatientsToExcel, exportPatientsToCSV } from "../../utils/exportUtils";
 import { 
     Search, 
     Users, 
@@ -23,7 +25,10 @@ import {
     ExternalLink, 
     ArrowUpRight, 
     ArrowDownRight,
-    Filter
+    Filter,
+    UserCheck,
+    AlertTriangle,
+    TrendingDown
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -91,10 +96,39 @@ export default function PatientsPage() {
         }
         if (activeFilter === "High Risk") {
             filtered = filtered.filter(p => p.risk_level.toLowerCase().includes('high'));
+        } else if (activeFilter === "Moderate Risk") {
+            filtered = filtered.filter(p => p.risk_level.toLowerCase().includes('moderate'));
+        } else if (activeFilter === "Low Risk") {
+            filtered = filtered.filter(p => p.risk_level.toLowerCase().includes('low'));
+        } else if (activeFilter === "Increasing") {
+            filtered = filtered.filter(p => p.trend === 'up');
         }
         setFilteredPatients(filtered);
         setCurrentPage(1);
     }, [searchTerm, activeFilter, patients]);
+
+    const filterOptions = [
+        { value: "All", label: "All Patients", icon: Users },
+        { value: "High Risk", label: "High Risk", icon: AlertCircle },
+        { value: "Moderate Risk", label: "Moderate Risk", icon: AlertTriangle },
+        { value: "Low Risk", label: "Low Risk", icon: UserCheck },
+        { value: "Increasing", label: "Increasing Risk", icon: TrendingUp }
+    ];
+
+    const handlePDFExport = () => {
+        exportPatientsToPDF(filteredPatients);
+        toast.success("PDF exported successfully!");
+    };
+
+    const handleExcelExport = () => {
+        exportPatientsToExcel(filteredPatients);
+        toast.success("Excel file exported successfully!");
+    };
+
+    const handleCSVExport = () => {
+        exportPatientsToCSV(filteredPatients);
+        toast.success("CSV exported successfully!");
+    };
 
     const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
     const paginatedItems = filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -115,36 +149,6 @@ export default function PatientsPage() {
                         title="Patient Directory"
                         subtitle="Full history and clinical mapping for all registered patients."
                     />
-                    <div style={{ display: "flex", gap: "12px" }}>
-                        <div style={{ position: "relative", width: "300px" }}>
-                            <Search style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: theme.textMuted }} size={18} />
-                            <input
-                                type="text"
-                                placeholder="Filter by name..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                style={{
-                                    width: "100%",
-                                    padding: "12px 14px 12px 42px",
-                                    borderRadius: "14px",
-                                    border: `1px solid ${theme.glassBorder}`,
-                                    background: theme.glassBg,
-                                    color: theme.textPrimary,
-                                    fontSize: "14px",
-                                    outline: "none",
-                                    backdropFilter: theme.glassBlur
-                                }}
-                            />
-                        </div>
-                        <button style={{ 
-                            padding: "12px 20px", borderRadius: "14px", border: `1px solid ${theme.glassBorder}`, 
-                            background: theme.glassBg, color: theme.textPrimary, fontWeight: 700,
-                            display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-                            backdropFilter: theme.glassBlur
-                        }}>
-                            <Filter size={18} /> Filter
-                        </button>
-                    </div>
                 </header>
 
                 {/* Stats Summary */}
@@ -179,6 +183,17 @@ export default function PatientsPage() {
                 </div>
 
                 <Card glass noPadding>
+                    <FilterToolbar
+                        searchValue={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        filters={filterOptions}
+                        activeFilter={activeFilter}
+                        onFilterChange={setActiveFilter}
+                        onPDFExport={handlePDFExport}
+                        onExcelExport={handleExcelExport}
+                        onCSVExport={handleCSVExport}
+                        placeholder="Filter by name..."
+                    />
                     <Table
                         headers={["Patient Identity", "Medical Risk", "Latest EPDS", "Historical Trend", "Last Assessment", "Clinical View"]}
                         loading={false}

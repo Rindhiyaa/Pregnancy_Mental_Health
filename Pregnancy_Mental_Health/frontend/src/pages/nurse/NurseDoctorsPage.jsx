@@ -5,7 +5,9 @@ import NurseSidebar from "../../components/NurseSidebar";
 import { PageTitle, Card, Badge, Loader2 } from "../../components/UI";
 import { api } from "../../utils/api";
 import { dummyApi, USE_DUMMY_DATA } from "../../utils/dummyData";
-import { Stethoscope, Mail, Phone, Clock, Users, ShieldCheck, Search, Filter } from "lucide-react";
+import { Stethoscope, Mail, Phone, Clock, Users, ShieldCheck } from "lucide-react";
+import FilterToolbar from "../../components/FilterToolbar";
+import { exportDoctorsToPDF, exportDoctorsToExcel, exportDoctorsToCSV } from "../../utils/exportUtils";
 
 export default function NurseDoctorsPage() {
   const { theme } = useTheme();
@@ -13,6 +15,7 @@ export default function NurseDoctorsPage() {
   const [loading, setLoading] = useState(true);
   const [doctors, setDoctors] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [availabilityFilter, setAvailabilityFilter] = useState("all");
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -37,10 +40,14 @@ export default function NurseDoctorsPage() {
     fetchDoctors();
   }, []);
 
-  const filteredDoctors = doctors.filter(d =>
-    d.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    d.specialization?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredDoctors = doctors.filter(d => {
+    const matchesSearch = d.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.specialization?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesAvailability = availabilityFilter === "all" ||
+      (availabilityFilter === "available" && d.isAvailable !== false) ||
+      (availabilityFilter === "busy" && d.isAvailable === false);
+    return matchesSearch && matchesAvailability;
+  });
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
@@ -49,25 +56,23 @@ export default function NurseDoctorsPage() {
       <main style={{ flex: 1, marginLeft: 260, padding: "40px 48px", width: "calc(100% - 260px)", boxSizing: "border-box" }}>
         <PageTitle title="Our Medical Team" subtitle="View and contact doctors available for clinical reviews" />
 
-        <div style={{ margin: '32px 0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ position: 'relative', width: '100%', maxWidth: 400 }}>
-            <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: theme.textMuted }} />
-            <input
-              style={{
-                width: '100%', padding: '12px 16px 12px 48px', borderRadius: 14,
-                border: `1.5px solid ${theme.border}`, background: theme.inputBg, color: theme.text,
-                fontSize: 15, outline: 'none', fontFamily: theme.fontBody
-              }}
-              placeholder="Search by name or specialization..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: theme.textMuted }}>{filteredDoctors.length} doctors found</div>
-          </div>
-        </div>
+        <Card glass noPadding style={{ margin: '32px 0 24px' }}>
+          <FilterToolbar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            placeholder="Search by name or specialization..."
+            filters={[
+              { label: "All", value: "all" },
+              { label: "Available", value: "available" },
+              { label: "Busy", value: "busy" },
+            ]}
+            activeFilter={availabilityFilter}
+            onFilterChange={setAvailabilityFilter}
+            onPDFExport={() => exportDoctorsToPDF(filteredDoctors)}
+            onExcelExport={() => exportDoctorsToExcel(filteredDoctors)}
+            onCSVExport={() => exportDoctorsToCSV(filteredDoctors)}
+          />
+        </Card>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '100px 0' }}>

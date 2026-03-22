@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from "../../ThemeContext";
 import AdminSidebar from "../../components/AdminSidebar";
+import FilterToolbar from "../../components/FilterToolbar";
 import { PageTitle, Divider, Card, Badge, Pagination } from "../../components/UI";
 import { getUsers, addUser, updateUser, deleteUser, addAuditLog } from "../../utils/dummyData";
-import { Search, Plus, Edit, Trash2, ShieldOff, KeyRound, CheckCircle, X, UserCheck } from "lucide-react";
+import { exportNursesToPDF, exportNursesToExcel, exportNursesToCSV } from "../../utils/exportUtils";
+import { Search, Plus, Edit, Trash2, ShieldOff, KeyRound, CheckCircle, X, UserCheck, Heart, UserX } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function NursesPage() {
@@ -11,6 +13,7 @@ export default function NursesPage() {
     const [nurses, setNurses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+    const [activeFilter, setActiveFilter] = useState("All");
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState({
         name: "", email: "", phone: "", role: "nurse", ward: ""
@@ -30,10 +33,36 @@ export default function NursesPage() {
         setLoading(false);
     };
 
-    const filteredNurses = nurses.filter(u =>
-        u.name.toLowerCase().includes(search.toLowerCase()) ||
-        u.email.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredNurses = nurses.filter(u => {
+        const matchesSearch = u.name.toLowerCase().includes(search.toLowerCase()) ||
+            u.email.toLowerCase().includes(search.toLowerCase());
+        
+        if (activeFilter === "All") return matchesSearch;
+        if (activeFilter === "Active") return matchesSearch && u.status === 'active';
+        if (activeFilter === "Suspended") return matchesSearch && u.status === 'suspended';
+        return matchesSearch;
+    });
+
+    const filterOptions = [
+        { value: "All", label: "All Nurses", icon: Heart },
+        { value: "Active", label: "Active", icon: UserCheck },
+        { value: "Suspended", label: "Suspended", icon: UserX }
+    ];
+
+    const handlePDFExport = () => {
+        exportNursesToPDF(filteredNurses);
+        toast.success("PDF exported successfully!");
+    };
+
+    const handleExcelExport = () => {
+        exportNursesToExcel(filteredNurses);
+        toast.success("Excel file exported successfully!");
+    };
+
+    const handleCSVExport = () => {
+        exportNursesToCSV(filteredNurses);
+        toast.success("CSV exported successfully!");
+    };
 
     const totalPages = Math.ceil(filteredNurses.length / itemsPerPage);
     const paginatedNurses = filteredNurses.slice(
@@ -90,12 +119,17 @@ export default function NursesPage() {
                 <Divider style={{ marginBottom: 24 }} />
 
                 <Card style={{ padding: 0, overflow: "hidden" }}>
-                    <div style={toolbarStyle(theme)}>
-                        <div style={{ position: "relative", flex: 1, maxWidth: 320 }}>
-                            <Search size={18} style={searchIconStyle(theme)} />
-                            <input type="text" placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)} style={inputStyle(theme, true)} />
-                        </div>
-                    </div>
+                    <FilterToolbar
+                        searchValue={search}
+                        onSearchChange={setSearch}
+                        filters={filterOptions}
+                        activeFilter={activeFilter}
+                        onFilterChange={setActiveFilter}
+                        onPDFExport={handlePDFExport}
+                        onExcelExport={handleExcelExport}
+                        onCSVExport={handleCSVExport}
+                        placeholder="Search by name or email..."
+                    />
 
                     <div style={{ overflowX: "auto" }}>
                         <table style={tableStyle}>

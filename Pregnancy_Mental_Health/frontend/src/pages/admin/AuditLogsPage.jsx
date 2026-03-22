@@ -3,8 +3,8 @@ import { useTheme } from "../../ThemeContext";
 import AdminSidebar from "../../components/AdminSidebar";
 import { PageTitle, Divider, Card, Badge, Pagination } from "../../components/UI";
 import { getAuditLogs } from "../../utils/dummyData";
-import { Search, Filter, Calendar, Clock, Download } from "lucide-react";
-import toast from "react-hot-toast";
+import { Calendar, Clock, Search, Filter, Download, ChevronDown } from "lucide-react";
+import { exportToPDF, exportToExcel, exportToCSV } from "../../utils/exportUtils";
 
 export default function AuditLogsPage() {
     const { theme } = useTheme();
@@ -55,10 +55,6 @@ export default function AuditLogsPage() {
         return 'warning';
     };
 
-    const handleExport = () => {
-        toast.success("Logs exported to CSV");
-    };
-
     return (
         <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
             <AdminSidebar />
@@ -66,70 +62,197 @@ export default function AuditLogsPage() {
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
                     <PageTitle title="Audit Logs" subtitle="Comprehensive system-wide action tracking for security and compliance" />
-                    <button
-                        onClick={handleExport}
-                        style={{
-                            background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-                            color: "white", padding: "10px 18px", borderRadius: 10, border: "none",
-                            display: "flex", alignItems: "center", gap: 8, fontWeight: 700, cursor: "pointer",
-                            transition: "all 0.2s", boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)"
-                        }}
-                    >
-                        <Download size={18} /> Export CSV
-                    </button>
                 </div>
                 <Divider style={{ marginBottom: 24 }} />
 
                 <Card style={{ padding: 0, overflow: "hidden" }}>
 
-                    {/* Toolbar */}
-                    <div style={{ padding: "20px 24px", borderBottom: `1px solid ${theme.divider}`, display: "flex", gap: 16, alignItems: "center", background: theme.innerBg, flexWrap: "wrap" }}>
-
-                        <div style={{ position: "relative", flex: "1 1 250px" }}>
-                            <Search size={18} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: theme.textMuted }} />
+                    {/* Custom Toolbar Layout with date picker in center */}
+                    <div style={{
+                        padding: "20px 24px",
+                        borderBottom: `1px solid ${theme.border}`,
+                        display: "flex",
+                        gap: 16,
+                        alignItems: "center",
+                        background: theme.innerBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#f8fafc"),
+                        flexWrap: "wrap",
+                        justifyContent: "space-between"
+                    }}>
+                        {/* Search Input */}
+                        <div style={{ position: "relative", flex: 1, maxWidth: 320, minWidth: 200 }}>
+                            <Search size={18} style={{
+                                position: "absolute",
+                                left: 12,
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                color: theme.textMuted
+                            }} />
                             <input
                                 type="text"
                                 placeholder="Search user or details..."
                                 value={searchUser}
                                 onChange={(e) => setSearchUser(e.target.value)}
-                                style={inputStyle(theme)}
+                                style={{
+                                    width: "100%",
+                                    padding: "10px 12px 10px 40px",
+                                    borderRadius: 8,
+                                    border: `1px solid ${theme.border}`,
+                                    fontSize: 14,
+                                    fontFamily: "inherit",
+                                    outline: "none",
+                                    boxSizing: "border-box",
+                                    background: theme.inputBg,
+                                    color: theme.textPrimary
+                                }}
                             />
                         </div>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <Filter size={18} color={theme.textMuted} />
-                            <select
-                                value={actionFilter}
-                                onChange={(e) => setActionFilter(e.target.value)}
-                                style={selectStyle(theme)}
-                            >
-                                <option value="all">All Actions</option>
-                                <option value="User Created">User Created</option>
-                                <option value="Password Reset">Password Reset</option>
-                                <option value="Assessment Approved">Assessment Approved</option>
-                                <option value="Mood Logged">Mood Logged</option>
-                                <option value="System Action">System Action</option>
-                            </select>
-                        </div>
-
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {/* Date Picker in Center */}
+                        <div style={{ 
+                            display: "flex", 
+                            alignItems: "center", 
+                            gap: 8,
+                            position: "absolute",
+                            left: "50%",
+                            transform: "translateX(-50%)"
+                        }}>
                             <Calendar size={18} color={theme.textMuted} />
                             <input
                                 type="date"
                                 value={dateFilter}
-                                onChange={(e) => setDateFilter(e.target.value)}
+                                onChange={(e) => { setDateFilter(e.target.value); setCurrentPage(1); }}
                                 style={selectStyle(theme)}
                             />
                         </div>
 
-                        {(searchUser || actionFilter !== 'all' || dateFilter) && (
-                            <button
-                                onClick={() => { setSearchUser(""); setActionFilter("all"); setDateFilter(""); }}
-                                style={{ background: "none", border: "none", color: theme.primary, fontWeight: 700, cursor: "pointer", fontSize: 13 }}
-                            >
-                                Clear Filters
-                            </button>
-                        )}
+                        {/* Right-aligned group: Filter + Export + Clear */}
+                        <div style={{
+                            display: "flex",
+                            gap: 6,
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                            marginLeft: "auto"
+                        }}>
+                            {/* Filter Dropdown */}
+                            <div style={{ position: "relative" }}>
+                                <button
+                                    style={{
+                                        padding: "10px 22px",
+                                        minWidth: 130,
+                                        borderRadius: 8,
+                                        border: `1px solid ${theme.border}`,
+                                        background: theme.cardBg,
+                                        color: theme.textPrimary,
+                                        cursor: "pointer",
+                                        fontWeight: 600,
+                                        fontSize: 14,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                        position: "relative"
+                                    }}
+                                    onClick={() => {
+                                        // Toggle filter dropdown - simplified for now
+                                        const filters = [
+                                            { label: "All Actions", value: "all" },
+                                            { label: "User Created", value: "User Created" },
+                                            { label: "Password Reset", value: "Password Reset" },
+                                            { label: "Assessment Approved", value: "Assessment Approved" },
+                                            { label: "Mood Logged", value: "Mood Logged" },
+                                            { label: "System Action", value: "System Action" },
+                                        ];
+                                        // Simple filter implementation
+                                        const newFilter = prompt("Enter filter value (all, User Created, Password Reset, etc.):", actionFilter);
+                                        if (newFilter !== null) {
+                                            setActionFilter(newFilter);
+                                        }
+                                    }}
+                                >
+                                    <Filter size={18} />
+                                    Filter
+                                    <ChevronDown size={16} />
+                                </button>
+                            </div>
+
+                            {/* Export Dropdown */}
+                            <div style={{ position: "relative" }}>
+                                <button
+                                    style={{
+                                        padding: "10px 22px",
+                                        minWidth: 130,
+                                        borderRadius: 8,
+                                        background: theme.primary,
+                                        color: "white",
+                                        border: "none",
+                                        boxShadow: "0 4px 12px rgba(139, 92, 246, 0.2)",
+                                        cursor: "pointer",
+                                        fontWeight: 600,
+                                        fontSize: 14,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                        position: "relative"
+                                    }}
+                                    onClick={() => {
+                                        // Simple export implementation
+                                        const exportType = prompt("Export as: PDF, Excel, or CSV?", "PDF");
+                                        if (exportType) {
+                                            if (exportType.toLowerCase() === 'pdf') {
+                                                exportToPDF(
+                                                    filteredLogs,
+                                                    'Audit Logs',
+                                                    [
+                                                        { header: 'Timestamp', accessor: (item) => new Date(item.timestamp).toLocaleString() },
+                                                        { header: 'User', accessor: 'user' },
+                                                        { header: 'Action', accessor: 'action' },
+                                                        { header: 'Details', accessor: 'details' },
+                                                        { header: 'IP', accessor: 'ip' },
+                                                    ],
+                                                    'audit-logs'
+                                                );
+                                            } else if (exportType.toLowerCase() === 'excel') {
+                                                exportToExcel(
+                                                    filteredLogs.map(l => ({
+                                                        Timestamp: new Date(l.timestamp).toLocaleString(),
+                                                        User: l.user,
+                                                        Action: l.action,
+                                                        Details: l.details,
+                                                        IP: l.ip,
+                                                    })),
+                                                    'Audit Logs',
+                                                    'audit-logs'
+                                                );
+                                            } else if (exportType.toLowerCase() === 'csv') {
+                                                exportToCSV(
+                                                    filteredLogs.map(l => ({
+                                                        Timestamp: new Date(l.timestamp).toLocaleString(),
+                                                        User: l.user,
+                                                        Action: l.action,
+                                                        Details: l.details,
+                                                        IP: l.ip,
+                                                    })),
+                                                    'audit-logs'
+                                                );
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <Download size={18} />
+                                    Export
+                                    <ChevronDown size={16} />
+                                </button>
+                            </div>
+
+                            {/* Clear Button */}
+                            {(searchUser || actionFilter !== 'all' || dateFilter) && (
+                                <button
+                                    onClick={() => { setSearchUser(""); setActionFilter("all"); setDateFilter(""); }}
+                                    style={{ background: "none", border: "none", color: theme.primary, fontWeight: 700, cursor: "pointer", fontSize: 13 }}
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Table */}
@@ -212,12 +335,6 @@ const thStyle = (theme) => ({
 const tdStyle = {
     padding: "16px 24px", verticalAlign: "middle"
 };
-
-const inputStyle = (theme) => ({
-    width: "100%", padding: "10px 12px 10px 40px", borderRadius: 8,
-    border: `1px solid ${theme.border}`, fontSize: 14, fontFamily: "inherit", outline: "none",
-    background: theme.inputBg, color: theme.textPrimary
-});
 
 const selectStyle = (theme) => ({
     padding: "10px", borderRadius: 8, border: `1px solid ${theme.border}`,

@@ -25,7 +25,7 @@ const NAV_ITEMS = [
   { to: "/nurse/assessment/new", icon: <ClipboardList size={18} />, label: "New Assessment" },
   { to: "/nurse/assessments", icon: <History size={18} />, label: "Assessment History" },
   { to: "/nurse/appointments", icon: <Calendar size={18} />, label: "Appointments" },
-  { to: "/nurse/doctors", icon: <Stethoscope size={18} />, label: "Our Doctors" },
+  { to: "/nurse/doctors", icon: <Shield size={18} />, label: "Our Doctors" },
   { to: "/nurse/messages", icon: <MessageSquare size={18} />, label: "Messages" },
 ];
 

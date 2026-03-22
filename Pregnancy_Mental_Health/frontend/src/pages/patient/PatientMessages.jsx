@@ -2,12 +2,13 @@ import React, { useState, useEffect } from "react";
 import {
   Mail, Bell, Calendar, ClipboardCheck, Settings, User, Bot,
   Phone, Pin, Info, Loader2, Inbox, MessageCircle,
-  Circle
+  Circle, FileText
 } from "lucide-react";
 import PatientSidebar from "../../components/PatientSidebar";
 import { api } from "../../utils/api";
 import { useTheme } from "../../ThemeContext";
 import { PageTitle, Divider, Card, Badge, PrimaryBtn } from "../../components/UI";
+import jsPDF from "jspdf";
 
 const DUMMY_MESSAGES = [
   {
@@ -88,6 +89,22 @@ export default function PatientMessages() {
 
   const unreadCount = messages.filter(m => !m.read).length;
   const selectedMsg = messages.find(m => m.id === selected);
+
+  const exportMessageToPDF = (msg) => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(msg.subject, 14, 22);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`From: ${msg.from} — ${msg.role}`, 14, 34);
+    doc.text(`Date: ${msg.date} at ${msg.time}`, 14, 42);
+    doc.setLineWidth(0.5);
+    doc.line(14, 48, 196, 48);
+    const lines = doc.splitTextToSize(msg.body, 180);
+    doc.text(lines, 14, 58);
+    doc.save(`message-${msg.id}.pdf`);
+  };
 
   const handleOpen = (msg) => {
     setSelected(msg.id);
@@ -226,7 +243,9 @@ export default function PatientMessages() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: theme.primary }}>
                     <Circle size={10} fill={theme.primary} /> Need more help? Contact our support line.
                   </div>
-                  <PrimaryBtn onClick={() => window.print()}>Print Message</PrimaryBtn>
+                  <PrimaryBtn onClick={() => exportMessageToPDF(selectedMsg)}>
+                    <FileText size={16} style={{ marginRight: 6 }} /> Export PDF
+                  </PrimaryBtn>
                 </div>
               </div>
             )}

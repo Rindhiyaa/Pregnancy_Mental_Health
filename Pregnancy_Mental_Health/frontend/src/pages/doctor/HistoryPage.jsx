@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../ThemeContext";
 import { api } from "../../utils/api";
 import { exportAssessmentToPDF } from "../../utils/pdfExport";
+import { exportAssessmentsToPDF, exportAssessmentsToExcel, exportAssessmentsToCSV } from "../../utils/exportUtils";
 import "../../styles/HistoryPage.css";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import logo from "../../Images/Postpartum_Risk_Insight_Logo.png"
 import DoctorSidebar from "../../components/DoctorSidebar";
+import FilterToolbar from "../../components/FilterToolbar";
 import {
     Card,
     Badge,
@@ -19,18 +20,9 @@ import {
     Loader2
 } from "../../components/UI";
 import {
-    Search,
-    Filter,
     Download,
     Trash2,
     Eye,
-    FileText,
-    AlertCircle,
-    CheckCircle,
-    Calendar,
-    ChevronRight,
-    ArrowUpRight,
-    Bell
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAvatarColor } from "../../utils/dummyData";
@@ -130,65 +122,31 @@ const HistoryPage = () => {
             <DoctorSidebar />
 
             <main style={{ flex: 1, marginLeft: 260, padding: "40px", boxSizing: 'border-box' }}>
-                <header style={{ marginBottom: "40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <header style={{ marginBottom: "32px" }}>
                     <PageTitle
                         title="Comprehensive History"
                         subtitle="Review all previous clinical interventions and AI diagnostic records."
                     />
-                    <div style={{ display: "flex", gap: "12px" }}>
-                        <div style={{ position: "relative", width: "300px" }}>
-                            <Search style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: theme.textMuted }} size={18} />
-                            <input
-                                type="text"
-                                placeholder="Search historical logs..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                style={{
-                                    width: "100%",
-                                    padding: "12px 14px 12px 42px",
-                                    borderRadius: "14px",
-                                    border: `1px solid ${theme.glassBorder}`,
-                                    background: theme.glassBg,
-                                    color: theme.textPrimary,
-                                    fontSize: "14px",
-                                    outline: "none",
-                                    backdropFilter: theme.glassBlur
-                                }}
-                            />
-                        </div>
-                    </div>
                 </header>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "24px", marginBottom: "32px", alignItems: "center" }}>
-                    <div style={{ display: "flex", gap: "12px" }}>
-                        {["all", "high", "moderate", "low"].map((risk) => (
-                            <button
-                                key={risk}
-                                onClick={() => setFilterRisk(risk)}
-                                style={{
-                                    padding: "10px 18px",
-                                    borderRadius: "12px",
-                                    border: filterRisk === risk ? `1px solid ${theme.primary}40` : `1px solid ${theme.glassBorder}`,
-                                    background: filterRisk === risk ? `${theme.primary}15` : theme.glassBg,
-                                    color: filterRisk === risk ? theme.primary : theme.textSecondary,
-                                    fontWeight: 700,
-                                    fontSize: "13px",
-                                    cursor: "pointer",
-                                    textTransform: "capitalize",
-                                    backdropFilter: theme.glassBlur
-                                }}
-                            >
-                                {risk} Risk
-                            </button>
-                        ))}
-                    </div>
-                    <button
-                        onClick={() => window.print()}
-                        style={{ background: theme.glassBg, color: theme.textPrimary, border: `1px solid ${theme.glassBorder}`, padding: '10px 20px', borderRadius: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, backdropFilter: theme.glassBlur }}
-                    >
-                        <Download size={18} /> Bulk Export PDF
-                    </button>
-                </div>
+                <Card glass noPadding style={{ marginBottom: 24 }}>
+                    <FilterToolbar
+                        searchValue={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        placeholder="Search historical logs..."
+                        filters={[
+                            { label: "All Risk", value: "all" },
+                            { label: "High Risk", value: "high" },
+                            { label: "Moderate Risk", value: "moderate" },
+                            { label: "Low Risk", value: "low" },
+                        ]}
+                        activeFilter={filterRisk}
+                        onFilterChange={setFilterRisk}
+                        onPDFExport={() => exportAssessmentsToPDF(filteredRows)}
+                        onExcelExport={() => exportAssessmentsToExcel(filteredRows)}
+                        onCSVExport={() => exportAssessmentsToCSV(filteredRows)}
+                    />
+                </Card>
 
                 <Card glass noPadding>
                     <Table

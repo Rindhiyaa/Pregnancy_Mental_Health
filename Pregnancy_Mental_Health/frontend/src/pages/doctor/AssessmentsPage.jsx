@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../ThemeContext";
 import { api } from "../../utils/api";
 import DoctorSidebar from "../../components/DoctorSidebar";
+import FilterToolbar from "../../components/FilterToolbar";
 import { 
     Card, 
     Badge, 
@@ -14,6 +15,7 @@ import {
     Pagination,
     Loader2
 } from "../../components/UI";
+import { exportAssessmentsToPDF, exportAssessmentsToExcel, exportAssessmentsToCSV } from "../../utils/exportUtils";
 import toast from 'react-hot-toast';
 import { 
     Search, 
@@ -23,7 +25,8 @@ import {
     AlertTriangle, 
     ChevronRight,
     Zap,
-    History as HistoryIcon
+    History as HistoryIcon,
+    ClipboardList
 } from 'lucide-react';
 import { getAvatarColor } from "../../utils/dummyData";
 
@@ -83,9 +86,6 @@ const AssessmentsPage = () => {
         setCurrentPage(1);
     }, [searchTerm, activeFilter, assessments, user?.id]);
 
-    const totalPages = Math.ceil(filteredAssessments.length / itemsPerPage);
-    const paginatedItems = filteredAssessments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
     const getTimeAgo = (timestamp) => {
         if (!timestamp) return "N/A";
         const diff = new Date() - new Date(timestamp);
@@ -94,6 +94,31 @@ const AssessmentsPage = () => {
         if (hours < 24) return `${hours}h ago`;
         return `${Math.floor(hours / 24)}d ago`;
     };
+
+    const filterOptions = [
+        { value: "all", label: "All Pending", icon: HistoryIcon },
+        { value: "high", label: "High Priority", icon: AlertTriangle },
+        { value: "moderate", label: "Moderate Risk", icon: Zap },
+        { value: "mine", label: "Assigned to Me", icon: User }
+    ];
+
+    const handlePDFExport = () => {
+        exportAssessmentsToPDF(filteredAssessments);
+        toast.success("PDF exported successfully!");
+    };
+
+    const handleExcelExport = () => {
+        exportAssessmentsToExcel(filteredAssessments);
+        toast.success("Excel file exported successfully!");
+    };
+
+    const handleCSVExport = () => {
+        exportAssessmentsToCSV(filteredAssessments);
+        toast.success("CSV exported successfully!");
+    };
+
+    const totalPages = Math.ceil(filteredAssessments.length / itemsPerPage);
+    const paginatedItems = filteredAssessments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     if (loading) return (
         <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: theme.pageBg }}>
@@ -111,64 +136,20 @@ const AssessmentsPage = () => {
                         title="Clinical Review Queue"
                         subtitle="Detailed screenings awaiting your professional assessment and approval."
                     />
-                    <div style={{ display: "flex", gap: "12px" }}>
-                        <div style={{ position: "relative", width: "300px" }}>
-                            <Search style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: theme.textMuted }} size={18} />
-                            <input
-                                type="text"
-                                placeholder="Search by patient ID..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                style={{
-                                    width: "100%",
-                                    padding: "12px 14px 12px 42px",
-                                    borderRadius: "14px",
-                                    border: `1px solid ${theme.glassBorder}`,
-                                    background: theme.glassBg,
-                                    color: theme.textPrimary,
-                                    fontSize: "14px",
-                                    outline: "none",
-                                    backdropFilter: theme.glassBlur
-                                }}
-                            />
-                        </div>
-                    </div>
                 </header>
 
-                <div style={{ display: "flex", gap: "12px", marginBottom: "32px", overflowX: 'auto', paddingBottom: 8 }} className="hide-scrollbar">
-                    {[
-                        { id: "all", label: "All Pending", icon: <HistoryIcon size={16} /> },
-                        { id: "high", label: "High Priority", icon: <AlertTriangle size={16} />, color: theme.dangerText },
-                        { id: "moderate", label: "Moderate Risk", icon: <Zap size={16} />, color: theme.warningText },
-                        { id: "mine", label: "Assigned to Me", icon: <User size={16} /> }
-                    ].map((f) => (
-                        <button
-                            key={f.id}
-                            onClick={() => setActiveFilter(f.id)}
-                            style={{
-                                padding: "10px 20px",
-                                borderRadius: "12px",
-                                border: activeFilter === f.id ? `1px solid ${f.color || theme.primary}40` : `1px solid ${theme.glassBorder}`,
-                                background: activeFilter === f.id ? `${f.color || theme.primary}15` : theme.glassBg,
-                                color: activeFilter === f.id ? (f.color || theme.primary) : theme.textSecondary,
-                                fontWeight: 700,
-                                fontSize: "14px",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                                whiteSpace: 'nowrap',
-                                transition: "all 0.2s",
-                                backdropFilter: theme.glassBlur
-                            }}
-                        >
-                            {f.icon}
-                            {f.label}
-                        </button>
-                    ))}
-                </div>
-
                 <Card glass noPadding>
+                    <FilterToolbar
+                        searchValue={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        filters={filterOptions}
+                        activeFilter={activeFilter}
+                        onFilterChange={setActiveFilter}
+                        onPDFExport={handlePDFExport}
+                        onExcelExport={handleExcelExport}
+                        onCSVExport={handleCSVExport}
+                        placeholder="Search by patient ID..."
+                    />
                     <Table
                         headers={["Patient Profile", "Lead Nurse", "Risk Indicator", "Submited On", "Clinician Action"]}
                         loading={false}

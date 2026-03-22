@@ -173,7 +173,7 @@ export default function DashboardPage() {
                                     style={{
                                         padding: '10px 10px 10px 40px',
                                         borderRadius: 12,
-                                        border: "1px solid rgba(255,255,255,0.2)",
+                                        border: "1px solid rgba(255, 255, 255, 0.89)",
                                         background: "rgba(255,255,255,0.1)",
                                         color: "white",
                                         width: 240,
@@ -181,15 +181,7 @@ export default function DashboardPage() {
                                     }}
                                 />
                             </div>
-                            <button style={{
-                                padding: "10px 16px", borderRadius: "12px",
-                                border: "1px solid rgba(255,255,255,0.2)",
-                                background: "rgba(255,255,255,0.1)", color: "white",
-                                fontWeight: 700, fontSize: "13px", cursor: "pointer",
-                                display: "flex", alignItems: "center", gap: "8px"
-                            }}>
-                                <Download size={16} /> Export Data
-                            </button>
+                           
                             <ThemeToggle inHeader={true} />
                         </div>
                     </div>

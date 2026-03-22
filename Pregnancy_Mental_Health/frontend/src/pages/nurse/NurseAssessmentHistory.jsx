@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
+import FilterToolbar from "../../components/FilterToolbar";
 import { PageTitle, Card, Badge, Loader2, Pagination } from "../../components/UI";
 import { api } from "../../utils/api";
 import { dummyApi, USE_DUMMY_DATA } from "../../utils/dummyData";
+import { exportAssessmentsToPDF, exportAssessmentsToExcel, exportAssessmentsToCSV } from "../../utils/exportUtils";
 import toast from "react-hot-toast";
-import { History, FileText, Download, Eye, Trash2, Search, Calendar, User, Stethoscope, ChevronRight } from "lucide-react";
+import { History, FileText, Download, Eye, Trash2, Search, Calendar, User, Stethoscope, ChevronRight, ClipboardList, Clock, CheckCircle } from "lucide-react";
 
 export default function NurseAssessmentHistory() {
   const { theme } = useTheme();
@@ -50,6 +52,29 @@ export default function NurseAssessmentHistory() {
     return matchesSearch && statusLower === filterLower;
   });
 
+  const filterOptions = [
+    { value: "All", label: "All Assessments", icon: ClipboardList },
+    { value: "Draft", label: "Draft", icon: FileText },
+    { value: "Submitted", label: "Submitted", icon: Clock },
+    { value: "Reviewed", label: "Reviewed", icon: CheckCircle },
+    { value: "Complete", label: "Complete", icon: CheckCircle }
+  ];
+
+  const handlePDFExport = () => {
+    exportAssessmentsToPDF(filteredAssessments);
+    toast.success("PDF exported successfully!");
+  };
+
+  const handleExcelExport = () => {
+    exportAssessmentsToExcel(filteredAssessments);
+    toast.success("Excel file exported successfully!");
+  };
+
+  const handleCSVExport = () => {
+    exportAssessmentsToCSV(filteredAssessments);
+    toast.success("CSV exported successfully!");
+  };
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const totalPages = Math.ceil(filteredAssessments.length / itemsPerPage);
@@ -58,7 +83,7 @@ export default function NurseAssessmentHistory() {
     currentPage * itemsPerPage
   );
 
-  const tabStyle = (active) => ({
+  const filterBtnStyle = (active) => ({
     padding: '10px 20px',
     borderRadius: 30,
     fontWeight: 700,
@@ -126,30 +151,18 @@ export default function NurseAssessmentHistory() {
         <PageTitle title="Assessment History" subtitle="Review and manage all patient mental health screenings" />
 
         {/* Filter Tabs & Search */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '32px 0 24px', gap: 20 }}>
-          <div style={{ display: 'flex', gap: 12 }}>
-            {["All", "Draft", "Submitted", "Reviewed", "Complete"].map(t => (
-              <button key={t} onClick={() => setFilter(t)} style={tabStyle(filter === t)}>{t}</button>
-            ))}
-          </div>
-
-          <div style={{ position: 'relative', flex: 1, maxWidth: 350 }}>
-            <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: theme.textMuted }} />
-            <input
-              style={{
-                width: '100%', padding: '12px 16px 12px 48px', borderRadius: 24,
-                border: `1.5px solid ${theme.border}`, background: theme.cardBg,
-                fontSize: 14, outline: 'none', fontFamily: theme.fontBody,
-                color: theme.textPrimary,
-                transition: 'all 0.2s ease'
-              }}
-              placeholder="Search by patient name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={(e) => e.target.style.borderColor = theme.primary}
-              onBlur={(e) => e.target.style.borderColor = theme.border}
-            />
-          </div>
+        <div style={{ marginBottom: 24 }}>
+          <FilterToolbar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            filters={filterOptions}
+            activeFilter={filter}
+            onFilterChange={setFilter}
+            onPDFExport={handlePDFExport}
+            onExcelExport={handleExcelExport}
+            onCSVExport={handleCSVExport}
+            placeholder="Search by patient name..."
+          />
         </div>
 
         <Card style={{ padding: 0, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>

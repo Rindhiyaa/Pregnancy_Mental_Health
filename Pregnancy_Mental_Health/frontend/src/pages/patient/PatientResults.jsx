@@ -6,12 +6,14 @@ import {
 import {
   Loader2, HeartPulse, Activity, Smile,
   ChevronDown, ChevronUp, Calendar, Clock,
-  CheckCircle, User, Info, MessageCircle, ArrowRight
+  CheckCircle, User, Info, MessageCircle, ArrowRight, FileText, Download
 } from "lucide-react";
 import PatientSidebar from "../../components/PatientSidebar";
+import FilterToolbar from "../../components/FilterToolbar";
 import { api } from "../../utils/api";
 import { useTheme } from "../../ThemeContext";
 import { PageTitle, Divider, Card, Badge, PrimaryBtn, Pagination } from "../../components/UI";
+import toast from "react-hot-toast";
 
 // ── DUMMY DATA (shows full UI until API connects) ── 
 const DUMMY_ASSESSMENTS = [
@@ -99,6 +101,8 @@ export default function PatientResults() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("All");
   const itemsPerPage = 5;
 
   const WELLNESS_CONFIG = {
@@ -188,8 +192,32 @@ export default function PatientResults() {
 
   const latest = assessments[0];
 
-  const totalPages = Math.ceil(assessments.length / itemsPerPage);
-  const paginatedAssessments = assessments.slice(
+  const filteredAssessments = assessments.filter(a => {
+    const matchesSearch = searchQuery === "" || 
+      a.date?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.doctor_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (activeFilter === "All") return matchesSearch;
+    if (activeFilter === "High Risk") return matchesSearch && a.wellness_status === "extra-care";
+    if (activeFilter === "Moderate Risk") return matchesSearch && a.wellness_status === "consistent";
+    if (activeFilter === "Low Risk") return matchesSearch && a.wellness_status === "feeling-well";
+    return matchesSearch;
+  });
+
+  const filterOptions = [
+    { value: "All", label: "All Results", icon: FileText },
+    { value: "High Risk", label: "High Risk", icon: HeartPulse },
+    { value: "Moderate Risk", label: "Moderate Risk", icon: Activity },
+    { value: "Low Risk", label: "Low Risk", icon: Smile }
+  ];
+
+  const handlePDFExport = () => {
+    window.print();
+    toast.success("PDF export initiated!");
+  };
+
+  const totalPages = Math.ceil(filteredAssessments.length / itemsPerPage);
+  const paginatedAssessments = filteredAssessments.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -246,6 +274,19 @@ export default function PatientResults() {
         </div>
 
         {/* ── ASSESSMENT LIST ── */}
+        <div style={{ marginBottom: 20 }}>
+          <FilterToolbar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            filters={filterOptions}
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+            onPDFExport={handlePDFExport}
+            placeholder="Search by date or doctor..."
+            showExport={true}
+          />
+        </div>
+        
         <h3 style={{ fontSize: 18, fontWeight: 700, color: theme.textPrimary, marginBottom: 20 }}>Assessment History</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {paginatedAssessments.map((a) => (
@@ -328,8 +369,9 @@ export default function PatientResults() {
                       </div>
                     </div>
 
-                    <PrimaryBtn style={{ marginTop: 24, width: "fit-content" }} onClick={() => window.print()}>
-                      Print Summary
+                    <PrimaryBtn style={{ marginTop: 24, width: "fit-content" }} onClick={handlePDFExport}>
+                      <FileText size={16} style={{ marginRight: 8 }} />
+                      Export as PDF
                     </PrimaryBtn>
 
                   </div>

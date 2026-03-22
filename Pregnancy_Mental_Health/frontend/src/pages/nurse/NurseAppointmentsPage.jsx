@@ -7,6 +7,8 @@ import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData"
 import toast from "react-hot-toast";
 import { useSearchParams } from "react-router-dom";
 import { PlusCircle, Clock, Stethoscope, CheckCircle, XCircle, Calendar, User, ChevronLeft, ChevronRight, ClipboardList, Trash2, X } from "lucide-react";
+import FilterToolbar from "../../components/FilterToolbar";
+import { exportToPDF, exportToExcel, exportToCSV } from "../../utils/exportUtils";
 
 export default function NurseAppointmentsPage() {
   const { theme } = useTheme();
@@ -21,8 +23,9 @@ export default function NurseAppointmentsPage() {
   const [instructions, setInstructions] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [showModal, setShowModal] = useState(prefilledPatientId ? true : false);
-  const [filter, setFilter] = useState("Today"); // Today | Week | All | Urgent
+  const [filter, setFilter] = useState("All"); // Today | Week | All | Urgent
   const [selectedDoctorFilter, setSelectedDoctorFilter] = useState("All Doctors");
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());
   // FIX 2: State to control the calendar modal overlay
   const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -186,6 +189,12 @@ export default function NurseAppointmentsPage() {
   };
 
   const filteredAppointments = appointments.filter(a => {
+    // Search filter
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      if (!a.patient_name?.toLowerCase().includes(q) && !a.doctor_name?.toLowerCase().includes(q)) return false;
+    }
+
     // Role/Doctor Filter
     if (selectedDoctorFilter !== "All Doctors" && a.doctor_name !== selectedDoctorFilter) {
       return false;
@@ -348,32 +357,58 @@ export default function NurseAppointmentsPage() {
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: theme.textMuted }}>View:</span>
-            <select 
-              value={filter} 
-              onChange={(e) => setFilter(e.target.value)}
-              style={{ ...inputStyle, marginTop: 0, width: 'auto', padding: '8px 16px', fontWeight: 600, background: theme.tableHeaderBg || theme.cardBgSecondary }}
-            >
-              <option value="Today">Today's Schedule</option>
-              <option value="Week">Next 7 Days</option>
-              <option value="All">All Appointments</option>
-              <option value="Urgent">Urgent Reviews</option>
-            </select>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: theme.textMuted }}>Filter by Doctor:</span>
-            <select 
-              value={selectedDoctorFilter} 
-              onChange={(e) => setSelectedDoctorFilter(e.target.value)}
-              style={{ ...inputStyle, marginTop: 0, width: 'auto', padding: '8px 16px', background: theme.tableHeaderBg || theme.cardBgSecondary }}
-            >
-              <option value="All Doctors">All Doctors</option>
-              {doctors.map(d => <option key={d.id} value={d.fullName}>{d.fullName}</option>)}
-            </select>
-          </div>
+        <div style={{ marginBottom: 24 }}>
+          <Card glass noPadding>
+            <FilterToolbar
+              searchValue={searchTerm}
+              onSearchChange={setSearchTerm}
+              placeholder="Search patient or doctor..."
+              filters={[
+                { label: "All", value: "All" },
+                { label: "Today", value: "Today" },
+                { label: "This Week", value: "Week" },
+                { label: "Urgent", value: "Urgent" },
+              ]}
+              activeFilter={filter}
+              onFilterChange={setFilter}
+              onPDFExport={() => exportToPDF(
+                filteredAppointments,
+                'Appointments Report',
+                [
+                  { header: 'Patient', accessor: 'patient_name' },
+                  { header: 'Doctor', accessor: 'doctor_name' },
+                  { header: 'Date', accessor: 'date' },
+                  { header: 'Time', accessor: 'time' },
+                  { header: 'Type', accessor: 'type' },
+                  { header: 'Status', accessor: 'status' },
+                ],
+                'appointments-report'
+              )}
+              onExcelExport={() => exportToExcel(
+                filteredAppointments.map(a => ({
+                  Patient: a.patient_name,
+                  Doctor: a.doctor_name,
+                  Date: a.date,
+                  Time: a.time,
+                  Type: a.type,
+                  Status: a.status,
+                })),
+                'Appointments Report',
+                'appointments-report'
+              )}
+              onCSVExport={() => exportToCSV(
+                filteredAppointments.map(a => ({
+                  Patient: a.patient_name,
+                  Doctor: a.doctor_name,
+                  Date: a.date,
+                  Time: a.time,
+                  Type: a.type,
+                  Status: a.status,
+                })),
+                'appointments-report'
+              )}
+            />
+          </Card>
         </div>
         
         {/* Full-width table - no side panel */}
