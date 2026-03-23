@@ -3,9 +3,9 @@ import { useTheme } from "../../ThemeContext";
 import AdminLayout from "../../components/AdminLayout";
 import FilterToolbar from "../../components/FilterToolbar";
 import { PageTitle, Divider, Card, Badge, Pagination } from "../../components/UI";
-import { getUsers, addUser, updateUser, deleteUser, addAuditLog } from "../../utils/dummyData";
-import { exportDoctorsToPDF, exportDoctorsToExcel, exportDoctorsToCSV } from "../../utils/exportUtils";
-import { Search, Plus, Edit, Trash2, ShieldOff, KeyRound, CheckCircle, X, Shield, Stethoscope, UserCheck, UserX } from "lucide-react";
+// import { getUsers, addUser, updateUser, deleteUser, addAuditLog } from "../../utils/dummyData";
+import { getUsers, addUser, updateUser, deleteUser, addAuditLog, api } from "../../utils/api";
+import { Search, Plus, Edit, Trash2, ShieldOff, KeyRound, CheckCircle, X, Shield } from "lucide-react";
 import toast from "react-hot-toast";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 
@@ -16,7 +16,6 @@ export default function DoctorsPage() {
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
-    const [activeFilter, setActiveFilter] = useState("All");
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState({
         name: "", email: "", phone: "", role: "doctor", specialization: ""
@@ -29,10 +28,31 @@ export default function DoctorsPage() {
 
     const loadDoctors = async () => {
         setLoading(true);
-        const data = await getUsers();
-        setDoctors(data.filter(u => u.role === 'doctor'));
-        setLoading(false);
-    };
+        try {
+          const res = await api.get("/admin/clinicians");
+          console.log("clinicians res", res);        // check status in console
+          if (!res.ok) throw new Error("Failed to load clinicians");
+          const data = await res.json();
+          console.log("clinicians data", data);      // confirm array & fields
+      
+          const doctorsOnly = data.filter(u => u.role === "doctor");
+          const mapped = doctorsOnly.map(u => ({
+            id: u.id,
+            name: `${u.first_name} ${u.last_name || ""}`.trim(),
+            email: u.email,
+            phone: u.phone_number || "",
+            status: u.is_active ? "active" : "suspended",
+            specialization: "",
+          }));
+      
+          setDoctors(mapped);
+        } catch (err) {
+          console.error("loadDoctors error", err);
+          toast.error("Failed to load doctors");
+        } finally {
+          setLoading(false);
+        }
+      };
 
     const filteredDoctors = doctors.filter(u => {
         const matchesSearch =
@@ -64,36 +84,94 @@ export default function DoctorsPage() {
         e.preventDefault();
         setSubmitting(true);
         try {
-            await addUser({ ...formData, role: 'doctor' });
-            toast.success(`Doctor ${formData.name} added successfully!`);
-            setFormData({ name: "", email: "", phone: "", role: "doctor", specialization: "" });
-            setShowModal(false);
-            loadDoctors();
-        } catch {
-            toast.error("Failed to add doctor");
+          const res = await api.post("/admin/users", {
+            first_name: formData.name,
+            last_name: "",
+            email: formData.email,
+            phone_number: formData.phone,
+            password: "TempPass123!",
+            role: "doctor",
+          });
+      
+          if (!res.ok) {
+            throw new Error(`Failed to create doctor (${res.status})`);
+          }
+      
+          const created = await res.json();
+      
+          try {
+            await addAuditLog(
+              "User Created",
+              `Created doctor ${created.first_name} ${created.last_name || ""} (ID ${created.id})`
+            );
+          } catch (logErr) {
+            console.warn("Audit log failed", logErr);
+          }
+      
+          toast.success(`Doctor ${formData.name} added successfully!`);
+          setFormData({ name: "", email: "", phone: "", role: "doctor", specialization: "" });
+          setShowModal(false);
+          loadDoctors();
+        } catch (err) {
+          console.error(err);
+          toast.error("Failed to add doctor");
         } finally {
-            setSubmitting(false);
+          setSubmitting(false);
         }
-    };
+      };
 
-    const handleSuspend = async (id, currentStatus) => {
-        const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
-        await updateUser(id, { status: newStatus });
-        toast.success(`Doctor ${newStatus === 'active' ? 'activated' : 'suspended'}`);
-        loadDoctors();
-    };
+      const handleSuspend = async (id, currentStatus) => {
+        const newIsActive = currentStatus !== "active";
+        try {
+          const res = await api.patch(`/admin/users/${id}/status?is_active=${newIsActive}`);
+          const updated = await res.json();
+          console.log("updated user from API", updated); // <— check updated.is_active here
+          if (!res.ok) throw new Error("Failed to update status");
+          toast.success(`Account ${newIsActive ? "activated" : "suspended"}`);
+          await loadDoctors();
+        } catch (err) {
+          console.error(err);
+          toast.error("Failed to update status");
+        }
+      };
 
     const handleDelete = async (id, name) => {
-        if (window.confirm(`Are you sure you want to permanently delete Dr. ${name}?`)) {
-            await deleteUser(id);
-            toast.success("Doctor record deleted");
-            loadDoctors();
+        if (!window.confirm(`Are you sure you want to permanently delete ${name}?`)) return;
+        try {
+            const res = await api.delete(`/admin/users/${id}`);
+            if (!res.ok) throw new Error("Failed to delete user");
+            toast.success("User record deleted");
+            loadDoctors(); // or loadNurses / loadPatients
+        } catch (err) {
+            toast.error("Failed to delete user");
         }
     };
 
-    const handleResetPassword = async (name) => {
-        await addAuditLog(`Requested password reset for Dr. ${name}`);
-        toast.success(`Reset link sent to ${name}`);
+    // Handler
+    const handleResetPassword = async (doctor) => {
+        if (!window.confirm(`Reset password for ${doctor.name}?`)) return;
+    
+        try {
+        const res = await api.post(`/admin/users/${doctor.id}/reset-password`);
+        if (!res.ok) throw new Error("Failed to reset password");
+    
+        const data = await res.json();
+        console.log("Reset response:", data);
+    
+        try {
+            await addAuditLog(
+            "Password Reset",
+            `Reset password for ${doctor.name} (ID ${doctor.id})`
+            );
+        } catch (logErr) {
+            console.warn("Audit log failed", logErr);
+        }
+    
+        toast.success("Password reset successfully");
+        } catch (err) {
+        console.error(err);
+        toast.error("Failed to reset password");
+        }
     };
 
     return (
@@ -342,11 +420,10 @@ export default function DoctorsPage() {
                                             {/* Actions */}
                                             <td style={{ ...tdStyle(isTablet), textAlign: "right" }}>
                                                 <ActionButtons
-                                                    onReset={() => handleResetPassword(doctor.name)}
+                                                    onReset={() => handleResetPassword(doctor)}
                                                     onSuspend={() => handleSuspend(doctor.id, doctor.status)}
                                                     onDelete={() => handleDelete(doctor.id, doctor.name)}
                                                     status={doctor.status}
-                                                    theme={theme}
                                                 />
                                             </td>
                                         </tr>
@@ -478,7 +555,7 @@ const StatusBadge = ({ status, theme }) => (
     </div>
 );
 
-const ActionButtons = ({ onReset, onSuspend, onDelete, status, theme }) => (
+const ActionButtons = ({ onReset, onSuspend, onDelete, status }) => (
     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
         <button onClick={onReset} title="Reset Password" style={actionBtnStyle(theme)}>
             <KeyRound size={15} />

@@ -140,7 +140,7 @@ export const apiRequest = async (endpoint, options = {}) => {
 
   try {
     // Intercept with Dummy Data if enabled
-    if (USE_DUMMY_DATA) {
+    if (false && USE_DUMMY_DATA) {
       console.log(`[MOCK] Intercepting ${config.method || 'GET'} ${endpoint}`);
 
       // Define a mock response helper
@@ -313,4 +313,33 @@ export const api = {
 
   delete: (endpoint, options = {}) =>
     apiRequest(endpoint, { ...options, method: 'DELETE' }),
+};
+
+// export const addAuditLog = async (action, details, ip = null) => {
+//   const body = { action, details, ip_address: ip };
+//   const res = await api.post("/admin/audit-logs", body);
+//   if (!res.ok) {
+//     console.error("Failed to add audit log");
+//   }
+//   return res;
+// };
+
+// user API helpers
+export const getUsers = () => api.get("/admin/users");
+
+export const addUser = (data) => api.post("/admin/users", data);
+
+export const updateUser = (id, data) => api.put(`/admin/users/${id}`, data);
+
+export const deleteUser = (id) => api.delete(`/admin/users/${id}`);
+
+export const addAuditLog = async (action, details, ip = null) => {
+  const res = await api.post("/admin/audit-logs", { action, details, ip_address: ip });
+
+  // Do NOT assume JSON; just check ok
+  if (!res.ok) {
+    console.error("Failed to add audit log", res.status);
+  }
+
+  return res;
 };

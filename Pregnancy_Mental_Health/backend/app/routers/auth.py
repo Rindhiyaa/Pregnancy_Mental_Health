@@ -18,65 +18,65 @@ from ..config import ALLOWED_ORIGINS, IS_PRODUCTION
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
-@router.post("/signup", status_code=status.HTTP_201_CREATED)
-def signup(user_in: UserCreate, response: Response, db: Session = Depends(get_db)):
-    # Validate password length
-    if len(user_in.password) < 8:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 8 characters",
-        )
+# @router.post("/signup", status_code=status.HTTP_201_CREATED)
+# def signup(user_in: UserCreate, response: Response, db: Session = Depends(get_db)):
+#     # Validate password length
+#     if len(user_in.password) < 8:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="Password must be at least 8 characters",
+#         )
     
-    # Check if user already exists with email or phone
-    existing_email = db.query(models.User).filter(models.User.email == user_in.email).first()
-    if existing_email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="An account with this email already exists.",
-        )
+#     # Check if user already exists with email or phone
+#     existing_email = db.query(models.User).filter(models.User.email == user_in.email).first()
+#     if existing_email:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="An account with this email already exists.",
+#         )
     
-    if user_in.phone_number:
-        existing_phone = db.query(models.User).filter(models.User.phone_number == user_in.phone_number).first()
-        if existing_phone:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="An account with this phone number already exists.",
-            )
+#     if user_in.phone_number:
+#         existing_phone = db.query(models.User).filter(models.User.phone_number == user_in.phone_number).first()
+#         if existing_phone:
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail="An account with this phone number already exists.",
+#             )
 
-    user = models.User(
-        first_name=user_in.first_name,
-        last_name=user_in.last_name,
-        email=user_in.email,
-        phone_number=user_in.phone_number,
-        hashed_password=hash_password(user_in.password),
-        role=user_in.role,
-        first_login=True if user_in.role == "patient" else False
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+#     user = models.User(
+#         first_name=user_in.first_name,
+#         last_name=user_in.last_name,
+#         email=user_in.email,
+#         phone_number=user_in.phone_number,
+#         hashed_password=hash_password(user_in.password),
+#         role=user_in.role,
+#         first_login=True if user_in.role == "patient" else False
+#     )
+#     db.add(user)
+#     db.commit()
+#     db.refresh(user)
     
-    # ... (JWT token creation logic remains the same)
-    access_token = create_access_token(data={"sub": user.email})
-    refresh_token = create_refresh_token(data={"sub": user.email})
+#     # ... (JWT token creation logic remains the same)
+#     access_token = create_access_token(data={"sub": user.email})
+#     refresh_token = create_refresh_token(data={"sub": user.email})
     
-    # Store refresh token in httpOnly cookie (secure, not accessible to JavaScript)
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,      # Cannot be accessed by JavaScript (XSS protection)
-        secure=IS_PRODUCTION,  # HTTPS only in production
-        samesite="lax",     # Better for SPA + API pattern, allows navigation
-        max_age=7 * 24 * 3600,  # 7 days
-        path="/"            # Ensure cookie is available for all paths
-    )
+#     # Store refresh token in httpOnly cookie (secure, not accessible to JavaScript)
+#     response.set_cookie(
+#         key="refresh_token",
+#         value=refresh_token,
+#         httponly=True,      # Cannot be accessed by JavaScript (XSS protection)
+#         secure=IS_PRODUCTION,  # HTTPS only in production
+#         samesite="lax",     # Better for SPA + API pattern, allows navigation
+#         max_age=7 * 24 * 3600,  # 7 days
+#         path="/"            # Ensure cookie is available for all paths
+#     )
     
-    # Return user data with access token only (refresh token in cookie)
-    return {
-        **UserOut.model_validate(user).model_dump(),
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+#     # Return user data with access token only (refresh token in cookie)
+#     return {
+#         **UserOut.model_validate(user).model_dump(),
+#         "access_token": access_token,
+#         "token_type": "bearer"
+#     }
 
 @router.post("/login")
 def login(credentials: LoginRequest, response: Response, db: Session = Depends(get_db)):

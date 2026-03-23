@@ -38,6 +38,7 @@ class UserOut(BaseModel):
     phone_number: str | None = None
     role: str | None = None
     first_login: bool = True
+    is_active: bool 
 
 
 class LoginRequest(BaseModel):
@@ -85,6 +86,29 @@ class ReferralRequest(BaseModel):
     clinician_notes: Optional[str] = None
     referral_department: str = "Psychiatry"
     top_risk_factors: List[str] = []
+
+class NurseAssessmentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    patient_id: Optional[int] = None
+    patient_name: str
+    created_at: Optional[datetime] = None
+    status: str
+    risk_level: str
+    risk_score: float
+
+    doctor_id: Optional[int] = None
+    assigned_doctor: Optional[str] = None
+
+class AppointmentCreate(BaseModel):
+    patient_id: int
+    doctor_id: int
+    date: str
+    time: str
+    type: str
+    notes: Optional[str]
+    urgency: str
 
 
 class AssessmentCreate(BaseModel):
@@ -148,23 +172,22 @@ class AssessmentResult(BaseModel):
 
 class AssessmentSave(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     patient_name: str
     patient_id: Optional[int] = None
+    patient_email: Optional[str] = None
+
     risk_level: str
-    score: float
-    clinician_risk: Optional[str] = None
+    risk_score: Optional[float] = None
+    epds_score: Optional[int] = None   # stays here, not used in model
+
     plan: Optional[str] = None
     notes: Optional[str] = None
-    clinician_email: Optional[str] = None
     raw_data: Optional[Dict[str, Any]] = None
-    
-    # Nurse workflow fields
-    nurse_id: Optional[int] = None
-    doctor_id: Optional[int] = None
-    status: str = "submitted" # draft, submitted, reviewed, complete
-    timestamp: Optional[datetime] = None
-    created_at: Optional[datetime] = None
+
+    assigned_doctor_id: int
+    status: str = "submitted"
+    is_draft: bool = False
 
 class AssessmentReview(BaseModel):
     risk_level_final: str
@@ -241,3 +264,26 @@ class PatientUpdate(BaseModel):
     para: Optional[int] = None
     assigned_doctor_id: Optional[int] = None
     status: Optional[str] = None
+
+class AuditLogCreate(BaseModel):
+    action: str
+    details: str
+    ip_address: str | None = None
+
+class AuditLogRead(BaseModel):
+    id: int
+    action: str
+    details: str
+    user_id: int
+    user_name: str
+    ip_address: Optional[str]
+    timestamp: datetime
+
+    class Config:
+        orm_mode = True
+
+class UserUpdate(BaseModel):
+    first_name: str | None = None
+    last_name: str | None = None
+    email: EmailStr | None = None
+    phone_number: str | None = None

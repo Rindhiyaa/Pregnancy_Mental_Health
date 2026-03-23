@@ -6,7 +6,7 @@ import NurseSidebar from "../../components/NurseSidebar";
 import DoctorSidebar from "../../components/DoctorSidebar";
 import SafetyAlert from "../../components/SafetyAlert";
 import { api } from "../../utils/api";
-import { USE_DUMMY_DATA, dummyApi } from "../../utils/dummyData";
+// import { USE_DUMMY_DATA, dummyApi } from "../../utils/dummyData";
 import toast from 'react-hot-toast';
 import { ASSESSMENT_SECTIONS, STEP_TITLES, INITIAL_FORM_DATA } from "../../constants/assessmentData";
 import "../../styles/NewAssessment.css";
@@ -39,13 +39,14 @@ export default function NurseNewAssessment() {
     const fetchData = async () => {
       try {
         const [docRes, patRes] = await Promise.all([
-          api.get("/auth/doctors"),
-          api.get("/doctor/patients")
+          api.get("/nurse/doctors"),   // you already have this
+          api.get("/nurse/patients")   // list patients created by this nurse
         ]);
         if (docRes.ok) setDoctors(await docRes.json());
         if (patRes.ok) setPatients(await patRes.json());
       } catch (err) {
         console.error("Failed to fetch data:", err);
+        toast.error("Failed to load doctors or patients");
       }
     };
     fetchData();
@@ -115,42 +116,52 @@ export default function NurseNewAssessment() {
       setShowPatientModal(true);
       return;
     }
+  
     setLoading(true);
     try {
       const epdsScore = Object.keys(formData)
-        .filter(k => k.startsWith('epds_'))
-        .reduce((acc, k) => acc + (parseInt(formData[k]) || 0), 0);
+      .filter(k => k.startsWith("epds_"))
+      .reduce((acc, k) => acc + (parseInt(formData[k]) || 0), 0);
 
       const payload = {
-        patient_name: formData.patient_name,
-        patient_id: selectedPatient?.id || null,
-        nurse_id: user?.id || "mock-nurse-id",
-        nurse_name: user?.fullName || "Nurse Priya",
-        doctor_id: selectedDoctorId,
-        status: "submitted",
-        raw_data: formData,
-        epds_score: epdsScore,
-        created_at: new Date().toISOString()
-      };
+        patient_name: formData.patient_name,                 // string, required
+        patient_id: selectedPatient?.id ?? null,             // int | null
+        patient_email: selectedPatient?.email ?? null,       // string | null
 
-      if (USE_DUMMY_DATA) {
-        const res = await dummyApi.submitAssessment(payload);
-        if (res.ok) {
-            toast.success(`Assessment submitted to Dr. ${doctors.find(d => String(d.id) === String(selectedDoctorId))?.fullName || 'Doctor'} successfully!`);
-            navigate("/nurse/dashboard");
-        }
+        risk_level: "Pending",                               // string, required
+        risk_score: null,                                    // number | null
+        epds_score: epdsScore,                               // number | null
+
+        plan: null,
+        notes: null,
+        raw_data: formData,                                  // object
+
+        assigned_doctor_id: Number(selectedDoctorId),        // int, required
+
+        status: "submitted",                                 // string
+        is_draft: false,                                     // bool
+      };
+  
+      const res = await api.post("/nurse/assessments", payload);
+      if (res.ok) {
+        const doctor = doctors.find(d => String(d.id) === String(selectedDoctorId));
+        toast.success(
+          `Assessment submitted to ${doctor?.fullName || doctor?.first_name || "Doctor"} successfully!`
+        );
+        navigate("/nurse/dashboard");
       } else {
-        const res = await api.post('/assessments', payload);
-        if (res.ok) {
-            toast.success(`Assessment submitted to Dr. ${doctors.find(d => String(d.id) === String(selectedDoctorId))?.fullName || 'Doctor'} successfully!`);
-            navigate("/nurse/dashboard");
-        } else {
-            throw new Error("Submission failed. Please try again.");
-        }
+        const errBody = await res.json().catch(() => ({}));
+        console.error("Assessment submit error body:", errBody);
+        const message =
+          (Array.isArray(errBody.detail) && errBody.detail[0]?.msg) ||
+          errBody.detail ||
+          "Submission failed. Please check required fields.";
+        throw new Error(message);
       }
     } catch (err) {
-      toast.error(err.message);
-    } finally {
+      console.error("Submit failed:", err);
+      toast.error(err.message || "Submission failed");
+    }finally {
       setLoading(false);
     }
   };
@@ -174,13 +185,13 @@ export default function NurseNewAssessment() {
 
 
   return (
-    <div className={`new-assessment-page ${theme.isDark ? 'dark' : ''}`} style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
+    <div className="new-assessment-page" style={{ display: "flex", minHeight: "100vh", background: "#f1f5f9", fontFamily: "'Inter', sans-serif" }}>
       {user?.role === 'doctor' ? <DoctorSidebar /> : <NurseSidebar />}
 
       <main className="portal-main" style={{ background: theme.pageBg, fontFamily: theme.fontBody }}>
         {/* TOP HEADER */}
         <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h1 style={{ fontSize: "28px", fontWeight: 700, color: theme.textPrimary, margin: 0 }}>
+          <h1 style={{ fontSize: "28px", fontWeight: 700, color: "#1e293b", margin: 0 }}>
             Nurse <span style={{ fontWeight: 400 }}>Workspace</span>
           </h1>
           {selectedPatient && (
@@ -284,9 +295,10 @@ export default function NurseNewAssessment() {
                             >
                               <option value="">Choose a Doctor</option>
                               {doctors.map(doc => (
-                                <option key={doc.id} value={doc.id}>
-                                  {doc.fullName} {doc.specialization ? `— ${doc.specialization}` : ""}
-                                </option>
+                              <option key={doc.id} value={doc.id}>
+                                {doc.fullName || `${doc.first_name ?? ""} ${doc.last_name ?? ""}`.trim()}
+                                {doc.specialization ? ` — ${doc.specialization}` : ""}
+                              </option>
                               ))}
                             </select>
                           </div>
@@ -305,9 +317,9 @@ export default function NurseNewAssessment() {
                       <div key={section.id} className={`form-grid-modern ${step === 5 ? 'single-col' : ''}`}>
                         {section.questions.map(q => (
                           <div key={q.name} className={`form-field-group ${q.type === 'textarea' ? 'full-width' : ''} ${step === 5 ? 'full-width' : ''}`}>
-            <label className="field-label-modern" style={{ color: theme.isDark ? "#FFFFFF" : theme.textSecondary, fontWeight: 800 }}>
-              {q.label} {q.required && <span className="required-star">*</span>}
-            </label>
+                            <label className="field-label-modern">
+                              {q.label} {q.required && <span className="required-star">*</span>}
+                            </label>
                             {q.type === "select" ? (
                               <div className="custom-select-wrapper">
                                 <select

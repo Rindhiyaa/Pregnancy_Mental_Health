@@ -3,12 +3,11 @@ import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
 import { PageTitle, Card, Badge, Loader2, Divider, Table, TableRow, TableCell, Pagination } from "../../components/UI";
 import { api } from "../../utils/api";
-import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
+// import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/dummyData";
 import toast from "react-hot-toast";
 import { useSearchParams } from "react-router-dom";
 import { PlusCircle, Clock, Stethoscope, CheckCircle, XCircle, Calendar, User, ChevronLeft, ChevronRight, ClipboardList, Trash2, X } from "lucide-react";
-import FilterToolbar from "../../components/FilterToolbar";
-import { exportToPDF, exportToExcel, exportToCSV } from "../../utils/exportUtils";
 
 export default function NurseAppointmentsPage() {
   const { theme } = useTheme();
@@ -21,11 +20,10 @@ export default function NurseAppointmentsPage() {
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [instructions, setInstructions] = useState([]);
-  const [availableSlots, setAvailableSlots] = useState([]);
+  // const [availableSlots, setAvailableSlots] = useState([]);
   const [showModal, setShowModal] = useState(prefilledPatientId ? true : false);
-  const [filter, setFilter] = useState("All"); // Today | Week | All | Urgent
+  const [filter, setFilter] = useState("Today"); // Today | Week | All | Urgent
   const [selectedDoctorFilter, setSelectedDoctorFilter] = useState("All Doctors");
-  const [searchTerm, setSearchTerm] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());
   // FIX 2: State to control the calendar modal overlay
   const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -49,27 +47,22 @@ export default function NurseAppointmentsPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        if (USE_DUMMY_DATA) {
-          const [appData, patData, docData, instData] = await Promise.all([
-            dummyApi.getAppointments(),
-            dummyApi.getPatients(),
-            dummyApi.getDoctors(),
-            dummyApi.getDoctorInstructions()
-          ]);
-          setAppointments(appData);
-          setPatients(patData);
-          setDoctors(docData);
-          setInstructions(instData.filter(i => i.status === 'pending'));
-        } else {
-          const [appRes, patRes, docRes] = await Promise.all([
-            api.get("/appointments"),
-            api.get("/nurse/patients"),
-            api.get("/nurse/doctors")
-          ]);
-
-          if (appRes.ok) setAppointments(await appRes.json());
-          if (patRes.ok) setPatients(await patRes.json());
-          if (docRes.ok) setDoctors(await docRes.json());
+        const [appRes, patRes, docRes] = await Promise.all([
+          api.get("/appointments"),
+          api.get("/nurse/patients"),
+          api.get("/nurse/doctors"),
+        ]);
+        if (appRes.ok) setAppointments(await appRes.json());
+        if (patRes.ok) setPatients(await patRes.json());
+        if (docRes.ok) {
+          const docs = await docRes.json();
+          const normalized = (docs || []).map(d => {
+            const first = d.first_name ?? "";
+            const last = d.last_name ?? "";
+            const fullName = d.fullName || `${first} ${last}`.trim() || d.email || "Doctor";
+            return { ...d, fullName };
+          });
+          setDoctors(normalized);
         }
       } catch (err) {
         console.error("Failed to fetch appointment data:", err);
@@ -82,19 +75,11 @@ export default function NurseAppointmentsPage() {
 
   const handleStatusUpdate = async (id, status) => {
     try {
-      if (USE_DUMMY_DATA) {
-        const res = await dummyApi.updateAppointmentStatus(id, status);
-        if (res.ok) {
-          setAppointments(prev => prev.map(app => app.id === id ? { ...app, status } : app));
-          toast.success(`Appointment marked as ${status} (Mock)`);
-        }
-      } else {
-        const res = await api.post(`/appointments/${id}/status?status=${status}`);
-        if (res.ok) {
-          toast.success(`Appointment marked as ${status}`);
-          const appRes = await api.get("/appointments");
-          if (appRes.ok) setAppointments(await appRes.json());
-        }
+      const res = await api.post(`/appointments/${id}/status?status=${status}`);
+      if (res.ok) {
+        toast.success(`Appointment marked as ${status}`);
+        const appRes = await api.get("/appointments");
+        if (appRes.ok) setAppointments(await appRes.json());
       }
     } catch (err) {
       toast.error("Failed to update status");
@@ -103,18 +88,10 @@ export default function NurseAppointmentsPage() {
 
   const handleDelete = async (id) => {
     try {
-      if (USE_DUMMY_DATA) {
-        const res = await dummyApi.deleteAppointment(id);
-        if (res.ok) {
-          setAppointments(prev => prev.filter(app => app.id !== id));
-          toast.success("Appointment deleted (Mock)");
-        }
-      } else {
-        const res = await api.delete(`/appointments/${id}`);
-        if (res.ok) {
-          toast.success("Appointment deleted");
-          setAppointments(prev => prev.filter(app => app.id !== id));
-        }
+      const res = await api.delete(`/appointments/${id}`);
+      if (res.ok) {
+        toast.success("Appointment deleted");
+        setAppointments(prev => prev.filter(app => app.id !== id));
       }
     } catch (err) {
       toast.error("Failed to delete appointment");
@@ -146,55 +123,34 @@ export default function NurseAppointmentsPage() {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      if (USE_DUMMY_DATA) {
-        // FIX 1: Use String() to ensure type-safe comparison, since <select> always yields strings
-        const selectedPatient = patients.find(p => String(p.id) === String(formData.patientId));
-        // FIX 1: doctorId holds the doctor's name string (set from slot.doctor), so use it directly
-        const selectedDoctor = doctors.find(d => String(d.id) === String(formData.doctorId) || d.fullName === formData.doctorId);
-
-        const payload = {
-          ...formData,
-          patient_name: selectedPatient?.name || "Unknown Patient",
-          // FIX: prefer doctor_name already set from slot selection (slot.doctor),
-          // then fall back to ID lookup, then to the raw doctorId string.
-          doctor_name: formData.doctor_name || selectedDoctor?.fullName || formData.doctorId || "Unassigned"
-        };
-
-        const res = await dummyApi.createAppointment(payload);
-        if (res.ok) {
-          toast.success("Appointment scheduled successfully (Mock)!");
-          setShowModal(false);
-          setConfirmationStep(false);
-          const [appData, instData] = await Promise.all([
-            dummyApi.getAppointments(),
-            dummyApi.getDoctorInstructions()
-          ]);
-          setAppointments(appData);
-          setInstructions(instData.filter(i => i.status === 'pending'));
-        }
-      } else {
-        const res = await api.post("/appointments", formData);
+      const payload = {
+         patient_id: Number(formData.patientId),
+         doctor_id: Number(formData.doctorId),
+         date: formData.date,
+         time: formData.time,
+         type: formData.type,
+         notes: formData.notes,
+         urgency: formData.urgency,
+         department: formData.department,
+      };
+     
+      const res = await api.post("/appointments", payload);
         if (res.ok) {
           toast.success("Appointment scheduled successfully!");
           setShowModal(false);
           setConfirmationStep(false);
-          // Refresh list
           const appRes = await api.get("/appointments");
-          if (appRes.ok) setAppointments(await appRes.json());
+            if (appRes.ok) setAppointments(await appRes.json());
+        } else {
+           const err = await res.json().catch(() => ({}));
+           toast.error(err.detail || "Failed to schedule appointment");
         }
-      }
     } catch (err) {
       toast.error("Failed to schedule appointment");
     }
   };
 
   const filteredAppointments = appointments.filter(a => {
-    // Search filter
-    if (searchTerm) {
-      const q = searchTerm.toLowerCase();
-      if (!a.patient_name?.toLowerCase().includes(q) && !a.doctor_name?.toLowerCase().includes(q)) return false;
-    }
-
     // Role/Doctor Filter
     if (selectedDoctorFilter !== "All Doctors" && a.doctor_name !== selectedDoctorFilter) {
       return false;
@@ -230,8 +186,6 @@ export default function NurseAppointmentsPage() {
     padding: '12px 16px',
     borderRadius: 12,
     border: `1.5px solid ${theme.border}`,
-    background: theme.inputBg,
-    color: theme.text,
     fontSize: 15,
     fontFamily: theme.fontBody,
     outline: 'none',
@@ -240,15 +194,12 @@ export default function NurseAppointmentsPage() {
   };
 
   const labelStyle = {
-    fontSize: 13,
-    fontWeight: 800,
-    color: theme.isDark ? "#FFFFFF" : theme.textSecondary,
+    fontSize: 14,
+    fontWeight: 700,
+    color: theme.text,
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    marginBottom: 4
+    gap: 8
   };
 
   return (
@@ -264,9 +215,9 @@ export default function NurseAppointmentsPage() {
               onClick={() => setShowCalendarModal(true)}
               style={{
                 padding: '12px 20px', borderRadius: 12, border: `1.5px solid ${theme.border}`,
-                background: theme.cardBg, color: theme.text, fontWeight: 700,
+                background: 'white', color: theme.text, fontWeight: 700,
                 display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-                transition: 'all 0.2s'
+                transition: 'border-color 0.2s'
               }}
               onMouseEnter={e => e.currentTarget.style.borderColor = theme.primary}
               onMouseLeave={e => e.currentTarget.style.borderColor = theme.border}
@@ -302,8 +253,8 @@ export default function NurseAppointmentsPage() {
               {instructions.map(inst => (
                 <Card key={inst.id} padding="24px" style={{ 
                   border: `1px solid ${theme.border}`, 
-                  background: theme.cardBg,
-                  boxShadow: theme.isDark ? '0 8px 32px rgba(0,0,0,0.4)' : '0 4px 20px rgba(0,0,0,0.03)',
+                  background: 'white',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
                   borderRadius: '16px',
                   display: 'flex', flexDirection: 'column'
                 }}>
@@ -357,58 +308,32 @@ export default function NurseAppointmentsPage() {
           </div>
         )}
 
-        <div style={{ marginBottom: 24 }}>
-          <Card glass noPadding>
-            <FilterToolbar
-              searchValue={searchTerm}
-              onSearchChange={setSearchTerm}
-              placeholder="Search patient or doctor..."
-              filters={[
-                { label: "All", value: "All" },
-                { label: "Today", value: "Today" },
-                { label: "This Week", value: "Week" },
-                { label: "Urgent", value: "Urgent" },
-              ]}
-              activeFilter={filter}
-              onFilterChange={setFilter}
-              onPDFExport={() => exportToPDF(
-                filteredAppointments,
-                'Appointments Report',
-                [
-                  { header: 'Patient', accessor: 'patient_name' },
-                  { header: 'Doctor', accessor: 'doctor_name' },
-                  { header: 'Date', accessor: 'date' },
-                  { header: 'Time', accessor: 'time' },
-                  { header: 'Type', accessor: 'type' },
-                  { header: 'Status', accessor: 'status' },
-                ],
-                'appointments-report'
-              )}
-              onExcelExport={() => exportToExcel(
-                filteredAppointments.map(a => ({
-                  Patient: a.patient_name,
-                  Doctor: a.doctor_name,
-                  Date: a.date,
-                  Time: a.time,
-                  Type: a.type,
-                  Status: a.status,
-                })),
-                'Appointments Report',
-                'appointments-report'
-              )}
-              onCSVExport={() => exportToCSV(
-                filteredAppointments.map(a => ({
-                  Patient: a.patient_name,
-                  Doctor: a.doctor_name,
-                  Date: a.date,
-                  Time: a.time,
-                  Type: a.type,
-                  Status: a.status,
-                })),
-                'appointments-report'
-              )}
-            />
-          </Card>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: theme.textMuted }}>View:</span>
+            <select 
+              value={filter} 
+              onChange={(e) => setFilter(e.target.value)}
+              style={{ ...inputStyle, marginTop: 0, width: 'auto', padding: '8px 16px', fontWeight: 600 }}
+            >
+              <option value="Today">Today's Schedule</option>
+              <option value="Week">Next 7 Days</option>
+              <option value="All">All Appointments</option>
+              <option value="Urgent">Urgent Reviews</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: theme.textMuted }}>Filter by Doctor:</span>
+            <select 
+              value={selectedDoctorFilter} 
+              onChange={(e) => setSelectedDoctorFilter(e.target.value)}
+              style={{ ...inputStyle, marginTop: 0, width: 'auto', padding: '8px 16px' }}
+            >
+              <option value="All Doctors">All Doctors</option>
+              {doctors.map(d => <option key={d.id} value={d.fullName}>{d.fullName}</option>)}
+            </select>
+          </div>
         </div>
         
         {/* Full-width table - no side panel */}
@@ -441,7 +366,7 @@ export default function NurseAppointmentsPage() {
                     <div style={{ fontWeight: 800, color: theme.text }}>{app.patient_name}</div>
                   </div>
                 </TableCell>
-                <TableCell>{app.doctor_name || 'Dr. Priya Sharma'}</TableCell>
+                <TableCell>{app.doctor_name || app.assigned_doctor || 'Unassigned'}</TableCell>
                 <TableCell>
                   <Badge variant={app.type === 'Urgent Review' ? 'danger' : 'info'}>{app.type}</Badge>
                 </TableCell>
@@ -449,21 +374,21 @@ export default function NurseAppointmentsPage() {
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button 
                       onClick={() => handleStatusUpdate(app.id, 'Completed')}
-                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: theme.cardBg, cursor: 'pointer' }}
+                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}
                       title="Mark as Completed"
                     >
                       <CheckCircle size={16} color="#10b981" />
                     </button>
                     <button 
                       onClick={() => handleStatusUpdate(app.id, 'Cancelled')}
-                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: theme.cardBg, cursor: 'pointer' }}
+                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}
                       title="Cancel Appointment"
                     >
                       <XCircle size={16} color="#f59e0b" />
                     </button>
                     <button 
                       onClick={() => handleDelete(app.id)}
-                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: theme.cardBg, cursor: 'pointer' }}
+                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}
                       title="Delete Appointment"
                     >
                       <Trash2 size={16} color="#ef4444" />
@@ -539,7 +464,36 @@ export default function NurseAppointmentsPage() {
                       </div>
                     </div>
 
-                    <div style={{ marginBottom: 24 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+                      <div>
+                        <label style={labelStyle}>Time</label>
+                        <input
+                          style={inputStyle}
+                          type="time"
+                          value={formData.time}
+                          onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Doctor</label>
+                        <select
+                          style={inputStyle}
+                          value={formData.doctorId}
+                          onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })}
+                          required
+                        >
+                          <option value="">Choose doctor...</option>
+                          {doctors.map(d => (
+                            <option key={d.id} value={d.id}>
+                              {d.fullName || `${d.first_name ?? ""} ${d.last_name ?? ""}`.trim() || d.email}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* <div style={{ marginBottom: 24 }}>
                       <label style={{ ...labelStyle, marginBottom: 12 }}>Pick an available slot</label>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
                         {availableSlots.length > 0 ? availableSlots.map(slot => (
@@ -552,14 +506,14 @@ export default function NurseAppointmentsPage() {
                               setFormData({
                                 ...formData,
                                 time: slot.time,
-                                doctorId: slot.doctor_id || slot.doctor,   // prefer id, fall back to name
-                                doctor_name: slot.doctor                   // always keep readable name
+                                doctorId: slot.doctor_id,      // numeric ID
+                                doctor_name: slot.doctor      // readable name
                               });
                               setConfirmationStep(true);
                             }}
                             style={{
                               padding: '12px', borderRadius: 10, border: `1.5px solid ${theme.border}`,
-                              background: theme.cardBg, textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s',
+                              background: 'white', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s',
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.borderColor = theme.primary}
                             onMouseLeave={(e) => e.currentTarget.style.borderColor = theme.border}
@@ -572,8 +526,8 @@ export default function NurseAppointmentsPage() {
                             Select Date & Department to see slots.
                           </div>
                         )}
-                      </div>
-                    </div>
+                      </div> */}
+                    {/* </div> */}
                   </form>
                 </>
               ) : (
@@ -613,7 +567,7 @@ export default function NurseAppointmentsPage() {
                         onClick={() => setConfirmationStep(false)}
                         style={{ 
                           flex: 1, padding: '14px', borderRadius: 12, border: `1.5px solid ${theme.border}`, 
-                          background: theme.cardBg, fontWeight: 700, cursor: 'pointer', color: theme.textMuted
+                          background: 'white', fontWeight: 700, cursor: 'pointer', color: theme.textMuted
                         }}
                       >
                         No, Change
@@ -666,9 +620,9 @@ export default function NurseAppointmentsPage() {
                   {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                 </span>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} style={{ padding: 6, borderRadius: 6, border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.text, cursor: 'pointer' }}><ChevronLeft size={16} /></button>
-                  <button onClick={() => setCurrentDate(new Date())} style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.text, cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Today</button>
-                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} style={{ padding: 6, borderRadius: 6, border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.text, cursor: 'pointer' }}><ChevronRight size={16} /></button>
+                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} style={{ padding: 6, borderRadius: 6, border: `1px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}><ChevronLeft size={16} /></button>
+                  <button onClick={() => setCurrentDate(new Date())} style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${theme.border}`, background: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Today</button>
+                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} style={{ padding: 6, borderRadius: 6, border: `1px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}><ChevronRight size={16} /></button>
                 </div>
               </div>
 

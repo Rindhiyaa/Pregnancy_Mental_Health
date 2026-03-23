@@ -4,7 +4,7 @@ import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
 import { PageTitle, Card, Loader2 } from "../../components/UI";
 import { api } from "../../utils/api";
-import { dummyApi, USE_DUMMY_DATA } from "../../utils/dummyData";
+// import { dummyApi, USE_DUMMY_DATA } from "../../utils/dummyData";
 import toast from "react-hot-toast";
 import { User, Mail, Phone, Calendar, Droplet, Baby, Hospital, Stethoscope, Hash, Lock } from "lucide-react";
 import "../../styles/RegisterPatient.css";
@@ -42,68 +42,46 @@ export default function NurseRegisterPatient() {
     setTempPassword(password);
 
     // Fetch doctors
-    const fetchDoctors = async () => {
-      try {
-        if (USE_DUMMY_DATA) {
-          const data = await dummyApi.getDoctors();
-          setDoctors(data);
-        } else {
-          const res = await api.get("/nurse/doctors");
-          if (res.ok) {
-            const data = await res.json();
-            setDoctors(data);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch doctors:", err);
+  const fetchDoctors = async () => {
+    try {
+      const res = await api.get("/nurse/doctors");
+      if (res.ok) {
+        const data = await res.json();
+        setDoctors(data);
       }
-    };
-    fetchDoctors();
-  }, []);
+    } catch (err) {
+      console.error("Failed to fetch doctors:", err);
+      toast.error("Failed to load doctors");
+    }
+  };
+  fetchDoctors();
+}, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const labelStyle = (theme) => ({
-    display: 'block',
-    marginBottom: 8,
-    fontWeight: 800,
-    fontSize: 13,
-    color: theme.isDark ? "#FFFFFF" : theme.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em'
-  });
-
+  // Update handleSubmit - remove dummy data check
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (USE_DUMMY_DATA) {
-        const res = await dummyApi.registerPatient(formData);
-        if (res.ok) {
-          toast.success("Patient registered successfully (Mock)!");
-          toast("Temporary password sent to patient email", { icon: '📧' });
-          navigate("/nurse/patients");
-        }
-      } else {
-        const payload = {
-          ...formData,
-          password: tempPassword,
-          role: "patient"
-        };
+      const payload = {
+        ...formData,
+        password: tempPassword,
+        role: "patient"
+      };
 
-        const res = await api.post("/nurse/register", payload);
-        if (res.ok) {
-          toast.success("Patient registered successfully!");
-          toast("Temporary password sent to patient email", { icon: '📧' });
-          navigate("/nurse/patients");
-        } else {
-          const err = await res.json();
-          toast.error(err.detail || "Registration failed");
-        }
+      const res = await api.post("/nurse/register", payload);
+      if (res.ok) {
+        toast.success("Patient registered successfully!");
+        toast("Temporary password sent to patient email", { icon: '📧' });
+        navigate("/nurse/patients");
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Registration failed");
       }
     } catch (err) {
       console.error("Registration error:", err);
@@ -114,7 +92,7 @@ export default function NurseRegisterPatient() {
   };
 
   return (
-    <div className={`rp-page ${theme.isDark ? 'dark' : ''}`}>
+    <div className="rp-page">
       <NurseSidebar />
 
       <main className="portal-main rp-main">

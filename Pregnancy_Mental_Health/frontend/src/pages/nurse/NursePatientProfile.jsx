@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import NurseSidebar from "../../components/NurseSidebar";
 import { PageTitle, Card, Badge, Loader2 } from "../../components/UI";
 import { api } from "../../utils/api";
-import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
+// import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/dummyData";
 import { useTheme } from "../../ThemeContext";
 import { User, Mail, Phone, Calendar, Droplet, Hash, Navigation, ClipboardList, ChevronLeft } from "lucide-react";
 import toast from "react-hot-toast";
@@ -17,30 +18,27 @@ export default function NursePatientProfile() {
 
     useEffect(() => {
         const fetchPatient = async () => {
-            setLoading(true);
-            try {
-                if (USE_DUMMY_DATA) {
-                    const data = await dummyApi.getPatients();
-                    const p = data.find(pt => pt.id.toString() === id);
-                    if (p) setPatient(p);
-                    else toast.error("Patient not found");
-                } else {
-                    const res = await api.get(`/nurse/patients/${id}`);
-                    if (res.ok) {
-                        setPatient(await res.json());
-                    } else {
-                        toast.error("Failed to load patient details");
-                    }
-                }
-            } catch (err) {
-                console.error(err);
-                toast.error("Error loading patient");
-            } finally {
-                setLoading(false);
+          setLoading(true);
+          try {
+            const res = await api.get(`/nurse/patients/${id}`);
+            if (res.ok) {
+              const data = await res.json();
+              setPatient(data);
+            } else {
+              const err = await res.json().catch(() => ({}));
+              toast.error(err.detail || "Failed to load patient details");
+              setPatient(null);
             }
+          } catch (err) {
+            console.error("Error loading patient:", err);
+            toast.error("Error loading patient");
+            setPatient(null);
+          } finally {
+            setLoading(false);
+          }
         };
         fetchPatient();
-    }, [id]);
+      }, [id]);
 
     if (loading) {
         return (
@@ -73,8 +71,8 @@ export default function NursePatientProfile() {
                 {icon}
             </div>
             <div>
-                <div style={{ fontSize: 13, color: theme.isDark ? "#FFFFFF" : theme.textSecondary, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: theme.textPrimary }}>{value || "-"}</div>
+                <div style={{ fontSize: 13, color: theme.textMuted, fontWeight: 700, marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: theme.text }}>{value || "-"}</div>
             </div>
         </div>
     );
@@ -109,14 +107,14 @@ export default function NursePatientProfile() {
                                 <Badge variant={patient.status === 'Draft' ? 'warning' : 'success'}>
                                     Status: {['Draft', 'Pending', 'Active'].includes(patient.status) ? patient.status : 'Active'}
                                 </Badge>
-                                <Badge variant="warning">ID: {patient.id}</Badge>
+                                <Badge variant="info">ID: {patient.id}</Badge>
                             </div>
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: 12 }}>
                         <button
                             onClick={() => navigate(`/nurse/assessment/new?patient=${patient.id}`)}
-                            style={{ padding: '10px 20px', borderRadius: 10, background: theme.cardBg, border: `1px solid ${theme.border}`, color: theme.text, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                            style={{ padding: '10px 20px', borderRadius: 10, background: 'white', border: `1px solid ${theme.border}`, color: theme.text, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                         >
                             <ClipboardList size={18} /> New Assessment
                         </button>
@@ -141,8 +139,16 @@ export default function NursePatientProfile() {
                         <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 24, color: theme.secondary, display: 'flex', alignItems: 'center', gap: 8 }}><ClipboardList size={20} /> Clinical Summary</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                             <InfoRow icon={<Hash size={18} />} label="Pregnancy Week" value={`Week ${patient.pregnancy_week || patient.pregnancyWeek || '-'}`} />
-                            <InfoRow icon={<User size={18} />} label="Assigned Doctor" value={patient.assigned_doctor_name || patient.doctorName || 'Unassigned'} />
-                            <InfoRow icon={<Hash size={18} />} label="Previous Pregnancies" value={patient.previous_pregnancies || patient.para || "0"} />
+                            <InfoRow
+                            icon={<User size={18} />}
+                            label="Assigned Doctor"
+                            value={patient.assigned_doctor || 'Unassigned'}
+                            />
+                            <InfoRow
+                            icon={<Hash size={18} />}
+                            label="Previous Pregnancies"
+                            value={patient.previous_pregnancies ?? "0"}
+/>
                         </div>
                     </Card>
                 </div>

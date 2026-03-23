@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/AdminSidebar";
-import {
-  getAdminAnalytics,
-  getUsers,
-  deleteUser,
-  updateUser,
-  addAuditLog,
-} from "../../utils/dummyData";
+import { api, addAuditLog } from "../../utils/api";
 import {
   Users, UserCheck, ClipboardList, Activity,
   ArrowUpRight, ArrowDownRight, Search, Filter,
@@ -72,27 +66,44 @@ export default function AdminDashboard() {
   const fetchAdminData = async () => {
     try {
       setLoading(true);
-      const analytics = await getAdminAnalytics();
-      const users = await getUsers();
-      setStats({
-        totalUsers: analytics.hospitalStats.patients + analytics.hospitalStats.clinicians,
-        totalClinicians: analytics.hospitalStats.clinicians,
-        totalPatients: analytics.hospitalStats.patients,
-        totalAssessments: analytics.usageStats.reduce((acc, curr) => acc + curr.assessments, 0),
-      });
-      setAllUsers(users);
+  
+      // 1) Load all users from backend
+      const usersRes = await api.get("/api/admin/users"); // include /api if your FastAPI prefix has it
+      const users = usersRes.data || [];
+  
+      // 2) recentUsers array used by the table
+      const sorted = users
+        .slice()
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  
       setRecentUsers(
-        users.slice(0, 8).map((u) => ({
+        sorted.map((u) => ({
           id: u.id,
-          name: u.name,
+          name: `${u.first_name} ${u.last_name || ""}`.trim(),
           email: u.email,
           role: u.role.charAt(0).toUpperCase() + u.role.slice(1),
-          status: u.status.charAt(0).toUpperCase() + u.status.slice(1),
-          joined: u.created,
+          status: u.is_active ? "Active" : "Suspended",
+          joined: new Date(u.created_at).toLocaleDateString(),
         }))
       );
+  
+      setAllUsers(users);
+  
+      // 3) Derive stats from users
+      const totalClinicians = users.filter(
+        (u) => u.role === "doctor" || u.role === "nurse"
+      ).length;
+      const totalPatients = users.filter((u) => u.role === "patient").length;
+  
+      setStats({
+        totalUsers: users.length,
+        totalClinicians,
+        totalPatients,
+        totalAssessments: 0, // update when you have an analytics endpoint
+      });
     } catch (error) {
       console.error("Error fetching admin data:", error);
+      toast.error("Failed to load admin data");
     } finally {
       setLoading(false);
     }
@@ -103,8 +114,16 @@ export default function AdminDashboard() {
   const handleEditSave = async () => {
     if (!editUser) return;
     try {
-      await updateUser(editUser.id, { name: editUser.name, email: editUser.email });
-      await addAuditLog(`Admin edited user: ${editUser.name}`);
+      const [firstName, ...rest] = (editUser.name || "").trim().split(" ");
+      const lastName = rest.join(" ") || null;
+  
+      const res = await api.patch(`/api/admin/users/${editUser.id}`, {
+        first_name: firstName,
+        last_name: lastName,
+        email: editUser.email,
+      });
+  
+      // Axios throws on non-2xx by default, so no res.ok
       toast.success(`User ${editUser.name} updated successfully`);
       setEditUser(null);
       fetchAdminData();
@@ -114,15 +133,26 @@ export default function AdminDashboard() {
   };
 
   const handleDelete = async (user) => {
-    if (window.confirm(`Are you sure you want to delete ${user.name}?`)) {
+    if (!window.confirm(`Are you sure you want to delete ${user.name}?`)) return;
+  
+    try {
+      await api.delete(`/api/admin/users/${user.id}`);
+  
       try {
-        await deleteUser(user.id);
-        await addAuditLog(`Admin deleted user: ${user.name}`);
-        toast.success(`User ${user.name} deleted`);
-        fetchAdminData();
-      } catch {
-        toast.error("Failed to delete user");
+        await addAuditLog(
+          "User Deleted",
+          `Deleted user ${user.name} (ID ${user.id})`
+        );
+      } catch (logErr) {
+        console.warn("Audit log failed", logErr);
       }
+  
+      toast.success(`User ${user.name} deleted`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete user");
+    } finally {
+      fetchAdminData();
     }
   };
 
@@ -412,34 +442,46 @@ export default function AdminDashboard() {
                     {roleFilter === "All" ? "Filter" : roleFilter}
                   </button>
                   {showFilter && (
-                    <div style={{
-                      position: "absolute", right: 0, top: "110%",
-                      background: theme.cardBg,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: 8, zIndex: 100,
-                      boxShadow: theme.isDark
-                        ? "0 8px 32px rgba(0,0,0,0.4)"
-                        : "0 8px 24px rgba(0,0,0,0.1)",
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      top: "110%",
+                      background: "white",
+                      border: `1px solid ${theme.divider}`,
+                      borderRadius: 8,
+                      zIndex: 100,
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
                       minWidth: 140,
-                    }}>
-                      {["All", "Clinician", "Patient", "Doctor"].map((role) => (
-                        <button
-                          key={role}
-                          onClick={() => { setRoleFilter(role); setShowFilter(false); }}
-                          style={{
-                            display: "block", width: "100%", textAlign: "left",
-                            padding: "10px 16px", border: "none", cursor: "pointer",
-                            background: roleFilter === role ? `${theme.primary}15` : theme.cardBg,
-                            color: roleFilter === role ? theme.primary : theme.textPrimary,
-                            fontWeight: roleFilter === role ? 700 : 400,
-                            fontSize: 13,
-                          }}
-                        >
-                          {role}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                    }}
+                  >
+                    {["All", "Doctor", "Nurse", "Patient"].map((role) => (
+                      <button
+                        key={role}
+                        onClick={() => {
+                          setRoleFilter(role);
+                          setShowFilter(false);
+                        }}
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          textAlign: "left",
+                          padding: "10px 16px",
+                          border: "none",
+                          cursor: "pointer",
+                          background:
+                            roleFilter === role ? `${theme.primary}15` : "white",
+                          color:
+                            roleFilter === role ? theme.primary : theme.textPrimary,
+                          fontWeight: roleFilter === role ? 700 : 400,
+                          fontSize: 13,
+                        }}
+                      >
+                        {role}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 </div>
 
                 {/* Add Doctor */}
@@ -460,7 +502,8 @@ export default function AdminDashboard() {
             </div>
 
             {/* Scrollable table wrapper — critical for mobile */}
-            <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+             {/* Scrollable table wrapper — critical for mobile */}
+             <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
               <table style={{
                 width: "100%", borderCollapse: "collapse",
                 textAlign: "left", minWidth: 520, // Prevents columns from collapsing
@@ -731,7 +774,7 @@ const tableHeaderStyle = (theme) => ({
   fontWeight: 800,
   color: theme.textSecondary,
   textTransform: "uppercase",
-  letterSpacing: "0.08em",
+  letterSpacing: "0.05em",
   borderBottom: `1px solid ${theme.divider}`,
   textAlign: "left",
   whiteSpace: "nowrap",
@@ -742,12 +785,12 @@ const tableCellStyle = (isMobile) => ({
   verticalAlign: "middle",
 });
 
-const actionBtnStyle = (theme) => ({
+const actionBtnStyle = ({
   padding: "6px",
   borderRadius: "6px",
-  border: `1px solid ${theme.border}`,
-  background: theme.cardBg,
-  color: theme.textMuted,
+  border: "1px solid #E5E7EB",
+  background: "white",
+  color: "#6B7280",
   cursor: "pointer",
   display: "flex",
   alignItems: "center",

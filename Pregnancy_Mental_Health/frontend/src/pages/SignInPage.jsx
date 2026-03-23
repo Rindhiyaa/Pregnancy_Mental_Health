@@ -121,7 +121,7 @@ export default function SignInPage() {
             patients.
           </p>
 
-          <p className="switch-auth">
+          {/* <p className="switch-auth">
             Don't have an account?{" "}
             <button type="button" className="link-button" onClick={() => navigate("/signup")}>
               Sign up
@@ -138,7 +138,7 @@ export default function SignInPage() {
             >
               Clear Data
             </button>
-          </p>
+          </p> */}
 
           <form onSubmit={handleSubmit} noValidate>
             <label>

@@ -2,19 +2,20 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
-import FilterToolbar from "../../components/FilterToolbar";
 import { PageTitle, Card, Badge, Loader2 } from "../../components/UI";
 import { api } from "../../utils/api";
-import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
-import { exportPatientsToPDF, exportPatientsToExcel, exportPatientsToCSV } from "../../utils/exportUtils";
+// import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/dummyData";
 import toast from "react-hot-toast";
-import { Search, Filter, PlusCircle, User, Phone, Calendar, Stethoscope, MessageSquare, MoreHorizontal, ChevronRight, ClipboardList, Users, UserCheck, Clock, FileText } from "lucide-react";
+import { Search, Filter, PlusCircle, User, Phone, Calendar, Stethoscope, MessageSquare, MoreHorizontal, ChevronRight, ClipboardList } from "lucide-react";
 
 export default function NursePatientsPage() {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
   const doctorId = searchParams.get('doctor');
+  const doctorIdNum = doctorId ? Number(doctorId) : null;
   const initialFilter = searchParams.get('filter') || "All";
   const [loading, setLoading] = useState(true);
   const [patients, setPatients] = useState([]);
@@ -32,15 +33,13 @@ export default function NursePatientsPage() {
     const fetchPatients = async () => {
       try {
         setLoading(true);
-        if (USE_DUMMY_DATA) {
-          const data = await dummyApi.getPatients({ limit: 50 });
-          setPatients(data);
+        const res = await api.get("/nurse/patients");
+        if (res.ok) {
+          const data = await res.json();
+          setPatients(data || []);
         } else {
-          const res = await api.get("/nurse/patients");
-          if (res.ok) {
-            const data = await res.json();
-            setPatients(data);
-          }
+          const err = await res.json().catch(() => ({}));
+          toast.error(err.detail || "Failed to load patients");
         }
       } catch (err) {
         console.error("Failed to fetch patients:", err);
@@ -56,38 +55,16 @@ export default function NursePatientsPage() {
     const matchesSearch = p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.phone?.includes(searchQuery);
     
-    const matchesDoctor = !doctorId || p.assigned_doctor_id === doctorId;
+    const matchesDoctor = !doctorIdNum || p.doctor_id === doctorIdNum;
 
     if (!matchesDoctor) return false;
 
     if (filter === "All") return matchesSearch;
-    if (filter === "Assessed") return matchesSearch && (p.last_assessment || p.last_assessment_date);
+    if (filter === "Assessed") return matchesSearch;// && (p.last_assessment || p.last_assessment_date);
     if (filter === "Pending") return matchesSearch && p.status === "Pending";
     if (filter === "Draft") return matchesSearch && p.status === "Draft";
     return matchesSearch;
   });
-
-  const filterOptions = [
-    { value: "All", label: "All Patients", icon: Users },
-    { value: "Assessed", label: "Assessed", icon: UserCheck },
-    { value: "Pending", label: "Pending", icon: Clock },
-    { value: "Draft", label: "Draft", icon: FileText }
-  ];
-
-  const handlePDFExport = () => {
-    exportPatientsToPDF(filteredPatients);
-    toast.success("PDF exported successfully!");
-  };
-
-  const handleExcelExport = () => {
-    exportPatientsToExcel(filteredPatients);
-    toast.success("Excel file exported successfully!");
-  };
-
-  const handleCSVExport = () => {
-    exportPatientsToCSV(filteredPatients);
-    toast.success("CSV exported successfully!");
-  };
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
@@ -96,35 +73,27 @@ export default function NursePatientsPage() {
     currentPage * itemsPerPage
   );
 
-  const filterBtnStyle = (active) => ({
+  const tabStyle = (active) => ({
     padding: '10px 24px',
     borderRadius: 12,
     fontWeight: 700,
     fontSize: 14,
     cursor: 'pointer',
-    background: active ? theme.primary : theme.cardBg,
+    background: active ? theme.primary : 'white',
     color: active ? 'white' : theme.textMuted,
     border: active ? 'none' : `1.5px solid ${theme.border}`,
     transition: 'all 0.2s'
   });
 
-  const labelStyle = {
-    fontSize: 13,
-    fontWeight: 800,
-    color: theme.isDark ? "#FFFFFF" : theme.textSecondary,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    marginBottom: 4
-  };
   const tableHeaderStyle = {
     padding: '16px 20px',
     textAlign: 'left',
+    fontSize: 13,
+    fontWeight: 800,
+    color: theme.textMuted,
+    textTransform: 'uppercase',
     letterSpacing: 1,
-    borderBottom: `1px solid ${theme.border}`,
-    background: theme.tableHeaderBg || theme.cardBgSecondary
+    borderBottom: `1px solid ${theme.border}`
   };
 
   const tableRowStyle = {
@@ -161,18 +130,26 @@ export default function NursePatientsPage() {
         </div>
 
         {/* Filters & Search */}
-        <div style={{ marginBottom: 24 }}>
-          <FilterToolbar
-            searchValue={searchQuery}
-            onSearchChange={setSearchQuery}
-            filters={filterOptions}
-            activeFilter={filter}
-            onFilterChange={setFilter}
-            onPDFExport={handlePDFExport}
-            onExcelExport={handleExcelExport}
-            onCSVExport={handleCSVExport}
-            placeholder="Search by name or phone..."
-          />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 20 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
+            {["All", "Assessed", "Pending", "Draft"].map(t => (
+              <button key={t} onClick={() => setFilter(t)} style={tabStyle(filter === t)}>{t}</button>
+            ))}
+          </div>
+
+          <div style={{ position: 'relative', flex: 1, maxWidth: 400 }}>
+            <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: theme.textMuted }} />
+            <input
+              style={{
+                width: '100%', padding: '12px 16px 12px 48px', borderRadius: 14,
+                border: `1.5px solid ${theme.border}`, background: 'white',
+                fontSize: 15, outline: 'none', fontFamily: theme.fontBody
+              }}
+              placeholder="Search by name or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
 
         {/* Doctor Filter Indicator */}
@@ -189,7 +166,7 @@ export default function NursePatientsPage() {
               <div>
                 <div style={{ fontSize: 13, color: theme.textMuted, fontWeight: 600 }}>Filtering Patients for:</div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>
-                  {patients.find(p => p.assigned_doctor_id === doctorId)?.assigned_doctor_name || 'Assigned Doctor'}
+                {patients.find(p => p.doctor_id === doctorIdNum)?.assigned_doctor || 'Assigned Doctor'}
                 </div>
               </div>
             </div>
@@ -212,8 +189,8 @@ export default function NursePatientsPage() {
         <Card padding="0">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : theme.cardBgSecondary) }}>
-                <th style={{ ...tableHeaderStyle, width: '60px', borderBottom: 'none' }}>S.No</th>
+              <tr style={{ background: theme.cardBgSecondary }}>
+                <th style={{ ...tableHeaderStyle, width: '60px' }}>S.No</th>
                 <th style={tableHeaderStyle}>Patient Name</th>
                 <th style={tableHeaderStyle}>Phone / Week</th>
                 <th style={tableHeaderStyle}>Assigned Doctor</th>
@@ -231,7 +208,7 @@ export default function NursePatientsPage() {
                   </td>
                 </tr>
               ) : paginatedPatients.length > 0 ? paginatedPatients.map((p, idx) => (
-                <tr key={`${p.id}-${idx}`} style={tableRowStyle} onMouseEnter={(e) => e.currentTarget.style.background = theme.tableHover || (theme.isDark ? 'rgba(255,255,255,0.03)' : theme.pageBg)} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'} onClick={() => navigate(`/nurse/patients/${p.id}`)}>
+                <tr key={`${p.id}-${idx}`} style={tableRowStyle} onMouseEnter={(e) => e.currentTarget.style.background = theme.pageBg} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'} onClick={() => navigate(`/nurse/patients/${p.id}`)}>
                   <td style={{ ...tableCellStyle, fontWeight: 700, color: theme.textMuted }}>
                     {(currentPage - 1) * itemsPerPage + idx + 1}
                   </td>
@@ -255,16 +232,17 @@ export default function NursePatientsPage() {
                   <td style={tableCellStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Stethoscope size={16} color={theme.textMuted} />
-                      <span style={{ fontWeight: 600 }}>{p.assigned_doctor_name || 'Unassigned'}</span>
+                      <span style={{ fontWeight: 600 }}>{p.assigned_doctor || 'Unassigned'}</span>
                     </div>
                   </td>
                   <td style={tableCellStyle}>
-                    <div style={{ color: theme.textMuted, fontSize: 14 }}>{p.last_assessment_date || p.last_assessment || 'No assessment yet'}</div>
+                    {/* <div style={{ color: theme.textMuted, fontSize: 14 }}>{p.last_assessment_date || p.last_assessment || 'No assessment yet'}</div> */}
+                    <div style={{ color: theme.textMuted, fontSize: 14 }}>No assessment yet</div>
                   </td>
                   <td style={tableCellStyle}>
                     <Badge variant={
                       p.status === 'Draft' ? 'warning' :
-                        p.status === 'Pending' ? 'secondary' : 'success'
+                      p.status === 'Pending' ? 'secondary' : 'success'
                     }>
                       {['Draft', 'Pending', 'Active'].includes(p.status) ? p.status : 'Active'}
                     </Badge>
@@ -302,8 +280,8 @@ export default function NursePatientsPage() {
                 onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.max(prev - 1, 1)); }}
                 disabled={currentPage === 1}
                 style={{ 
-                  padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${theme.border}`, 
-                  background: currentPage === 1 ? 'transparent' : theme.cardBg, 
+                  padding: '8px 16px', borderRadius: 8, border: `1px solid ${theme.border}`, 
+                  background: currentPage === 1 ? 'transparent' : 'white', 
                   cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
                   color: currentPage === 1 ? theme.textMuted : theme.text,
                   fontWeight: 600, fontSize: 13
@@ -318,8 +296,8 @@ export default function NursePatientsPage() {
                 onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.min(prev + 1, totalPages)); }}
                 disabled={currentPage === totalPages}
                 style={{ 
-                  padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${theme.border}`, 
-                  background: currentPage === totalPages ? 'transparent' : theme.cardBg, 
+                  padding: '8px 16px', borderRadius: 8, border: `1px solid ${theme.border}`, 
+                  background: currentPage === totalPages ? 'transparent' : 'white', 
                   cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
                   color: currentPage === totalPages ? theme.textMuted : theme.text,
                   fontWeight: 600, fontSize: 13

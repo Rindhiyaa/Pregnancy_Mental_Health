@@ -6,7 +6,6 @@ import ProtectedRoute from "./ProtectedRoute";
 import HomePage from "../pages/HomePage";
 import AboutPage from "../pages/AboutPage";
 import SignInPage from "../pages/SignInPage";
-import SignUpPage from "../pages/SignUpPage";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import ProfilePage from "../pages/ProfilePage";
@@ -58,7 +57,7 @@ export default function AppRouter() {
       <Route path="/" element={<HomePage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/signin" element={<SignInPage />} />
-      <Route path="/signup" element={<SignUpPage />} />
+      {/* <Route path="/signup" element={<SignUpPage />} /> */}
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* Admin Routes */}
@@ -89,7 +88,6 @@ export default function AppRouter() {
       <Route path="/doctor/review/:id" element={<ProtectedRoute requiredRole="doctor"><DoctorAssessmentReview /></ProtectedRoute>} />
       <Route path="/doctor/validate/:id" element={<ProtectedRoute requiredRole="doctor"><ClinicalValidation /></ProtectedRoute>} />
       <Route path="/doctor/history" element={<ProtectedRoute requiredRole="doctor"><HistoryPage /></ProtectedRoute>} />
-      <Route path="/doctor/messages" element={<ProtectedRoute requiredRole="doctor"><ClinicianMessages /></ProtectedRoute>} />
       <Route path="/doctor/profile" element={<ProtectedRoute requiredRole="doctor"><DoctorProfilePage /></ProtectedRoute>} />
 
       {/* Patient Routes */}
@@ -103,7 +101,7 @@ export default function AppRouter() {
       <Route path="/patient/change-password" element={<ProtectedRoute requiredRole="patient"><PatientChangePassword /></ProtectedRoute>} />
 
       {/* Catch-all */}
-      {/* <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} /> */}
+      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

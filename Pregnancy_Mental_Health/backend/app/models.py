@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, Float, DateTime, func, String, Boolean, JSON, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 from .database import Base
+from datetime import datetime
 
 class User(Base):
     __tablename__ = "users"
@@ -14,7 +15,7 @@ class User(Base):
     role = Column(String, nullable=True) # "doctor", "nurse", "patient"
     first_login = Column(Boolean, default=True) # Force password change for patients
     member_since = Column(DateTime(timezone=True), server_default=func.now())
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True, nullable=False)
 
 
 class MoodEntry(Base):
@@ -110,6 +111,11 @@ class Patient(Base):
     created_by_nurse_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     assigned_doctor_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     status = Column(String, default="active") # active, inactive
+    previous_pregnancies = Column(Integer, nullable=True)
+    hospital_name = Column(String, nullable=True)
+    ward_bed = Column(String, nullable=True)
+    doctor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -148,5 +154,16 @@ class FollowUp(Base):
 
     # Relationship to Patient
     patient = relationship("Patient", back_populates="follow_ups")
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    user_name = Column(String, nullable=False)      # or a FK to users
+    action = Column(String, nullable=False)
+    details = Column(String, nullable=False)
+    ip_address = Column(String, nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 

@@ -4,10 +4,8 @@ import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
 import { PageTitle, Card, Badge, Loader2 } from "../../components/UI";
 import { api } from "../../utils/api";
-import { dummyApi, USE_DUMMY_DATA } from "../../utils/dummyData";
-import { Stethoscope, Mail, Phone, Clock, Users, ShieldCheck } from "lucide-react";
-import FilterToolbar from "../../components/FilterToolbar";
-import { exportDoctorsToPDF, exportDoctorsToExcel, exportDoctorsToCSV } from "../../utils/exportUtils";
+// import { dummyApi, USE_DUMMY_DATA } from "../../utils/dummyData";
+import { Stethoscope, Mail, Phone, Clock, Users, ShieldCheck, Search, Filter } from "lucide-react";
 
 export default function NurseDoctorsPage() {
   const { theme } = useTheme();
@@ -15,21 +13,25 @@ export default function NurseDoctorsPage() {
   const [loading, setLoading] = useState(true);
   const [doctors, setDoctors] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [availabilityFilter, setAvailabilityFilter] = useState("all");
 
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         setLoading(true);
-        if (USE_DUMMY_DATA) {
-          const data = await dummyApi.getDoctors();
-          setDoctors(data);
-        } else {
-          const res = await api.get("/nurse/doctors");
-          if (res.ok) {
-            const data = await res.json();
-            setDoctors(data);
-          }
+        const res = await api.get("/nurse/doctors");
+        if (res.ok) {
+          const data = await res.json();
+          // normalize to { id, fullName, specialization, email, ... }
+          const normalized = (data || []).map(d => ({
+            id: d.id,
+            fullName: d.fullName || `${d.first_name ?? ""} ${d.last_name ?? ""}`.trim(),
+            specialization: d.specialization || "",
+            email: d.email,
+            employeeId: d.employeeId,
+            isAvailable: d.isAvailable,
+            active_patients: d.active_patients,
+          }));
+          setDoctors(normalized);
         }
       } catch (err) {
         console.error("Failed to fetch doctors:", err);
@@ -40,14 +42,10 @@ export default function NurseDoctorsPage() {
     fetchDoctors();
   }, []);
 
-  const filteredDoctors = doctors.filter(d => {
-    const matchesSearch = d.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.specialization?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesAvailability = availabilityFilter === "all" ||
-      (availabilityFilter === "available" && d.isAvailable !== false) ||
-      (availabilityFilter === "busy" && d.isAvailable === false);
-    return matchesSearch && matchesAvailability;
-  });
+  const filteredDoctors = doctors.filter(d =>
+    d.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    d.specialization?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
@@ -56,23 +54,25 @@ export default function NurseDoctorsPage() {
       <main className="portal-main" style={{ background: theme.pageBg, fontFamily: theme.fontBody }}>
         <PageTitle title="Our Medical Team" subtitle="View and contact doctors available for clinical reviews" />
 
-        <Card glass noPadding style={{ margin: '32px 0 24px' }}>
-          <FilterToolbar
-            searchValue={searchQuery}
-            onSearchChange={setSearchQuery}
-            placeholder="Search by name or specialization..."
-            filters={[
-              { label: "All", value: "all" },
-              { label: "Available", value: "available" },
-              { label: "Busy", value: "busy" },
-            ]}
-            activeFilter={availabilityFilter}
-            onFilterChange={setAvailabilityFilter}
-            onPDFExport={() => exportDoctorsToPDF(filteredDoctors)}
-            onExcelExport={() => exportDoctorsToExcel(filteredDoctors)}
-            onCSVExport={() => exportDoctorsToCSV(filteredDoctors)}
-          />
-        </Card>
+        <div style={{ margin: '32px 0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: 400 }}>
+            <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: theme.textMuted }} />
+            <input
+              style={{
+                width: '100%', padding: '12px 16px 12px 48px', borderRadius: 14,
+                border: `1.5px solid ${theme.border}`, background: 'white',
+                fontSize: 15, outline: 'none', fontFamily: theme.fontBody
+              }}
+              placeholder="Search by name or specialization..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: theme.textMuted }}>{filteredDoctors.length} doctors found</div>
+          </div>
+        </div>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '100px 0' }}>
@@ -108,7 +108,9 @@ export default function NurseDoctorsPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <Users size={18} color={theme.textMuted} />
                     <div style={{ fontSize: 14 }}>
-                      <span style={{ fontWeight: 800, color: theme.text }}>{doc.active_patients || Math.floor(Math.random() * 20)}</span>
+                    <span style={{ fontWeight: 800, color: theme.text }}>
+                      {doc.active_patients ?? 0}
+                    </span>
                       <span style={{ color: theme.textMuted, marginLeft: 4 }}>Active Patients</span>
                     </div>
                   </div>
@@ -118,14 +120,16 @@ export default function NurseDoctorsPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <ShieldCheck size={18} color={theme.textMuted} />
-                    <div style={{ fontSize: 14, color: theme.textMuted }}>ID: {doc.employeeId || 'MD-12942'}</div>
+                    <div style={{ fontSize: 14, color: theme.textMuted }}>
+                      ID: {doc.employeeId ?? `DOC-${doc.id}`}
+                    </div>
                   </div>
                 </div>
 
                 <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
                   <button 
                     onClick={() => navigate(`/nurse/patients?doctor=${doc.id}`)}
-                    style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1.5px solid ${theme.border}`, background: theme.cardBg, color: theme.text, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1.5px solid ${theme.border}`, background: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
                   >
                     View Patients
                   </button>

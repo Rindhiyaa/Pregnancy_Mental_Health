@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from "../../ThemeContext";
 import AdminSidebar from "../../components/AdminSidebar";
 import { PageTitle, Divider, Card } from "../../components/UI";
-import { getAdminAnalytics } from "../../utils/dummyData";
+// import { getAdminAnalytics } from "../../utils/dummyData";
+import { api } from "../../utils/api";
 import {
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -43,10 +44,17 @@ export default function AnalyticsPage() {
 
     useEffect(() => {
         const fetchData = async () => {
-            setLoading(true);
-            const analytics = await getAdminAnalytics();
+          setLoading(true);
+          try {
+            const res = await api.get("/admin/dashboard"); // or reuse /admin/dashboard if you extend it
+            if (!res.ok) throw new Error("Failed to load analytics");
+            const analytics = await res.json();
             setData(analytics);
+          } catch (err) {
+            console.error(err);
+          } finally {
             setLoading(false);
+          }
         };
         fetchData();
     }, []);

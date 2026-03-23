@@ -6,6 +6,10 @@ import { getAuditLogs } from "../../utils/dummyData";
 import { Calendar, Clock, Search, Filter, Download, ChevronDown, Menu, X } from "lucide-react";
 import { exportToPDF, exportToExcel, exportToCSV } from "../../utils/exportUtils";
 import ThemeToggle from "../../components/ThemeToggle";
+// import { getAuditLogs } from "../../utils/dummyData";
+import { Search, Filter, Calendar, Clock, Download } from "lucide-react";
+import toast from "react-hot-toast";
+import { api } from "../../utils/api";
 
 // ─── Responsive Hook ────────────────────────────────────────────────────────
 function useBreakpoint() {
@@ -54,23 +58,38 @@ export default function AuditLogsPage() {
         return () => document.removeEventListener("click", handler);
     }, []);
 
+
     const loadLogs = async () => {
         setLoading(true);
-        const data = await getAuditLogs();
-        setLogs(data);
-        setLoading(false);
+        try {
+          const res = await api.get("/admin/audit-logs");
+          if (!res.ok) throw new Error("Failed to load logs");
+          const data = await res.json();
+          setLogs(data);
+        } catch (err) {
+          console.error(err);
+          toast.error("Failed to load audit logs");
+        } finally {
+          setLoading(false);
+        }
     };
 
     const filteredLogs = logs.filter(log => {
+        const userName = log.user_name || log.user || "";
+        const details = log.details || "";
         const matchesUser =
             log.user.toLowerCase().includes(searchUser.toLowerCase()) ||
             log.details.toLowerCase().includes(searchUser.toLowerCase());
         const matchesAction =
-            actionFilter === "all" || log.action.toLowerCase() === actionFilter.toLowerCase();
-        const logDate = log.timestamp.split('T')[0];
+            actionFilter === "all" ||
+            (log.action || "").toLowerCase() === actionFilter.toLowerCase();
+      
+        const ts = log.timestamp || log.created_at || "";
+        const logDate = ts.split("T")[0];
         const matchesDate = !dateFilter || logDate === dateFilter;
+      
         return matchesUser && matchesAction && matchesDate;
-    });
+      });
 
     const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
     const paginatedLogs = filteredLogs.slice(
@@ -83,29 +102,34 @@ export default function AuditLogsPage() {
         if (act.includes('delete') || act.includes('suspend') || act.includes('fail')) return 'error';
         if (act.includes('create') || act.includes('approve') || act.includes('success')) return 'success';
         if (act.includes('update') || act.includes('edit')) return 'warning';
-        return 'warning';
+        return 'info';
     };
 
-    const handleExport = (type) => {
-        setShowExportMenu(false);
-        const columns = [
-            { header: 'Timestamp', accessor: (item) => new Date(item.timestamp).toLocaleString() },
-            { header: 'User', accessor: 'user' },
-            { header: 'Action', accessor: 'action' },
-            { header: 'Details', accessor: 'details' },
-            { header: 'IP', accessor: 'ip' },
-        ];
-        const mapped = filteredLogs.map(l => ({
-            Timestamp: new Date(l.timestamp).toLocaleString(),
-            User: l.user,
-            Action: l.action,
-            Details: l.details,
-            IP: l.ip,
-        }));
-        if (type === 'pdf') exportToPDF(filteredLogs, 'Audit Logs', columns, 'audit-logs');
-        else if (type === 'excel') exportToExcel(mapped, 'Audit Logs', 'audit-logs');
-        else if (type === 'csv') exportToCSV(mapped, 'audit-logs');
-    };
+    const handleExport = async () => {
+        try {
+          const token = localStorage.getItem("token"); // or whatever key you use
+          const res = await fetch("http://127.0.0.1:8000/api/admin/audit-logs/export", {
+            method: "GET",
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          });
+          if (!res.ok) throw new Error("Failed to export CSV");
+      
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "audit_logs.csv";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } catch (err) {
+          console.error(err);
+          toast.error("Failed to export CSV");
+        }
+      };
 
     const SIDEBAR_WIDTH = 260;
     const mainMarginLeft = isDesktop ? SIDEBAR_WIDTH : 0;

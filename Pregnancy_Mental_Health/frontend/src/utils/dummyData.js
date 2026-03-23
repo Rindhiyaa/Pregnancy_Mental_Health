@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
 const sleep = (ms = 600) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Flag to toggle between real API and dummy data
-export const USE_DUMMY_DATA = true;
+export const USE_DUMMY_DATA = false;
 
 // --- Initial Data ---
 

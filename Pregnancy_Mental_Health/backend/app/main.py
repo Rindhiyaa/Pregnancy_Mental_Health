@@ -123,7 +123,7 @@ app.include_router(notifications.router)
 app.include_router(follow_ups.router)
 app.include_router(patient_portal.router)
 app.include_router(admin.router)
-app.include_router(nurse.router)
+app.include_router(nurse.router, prefix="/api")
 app.include_router(doctor.router)
 
 @app.get("/")

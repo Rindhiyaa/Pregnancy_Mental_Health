@@ -3,7 +3,7 @@ import { useTheme } from "../../ThemeContext";
 import AdminLayout from "../../components/AdminLayout";
 import FilterToolbar from "../../components/FilterToolbar";
 import { PageTitle, Divider, Card, Badge, Pagination } from "../../components/UI";
-import { getUsers, addUser, updateUser, deleteUser, addAuditLog } from "../../utils/dummyData";
+//import { getUsers, addUser, updateUser, deleteUser, addAuditLog } from "../../utils/dummyData";
 import { exportNursesToPDF, exportNursesToExcel, exportNursesToCSV } from "../../utils/exportUtils";
 import { Plus, Trash2, ShieldOff, KeyRound, CheckCircle, X, UserCheck, Heart, UserX } from "lucide-react";
 import toast from "react-hot-toast";
@@ -16,7 +16,6 @@ export default function NursesPage() {
     const [nurses, setNurses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
-    const [activeFilter, setActiveFilter] = useState("All");
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState({
         name: "", email: "", phone: "", role: "nurse", ward: ""
@@ -29,10 +28,30 @@ export default function NursesPage() {
 
     const loadNurses = async () => {
         setLoading(true);
-        const data = await getUsers();
-        setNurses(data.filter(u => u.role === 'nurse'));
-        setLoading(false);
-    };
+        try {
+          const res = await api.get("/admin/clinicians");
+          if (!res.ok) throw new Error("Failed to load clinicians");
+          const data = await res.json();
+      
+          const nursesOnly = data.filter(u => u.role === "nurse");
+      
+          const mapped = nursesOnly.map(u => ({
+            id: u.id,
+            name: `${u.first_name} ${u.last_name || ""}`.trim(),
+            email: u.email,
+            phone: u.phone_number || "",
+            status: u.is_active ? "active" : "suspended",
+            ward: "", // fill later if backend supports it
+          }));
+      
+          setNurses(mapped);
+        } catch (err) {
+          console.error("loadNurses error", err);
+          toast.error("Failed to load nurses");
+        } finally {
+          setLoading(false);
+        }
+      };
 
     const filteredNurses = nurses.filter(u => {
         const matchesSearch =
@@ -64,9 +83,32 @@ export default function NursesPage() {
         e.preventDefault();
         setSubmitting(true);
         try {
-            await addUser({ ...formData, role: 'nurse' });
+            const res = await api.post("/admin/users", {
+            first_name: formData.name,
+            last_name: "",
+            email: formData.email,
+            phone_number: formData.phone,
+            password: "TempPass123!",
+            role: "nurse",
+            });
+
+            if (!res.ok) {
+            throw new Error(`Failed to create nurse (${res.status})`);
+            }
+
+            const created = await res.json();
+
+            try {
+            await addAuditLog(
+                "User Created",
+                `Created nurse ${created.first_name} ${created.last_name || ""} (ID ${created.id})`
+            );
+            } catch (logErr) {
+            console.warn("Audit log failed", logErr);
+            }
+
             toast.success(`Nurse ${formData.name} added successfully!`);
-            setFormData({ name: "", email: "", phone: "", role: "nurse", ward: "" });
+            setFormData({ name: "", email: "", phone: "", role: "nurse" });
             setShowModal(false);
             loadNurses();
         } catch {
@@ -77,23 +119,55 @@ export default function NursesPage() {
     };
 
     const handleSuspend = async (id, currentStatus) => {
-        const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
-        await updateUser(id, { status: newStatus });
-        toast.success(`Nurse ${newStatus === 'active' ? 'activated' : 'suspended'}`);
-        loadNurses();
-    };
-
-    const handleDelete = async (id, name) => {
-        if (window.confirm(`Are you sure you want to permanently delete Nurse ${name}?`)) {
-            await deleteUser(id);
-            toast.success("Nurse record deleted");
-            loadNurses();
+        const newIsActive = currentStatus !== "active"; // active -> false, suspended -> true
+        try {
+          const res = await api.patch(`/admin/users/${id}/status?is_active=${newIsActive}`);
+          if (!res.ok) throw new Error("Failed to update status");
+          toast.success(
+            `Account ${newIsActive ? "activated" : "suspended"}`
+          );
+          loadNurses(); // or loadNurses / loadPatients
+        } catch (err) {
+          toast.error("Failed to update status");
         }
-    };
+      };
 
-    const handleResetPassword = async (name) => {
-        await addAuditLog(`Requested password reset for Nurse ${name}`);
-        toast.success(`Reset link sent to ${name}`);
+      const handleDelete = async (id, name) => {
+        if (!window.confirm(`Are you sure you want to permanently delete ${name}?`)) return;
+        try {
+          const res = await api.delete(`/admin/users/${id}`);
+          if (!res.ok) throw new Error("Failed to delete user");
+          toast.success("User record deleted");
+          loadNurses(); // or loadNurses / loadPatients
+        } catch (err) {
+          toast.error("Failed to delete user");
+        }
+      };
+
+      const handleResetPassword = async (doctor) => {
+        if (!window.confirm(`Reset password for ${doctor.name}?`)) return;
+    
+        try {
+        const res = await api.post(`/admin/users/${doctor.id}/reset-password`);
+        if (!res.ok) throw new Error("Failed to reset password");
+    
+        const data = await res.json();
+        console.log("Reset response:", data);
+    
+        try {
+            await addAuditLog(
+            "Password Reset",
+            `Reset password for ${doctor.name} (ID ${doctor.id})`
+            );
+        } catch (logErr) {
+            console.warn("Audit log failed", logErr);
+        }
+    
+        toast.success("Password reset successfully");
+        } catch (err) {
+        console.error(err);
+        toast.error("Failed to reset password");
+        }
     };
 
     return (
@@ -336,11 +410,10 @@ export default function NursesPage() {
                                             {/* Actions */}
                                             <td style={{ ...tdStyle(isTablet), textAlign: "right" }}>
                                                 <ActionButtons
-                                                    onReset={() => handleResetPassword(nurse.name)}
+                                                    onReset={() => handleResetPassword(nurse)}
                                                     onSuspend={() => handleSuspend(nurse.id, nurse.status)}
                                                     onDelete={() => handleDelete(nurse.id, nurse.name)}
                                                     status={nurse.status}
-                                                    theme={theme}
                                                 />
                                             </td>
                                         </tr>
@@ -471,7 +544,7 @@ const StatusBadge = ({ status, theme }) => (
     </div>
 );
 
-const ActionButtons = ({ onReset, onSuspend, onDelete, status, theme }) => (
+const ActionButtons = ({ onReset, onSuspend, onDelete, status }) => (
     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
         <button onClick={onReset} title="Reset Password" style={actionBtnStyle(theme)}>
             <KeyRound size={15} />
