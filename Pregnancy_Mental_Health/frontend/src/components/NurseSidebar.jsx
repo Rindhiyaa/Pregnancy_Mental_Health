@@ -1,5 +1,5 @@
-import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   Home,
   Users,
@@ -7,16 +7,17 @@ import {
   ClipboardList,
   History,
   Calendar,
-  Stethoscope,
   MessageSquare,
   User,
+  Shield,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import { THEME } from "../theme";
 import { useTheme } from "../ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import logo from "../Images/Postpartum_Risk_Insight_Logo.png";
-import ThemeToggle from "./ThemeToggle";
 
 const NAV_ITEMS = [
   { to: "/nurse/dashboard", icon: <Home size={18} />, label: "Dashboard" },
@@ -25,28 +26,38 @@ const NAV_ITEMS = [
   { to: "/nurse/assessment/new", icon: <ClipboardList size={18} />, label: "New Assessment" },
   { to: "/nurse/assessments", icon: <History size={18} />, label: "Assessment History" },
   { to: "/nurse/appointments", icon: <Calendar size={18} />, label: "Appointments" },
-  { to: "/nurse/doctors", icon: <Shield size={18} />, label: "Our Doctors" },
+  { to: "/nurse/doctors", icon: <Shield size={18} />, label: "Our Doctors" }, 
   { to: "/nurse/messages", icon: <MessageSquare size={18} />, label: "Messages" },
 ];
 
 export default function NurseSidebar() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
 
-  const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem('ppd_access_token');
-      if (token && user?.email) {
-        // Import api utility if needed, but we can just use the auth logout
-      }
-    } catch (e) { }
-    logout();
-    navigate("/signin");
-  };
+  useEffect(() => { setIsOpen(false); }, [location.pathname]);
+
+  const handleLogout = async () => { logout(); navigate("/signin"); };
 
   return (
-    <aside style={{ ...S.sidebar, background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}` }}>
+    <>
+      <button
+        className="sidebar-toggle"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label="Toggle navigation"
+        aria-expanded={isOpen}
+      >
+        {isOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+
+      {isOpen && <div className="sidebar-overlay open" onClick={() => setIsOpen(false)} />}
+
+      <aside
+        className={`portal-sidebar${isOpen ? ' open' : ''}`}
+        style={{ ...S.sidebar, background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}` }}
+      >
 
       <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "-8px" }}>
@@ -87,8 +98,6 @@ export default function NurseSidebar() {
       <div style={S.bottomArea}>
         <div style={{ ...S.topDivider, background: theme.sidebarBorder }} />
         
-
-
         <NavLink
           to="/nurse/profile"
           style={({ isActive }) => ({
@@ -105,14 +114,14 @@ export default function NurseSidebar() {
 
         <button
           style={{ ...S.logoutBtn, color: theme.sidebarText }}
-          onClick={handleLogout}
-        >
+          onClick={handleLogout}>
           <span style={S.navIcon}><LogOut size={18} /></span>
           <span style={S.navLabel}>Logout</span>
         </button>
       </div>
 
     </aside>
+    </>
   );
 }
 

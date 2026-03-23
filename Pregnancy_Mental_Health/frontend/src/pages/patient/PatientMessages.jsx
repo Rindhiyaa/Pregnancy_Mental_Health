@@ -117,7 +117,7 @@ export default function PatientMessages() {
   if (loading) return (
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
-      <main style={{ flex: 1, marginLeft: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
         <div style={{ textAlign: 'center' }}>
           <Loader2 className="animate-spin" size={40} color={theme.primary} style={{ marginBottom: 16 }} />
           <div style={{ color: theme.textMuted, fontWeight: 500 }}>Loading messages...</div>
@@ -130,13 +130,7 @@ export default function PatientMessages() {
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
 
-      <main style={{
-        flex: 1,
-        marginLeft: 260,
-        padding: "40px 48px",
-        width: "calc(100% - 260px)",
-        boxSizing: "border-box"
-      }}>
+      <main className="portal-main" style={{ background: theme.pageBg }}>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
           <PageTitle

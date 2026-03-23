@@ -90,7 +90,7 @@ export default function DoctorPatientProfile() {
         <div style={{ display: 'flex', minHeight: '100vh', background: theme.pageBg }}>
             <DoctorSidebar />
 
-            <main style={{ flex: 1, marginLeft: 260, padding: "40px", boxSizing: "border-box" }}>
+            <main className="portal-main" style={{ background: theme.pageBg }}>
                 <button
                     onClick={() => navigate('/doctor/patients')}
                     style={{ 
@@ -142,7 +142,7 @@ export default function DoctorPatientProfile() {
                     </div>
                 </header>
 
-                <div style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: "32px", alignItems: "start" }}>
+                <div className="stats-grid-2" style={{ gap: "32px", alignItems: "start" }}>
                     {/* Demographics Card */}
                     <Card glass style={{ padding: "32px" }}>
                         <h3 style={{ fontSize: "18px", fontWeight: 800, marginBottom: "32px", color: theme.textPrimary, display: 'flex', alignItems: 'center', gap: 12 }}>

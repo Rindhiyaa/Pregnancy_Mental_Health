@@ -46,7 +46,7 @@ export default function NursePatientProfile() {
         return (
             <div style={{ display: 'flex', minHeight: '100vh', background: theme.pageBg }}>
                 <NurseSidebar />
-                <main style={{ flex: 1, marginLeft: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
                     <Loader2 className="animate-spin" size={40} color={theme.primary} />
                 </main>
             </div>
@@ -57,7 +57,7 @@ export default function NursePatientProfile() {
         return (
             <div style={{ display: 'flex', minHeight: '100vh', background: theme.pageBg }}>
                 <NurseSidebar />
-                <main style={{ flex: 1, marginLeft: 260, padding: 40, textAlign: 'center' }}>
+                <main className="portal-main" style={{ textAlign: 'center', background: theme.pageBg }}>
                     <h2>Patient Not Found</h2>
                     <button onClick={() => navigate('/nurse/patients')} style={{ padding: '10px 20px', background: theme.primary, color: 'white', borderRadius: 8, border: 'none', marginTop: 20, cursor: 'pointer' }}>
                         Back to Patients
@@ -83,7 +83,7 @@ export default function NursePatientProfile() {
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: theme.pageBg }}>
             <NurseSidebar />
-            <main style={{ flex: 1, marginLeft: 260, padding: "40px 48px", boxSizing: "border-box" }}>
+            <main className="portal-main" style={{ background: theme.pageBg }}>
 
                 <button
                     onClick={() => navigate('/nurse/patients')}

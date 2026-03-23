@@ -117,7 +117,7 @@ export default function NurseRegisterPatient() {
     <div className={`rp-page ${theme.isDark ? 'dark' : ''}`}>
       <NurseSidebar />
 
-      <main className="rp-main" style={{ marginLeft: 260 }}>
+      <main className="portal-main rp-main">
         <PageTitle title="Register New Patient" subtitle="Create a new mother account and set up portal access" />
 
         <form onSubmit={handleSubmit} className="rp-form-container">

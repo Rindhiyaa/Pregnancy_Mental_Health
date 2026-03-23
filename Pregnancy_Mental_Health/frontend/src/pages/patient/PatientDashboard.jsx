@@ -59,7 +59,7 @@ export default function PatientDashboard() {
   if (loading) return (
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
-      <main style={{ flex: 1, marginLeft: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
         <div style={{ textAlign: 'center' }}>
           <Loader2 className="animate-spin" size={40} color={theme.primary} style={{ marginBottom: 16 }} />
           <div style={{ color: theme.textMuted, fontWeight: 500 }}>Loading your portal...</div>
@@ -72,14 +72,7 @@ export default function PatientDashboard() {
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
 
-      <main style={{
-        flex: 1,
-        marginLeft: 260,
-        padding: "40px 48px",
-        width: "calc(100% - 260px)",
-        boxSizing: "border-box",
-        background: theme.pageBg
-      }}>
+      <main className="portal-main" style={{ background: theme.pageBg }}>
         {/* Welcome Header */}
         <div style={{
           background: theme.heroGradient,
@@ -110,7 +103,7 @@ export default function PatientDashboard() {
           <div style={{ position: "absolute", bottom: -40, left: "40%", width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, marginBottom: 32 }}>
+        <div className="stats-grid-3" style={{ marginBottom: 32 }}>
           {/* My Doctor */}
           <Card>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
@@ -216,7 +209,7 @@ export default function PatientDashboard() {
         </Card>
 
         {/* Quick Actions */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        <div className="stats-grid-2" style={{ gap: 24 }}>
           <Card>
             <h3 style={{ fontSize: 18, fontWeight: 300, color: theme.textPrimary, marginBottom: 16 }}>Need to talk?</h3>
             <p style={{ fontSize: 14, color: theme.textSecondary, lineHeight: 1.6, marginBottom: 20 }}>

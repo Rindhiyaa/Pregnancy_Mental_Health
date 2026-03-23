@@ -1,0 +1,251 @@
+/* ============================================================
+   PORTAL RESPONSIVE — Doctor, Nurse, Admin portals
+   Handles the fixed sidebar + main content layout at all sizes
+   ============================================================ */
+
+/* ── Base: sidebar is fixed 240px wide ── */
+.portal-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.portal-main {
+  flex: 1;
+  margin-left: 240px;
+  padding: 40px;
+  box-sizing: border-box;
+  transition: margin-left 0.25s ease;
+  min-width: 0; /* prevent flex blowout */
+}
+
+/* ── Stats grids ── */
+.stats-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.stats-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.stats-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+/* ── Dashboard 2-col layout ── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+  margin-bottom: 40px;
+}
+
+/* ── Schedule 2-col layout ── */
+.schedule-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── Messages 3-col layout ── */
+.messages-grid {
+  display: grid;
+  grid-template-columns: 320px 1.2fr 1.3fr;
+  gap: 32px;
+}
+
+/* ── Page header row ── */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* ── Hero header inside dashboard ── */
+.dashboard-hero {
+  padding: 40px;
+  border-radius: 24px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-hero-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ── Table wrapper ── */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================================
+   BREAKPOINT: 1280px — sidebar still visible, content adjusts
+   ============================================================ */
+@media (max-width: 1280px) {
+  .portal-main {
+    padding: 32px 28px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1.5fr 1fr;
+    gap: 24px;
+  }
+
+  .messages-grid {
+    grid-template-columns: 260px 1fr 1fr;
+    gap: 20px;
+  }
+
+  .stats-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================================
+   BREAKPOINT: 1024px — sidebar collapses, full width content
+   ============================================================ */
+@media (max-width: 1024px) {
+  .portal-main {
+    margin-left: 0 !important;
+    padding: 24px 20px;
+    padding-top: 68px; /* space for hamburger toggle */
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .messages-grid {
+    grid-template-columns: 1fr;
+    height: auto !important;
+  }
+
+  .stats-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-hero {
+    padding: 28px 24px;
+  }
+
+  .dashboard-hero-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ============================================================
+   BREAKPOINT: 768px — tablet
+   ============================================================ */
+@media (max-width: 768px) {
+  .portal-main {
+    padding: 16px;
+    padding-top: 68px;
+  }
+
+  .stats-grid-4,
+  .stats-grid-3 {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stats-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+
+  .dashboard-hero {
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+  }
+
+  .dashboard-hero h1 {
+    font-size: 22px !important;
+  }
+
+  /* Tables scroll horizontally */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 560px;
+  }
+
+  /* Modal full width */
+  .modal-box {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    padding: 24px !important;
+  }
+
+  /* Messages: stack columns */
+  .messages-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Schedule: stack */
+  .schedule-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   BREAKPOINT: 480px — small mobile
+   ============================================================ */
+@media (max-width: 480px) {
+  .portal-main {
+    padding: 12px;
+    padding-top: 64px;
+  }
+
+  .stats-grid-4,
+  .stats-grid-3,
+  .stats-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dashboard-hero h1 {
+    font-size: 18px !important;
+  }
+
+  .page-header button {
+    width: 100%;
+    justify-content: center;
+  }
+}

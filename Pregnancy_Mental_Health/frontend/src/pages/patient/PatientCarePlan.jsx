@@ -119,7 +119,7 @@ export default function PatientCarePlan() {
   if (loading) return (
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
-      <main style={{ flex: 1, marginLeft: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
         <div style={{ textAlign: 'center' }}>
           <Loader2 className="animate-spin" size={40} color={theme.primary} style={{ marginBottom: 16 }} />
           <div style={{ color: theme.textMuted, fontWeight: 500 }}>Loading your care plan...</div>
@@ -132,13 +132,7 @@ export default function PatientCarePlan() {
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
 
-      <main style={{
-        flex: 1,
-        marginLeft: 260,
-        padding: "40px 48px",
-        width: "calc(100% - 260px)",
-        boxSizing: "border-box"
-      }}>
+      <main className="portal-main" style={{ background: theme.pageBg }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
           <PageTitle
             title="My Care Plan"
@@ -191,7 +185,7 @@ export default function PatientCarePlan() {
           </div>
         </Card>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 32 }}>
+        <div className="dashboard-grid" style={{ gap: 32 }}>
           {/* ── LEFT COLUMN ── */}
           <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
             {/* Recommendation */}

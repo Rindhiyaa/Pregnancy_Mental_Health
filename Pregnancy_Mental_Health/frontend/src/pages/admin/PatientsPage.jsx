@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from "../../ThemeContext";
-import AdminSidebar from "../../components/AdminSidebar";
+import AdminLayout from "../../components/AdminLayout";
 import FilterToolbar from "../../components/FilterToolbar";
 import { PageTitle, Divider, Card, Badge, Pagination } from "../../components/UI";
 import { getUsers, addUser, updateUser, deleteUser, addAuditLog } from "../../utils/dummyData";
@@ -107,11 +107,12 @@ export default function PatientsPage() {
     };
 
     return (
-        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
-            <AdminSidebar />
-            <main style={{ flex: 1, marginLeft: 260, padding: "40px 48px", boxSizing: "border-box" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-                    <PageTitle title="Patient Registry" subtitle="Comprehensive list of registered patients and their wellness tracking" />
+        <AdminLayout pageTitle="Patients">
+                <div className="page-header">
+                    <div>
+                        <h1 style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary, margin: 0 }}>Patients</h1>
+                        <p style={{ fontSize: 14, color: theme.textMuted, margin: "4px 0 0" }}>Manage registered patient accounts</p>
+                    </div>
                     <button onClick={() => setShowModal(true)} style={primaryBtnStyle(theme)}>
                         <Plus size={18} /> New Patient
                     </button>
@@ -189,8 +190,6 @@ export default function PatientsPage() {
                         onPageChange={setCurrentPage}
                     />
                 </Card>
-            </main>
-
             {showModal && (
                 <Modal onClose={() => setShowModal(false)} title="Register New Patient" theme={theme}>
                     <form onSubmit={handleCreatePatient}>
@@ -217,7 +216,7 @@ export default function PatientsPage() {
                     </form>
                 </Modal>
             )}
-        </div>
+        </AdminLayout>
     );
 }
 

@@ -142,17 +142,11 @@ export default function PatientsPage() {
     return (
         <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
             <DoctorSidebar />
-
-            <main style={{ flex: 1, marginLeft: 260, padding: "40px", boxSizing: 'border-box' }}>
-                <header style={{ marginBottom: "40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <PageTitle
-                        title="Patient Directory"
-                        subtitle="Full history and clinical mapping for all registered patients."
-                    />
+            <main className="portal-main" style={{ background: theme.pageBg }}>
+                <header className="page-header">
+                    <PageTitle title="Patient Directory" subtitle="Full history and clinical mapping for all registered patients." />
                 </header>
-
-                {/* Stats Summary */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px", marginBottom: "40px" }}>
+                <div className="stats-grid-3">
                     <Card glass style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                         <div style={{ width: 56, height: 56, borderRadius: 16, background: theme.primary + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.primary }}>
                             <Users size={28} />

@@ -1,5 +1,5 @@
-import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   Home,
   BarChart2,
@@ -10,6 +10,8 @@ import {
   MessageSquare,
   User,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import { THEME } from "../theme";
 import { useTheme } from "../ThemeContext";
@@ -30,6 +32,11 @@ export default function PatientSidebar() {
   const { user, logout } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Close sidebar on route change
+  useEffect(() => { setIsOpen(false); }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -37,7 +44,32 @@ export default function PatientSidebar() {
   };
 
   return (
-    <aside style={{ ...S.sidebar, background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}` }}>
+    <>
+      {/* Hamburger toggle — visible only on mobile/tablet */}
+      <button
+        onClick={() => setIsOpen(o => !o)}
+        className="sidebar-toggle"
+        aria-label="Toggle navigation"
+        aria-expanded={isOpen}
+      >
+        {isOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+
+      {/* Overlay */}
+      {isOpen && (
+        <div
+          className="sidebar-overlay open"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+    <aside
+      className={`portal-sidebar${isOpen ? ' open' : ''}`}
+      style={{
+        ...S.sidebar,
+        background: theme.sidebarBg,
+        borderRight: `1px solid ${theme.sidebarBorder}`,
+      }}>
 
       <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "-8px" }}>
@@ -102,6 +134,7 @@ export default function PatientSidebar() {
       </div>
 
     </aside>
+    </>
   );
 }
 

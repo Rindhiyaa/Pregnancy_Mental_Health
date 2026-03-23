@@ -123,21 +123,14 @@ export default function MoodTracker() {
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
 
-      <main style={{
-        flex: 1,
-        marginLeft: 260,
-        padding: "40px 48px",
-        width: "calc(100% - 260px)",
-        boxSizing: "border-box"
-      }}>
-
+      <main className="portal-main" style={{ background: theme.pageBg }}>
         <PageTitle
           title="Mood Tracker"
           subtitle="Tracking your mood helps your care team understand your progress"
         />
         <Divider />
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 32 }}>
+        <div className="dashboard-grid" style={{ gap: 32 }}>
 
           {/* ── LEFT: TODAY'S CHECK-IN ── */}
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>

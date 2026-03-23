@@ -207,7 +207,7 @@ export default function PatientProfile() {
   if (fetching) return (
     <div style={S.portal(theme)}>
       <PatientSidebar />
-      <main style={{ ...S.main(theme), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
         <div style={{ textAlign: 'center' }}>
           <Loader2 className="animate-spin" size={40} color={theme.primary} style={{ marginBottom: 16 }} />
           <div style={{ color: theme.textMuted, fontWeight: 500 }}>Loading your profile...</div>
@@ -220,7 +220,7 @@ export default function PatientProfile() {
     <div style={S.portal(theme)}>
       <PatientSidebar />
 
-      <main style={S.main(theme)}>
+      <main className="portal-main" style={{ background: theme.pageBg }}>
 
         {/* ── HEADER ── */}
         <div style={S.header(theme)}>
@@ -441,9 +441,8 @@ const S = {
     fontFamily: theme.fontBody,
   }),
   main: (theme) => ({
-    flex: 1, marginLeft: 260,
+    flex: 1,
     padding: "40px 52px",
-    width: "calc(100% - 260px)",
     boxSizing: "border-box",
   }),
 

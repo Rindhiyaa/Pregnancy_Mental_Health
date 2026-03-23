@@ -177,7 +177,7 @@ export default function NurseNewAssessment() {
     <div className={`new-assessment-page ${theme.isDark ? 'dark' : ''}`} style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       {user?.role === 'doctor' ? <DoctorSidebar /> : <NurseSidebar />}
 
-      <main style={{ flex: 1, marginLeft: 260, padding: "40px", boxSizing: "border-box" }}>
+      <main className="portal-main" style={{ background: theme.pageBg, fontFamily: theme.fontBody }}>
         {/* TOP HEADER */}
         <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h1 style={{ fontSize: "28px", fontWeight: 700, color: theme.textPrimary, margin: 0 }}>

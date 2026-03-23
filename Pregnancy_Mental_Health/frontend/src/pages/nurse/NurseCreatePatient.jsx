@@ -62,14 +62,7 @@ export default function NurseCreatePatient() {
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <NurseSidebar />
 
-      <main style={{
-        flex: 1,
-        marginLeft: 260,
-        padding: "40px 48px",
-        width: "calc(100% - 260px)",
-        boxSizing: "border-box",
-        background: theme.pageBg
-      }}>
+      <main className="portal-main" style={{ background: theme.pageBg }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
           <div>
             <h1 style={{ fontFamily: theme.fontHeading, fontSize: 28, fontWeight: 800, color: theme.textPrimary, margin: 0 }}>

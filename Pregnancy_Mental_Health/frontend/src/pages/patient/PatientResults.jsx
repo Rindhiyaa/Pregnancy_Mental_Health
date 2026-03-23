@@ -225,7 +225,7 @@ export default function PatientResults() {
   if (loading) return (
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
-      <main style={{ flex: 1, marginLeft: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
         <div style={{ textAlign: 'center' }}>
           <Loader2 className="animate-spin" size={40} color={theme.primary} style={{ marginBottom: 16 }} />
           <div style={{ color: theme.textMuted, fontWeight: 500 }}>Loading your results...</div>
@@ -238,14 +238,7 @@ export default function PatientResults() {
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
 
-      <main style={{
-        flex: 1,
-        marginLeft: 260,
-        padding: "40px 48px",
-        width: "calc(100% - 260px)",
-        boxSizing: "border-box",
-        background: theme.pageBg
-      }}>
+      <main className="portal-main" style={{ background: theme.pageBg }}>
 
         <PageTitle
           title="My Results"
@@ -254,7 +247,7 @@ export default function PatientResults() {
         <Divider />
 
         {/* ── SUMMARY ROW ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 32 }}>
+        <div className="stats-grid-3" style={{ gap: 20, marginBottom: 32 }}>
           <Card style={{ padding: "16px 20px" }}>
             <div style={{ fontSize: 24, fontWeight: 800, color: theme.primary, marginBottom: 4 }}>{assessments.length}</div>
             <div style={{ fontSize: 12, fontWeight: 600, color: theme.textMuted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Assessments</div>

@@ -1,23 +1,19 @@
-import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
   UserPlus,
-  ClipboardCheck,
   FileText,
-  Settings,
   LogOut,
   Shield,
-  ShieldAlert,
   BarChart3,
-  Search,
-  Bell
+  Menu,
+  X
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../ThemeContext";
 import logo from "../Images/Postpartum_Risk_Insight_Logo.png";
-import ThemeToggle from "./ThemeToggle";
 
 const ADMIN_NAV_ITEMS = [
   { to: "/admin/dashboard", icon: <LayoutDashboard size={18} />, label: "Dashboard" },
@@ -29,21 +25,53 @@ const ADMIN_NAV_ITEMS = [
 ];
 
 export default function AdminSidebar() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/signin");
-  };
+  // Close sidebar on route change (mobile)
+  useEffect(() => { setIsOpen(false); }, [location.pathname]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') setIsOpen(false); };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, []);
+
+  const handleLogout = () => { logout(); navigate("/signin"); };
 
   return (
-    <aside style={{
-      width: 240, height: "100vh", position: "fixed",
-      background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`,
-      display: "flex", flexDirection: "column", zIndex: 100, color: "white"
-    }}>
+    <>
+      {/* Mobile toggle button */}
+      <button
+        className="sidebar-toggle"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label="Toggle navigation"
+        aria-expanded={isOpen}
+      >
+        {isOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+
+      {/* Overlay */}
+      {isOpen && (
+        <div
+          className="sidebar-overlay open"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`portal-sidebar${isOpen ? ' open' : ''}`}
+        style={{
+          width: 240, height: "100vh", position: "fixed",
+          background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`,
+          display: "flex", flexDirection: "column", zIndex: 100, color: "white",
+          transition: "transform 0.25s ease"
+        }}
+      >
 
       <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "-8px" }}>
@@ -98,6 +126,7 @@ export default function AdminSidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }
 

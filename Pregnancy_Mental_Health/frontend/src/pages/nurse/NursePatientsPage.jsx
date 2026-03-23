@@ -144,7 +144,7 @@ export default function NursePatientsPage() {
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <NurseSidebar />
 
-      <main style={{ flex: 1, marginLeft: 260, padding: "40px 48px", width: "calc(100% - 260px)", boxSizing: "border-box" }}>
+      <main className="portal-main" style={{ background: theme.pageBg, fontFamily: theme.fontBody }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
           <PageTitle title="Patients Directory" subtitle="Manage all registered mothers and their assessment status" />
           <button

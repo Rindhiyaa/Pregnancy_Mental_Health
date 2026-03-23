@@ -386,4 +386,36 @@
 .dark .np-btn-logout:hover {
     background: rgba(239, 68, 68, 0.1);
     border-color: #F87171;
-}
+}
+
+
+/* ── Responsive: Profile pages ── */
+@media (max-width: 1024px) {
+  .np-main {
+    margin-left: 0 !important;
+    padding: 24px 20px;
+    padding-top: 68px;
+  }
+}
+
+@media (max-width: 768px) {
+  .np-main {
+    padding: 16px;
+    padding-top: 68px;
+  }
+
+  .np-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .np-stats-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .np-main {
+    padding: 12px;
+    padding-top: 64px;
+  }
+}

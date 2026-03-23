@@ -161,13 +161,9 @@ const SchedulePage = () => {
     return (
         <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
             <DoctorSidebar />
-
-            <main style={{ flex: 1, marginLeft: 260, padding: "40px", boxSizing: 'border-box' }}>
-                <header style={{ marginBottom: "40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <PageTitle
-                        title="Clinical Schedule"
-                        subtitle="Maintain patient follow-ups and monitor today's medical appointments."
-                    />
+            <main className="portal-main" style={{ background: theme.pageBg }}>
+                <header className="page-header">
+                    <PageTitle title="Clinical Schedule" subtitle="Maintain patient follow-ups and monitor today's medical appointments." />
                     <button
                         onClick={() => setShowAddModal(true)}
                         style={{
@@ -180,9 +176,7 @@ const SchedulePage = () => {
                         <Plus size={20} /> New Appointment
                     </button>
                 </header>
-
-                {/* 2-Column layout: Mini Calendar + Day View | Appointments */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "24px", alignItems: 'start' }}>
+                <div className="schedule-grid">
 
                     {/* ── LEFT: Mini Calendar + Day Overview ── */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

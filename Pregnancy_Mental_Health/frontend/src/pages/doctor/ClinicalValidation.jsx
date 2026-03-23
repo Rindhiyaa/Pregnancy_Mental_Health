@@ -147,10 +147,10 @@ export default function ClinicalValidation() {
     return (
         <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
             <DoctorSidebar />
-            <main style={{
-                flex: 1, marginLeft: 260, padding: "32px 40px",
-                boxSizing: "border-box", minHeight: "100vh",
-                fontFamily: "'Inter', system-ui, sans-serif"
+            <main className="portal-main" style={{
+                minHeight: "100vh",
+                fontFamily: "'Inter', system-ui, sans-serif",
+                background: theme.pageBg
             }}>
                 {/* Header */}
                 <header style={{ marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -173,7 +173,7 @@ export default function ClinicalValidation() {
                 </header>
 
                 {/* 2-col grid: AI Panel | Validation Form */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+                <div className="stats-grid-2" style={{ gap: 24 }}>
 
                     {/* LEFT: AI Diagnosis */}
                     <Card glass style={{ padding: 28 }}>

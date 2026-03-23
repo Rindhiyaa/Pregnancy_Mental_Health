@@ -120,13 +120,9 @@ const HistoryPage = () => {
     return (
         <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
             <DoctorSidebar />
-
-            <main style={{ flex: 1, marginLeft: 260, padding: "40px", boxSizing: 'border-box' }}>
-                <header style={{ marginBottom: "32px" }}>
-                    <PageTitle
-                        title="Comprehensive History"
-                        subtitle="Review all previous clinical interventions and AI diagnostic records."
-                    />
+            <main className="portal-main" style={{ background: theme.pageBg }}>
+                <header className="page-header" style={{ marginBottom: 32 }}>
+                    <PageTitle title="Comprehensive History" subtitle="Review all previous clinical interventions and AI diagnostic records." />
                 </header>
 
                 <Card glass noPadding style={{ marginBottom: 24 }}>

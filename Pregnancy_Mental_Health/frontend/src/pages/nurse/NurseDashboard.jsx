@@ -124,7 +124,7 @@ export default function NurseDashboard() {
   if (loading) return (
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <NurseSidebar />
-      <main style={{ flex: 1, marginLeft: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
         <div style={{ textAlign: 'center' }}>
           <Loader2 className="animate-spin" size={40} color={theme.primary} style={{ marginBottom: 16 }} />
           <div style={{ color: theme.textMuted, fontWeight: 500 }}>Loading Nurse Portal...</div>
@@ -137,14 +137,7 @@ export default function NurseDashboard() {
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <NurseSidebar />
 
-      <main style={{
-        flex: 1,
-        marginLeft: 260,
-        padding: "40px 48px",
-        width: "calc(100% - 260px)",
-        boxSizing: "border-box",
-        background: theme.pageBg
-      }}>
+      <main className="portal-main" style={{ background: theme.pageBg }}>
         {/* Welcome Header */}
         <div style={{
           background: theme.heroGradient,
@@ -176,12 +169,7 @@ export default function NurseDashboard() {
         </div>
 
         {/* Stats Row */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: 24,
-          marginBottom: 40
-        }}>
+        <div className="stats-grid-4" style={{ marginBottom: 40 }}>
           {[
             { label: "Total Patients", value: stats.total_patients, color: theme.primary, icon: <Users size={20} /> },
             { label: "Pending Drafts", value: stats.pending_assessments, color: theme.secondary, icon: <Clock size={20} /> },

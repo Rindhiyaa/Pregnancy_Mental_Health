@@ -80,13 +80,7 @@ export default function Resources() {
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
 
-      <main style={{
-        flex: 1,
-        marginLeft: 260,
-        padding: "40px 48px",
-        width: "calc(100% - 260px)",
-        boxSizing: "border-box"
-      }}>
+      <main className="portal-main" style={{ background: theme.pageBg }}>
 
         <PageTitle
           title="Resources For You"
@@ -95,7 +89,7 @@ export default function Resources() {
         <Divider />
 
         {/* ── RESOURCE GRID ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, marginBottom: 40 }}>
+        <div className="stats-grid-3" style={{ gap: 24, marginBottom: 40 }}>
           {RESOURCES.map((r) => (
             <Card key={r.id} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

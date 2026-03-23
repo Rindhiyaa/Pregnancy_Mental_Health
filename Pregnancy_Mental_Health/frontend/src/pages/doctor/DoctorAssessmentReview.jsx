@@ -54,11 +54,11 @@ export default function DoctorAssessmentReview() {
     return (
         <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
             <DoctorSidebar />
-            <main style={{
-                flex: 1, marginLeft: 260, padding: "32px 40px",
-                boxSizing: "border-box", height: "100vh",
+            <main className="portal-main" style={{
+                height: "100vh",
                 overflow: "hidden", display: "flex", flexDirection: "column",
-                fontFamily: "'Inter', system-ui, sans-serif"
+                fontFamily: "'Inter', system-ui, sans-serif",
+                background: theme.pageBg
             }}>
                 {/* Header */}
                 <header style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>

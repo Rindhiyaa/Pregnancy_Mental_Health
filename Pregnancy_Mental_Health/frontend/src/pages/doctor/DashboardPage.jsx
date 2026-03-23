@@ -134,24 +134,17 @@ export default function DashboardPage() {
     return (
         <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
             <DoctorSidebar />
-
-            <main style={{ flex: 1, marginLeft: 260, padding: "40px", maxWidth: "1600px", boxSizing: 'border-box' }}>
+            <main className="portal-main" style={{ background: theme.pageBg }}>
                 {/* Hero Header */}
-                <div style={{
+                <div className="dashboard-hero" style={{
                     background: theme.heroGradient,
-                    padding: "40px",
-                    borderRadius: 24,
                     color: "white",
-                    marginBottom: 32,
-                    position: "relative",
-                    overflow: "hidden",
                     boxShadow: theme.shadowPremium
                 }}>
-                    {/* Decorative circles */}
                     <div style={{ position: "absolute", top: -20, right: -20, width: 150, height: 150, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
                     <div style={{ position: "absolute", bottom: -40, left: "40%", width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
                     
-                    <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div className="dashboard-hero-inner" style={{ position: "relative", zIndex: 1 }}>
                         <div>
                             <h1 style={{ 
                                 fontFamily: theme.fontHeading, 
@@ -164,7 +157,7 @@ export default function DashboardPage() {
                                 Clinical Command Center — {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                             </p>
                         </div>
-                        <div style={{ display: "flex", gap: "12px" }}>
+                        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                             <div style={{ position: 'relative' }}>
                                 <Search size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: "rgba(255,255,255,0.7)" }} />
                                 <input
@@ -188,41 +181,14 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Primary Stats Grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px", marginBottom: "40px" }}>
-                    <StatCard
-                        title="Today's Consults"
-                        value={stats.todayAppointments}
-                        icon={<Calendar size={24} />}
-                        trend="up"
-                        trendValue="8"
-                    />
-                    <StatCard
-                        title="Pending Reviews"
-                        value={stats.pending}
-                        icon={<Clock size={24} />}
-                        color="warning"
-                        trend="down"
-                        trendValue="2"
-                    />
-                    <StatCard
-                        title="High Risk Alerts"
-                        value={stats.highRisk}
-                        icon={<AlertCircle size={24} />}
-                        color="danger"
-                        trend="up"
-                        trendValue="1"
-                    />
-                    <StatCard
-                        title="Total Patients"
-                        value={stats.totalPatients}
-                        icon={<Users size={24} />}
-                        color="success"
-                        trend="up"
-                        trendValue="12%"
-                    />
+                <div className="stats-grid-4">
+                    <StatCard title="Today's Consults" value={stats.todayAppointments} icon={<Calendar size={24} />} trend="up" trendValue="8" />
+                    <StatCard title="Pending Reviews" value={stats.pending} icon={<Clock size={24} />} color="warning" trend="down" trendValue="2" />
+                    <StatCard title="High Risk Alerts" value={stats.highRisk} icon={<AlertCircle size={24} />} color="danger" trend="up" trendValue="1" />
+                    <StatCard title="Total Patients" value={stats.totalPatients} icon={<Users size={24} />} color="success" trend="up" trendValue="12%" />
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "32px", marginBottom: "40px" }}>
+                <div className="dashboard-grid">
                     {/* Left Column: Visualizations & Queue */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                         {/* Weekly Trends Chart */}

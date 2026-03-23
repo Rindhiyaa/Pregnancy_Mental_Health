@@ -141,16 +141,11 @@ export default function ClinicianMessages() {
     return (
         <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: "'Poppins', sans-serif" }}>
             <Sidebar />
-
-            <main style={{ flex: 1, marginLeft: 260, padding: "40px", boxSizing: 'border-box', maxWidth: 1600 }}>
+            <main className="portal-main" style={{ background: theme.pageBg, maxWidth: 1600 }}>
                 <header style={{ marginBottom: "32px" }}>
-                    <PageTitle
-                        title="Secure Messaging Center"
-                        subtitle="Maintain HIPAA-compliant communications with your patients and care team."
-                    />
+                    <PageTitle title="Secure Messaging Center" subtitle="Maintain HIPAA-compliant communications with your patients and care team." />
                 </header>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '320px 1.2fr 1.3fr', gap: "32px", height: "calc(100vh - 160px)" }}>
+                <div className="messages-grid" style={{ height: "calc(100vh - 160px)" }}>
                     
                     {/* Column 1: Clinical Templates */}
                     <div style={{ ...baseCardStyle, overflowY: 'auto' }}>
