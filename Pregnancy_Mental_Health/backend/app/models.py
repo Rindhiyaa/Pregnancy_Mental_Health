@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, DateTime, func, String, Boolean, JSON, ForeignKey, BigInteger
+from sqlalchemy import Column, Integer, Float, DateTime, func, String, Boolean, JSON, ForeignKey, BigInteger, Date, Time
 from sqlalchemy.orm import relationship
 from .database import Base
 from datetime import datetime
@@ -10,12 +10,20 @@ class User(Base):
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    phone_number = Column(String, unique=True, index=True, nullable=True) # For patient login
+    phone_number = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String, nullable=False)
-    role = Column(String, nullable=True) # "doctor", "nurse", "patient"
-    first_login = Column(Boolean, default=True) # Force password change for patients
+    role = Column(String, nullable=True)
+    first_login = Column(Boolean, default=True)
     member_since = Column(DateTime(timezone=True), server_default=func.now())
     is_active = Column(Boolean, default=True, nullable=False)
+
+    # explicitly use Patient.user_id as the FK for this relationship
+    patient_profile = relationship(
+        "Patient",
+        back_populates="user",
+        uselist=False,
+        foreign_keys="Patient.user_id",
+    )
 
 
 class MoodEntry(Base):
@@ -65,10 +73,12 @@ class Assessment(Base):
     notes = Column(String, nullable=True)
     clinician_email = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
 
     # --- New Fields for Nurse Workflow ---
     nurse_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
-    doctor_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+   # doctor_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    assigned_doctor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     # Status: draft, submitted, reviewed, complete
     status = Column(String, default="submitted") 
@@ -83,6 +93,7 @@ class Assessment(Base):
     patient = relationship("Patient", back_populates="assessments")
 
 
+
 class Patient(Base):
     __tablename__ = "patients"
 
@@ -95,33 +106,62 @@ class Patient(Base):
     blood_group = Column(String, nullable=True)
     address = Column(String, nullable=True)
     city = Column(String, nullable=True)
-    
+
     emergency_name = Column(String, nullable=True)
     emergency_phone = Column(String, nullable=True)
     emergency_relation = Column(String, nullable=True)
-    
+
     pregnancy_week = Column(Integer, nullable=True)
     due_date = Column(DateTime(timezone=True), nullable=True)
     gravida = Column(Integer, nullable=True)
     para = Column(Integer, nullable=True)
-    
+
     clinician_email = Column(String, nullable=True)
-    
-    # --- New Fields for Nurse Workflow ---
-    created_by_nurse_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
-    assigned_doctor_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
-    status = Column(String, default="active") # active, inactive
+
+    # main link to portal user
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user = relationship(
+        "User",
+        back_populates="patient_profile",
+        foreign_keys=[user_id],
+    )
+
+    # other user links (doctor/nurse) – keep as plain FKs, no back_populates here
+    created_by_nurse_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    assigned_doctor_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    doctor_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    status = Column(String, default="active")
     previous_pregnancies = Column(Integer, nullable=True)
     hospital_name = Column(String, nullable=True)
     ward_bed = Column(String, nullable=True)
-    doctor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
-    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationship to Assessments
-    assessments = relationship("Assessment", back_populates="patient", cascade="all, delete-orphan", passive_deletes=True)
-    follow_ups = relationship("FollowUp", back_populates="patient", cascade="all, delete-orphan", passive_deletes=True)
+    assessments = relationship(
+        "Assessment",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    follow_ups = relationship(
+        "FollowUp",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
 
 class Notification(Base):
@@ -165,5 +205,24 @@ class AuditLog(Base):
     details = Column(String, nullable=False)
     ip_address = Column(String, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class Appointment(Base):
+    __tablename__ = "appointments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    doctor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    date = Column(Date, nullable=False)
+    time = Column(Time, nullable=False)
+
+    type = Column(String, default="Follow-up")      # e.g. "Follow-up", "Urgent Review"
+    notes = Column(String, nullable=True)
+    urgency = Column(String, default="Routine")     # "Routine", "Urgent", etc.
+    department = Column(String, default="OBGYN")
+
+    patient = relationship("Patient", backref="appointments")
+    doctor = relationship("User", backref="appointments")
 
 

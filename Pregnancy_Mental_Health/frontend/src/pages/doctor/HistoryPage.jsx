@@ -44,16 +44,37 @@ const HistoryPage = () => {
     const fetchHistory = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await api.get('/doctor/assessments');
-            if (res.ok) {
-                const data = await res.json();
-                const sorted = data.sort((a, b) => new Date(b.timestamp || b.created_at) - new Date(a.timestamp || a.created_at));
-                setRows(sorted);
-                setFilteredRows(sorted);
+            
+            console.log("Fetching history...");
+            
+            // Updated to use new API format that returns { data, response }
+            const { data } = await api.get('/doctor/assessments');
+            
+            console.log("History data:", data);
+            
+            // Handle different response formats
+            let assessmentList = [];
+            if (Array.isArray(data)) {
+                assessmentList = data;
+            } else if (data && Array.isArray(data.assessments)) {
+                assessmentList = data.assessments;
             }
+            
+            // Sort by timestamp/created_at
+            const sorted = assessmentList.sort(
+                (a, b) => new Date(b.timestamp || b.created_at) - new Date(a.timestamp || a.created_at)
+            );
+            
+            setRows(sorted);
+            setFilteredRows(sorted);
+            
+            console.log("✅ Loaded", sorted.length, "history records");
+            
         } catch (err) {
             console.error("Failed to fetch history:", err);
             toast.error("Failed to load clinical history");
+            setRows([]);
+            setFilteredRows([]);
         } finally {
             setLoading(false);
         }
@@ -101,12 +122,14 @@ const HistoryPage = () => {
     const deleteAssessment = async (id) => {
         if (!window.confirm("Are you sure you want to delete this clinical record?")) return;
         try {
-            const res = await api.delete(`/assessments/${id}`);
-            if (res.ok) {
-                toast.success("Record deleted successfully");
-                fetchHistory();
-            }
+            // Updated to use new API format
+            await api.delete(`/assessments/${id}`);
+            
+            toast.success("Record deleted successfully");
+            fetchHistory();
+            
         } catch (err) {
+            console.error("Delete failed:", err);
             toast.error("Failed to delete record");
         }
     };
@@ -243,7 +266,9 @@ const HistoryPage = () => {
                                         <Badge variant={(selectedAssessment.risk_level || "").toLowerCase().includes("high") ? "danger" : "warning"} size="lg">
                                             {selectedAssessment.risk_level}
                                         </Badge>
-                                        <div style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary }}>{selectedAssessment.score}/100 Score</div>
+                                        <div style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary }}>
+                                            {Math.round(selectedAssessment.risk_score || 0)}/100 Score
+                                        </div>
                                     </div>
 
                                     <div style={{ height: 200 }}>

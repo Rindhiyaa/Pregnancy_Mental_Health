@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from .database import engine
 from . import models
-from .routers import predictions, auth, assessments, notifications, follow_ups, patient_portal, admin, nurse, doctor
+from .routers import predictions, auth, assessments, notifications, follow_ups, patient_portal, admin, nurse, doctor, messages
 from .routers.patients import router as patients_router
 from .rate_limiter import rate_limiter
 from .config import ALLOWED_ORIGINS, TRUSTED_HOSTS, IS_PRODUCTION
@@ -125,6 +125,7 @@ app.include_router(patient_portal.router)
 app.include_router(admin.router)
 app.include_router(nurse.router, prefix="/api")
 app.include_router(doctor.router)
+app.include_router(messages.router)
 
 @app.get("/")
 def root():

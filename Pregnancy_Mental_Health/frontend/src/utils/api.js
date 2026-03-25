@@ -286,33 +286,127 @@ export const apiRequest = async (endpoint, options = {}) => {
 /**
  * Convenience methods
  */
+/**
+ * Convenience methods
+ */
+/**
+ * Convenience methods with better error handling
+ */
 export const api = {
-  get: (endpoint, options = {}) =>
-    apiRequest(endpoint, { ...options, method: 'GET' }),
+  get: async (endpoint, options = {}) => {
+    const response = await apiRequest(endpoint, { ...options, method: 'GET' });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP ${response.status}`);
+    }
+    
+    // Check if response has content
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      return { data, response };
+    }
+    
+    return { data: null, response };
+  },
 
-  post: (endpoint, data, options = {}) =>
-    apiRequest(endpoint, {
+  post: async (endpoint, bodyData, options = {}) => {
+    const response = await apiRequest(endpoint, {
       ...options,
       method: 'POST',
-      body: JSON.stringify(data),
-    }),
+      body: JSON.stringify(bodyData),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP ${response.status}`);
+    }
+    
+    // 204 No Content
+    if (response.status === 204) {
+      return { data: null, response };
+    }
+    
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      return { data, response };
+    }
+    
+    return { data: null, response };
+  },
 
-  put: (endpoint, data, options = {}) =>
-    apiRequest(endpoint, {
+  put: async (endpoint, bodyData, options = {}) => {
+    const response = await apiRequest(endpoint, {
       ...options,
       method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+      body: JSON.stringify(bodyData),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP ${response.status}`);
+    }
+    
+    if (response.status === 204) {
+      return { data: null, response };
+    }
+    
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      return { data, response };
+    }
+    
+    return { data: null, response };
+  },
 
-  patch: (endpoint, data, options = {}) =>
-    apiRequest(endpoint, {
+  patch: async (endpoint, bodyData, options = {}) => {
+    const response = await apiRequest(endpoint, {
       ...options,
       method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
+      body: JSON.stringify(bodyData),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP ${response.status}`);
+    }
+    
+    if (response.status === 204) {
+      return { data: null, response };
+    }
+    
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      return { data, response };
+    }
+    
+    return { data: null, response };
+  },
 
-  delete: (endpoint, options = {}) =>
-    apiRequest(endpoint, { ...options, method: 'DELETE' }),
+  delete: async (endpoint, options = {}) => {
+    const response = await apiRequest(endpoint, { ...options, method: 'DELETE' });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP ${response.status}`);
+    }
+    
+    if (response.status === 204) {
+      return { data: null, response };
+    }
+    
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      return { data, response };
+    }
+    
+    return { data: null, response };
+  },
 };
 
 // export const addAuditLog = async (action, details, ip = null) => {

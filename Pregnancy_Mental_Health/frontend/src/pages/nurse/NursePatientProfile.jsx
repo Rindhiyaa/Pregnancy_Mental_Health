@@ -18,25 +18,18 @@ export default function NursePatientProfile() {
 
     useEffect(() => {
         const fetchPatient = async () => {
-          setLoading(true);
-          try {
-            const res = await api.get(`/nurse/patients/${id}`);
-            if (res.ok) {
-              const data = await res.json();
-              setPatient(data);
-            } else {
-              const err = await res.json().catch(() => ({}));
-              toast.error(err.detail || "Failed to load patient details");
+            setLoading(true);
+            try {
+              const { data } = await api.get(`/nurse/patients/${id}`);
+              setPatient(data || null);
+            } catch (err) {
+              console.error("Error loading patient:", err);
+              toast.error("Failed to load patient details");
               setPatient(null);
+            } finally {
+              setLoading(false);
             }
-          } catch (err) {
-            console.error("Error loading patient:", err);
-            toast.error("Error loading patient");
-            setPatient(null);
-          } finally {
-            setLoading(false);
-          }
-        };
+          };
         fetchPatient();
       }, [id]);
 
@@ -130,7 +123,16 @@ export default function NursePatientProfile() {
                             <InfoRow icon={<Calendar size={18} />} label="Date of Birth/Age" value={patient.dob ? `${patient.dob} (${patient.age} yrs)` : (patient.age ? `${patient.age} yrs` : "Unknown")} />
                             <InfoRow icon={<Droplet size={18} />} label="Blood Group" value={patient.blood_group || patient.bloodGroup} />
                             <div style={{ gridColumn: 'span 2' }}>
-                                <InfoRow icon={<Navigation size={18} />} label="Address" value={`${patient.address || ''} ${patient.city || ''}`} />
+                            <InfoRow
+                              icon={<Navigation size={18} />}
+                              label="Home Address"
+                              value={patient.address}
+                            />
+                            <InfoRow
+                              icon={<Navigation size={18} />}
+                              label="City"
+                              value={patient.city}
+                            />
                             </div>
                         </div>
                     </Card>
@@ -140,10 +142,10 @@ export default function NursePatientProfile() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                             <InfoRow icon={<Hash size={18} />} label="Pregnancy Week" value={`Week ${patient.pregnancy_week || patient.pregnancyWeek || '-'}`} />
                             <InfoRow
-                            icon={<User size={18} />}
-                            label="Assigned Doctor"
-                            value={patient.assigned_doctor || 'Unassigned'}
-                            />
+                                icon={<User size={18} />}
+                                label="Assigned Doctor"
+                                value={patient.assigned_doctor ? `Dr. ${patient.assigned_doctor}` : "Unassigned"}
+                                />
                             <InfoRow
                             icon={<Hash size={18} />}
                             label="Previous Pregnancies"

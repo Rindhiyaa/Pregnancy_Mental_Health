@@ -18,27 +18,26 @@ export default function NurseDoctorsPage() {
     const fetchDoctors = async () => {
       try {
         setLoading(true);
-        const res = await api.get("/nurse/doctors");
-        if (res.ok) {
-          const data = await res.json();
-          // normalize to { id, fullName, specialization, email, ... }
-          const normalized = (data || []).map(d => ({
-            id: d.id,
-            fullName: d.fullName || `${d.first_name ?? ""} ${d.last_name ?? ""}`.trim(),
-            specialization: d.specialization || "",
-            email: d.email,
-            employeeId: d.employeeId,
-            isAvailable: d.isAvailable,
-            active_patients: d.active_patients,
-          }));
-          setDoctors(normalized);
-        }
+        const { data } = await api.get("/nurse/doctors");
+  
+        const normalized = (data || []).map(d => ({
+          id: d.id,
+          fullName: d.fullName || `${d.first_name ?? ""} ${d.last_name ?? ""}`.trim(),
+          specialization: d.specialization || "",
+          email: d.email,
+          employeeId: d.employeeId,
+          isAvailable: d.isAvailable,
+          active_patients: d.active_patients,
+        }));
+  
+        setDoctors(normalized);
       } catch (err) {
         console.error("Failed to fetch doctors:", err);
       } finally {
         setLoading(false);
       }
     };
+  
     fetchDoctors();
   }, []);
 
@@ -92,10 +91,10 @@ export default function NurseDoctorsPage() {
                     fontSize: 24, fontWeight: 800,
                     boxShadow: `0 8px 16px -4px ${theme.primary}40`
                   }}>
-                    {doc.fullName?.charAt(0)}
+                     {doc.fullName?.charAt(0)}
                   </div>
                   <div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: theme.text, marginBottom: 4 }}>{doc.fullName}</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: theme.text, marginBottom: 4 }}> Dr. {doc.fullName}</div>
                     <div style={{ fontSize: 14, color: theme.primary, fontWeight: 700 }}>{doc.specialization || 'OB/GYN Specialist'}</div>
                     <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: doc.isAvailable !== false ? '#10b981' : '#f59e0b' }} />

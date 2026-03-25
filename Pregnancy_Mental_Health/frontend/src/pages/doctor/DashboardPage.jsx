@@ -12,17 +12,19 @@ import {
 } from "../../components/UI";
 import { getAvatarColor } from "../../utils/dummyData";
 import {
-  AlertCircle,
-  Clock,
-  Users,
-  Activity,
-  Calendar,
-  ChevronRight,
-  TrendingUp,
-  Zap,
-  Download,
-  Search
-} from "lucide-react";
+    AlertCircle,
+    Clock,
+    Users,
+    Activity,
+    Calendar,
+    ChevronRight,
+    TrendingUp,
+    Zap,
+    Download,
+    Search,
+    Bell,
+    X
+  } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -57,21 +59,22 @@ export default function DashboardPage() {
   const [appointments, setAppointments] = useState([]);
   const [trendData, setTrendData] = useState([]);
   const [distributionData, setDistributionData] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
+  
   const fetchData = useCallback(
     async () => {
       try {
         setLoading(true);
 
-        const [dashRes, appRes, subRes] = await Promise.all([
-          api.get("/api/doctor/dashboard"),
-          api.get("/api/appointments/today"),
-          api.get("/api/doctor/assessments", {
-            params: { status: "submitted" }
-          })
+        const [{ data: dashData }, notifRes, unreadRes] = await Promise.all([
+          api.get("/doctor/dashboard"),
+          api.get("/notifications"),
+          api.get("/notifications/unread-count"),
         ]);
 
-        const dashData = dashRes.data || {};
         const statsFromApi = dashData.stats || {};
 
         setStats({
@@ -99,16 +102,30 @@ export default function DashboardPage() {
             : []
         );
 
-        const subData = Array.isArray(subRes.data) ? subRes.data : [];
-        const sortedQueue = subData.sort(
-          (a, b) =>
-            new Date(b.timestamp || b.created_at) -
-            new Date(a.timestamp || a.created_at)
-        );
+        const notifs = notifRes.data || [];
+        setNotifications(Array.isArray(notifs) ? notifs : []);
+        setUnreadCount(unreadRes.data?.count ?? 0);
+
+        // submitted queue
+        const { data: subData } = await api.get("/doctor/assessments", {
+          params: { status: "submitted" }
+        });
+        const sortedQueue = Array.isArray(subData)
+          ? subData.sort(
+              (a, b) =>
+                new Date(b.timestamp || b.created_at) -
+                new Date(a.timestamp || a.created_at)
+            )
+          : [];
         setQueue(sortedQueue.slice(0, 5));
 
-        const appData = Array.isArray(appRes.data) ? appRes.data : [];
-        setAppointments(appData);
+        // today's appointments
+        try {
+          const { data: appData } = await api.get("/appointments/today");
+          setAppointments(Array.isArray(appData) ? appData : []);
+        } catch {
+          setAppointments([]);
+        }
       } catch (err) {
         console.error("Dashboard data fetch failed:", err);
         toast.error("Failed to load dashboard data");
@@ -132,6 +149,26 @@ export default function DashboardPage() {
     return `${Math.floor(hours / 24)}d ago`;
   };
 
+  const handleMarkOneRead = async (id) => {
+    try {
+      await api.post(`/api/notifications/${id}/read`, {});
+      setNotifications(prev => prev.filter(n => n.id !== id)); // remove
+      setUnreadCount(c => Math.max(0, c - 1));
+    } catch (e) {
+      console.error("Failed to mark notification read", e);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.post("/api/notifications/read-all", {});
+      setNotifications([]);  // clear list
+      setUnreadCount(0);
+    } catch (e) {
+      console.error("Failed to mark all notifications read", e);
+    }
+  };
+
   if (loading) {
     return (
       <div
@@ -148,6 +185,15 @@ export default function DashboardPage() {
     );
   }
 
+  const displayName =
+  user?.firstName || user?.lastName
+    ? `Dr. ${user?.firstName || ""} ${user?.lastName || ""}`.trim()
+    : "Doctor";
+
+    const hour = new Date().getHours();
+    const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
   return (
     <div
       style={{
@@ -160,17 +206,18 @@ export default function DashboardPage() {
       <main className="portal-main" style={{ background: theme.pageBg }}>
         {/* Hero Header */}
         <div
-          className="dashboard-hero"
-          style={{
-            background: theme.heroGradient,
-            color: "white",
-            boxShadow: theme.shadowPremium,
-            position: "relative",
-            padding: 32,
-            borderRadius: 24,
-            marginBottom: 32
-          }}
-        >
+            className="dashboard-hero"
+            style={{
+                background: theme.heroGradient,
+                color: "white",
+                boxShadow: theme.shadowPremium,
+                position: "relative",
+                padding: 32,
+                borderRadius: 24,
+                marginBottom: 32,
+                overflow: "visible"          // <— add this
+            }}
+            >
           <div
             style={{
               position: "absolute",
@@ -215,13 +262,13 @@ export default function DashboardPage() {
                   margin: "0 0 8px 0"
                 }}
               >
-                Good morning,{" "}
+                {greeting},{" "}
                 <span
-                  style={{
+                    style={{
                     color: theme.isDark ? "#2DD4BF" : "#22D3EE"
-                  }}
+                    }}
                 >
-                  Dr. {user?.lastName || "Clinician"}
+                    {displayName}
                 </span>
               </h1>
               <p style={{ margin: 0, opacity: 0.9, fontSize: 14 }}>
@@ -234,34 +281,230 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ position: "relative" }}>
-                <Search
-                  size={18}
-                  style={{
-                    position: "absolute",
-                    left: 12,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "rgba(255,255,255,0.7)"
-                  }}
-                />
-                <input
-                  type="text"
-                  placeholder="Search clinical records..."
-                  style={{
-                    padding: "10px 10px 10px 40px",
-                    borderRadius: 12,
-                    border: "1px solid rgba(255, 255, 255, 0.89)",
-                    background: "rgba(255,255,255,0.1)",
-                    color: "white",
-                    width: 240,
-                    outline: "none"
-                  }}
-                />
-              </div>
-              <ThemeToggle inHeader={true} />
-            </div>
+            <div
+                style={{
+                    display: "flex",
+                    gap: 12,
+                    flexWrap: "wrap",
+                    position: "relative",   // allow absolute children to overflow
+                    overflow: "visible"
+                }}
+                >
+                <div style={{ position: "relative" }}>
+                    <Search
+                    size={18}
+                    style={{
+                        position: "absolute",
+                        left: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "rgba(255,255,255,0.7)"
+                    }}
+                    />
+                    <input
+                    type="text"
+                    placeholder="Search clinical records..."
+                    style={{
+                        padding: "10px 10px 10px 40px",
+                        borderRadius: 12,
+                        border: "1px solid rgba(255, 255, 255, 0.89)",
+                        background: "rgba(255,255,255,0.1)",
+                        color: "white",
+                        width: 240,
+                        outline: "none"
+                    }}
+                    />
+                </div>
+
+                {/* Notification bell + dropdown */}
+                <div style={{ position: "relative", overflow: "visible" }}>
+                    <button
+                    onClick={() => setShowNotifications(v => !v)}
+                    style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 999,
+                        border: "1px solid rgba(255,255,255,0.6)",
+                        background: "rgba(255,255,255,0.08)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        position: "relative",
+                        color: "white"
+                    }}
+                    >
+                    <Bell size={18} />
+                    {unreadCount > 0 && (
+                        <span
+                        style={{
+                            position: "absolute",
+                            top: 4,
+                            right: 4,
+                            minWidth: 16,
+                            height: 16,
+                            borderRadius: 999,
+                            background: "#ef4444",
+                            color: "white",
+                            fontSize: 10,
+                            fontWeight: 700,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "0 4px"
+                        }}
+                        >
+                        {unreadCount}
+                        </span>
+                    )}
+                    </button>
+
+                    {showNotifications && (
+                    <div
+                        style={{
+                        position: "absolute",
+                        right: 0,
+                        marginTop: 8,
+                        width: 320,
+                        maxHeight: 360,
+                        overflowY: "auto",           // scroll inside panel
+                        background: theme.cardBg,
+                        borderRadius: 16,
+                        boxShadow: theme.shadowPremium,
+                        border: `1px solid ${theme.glassBorder}`,
+                        zIndex: 50                  // above hero
+                        }}
+                    >
+                        <div
+                        style={{
+                            padding: "10px 14px",
+                            borderBottom: `1px solid ${theme.glassBorder}`,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between"
+                        }}
+                        >
+                        <span
+                            style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: theme.textPrimary
+                            }}
+                        >
+                            Notifications
+                        </span>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            {unreadCount > 0 && (
+                            <button
+                                onClick={handleMarkAllRead}
+                                style={{
+                                border: "none",
+                                background: "none",
+                                color: theme.primary,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                cursor: "pointer"
+                                }}
+                            >
+                                Mark all read
+                            </button>
+                            )}
+                            <button
+                            onClick={() => setShowNotifications(false)}
+                            style={{
+                                border: "none",
+                                background: "transparent",
+                                cursor: "pointer",
+                                padding: 2,
+                                color: theme.textMuted
+                            }}
+                            >
+                            <X size={14} />
+                            </button>
+                        </div>
+                        </div>
+
+                        {notifications.length === 0 ? (
+                        <div
+                            style={{
+                            padding: 16,
+                            fontSize: 12,
+                            color: theme.textMuted,
+                            textAlign: "center"
+                            }}
+                        >
+                            No notifications yet.
+                        </div>
+                        ) : (
+                        notifications.map((n) => (
+                            <div
+                            key={n.id}
+                            style={{
+                                padding: "10px 14px",
+                                borderBottom: `1px solid ${theme.glassBorder}`,
+                                background: n.is_read ? "transparent" : theme.primary + "10",
+                                cursor: "default"
+                            }}
+                            >
+                            <div
+                                style={{
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: theme.textPrimary,
+                                marginBottom: 4
+                                }}
+                            >
+                                {n.title}
+                            </div>
+                            <div
+                                style={{
+                                fontSize: 12,
+                                color: theme.textSecondary,
+                                marginBottom: 6
+                                }}
+                            >
+                                {n.message}
+                            </div>
+                            <div
+                                style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                fontSize: 11,
+                                color: theme.textMuted
+                                }}
+                            >
+                                <span>
+                                {new Date(n.created_at).toLocaleString([], {
+                                    dateStyle: "short",
+                                    timeStyle: "short"
+                                })}
+                                </span>
+                                {!n.is_read && (
+                                <button
+                                    onClick={() => handleMarkOneRead(n.id)}
+                                    style={{
+                                    border: "none",
+                                    background: "none",
+                                    color: theme.primary,
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    cursor: "pointer"
+                                    }}
+                                >
+                                    Mark read
+                                </button>
+                                )}
+                            </div>
+                            </div>
+                        ))
+                        )}
+                    </div>
+                    )}
+                </div>
+
+                <ThemeToggle inHeader={true} />
+                </div>
           </div>
         </div>
 

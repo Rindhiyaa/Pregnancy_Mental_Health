@@ -39,16 +39,18 @@ export default function NurseNewAssessment() {
     const fetchData = async () => {
       try {
         const [docRes, patRes] = await Promise.all([
-          api.get("/nurse/doctors"),   // you already have this
-          api.get("/nurse/patients")   // list patients created by this nurse
+          api.get("/nurse/doctors"),
+          api.get("/nurse/patients")
         ]);
-        if (docRes.ok) setDoctors(await docRes.json());
-        if (patRes.ok) setPatients(await patRes.json());
+  
+        setDoctors(docRes.data || []);
+        setPatients(patRes.data || []);
       } catch (err) {
         console.error("Failed to fetch data:", err);
         toast.error("Failed to load doctors or patients");
       }
     };
+  
     fetchData();
   }, []);
 
@@ -120,48 +122,43 @@ export default function NurseNewAssessment() {
     setLoading(true);
     try {
       const epdsScore = Object.keys(formData)
-      .filter(k => k.startsWith("epds_"))
-      .reduce((acc, k) => acc + (parseInt(formData[k]) || 0), 0);
-
+        .filter(k => k.startsWith("epds_"))
+        .reduce((acc, k) => acc + (parseInt(formData[k]) || 0), 0);
+  
       const payload = {
-        patient_name: formData.patient_name,                 // string, required
-        patient_id: selectedPatient?.id ?? null,             // int | null
-        patient_email: selectedPatient?.email ?? null,       // string | null
-
-        risk_level: "Pending",                               // string, required
-        risk_score: null,                                    // number | null
-        epds_score: epdsScore,                               // number | null
-
+        patient_name: formData.patient_name,
+        patient_id: selectedPatient?.id ?? null,
+        patient_email: selectedPatient?.email ?? null,
+        risk_level: "Pending",
+        risk_score: null,
+        epds_score: epdsScore,
         plan: null,
         notes: null,
-        raw_data: formData,                                  // object
-
-        assigned_doctor_id: Number(selectedDoctorId),        // int, required
-
-        status: "submitted",                                 // string
-        is_draft: false,                                     // bool
+        raw_data: formData,
+        assigned_doctor_id: selectedDoctorId ? Number(selectedDoctorId) : null,
+        status: "submitted",
+        is_draft: false,
       };
   
-      const res = await api.post("/nurse/assessments", payload);
-      if (res.ok) {
-        const doctor = doctors.find(d => String(d.id) === String(selectedDoctorId));
-        toast.success(
-          `Assessment submitted to ${doctor?.fullName || doctor?.first_name || "Doctor"} successfully!`
-        );
-        navigate("/nurse/dashboard");
-      } else {
-        const errBody = await res.json().catch(() => ({}));
-        console.error("Assessment submit error body:", errBody);
-        const message =
-          (Array.isArray(errBody.detail) && errBody.detail[0]?.msg) ||
-          errBody.detail ||
-          "Submission failed. Please check required fields.";
-        throw new Error(message);
-      }
-    } catch (err) {
-      console.error("Submit failed:", err);
-      toast.error(err.message || "Submission failed");
-    }finally {
+      // api.post throws on non-2xx and returns { data, response } on success
+      await api.post("/nurse/assessments", payload);
+  
+      const doctor = doctors.find(
+        d => String(d.id) === String(selectedDoctorId)
+      );
+      toast.success(
+        `Assessment submitted to ${
+          doctor?.fullName || doctor?.first_name || "Doctor"
+        } successfully!`
+      );
+      navigate("/nurse/dashboard");
+    } catch (error) {
+      console.error("Submit failed:", error);
+      // error.message contains backend text from api.js
+      toast.error(
+        error.message || "Submission failed. Please check required fields."
+      );
+    } finally {
       setLoading(false);
     }
   };
@@ -296,7 +293,7 @@ export default function NurseNewAssessment() {
                               <option value="">Choose a Doctor</option>
                               {doctors.map(doc => (
                               <option key={doc.id} value={doc.id}>
-                                {doc.fullName || `${doc.first_name ?? ""} ${doc.last_name ?? ""}`.trim()}
+                                Dr. {doc.fullName || `${doc.first_name ?? ""} ${doc.last_name ?? ""}`.trim()}
                                 {doc.specialization ? ` — ${doc.specialization}` : ""}
                               </option>
                               ))}
@@ -435,11 +432,23 @@ export default function NurseNewAssessment() {
                 <div className="patient-details-grid">
                   <div className="detail-item">
                     <span className="detail-label">Current Week</span>
-                    <span className="detail-value">26 weeks</span>
+                    <span className="detail-value">
+                      {selectedPatient?.pregnancy_week
+                        ? `${selectedPatient.pregnancy_week} weeks`
+                        : "Not recorded"}
+                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Last Assessment</span>
-                    <span className="detail-value">Completed</span>
+                    <span className="detail-value">
+                      {selectedPatient?.last_assessment_date
+                        ? new Date(selectedPatient.last_assessment_date).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "No assessment yet"}
+                    </span>
                   </div>
                 </div>
               </div>

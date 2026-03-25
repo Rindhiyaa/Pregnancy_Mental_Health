@@ -761,7 +761,7 @@ export const addAuditLog = async (details, action = "System Action") => {
   return newLog;
 };
 
-// --- ANALYTICS DATA ---
+// --- ANALYTICS DATA --
 export const getAdminAnalytics = async () => {
   await sleep(600);
   return {

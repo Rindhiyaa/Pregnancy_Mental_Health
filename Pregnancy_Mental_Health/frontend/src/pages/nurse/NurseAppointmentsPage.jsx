@@ -1,36 +1,57 @@
 import React, { useState, useEffect } from "react";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
-import { PageTitle, Card, Badge, Loader2, Divider, Table, TableRow, TableCell, Pagination } from "../../components/UI";
+import {
+  PageTitle,
+  Card,
+  Badge,
+  Loader2,
+  Divider,
+  Table,
+  TableRow,
+  TableCell,
+  Pagination
+} from "../../components/UI";
 import { api } from "../../utils/api";
-// import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
 import { getAvatarColor } from "../../utils/dummyData";
 import toast from "react-hot-toast";
 import { useSearchParams } from "react-router-dom";
-import { PlusCircle, Clock, Stethoscope, CheckCircle, XCircle, Calendar, User, ChevronLeft, ChevronRight, ClipboardList, Trash2, X } from "lucide-react";
+import {
+  PlusCircle,
+  Clock,
+  Stethoscope,
+  CheckCircle,
+  XCircle,
+  Calendar,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Trash2,
+  X
+} from "lucide-react";
 
 export default function NurseAppointmentsPage() {
   const { theme } = useTheme();
   const [searchParams] = useSearchParams();
-  const prefilledPatientId = searchParams.get('patient');
-  const prefilledType = searchParams.get('type');
+  const prefilledPatientId = searchParams.get("patient");
+  const prefilledType = searchParams.get("type");
 
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [instructions, setInstructions] = useState([]);
-  // const [availableSlots, setAvailableSlots] = useState([]);
   const [showModal, setShowModal] = useState(prefilledPatientId ? true : false);
-  const [filter, setFilter] = useState("Today"); // Today | Week | All | Urgent
+  const [filter, setFilter] = useState("All"); // Today | Week | All | Urgent
   const [selectedDoctorFilter, setSelectedDoctorFilter] = useState("All Doctors");
   const [currentDate, setCurrentDate] = useState(new Date());
-  // FIX 2: State to control the calendar modal overlay
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
   const [formData, setFormData] = useState({
+    id: null,                    // NEW: for editing existing appointment
     patientId: prefilledPatientId || "",
     doctorId: "",
     date: "",
@@ -47,52 +68,57 @@ export default function NurseAppointmentsPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
+    
         const [appRes, patRes, docRes] = await Promise.all([
-          api.get("/appointments"),
+          api.get("/nurse/appointments"),
           api.get("/nurse/patients"),
           api.get("/nurse/doctors"),
         ]);
-        if (appRes.ok) setAppointments(await appRes.json());
-        if (patRes.ok) setPatients(await patRes.json());
-        if (docRes.ok) {
-          const docs = await docRes.json();
-          const normalized = (docs || []).map(d => {
-            const first = d.first_name ?? "";
-            const last = d.last_name ?? "";
-            const fullName = d.fullName || `${first} ${last}`.trim() || d.email || "Doctor";
-            return { ...d, fullName };
-          });
-          setDoctors(normalized);
-        }
+    
+        // api returns data directly, not a Response object
+        setAppointments(Array.isArray(appRes) ? appRes : appRes?.data || []);
+    
+        const patientsList = Array.isArray(patRes) ? patRes : patRes?.data || [];
+        setPatients(patientsList);
+    
+        const docsList = Array.isArray(docRes) ? docRes : docRes?.data || [];
+        const normalized = docsList.map((d) => {
+          const first = d.first_name ?? "";
+          const last = d.last_name ?? "";
+          const fullName = d.fullName || `${first} ${last}`.trim() || d.email || "Doctor";
+          return { ...d, fullName };
+        });
+        setDoctors(normalized);
+    
       } catch (err) {
-        console.error("Failed to fetch appointment data:", err);
+        console.error("Failed to fetch appointment data", err);
+        toast.error("Failed to load appointments data");
       } finally {
         setLoading(false);
       }
     };
+  
     fetchData();
   }, []);
+ 
+  
 
   const handleStatusUpdate = async (id, status) => {
     try {
-      const res = await api.post(`/appointments/${id}/status?status=${status}`);
-      if (res.ok) {
-        toast.success(`Appointment marked as ${status}`);
-        const appRes = await api.get("/appointments");
-        if (appRes.ok) setAppointments(await appRes.json());
-      }
+      await api.post(`/nurse/appointments/${id}/status?status=${status}`);
+      toast.success(`Appointment marked as ${status}`);
+      // Remove from table immediately instead of refetching
+      setAppointments((prev) => prev.filter((app) => app.id !== id));
     } catch (err) {
       toast.error("Failed to update status");
     }
   };
-
+  
   const handleDelete = async (id) => {
     try {
-      const res = await api.delete(`/appointments/${id}`);
-      if (res.ok) {
-        toast.success("Appointment deleted");
-        setAppointments(prev => prev.filter(app => app.id !== id));
-      }
+      await api.delete(`/nurse/appointments/${id}`);
+      toast.success("Appointment deleted");
+      setAppointments((prev) => prev.filter((app) => app.id !== id));
     } catch (err) {
       toast.error("Failed to delete appointment");
     }
@@ -112,47 +138,61 @@ export default function NurseAppointmentsPage() {
 
   const getEventsForDay = (date) => {
     if (!date) return [];
-    return appointments.filter(a => {
+    return appointments.filter((a) => {
       const aDate = new Date(a.date);
-      return aDate.getDate() === date.getDate() &&
-             aDate.getMonth() === date.getMonth() &&
-             aDate.getFullYear() === date.getFullYear();
+      return (
+        aDate.getDate() === date.getDate() &&
+        aDate.getMonth() === date.getMonth() &&
+        aDate.getFullYear() === date.getFullYear()
+      );
     });
   };
 
   const handleCreate = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
+    console.log("Step 1 - building payload");
     try {
       const payload = {
-         patient_id: Number(formData.patientId),
-         doctor_id: Number(formData.doctorId),
-         date: formData.date,
-         time: formData.time,
-         type: formData.type,
-         notes: formData.notes,
-         urgency: formData.urgency,
-         department: formData.department,
+        patientid: Number(formData.patientId),
+        doctorid: Number(formData.doctorId),
+        date: formData.date,
+        time: formData.time,
+        type: formData.type,
+        notes: formData.notes,
+        urgency: formData.urgency,
+        department: formData.department,
       };
-     
-      const res = await api.post("/appointments", payload);
-        if (res.ok) {
-          toast.success("Appointment scheduled successfully!");
-          setShowModal(false);
-          setConfirmationStep(false);
-          const appRes = await api.get("/appointments");
-            if (appRes.ok) setAppointments(await appRes.json());
-        } else {
-           const err = await res.json().catch(() => ({}));
-           toast.error(err.detail || "Failed to schedule appointment");
-        }
+      console.log("Step 2 - payload built", payload);
+  
+      let res;
+      if (formData.id) {
+        res = await api.put(`/nurse/appointments/${formData.id}`, payload);
+      } else {
+        res = await api.post("/nurse/appointments", payload);
+      }
+      console.log("Step 3 - API response", res);
+
+      const success = res !== undefined && res !== null && !res?.error && !res?.detail;
+
+      if (res?.response?.ok || res?.data?.id) {
+        toast.success(formData.id ? "Appointment updated!" : "Appointment scheduled successfully!");
+        setShowModal(false);
+        setConfirmationStep(false);
+        setFormData((prev) => ({ ...prev, id: null, instructionId: null }));
+        const appRes = await api.get("/nurse/appointments");
+        const appointments = Array.isArray(appRes) ? appRes : Array.isArray(appRes?.data) ? appRes.data : [];
+        setAppointments(appointments);
+      } else {
+        const errMsg = res?.data?.detail || "Failed to schedule appointment";
+        toast.error(errMsg);
+      }
     } catch (err) {
       toast.error("Failed to schedule appointment");
     }
   };
 
-  const filteredAppointments = appointments.filter(a => {
-    // Role/Doctor Filter
-    if (selectedDoctorFilter !== "All Doctors" && a.doctor_name !== selectedDoctorFilter) {
+  const filteredAppointments = appointments.filter((a) => {
+    if (selectedDoctorFilter !== "All Doctors" && (a.doctor_name || a.doctorname) !== selectedDoctorFilter) {
       return false;
     }
 
@@ -161,7 +201,9 @@ export default function NurseAppointmentsPage() {
     today.setHours(0, 0, 0, 0);
 
     if (filter === "Today") {
-      return appDate.toDateString() === today.toDateString();
+      const dateStr = typeof a.date === "string" ? a.date : appDate.toISOString().split("T")[0];
+      const todayStr = today.toISOString().split("T")[0];
+      return dateStr === todayStr;
     }
     if (filter === "Week") {
       const nextWeek = new Date();
@@ -169,12 +211,11 @@ export default function NurseAppointmentsPage() {
       return appDate >= today && appDate <= nextWeek;
     }
     if (filter === "Urgent") {
-      return a.type === 'Urgent Review' || a.type === 'Urgent';
+      return a.urgency === "Urgent" || a.type === "Urgent Review" || a.type === "Urgent";
     }
     return true;
   });
 
-  // Pagination Logic
   const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
   const paginatedAppointments = filteredAppointments.slice(
     (currentPage - 1) * itemsPerPage,
@@ -182,54 +223,99 @@ export default function NurseAppointmentsPage() {
   );
 
   const inputStyle = {
-    width: '100%',
-    padding: '12px 16px',
+    width: "100%",
+    padding: "12px 16px",
     borderRadius: 12,
     border: `1.5px solid ${theme.border}`,
     fontSize: 15,
     fontFamily: theme.fontBody,
-    outline: 'none',
+    outline: "none",
     marginTop: 8,
-    boxSizing: 'border-box'
+    boxSizing: "border-box"
   };
 
   const labelStyle = {
     fontSize: 14,
     fontWeight: 700,
     color: theme.text,
-    display: 'flex',
-    alignItems: 'center',
+    display: "flex",
+    alignItems: "center",
     gap: 8
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        background: theme.pageBg,
+        fontFamily: theme.fontBody
+      }}
+    >
       <NurseSidebar />
 
       <main className="portal-main" style={{ background: theme.pageBg, fontFamily: theme.fontBody }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
-          <PageTitle title="Clinical Appointments" subtitle="Schedule and manage patient reviews and follow-ups" />
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            {/* View Calendar button lives next to Schedule Appointment */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: 32
+          }}
+        >
+          <PageTitle
+            title="Clinical Appointments"
+            subtitle="Schedule and manage patient reviews and follow-ups"
+          />
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <button
               onClick={() => setShowCalendarModal(true)}
               style={{
-                padding: '12px 20px', borderRadius: 12, border: `1.5px solid ${theme.border}`,
-                background: 'white', color: theme.text, fontWeight: 700,
-                display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-                transition: 'border-color 0.2s'
+                padding: "12px 20px",
+                borderRadius: 12,
+                border: `1.5px solid ${theme.border}`,
+                background: "white",
+                color: theme.text,
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                cursor: "pointer",
+                transition: "border-color 0.2s"
               }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = theme.primary}
-              onMouseLeave={e => e.currentTarget.style.borderColor = theme.border}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = theme.primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = theme.border)}
             >
               <Calendar size={18} color={theme.primary} /> View Calendar
             </button>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                setFormData({
+                  id: null,
+                  patientId: "",
+                  doctorId: "",
+                  date: "",
+                  time: "",
+                  type: "Follow-up",
+                  notes: "",
+                  urgency: "Routine",
+                  department: "OBGYN",
+                  instructionId: null
+                });
+                setConfirmationStep(false);
+                setShowModal(true);
+              }}
               style={{
-                padding: '12px 24px', borderRadius: 12, border: 'none',
-                background: theme.primary, color: 'white', fontWeight: 700,
-                display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+                padding: "12px 24px",
+                borderRadius: 12,
+                border: "none",
+                background: theme.primary,
+                color: "white",
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                cursor: "pointer",
                 boxShadow: `0 8px 20px -6px ${theme.primary}50`
               }}
             >
@@ -238,67 +324,174 @@ export default function NurseAppointmentsPage() {
           </div>
         </div>
 
-
         {instructions.length > 0 && (
           <div style={{ marginBottom: 40 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: theme.primary + '15', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  background: theme.primary + "15",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
                 <ClipboardList size={20} color={theme.primary} />
               </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: theme.text, margin: 0 }}>Doctor Instructions (Action Required)</h3>
-              <Badge variant="danger" style={{ padding: '2px 8px', marginLeft: 8 }}>{instructions.length} Pending</Badge>
+              <h3
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: theme.text,
+                  margin: 0
+                }}
+              >
+                Doctor Instructions (Action Required)
+              </h3>
+              <Badge variant="danger" style={{ padding: "2px 8px", marginLeft: 8 }}>
+                {instructions.length} Pending
+              </Badge>
             </div>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
-              {instructions.map(inst => (
-                <Card key={inst.id} padding="24px" style={{ 
-                  border: `1px solid ${theme.border}`, 
-                  background: 'white',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-                  borderRadius: '16px',
-                  display: 'flex', flexDirection: 'column'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+                gap: 20
+              }}
+            >
+              {instructions.map((inst) => (
+                <Card
+                  key={inst.instruction_id || inst.id}
+                  padding="24px"
+                  style={{
+                    border: `1px solid ${theme.border}`,
+                    background: "white",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
+                    borderRadius: "16px",
+                    display: "flex",
+                    flexDirection: "column"
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      marginBottom: 16
+                    }}
+                  >
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 16, color: theme.text, marginBottom: 4 }}>{inst.patient_name}</div>
-                      <div style={{ fontSize: 13, color: theme.textMuted, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          fontSize: 16,
+                          color: theme.text,
+                          marginBottom: 4
+                        }}
+                      >
+                        {inst.patient_name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: theme.textMuted,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6
+                        }}
+                      >
                         <Stethoscope size={14} /> Ref: {inst.doctor_name}
                       </div>
                     </div>
-                    <Badge variant={inst.urgency === 'Urgent' ? 'danger' : 'warning'} size="sm">{inst.urgency}</Badge>
+                    <Badge
+                      variant={inst.urgency === "High" || inst.urgency === "Urgent" ? "danger" : "warning"}
+                      size="sm"
+                    >
+                      {inst.urgency}
+                    </Badge>
                   </div>
-                  <div style={{ 
-                    fontSize: 13, background: theme.pageBg, padding: '16px', 
-                    borderRadius: 12, border: `1px solid ${theme.border}80`, 
-                    marginBottom: 20, flex: 1
-                  }}>
-                    <div style={{ fontWeight: 600, color: theme.text, marginBottom: 8, lineHeight: 1.5 }}>
-                      <span style={{ color: theme.textMuted, fontWeight: 500 }}>Task:</span> {inst.instruction}
+                  <div
+                    style={{
+                      fontSize: 13,
+                      background: theme.pageBg,
+                      padding: "16px",
+                      borderRadius: 12,
+                      border: `1px solid ${theme.border}80`,
+                      marginBottom: 20,
+                      flex: 1
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        color: theme.text,
+                        marginBottom: 8,
+                        lineHeight: 1.5
+                      }}
+                    >
+                      <span style={{ color: theme.textMuted, fontWeight: 500 }}>Task:</span>{" "}
+                      {inst.instruction || "Schedule follow-up based on risk band"}
                     </div>
-                    <div style={{ fontSize: 12, color: theme.primary, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, opacity: 0.9 }}>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: theme.primary,
+                        fontWeight: 600,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        opacity: 0.9
+                      }}
+                    >
                       <Clock size={12} /> Window: {inst.window}
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => {
-                        setFormData({
-                            ...formData,
-                            patientId: inst.patient_id,
-                            urgency: inst.urgency === 'Urgent' ? 'Urgent' : 'Routine',
-                            type: 'Follow-up',
-                            instructionId: inst.id,
-                            notes: inst.instruction
-                        });
-                        setShowModal(true);
+                      setFormData({
+                        id: null,
+                        patientId: inst.patient_id,
+                        doctorId: inst.doctor_id,
+                        date: "",
+                        time: "",
+                        type: "Follow-up",
+                        notes: inst.instruction || "",
+                        urgency:
+                          inst.urgency === "High" || inst.urgency === "Urgent" ? "Urgent" : "Routine",
+                        department: "OBGYN",
+                        instructionId: inst.instruction_id || inst.id
+                      });
+                      setConfirmationStep(false);
+                      setShowModal(true);
                     }}
-                    style={{ 
-                        width: '100%', padding: '14px', borderRadius: '12px', border: 'none', 
-                        background: theme.primary, color: 'white', fontWeight: 600, 
-                        fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                        boxShadow: `0 8px 16px ${theme.primary}25`, transition: 'all 0.2s'
+                    style={{
+                      width: "100%",
+                      padding: "14px",
+                      borderRadius: "12px",
+                      border: "none",
+                      background: theme.primary,
+                      color: "white",
+                      fontWeight: 600,
+                      fontSize: 14,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      boxShadow: `0 8px 16px ${theme.primary}25`,
+                      transition: "all 0.2s"
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 12px 20px ${theme.primary}35`; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 8px 16px ${theme.primary}25`; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = `0 12px 20px ${theme.primary}35`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = `0 8px 16px ${theme.primary}25`;
+                    }}
                   >
                     <Calendar size={16} /> Book Appointment
                   </button>
@@ -308,13 +501,22 @@ export default function NurseAppointmentsPage() {
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 24,
+            gap: 16,
+            flexWrap: "wrap"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: theme.textMuted }}>View:</span>
-            <select 
-              value={filter} 
+            <select
+              value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              style={{ ...inputStyle, marginTop: 0, width: 'auto', padding: '8px 16px', fontWeight: 600 }}
+              style={{ ...inputStyle, marginTop: 0, width: "auto", padding: "8px 16px", fontWeight: 600 }}
             >
               <option value="Today">Today's Schedule</option>
               <option value="Week">Next 7 Days</option>
@@ -323,22 +525,25 @@ export default function NurseAppointmentsPage() {
             </select>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: theme.textMuted }}>Filter by Doctor:</span>
-            <select 
-              value={selectedDoctorFilter} 
+            <select
+              value={selectedDoctorFilter}
               onChange={(e) => setSelectedDoctorFilter(e.target.value)}
-              style={{ ...inputStyle, marginTop: 0, width: 'auto', padding: '8px 16px' }}
+              style={{ ...inputStyle, marginTop: 0, width: "auto", padding: "8px 16px" }}
             >
               <option value="All Doctors">All Doctors</option>
-              {doctors.map(d => <option key={d.id} value={d.fullName}>{d.fullName}</option>)}
+              {doctors.map((d) => (
+                <option key={d.id} value={d.fullName}>
+                 Dr. {d.fullName}
+                </option>
+              ))}
             </select>
           </div>
         </div>
-        
-        {/* Full-width table - no side panel */}
+
         <div>
-          <Table 
+          <Table
             headers={["S.No", "Date & Time", "Patient", "Doctor", "Type", "Actions"]}
             loading={loading}
             loadingMessage="Loading appointments..."
@@ -354,41 +559,96 @@ export default function NurseAppointmentsPage() {
                   <div style={{ fontSize: 12, color: theme.textMuted }}>{app.time}</div>
                 </TableCell>
                 <TableCell>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ 
-                      width: 40, height: 40, borderRadius: 10, 
-                      background: getAvatarColor(app.patient_name) + '15', color: getAvatarColor(app.patient_name), 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 800, fontSize: 16, flexShrink: 0
-                    }}>
-                      {app.patient_name?.charAt(0) || '?'}
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 10,
+                        background: getAvatarColor(app.patient_name) + "15",
+                        color: getAvatarColor(app.patient_name),
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 800,
+                        fontSize: 16,
+                        flexShrink: 0
+                      }}
+                    >
+                      {(app.patient_name || app.patientname)?.charAt(0) || "?"}
                     </div>
-                    <div style={{ fontWeight: 800, color: theme.text }}>{app.patient_name}</div>
+                    <div style={{ fontWeight: 800, color: theme.text }}>{app.patient_name || app.patientname}</div>
                   </div>
                 </TableCell>
-                <TableCell>{app.doctor_name || app.assigned_doctor || 'Unassigned'}</TableCell>
+                <TableCell>Dr. {app.doctor_name || app.doctorname || app.assigned_doctor || "Unassigned"}</TableCell>
                 <TableCell>
-                  <Badge variant={app.type === 'Urgent Review' ? 'danger' : 'info'}>{app.type}</Badge>
+                  <Badge variant={app.type === "Urgent Review" ? "danger" : "info"}>{app.type}</Badge>
                 </TableCell>
                 <TableCell>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button 
-                      onClick={() => handleStatusUpdate(app.id, 'Completed')}
-                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      onClick={() => handleStatusUpdate(app.id, "Completed")}
+                      style={{
+                        padding: 8,
+                        borderRadius: 8,
+                        border: `1.5px solid ${theme.border}`,
+                        background: "white",
+                        cursor: "pointer"
+                      }}
                       title="Mark as Completed"
                     >
                       <CheckCircle size={16} color="#10b981" />
                     </button>
-                    <button 
-                      onClick={() => handleStatusUpdate(app.id, 'Cancelled')}
-                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}
+                    <button
+                      onClick={() => handleStatusUpdate(app.id, "Cancelled")}
+                      style={{
+                        padding: 8,
+                        borderRadius: 8,
+                        border: `1.5px solid ${theme.border}`,
+                        background: "white",
+                        cursor: "pointer"
+                      }}
                       title="Cancel Appointment"
                     >
                       <XCircle size={16} color="#f59e0b" />
                     </button>
-                    <button 
+                    <button
+                      onClick={() => {
+                        setFormData({
+                          id: app.id,
+                          patientId: app.patient_id,
+                          doctorId: app.doctor_id,
+                          date: app.date,
+                          time: app.time,
+                          type: app.type || "Follow-up",
+                          notes: app.notes || "",
+                          urgency: app.urgency || "Routine",
+                          department: app.department || "OBGYN",
+                          instructionId: null
+                        });
+                        setConfirmationStep(false);
+                        setShowModal(true);
+                      }}
+                      style={{
+                        padding: 8,
+                        borderRadius: 8,
+                        border: `1.5px solid ${theme.border}`,
+                        background: "white",
+                        cursor: "pointer"
+                      }}
+                      title="Edit Appointment"
+                    >
+                      ✎
+                    </button>
+                    <button
                       onClick={() => handleDelete(app.id)}
-                      style={{ padding: 8, borderRadius: 8, border: `1.5px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}
+                      style={{
+                        padding: 8,
+                        borderRadius: 8,
+                        border: `1.5px solid ${theme.border}`,
+                        background: "white",
+                        cursor: "pointer"
+                      }}
                       title="Delete Appointment"
                     >
                       <Trash2 size={16} color="#ef4444" />
@@ -398,39 +658,121 @@ export default function NurseAppointmentsPage() {
               </TableRow>
             ))}
           </Table>
-          <Pagination 
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
 
         {showModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-            <Card padding="40px" style={{ width: '100%', maxWidth: 550, position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
-              
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000
+            }}
+          >
+            <Card
+              padding="40px"
+              style={{
+                width: "100%",
+                maxWidth: 550,
+                position: "relative",
+                maxHeight: "90vh",
+                overflowY: "auto"
+              }}
+            >
               {!confirmationStep ? (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      marginBottom: 24
+                    }}
+                  >
                     <div>
-                      <h2 style={{ fontFamily: theme.fontHeading, fontSize: 24, fontWeight: 800, margin: 0 }}>Schedule Appointment</h2>
-                      <p style={{ color: theme.textMuted, margin: '4px 0 0 0' }}>{formData.instructionId ? `Acting on Doctor Instruction` : `Set up a review session for a patient.`}</p>
+                      <h2
+                        style={{
+                          fontFamily: theme.fontHeading,
+                          fontSize: 24,
+                          fontWeight: 800,
+                          margin: 0
+                        }}
+                      >
+                        {formData.id ? "Edit Appointment" : "Schedule Appointment"}
+                      </h2>
+                      <p
+                        style={{
+                          color: theme.textMuted,
+                          margin: "4px 0 0 0"
+                        }}
+                      >
+                        {formData.instructionId
+                          ? "Acting on Doctor Instruction"
+                          : "Set up a review session for a patient."}
+                      </p>
                     </div>
-                    <button onClick={() => { setShowModal(false); setFormData({ ...formData, instructionId: null }); }} style={{ background: 'none', border: 'none', color: theme.textMuted, cursor: 'pointer' }}><XCircle size={24} /></button>
+                    <button
+                      onClick={() => {
+                        setShowModal(false);
+                        setConfirmationStep(false);
+                        setFormData((prev) => ({ ...prev, id: null, instructionId: null }));
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: theme.textMuted,
+                        cursor: "pointer"
+                      }}
+                    >
+                      <XCircle size={24} />
+                    </button>
                   </div>
 
                   <form onSubmit={(e) => e.preventDefault()}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 16,
+                        marginBottom: 20
+                      }}
+                    >
                       <div>
-                        <label style={labelStyle}><User size={16} /> Patient</label>
-                        <select style={inputStyle} value={formData.patientId} onChange={(e) => setFormData({ ...formData, patientId: e.target.value })} required>
+                        <label style={labelStyle}>
+                          <User size={16} /> Patient
+                        </label>
+                        <select
+                          style={inputStyle}
+                          value={formData.patientId}
+                          onChange={(e) =>
+                            setFormData({ ...formData, patientId: e.target.value })
+                          }
+                          required
+                        >
                           <option value="">Choose patient...</option>
-                          {patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                          {patients.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div>
                         <label style={labelStyle}>Urgency</label>
-                        <select style={inputStyle} value={formData.urgency} onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}>
+                        <select
+                          style={inputStyle}
+                          value={formData.urgency}
+                          onChange={(e) =>
+                            setFormData({ ...formData, urgency: e.target.value })
+                          }
+                        >
                           <option value="Routine">Routine</option>
                           <option value="Early">Early</option>
                           <option value="Urgent">Urgent</option>
@@ -438,24 +780,36 @@ export default function NurseAppointmentsPage() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 16,
+                        marginBottom: 20
+                      }}
+                    >
                       <div>
-                        <label style={labelStyle}><Calendar size={16} /> Date</label>
-                        <input style={inputStyle} type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} required />
+                        <label style={labelStyle}>
+                          <Calendar size={16} /> Date
+                        </label>
+                        <input
+                          style={inputStyle}
+                          type="date"
+                          value={formData.date}
+                          onChange={(e) =>
+                            setFormData({ ...formData, date: e.target.value })
+                          }
+                          required
+                        />
                       </div>
                       <div>
                         <label style={labelStyle}>Department</label>
-                        <select 
-                          style={inputStyle} 
-                          value={formData.department} 
-                          onChange={async (e) => {
-                            const dept = e.target.value;
-                            setFormData({ ...formData, department: dept });
-                            if (USE_DUMMY_DATA) {
-                              const slots = await dummyApi.getAvailableSlots(dept);
-                              setAvailableSlots(slots);
-                            }
-                          }}
+                        <select
+                          style={inputStyle}
+                          value={formData.department}
+                          onChange={(e) =>
+                            setFormData({ ...formData, department: e.target.value })
+                          }
                         >
                           <option value="OBGYN">OBGYN</option>
                           <option value="Psychiatry">Psychiatry</option>
@@ -464,14 +818,23 @@ export default function NurseAppointmentsPage() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 16,
+                        marginBottom: 20
+                      }}
+                    >
                       <div>
                         <label style={labelStyle}>Time</label>
                         <input
                           style={inputStyle}
                           type="time"
                           value={formData.time}
-                          onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, time: e.target.value })
+                          }
                           required
                         />
                       </div>
@@ -480,103 +843,177 @@ export default function NurseAppointmentsPage() {
                         <select
                           style={inputStyle}
                           value={formData.doctorId}
-                          onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, doctorId: e.target.value })
+                          }
                           required
                         >
                           <option value="">Choose doctor...</option>
-                          {doctors.map(d => (
+                          {doctors.map((d) => (
                             <option key={d.id} value={d.id}>
-                              {d.fullName || `${d.first_name ?? ""} ${d.last_name ?? ""}`.trim() || d.email}
+                              {d.fullName ||
+                                `${d.first_name ?? ""} ${d.last_name ?? ""}`.trim() ||
+                                d.email}
                             </option>
                           ))}
                         </select>
                       </div>
                     </div>
 
-                    {/* <div style={{ marginBottom: 24 }}>
-                      <label style={{ ...labelStyle, marginBottom: 12 }}>Pick an available slot</label>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-                        {availableSlots.length > 0 ? availableSlots.map(slot => (
-                          <button
-                            key={slot.id}
-                            type="button"
-                            onClick={() => {
-                              // FIX: Store doctor_id AND doctor_name from the slot so the
-                              // appointment record correctly identifies the assigned doctor.
-                              setFormData({
-                                ...formData,
-                                time: slot.time,
-                                doctorId: slot.doctor_id,      // numeric ID
-                                doctor_name: slot.doctor      // readable name
-                              });
-                              setConfirmationStep(true);
-                            }}
-                            style={{
-                              padding: '12px', borderRadius: 10, border: `1.5px solid ${theme.border}`,
-                              background: 'white', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s',
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.borderColor = theme.primary}
-                            onMouseLeave={(e) => e.currentTarget.style.borderColor = theme.border}
-                          >
-                            <div style={{ fontWeight: 700, fontSize: 13, color: theme.text }}>{slot.time}</div>
-                            <div style={{ fontSize: 11, color: theme.textMuted }}>{slot.doctor}</div>
-                          </button>
-                        )) : (
-                          <div style={{ gridColumn: 'span 2', fontSize: 13, color: theme.textMuted, textAlign: 'center', padding: 20, background: theme.cardBgSecondary, borderRadius: 12 }}>
-                            Select Date & Department to see slots.
-                          </div>
-                        )}
-                      </div> */}
-                    {/* </div> */}
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={labelStyle}>Notes</label>
+                      <textarea
+                        style={{ ...inputStyle, minHeight: 80, resize: "vertical" }}
+                        value={formData.notes}
+                        onChange={(e) =>
+                          setFormData({ ...formData, notes: e.target.value })
+                        }
+                        placeholder="Any specific instructions for this appointment..."
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setConfirmationStep(true);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: "13px",
+                          borderRadius: 12,
+                          border: "none",
+                          background: theme.primary,
+                          color: "white",
+                          fontWeight: 700,
+                          cursor: "pointer"
+                        }}
+                      >
+                        Continue
+                      </button>
+                    </div>
                   </form>
                 </>
               ) : (
-                // FIX 3: Confirmation step now has an X close button in the top-right corner
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      marginBottom: 8
+                    }}
+                  >
                     <button
-                      onClick={() => { setShowModal(false); setConfirmationStep(false); }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: theme.textMuted, padding: 4 }}
+                      onClick={() => {
+                        setShowModal(false);
+                        setConfirmationStep(false);
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: theme.textMuted,
+                        padding: 4
+                      }}
                       title="Close"
                     >
                       <X size={22} />
                     </button>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ 
-                      width: 64, height: 64, borderRadius: '50%', background: theme.primary + '15', 
-                      color: theme.primary, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      margin: '0 auto 24px'
-                    }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div
+                      style={{
+                        width: 64,
+                        height: 64,
+                        borderRadius: "50%",
+                        background: theme.primary + "15",
+                        color: theme.primary,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        margin: "0 auto 24px"
+                      }}
+                    >
                       <Calendar size={32} />
                     </div>
-                    <h2 style={{ fontFamily: theme.fontHeading, fontSize: 22, fontWeight: 800, marginBottom: 12 }}>Confirm Appointment?</h2>
-                    <div style={{ 
-                      background: theme.cardBgSecondary, padding: 20, borderRadius: 16, marginBottom: 32,
-                      textAlign: 'left', border: `1px solid ${theme.border}`
-                    }}>
-                      {/* FIX 1: Use String() for type-safe comparison in confirmation view too */}
-                      <div style={{ marginBottom: 8, fontSize: 14 }}><strong>Patient:</strong> {patients.find(p => String(p.id) === String(formData.patientId))?.name}</div>
-                      <div style={{ marginBottom: 8, fontSize: 14 }}><strong>Date:</strong> {formData.date} at {formData.time}</div>
-                      <div style={{ marginBottom: 8, fontSize: 14 }}><strong>Doctor:</strong> {formData.doctorId}</div>
-                      <div style={{ fontSize: 14 }}><strong>Urgency:</strong> <Badge variant={formData.urgency === 'Urgent' ? 'danger' : 'info'}>{formData.urgency}</Badge></div>
+                    <h2
+                      style={{
+                        fontFamily: theme.fontHeading,
+                        fontSize: 22,
+                        fontWeight: 800,
+                        marginBottom: 12
+                      }}
+                    >
+                      Confirm Appointment?
+                    </h2>
+                    <div
+                      style={{
+                        background: theme.cardBgSecondary,
+                        padding: 20,
+                        borderRadius: 16,
+                        marginBottom: 32,
+                        textAlign: "left",
+                        border: `1px solid ${theme.border}`
+                      }}
+                    >
+                      <div style={{ marginBottom: 8, fontSize: 14 }}>
+                        <strong>Patient:</strong>{" "}
+                        {
+                          patients.find(
+                            (p) => String(p.id) === String(formData.patientId)
+                          )?.name
+                        }
+                      </div>
+                      <div style={{ marginBottom: 8, fontSize: 14 }}>
+                        <strong>Date:</strong> {formData.date} at {formData.time}
+                      </div>
+                      <div style={{ marginBottom: 8, fontSize: 14 }}>
+                        <strong>Doctor:</strong>{" "}
+                        {
+                          doctors.find(
+                            (d) => String(d.id) === String(formData.doctorId)
+                          )?.fullName
+                        }
+                      </div>
+                      <div style={{ fontSize: 14 }}>
+                        <strong>Urgency:</strong>{" "}
+                        <Badge
+                          variant={
+                            formData.urgency === "Urgent" ? "danger" : "info"
+                          }
+                        >
+                          {formData.urgency}
+                        </Badge>
+                      </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 16 }}>
-                      <button 
+                    <div style={{ display: "flex", gap: 16 }}>
+                      <button
                         onClick={() => setConfirmationStep(false)}
-                        style={{ 
-                          flex: 1, padding: '14px', borderRadius: 12, border: `1.5px solid ${theme.border}`, 
-                          background: 'white', fontWeight: 700, cursor: 'pointer', color: theme.textMuted
+                        style={{
+                          flex: 1,
+                          padding: "14px",
+                          borderRadius: 12,
+                          border: `1.5px solid ${theme.border}`,
+                          background: "white",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          color: theme.textMuted
                         }}
                       >
                         No, Change
                       </button>
-                      <button 
+                      <button
                         onClick={handleCreate}
-                        style={{ 
-                          flex: 1, padding: '14px', borderRadius: 12, border: 'none', 
-                          background: theme.primary, color: 'white', fontWeight: 700, cursor: 'pointer'
+                        style={{
+                          flex: 1,
+                          padding: "14px",
+                          borderRadius: 12,
+                          border: "none",
+                          background: theme.primary,
+                          color: "white",
+                          fontWeight: 700,
+                          cursor: "pointer"
                         }}
                       >
                         Yes, Confirm
@@ -589,76 +1026,219 @@ export default function NurseAppointmentsPage() {
           </div>
         )}
 
-        {/* FIX 2: Calendar Modal Overlay - triggered by 'View Calendar' button */}
         {showCalendarModal && (
-          <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', zIndex: 1000
-          }}
-            onClick={(e) => { if (e.target === e.currentTarget) setShowCalendarModal(false); }}
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowCalendarModal(false);
+            }}
           >
-            <Card padding="32px" style={{ width: '100%', maxWidth: 420, position: 'relative' }}>
-              {/* FIX 3: X close button on the calendar modal */}
+            <Card padding="32px" style={{ width: "100%", maxWidth: 420, position: "relative" }}>
               <button
                 onClick={() => setShowCalendarModal(false)}
                 style={{
-                  position: 'absolute', top: 16, right: 16,
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: theme.textMuted, padding: 4, borderRadius: 6
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: theme.textMuted,
+                  padding: 4,
+                  borderRadius: 6
                 }}
                 title="Close Calendar"
               >
                 <X size={22} />
               </button>
 
-              <h3 style={{ fontFamily: theme.fontHeading, fontSize: 20, fontWeight: 800, margin: '0 0 20px 0' }}>
+              <h3
+                style={{
+                  fontFamily: theme.fontHeading,
+                  fontSize: 20,
+                  fontWeight: 800,
+                  margin: "0 0 20px 0"
+                }}
+              >
                 Appointment Calendar
               </h3>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <span style={{ fontWeight: 700, fontSize: 16, color: theme.text }}>
-                  {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 16
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 16,
+                    color: theme.text
+                  }}
+                >
+                  {currentDate.toLocaleString("default", {
+                    month: "long",
+                    year: "numeric"
+                  })}
                 </span>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} style={{ padding: 6, borderRadius: 6, border: `1px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}><ChevronLeft size={16} /></button>
-                  <button onClick={() => setCurrentDate(new Date())} style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${theme.border}`, background: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Today</button>
-                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} style={{ padding: 6, borderRadius: 6, border: `1px solid ${theme.border}`, background: 'white', cursor: 'pointer' }}><ChevronRight size={16} /></button>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() =>
+                      setCurrentDate(
+                        new Date(
+                          currentDate.getFullYear(),
+                          currentDate.getMonth() - 1,
+                          1
+                        )
+                      )
+                    }
+                    style={{
+                      padding: 6,
+                      borderRadius: 6,
+                      border: `1px solid ${theme.border}`,
+                      background: "white",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    onClick={() => setCurrentDate(new Date())}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: 6,
+                      border: `1px solid ${theme.border}`,
+                      background: "white",
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontWeight: 700
+                    }}
+                  >
+                    Today
+                  </button>
+                  <button
+                    onClick={() =>
+                      setCurrentDate(
+                        new Date(
+                          currentDate.getFullYear(),
+                          currentDate.getMonth() + 1,
+                          1
+                        )
+                      )
+                    }
+                    style={{
+                      padding: 6,
+                      borderRadius: 6,
+                      border: `1px solid ${theme.border}`,
+                      background: "white",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, textAlign: 'center' }}>
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                  <div key={`${d}-${i}`} style={{ fontSize: 11, fontWeight: 800, color: theme.textMuted, paddingBottom: 8 }}>{d}</div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(7, 1fr)",
+                  gap: 4,
+                  textAlign: "center"
+                }}
+              >
+                {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+                  <div
+                    key={`${d}-${i}`}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 800,
+                      color: theme.textMuted,
+                      paddingBottom: 8
+                    }}
+                  >
+                    {d}
+                  </div>
                 ))}
                 {getDaysInMonth(currentDate).map((date, idx) => {
-                  const isToday = date && date.toDateString() === new Date().toDateString();
+                  const isToday =
+                    date && date.toDateString() === new Date().toDateString();
                   const events = getEventsForDay(date);
                   return (
                     <div
                       key={idx}
                       style={{
-                        aspectRatio: '1', display: 'flex', flexDirection: 'column',
-                        alignItems: 'center', justifyContent: 'center', borderRadius: 8,
-                        fontSize: 13, fontWeight: date ? 700 : 400,
-                        background: isToday ? theme.primary : 'transparent',
-                        color: isToday ? 'white' : theme.text,
-                        position: 'relative', cursor: date ? 'pointer' : 'default',
-                        transition: 'background 0.15s'
+                        aspectRatio: "1",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: date ? 700 : 400,
+                        background: isToday ? theme.primary : "transparent",
+                        color: isToday ? "white" : theme.text,
+                        position: "relative",
+                        cursor: date ? "pointer" : "default",
+                        transition: "background 0.15s"
                       }}
-                      onMouseEnter={e => { if (date && !isToday) e.currentTarget.style.background = `${theme.primary}15`; }}
-                      onMouseLeave={e => { if (date && !isToday) e.currentTarget.style.background = 'transparent'; }}
+                      onMouseEnter={(e) => {
+                        if (date && !isToday)
+                          e.currentTarget.style.background = `${theme.primary}15`;
+                      }}
+                      onMouseLeave={(e) => {
+                        if (date && !isToday)
+                          e.currentTarget.style.background = "transparent";
+                      }}
                     >
                       {date && date.getDate()}
                       {events.length > 0 && !isToday && (
-                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: theme.primary, position: 'absolute', bottom: 3 }} />
+                        <div
+                          style={{
+                            width: 4,
+                            height: 4,
+                            borderRadius: "50%",
+                            background: theme.primary,
+                            position: "absolute",
+                            bottom: 3
+                          }}
+                        />
                       )}
                     </div>
                   );
                 })}
               </div>
 
-              <div style={{ marginTop: 20, fontSize: 12, color: theme.textMuted, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: theme.primary }} />
+              <div
+                style={{
+                  marginTop: 20,
+                  fontSize: 12,
+                  color: theme.textMuted,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6
+                }}
+              >
+                <div
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: theme.primary
+                  }}
+                />
                 Dot indicates appointments on that day
               </div>
             </Card>
@@ -668,5 +1248,3 @@ export default function NurseAppointmentsPage() {
     </div>
   );
 }
-
-

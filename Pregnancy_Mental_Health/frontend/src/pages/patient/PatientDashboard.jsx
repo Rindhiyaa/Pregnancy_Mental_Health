@@ -39,18 +39,15 @@ export default function PatientDashboard() {
     const fetchDashboard = async () => {
       try {
         setLoading(true);
-        const res = await api.get('/patient/dashboard');
-        if (res.ok) {
-          const data = await res.json();
-          setDashboardData(data);
-        }
+        const { data } = await api.get('/patient/dashboard');
+        setDashboardData(data);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
         setLoading(false);
       }
     };
-
+  
     if (user?.email) {
       fetchDashboard();
     }

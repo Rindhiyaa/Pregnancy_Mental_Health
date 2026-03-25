@@ -8,9 +8,10 @@ import { exportNursesToPDF, exportNursesToExcel, exportNursesToCSV } from "../..
 import { Plus, Trash2, ShieldOff, KeyRound, CheckCircle, X, UserCheck, Heart, UserX } from "lucide-react";
 import toast from "react-hot-toast";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
+import { api, addAuditLog } from "../../utils/api";
 
 export default function NursesPage() {
-    const { theme } = useTheme();
+    const { theme }  = useTheme();
     const { isMobile, isTablet, isDesktop } = useBreakpoint();
 
     const [nurses, setNurses] = useState([]);
@@ -23,25 +24,24 @@ export default function NursesPage() {
     const [submitting, setSubmitting] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const [activeFilter, setActiveFilter] = useState("All");
 
     useEffect(() => { loadNurses(); }, []);
 
     const loadNurses = async () => {
         setLoading(true);
         try {
-          const res = await api.get("/admin/clinicians");
-          if (!res.ok) throw new Error("Failed to load clinicians");
-          const data = await res.json();
+          const { data } = await api.get("/admin/clinicians");
+          const nursesOnly = data.filter((u) => u.role === "nurse");
       
-          const nursesOnly = data.filter(u => u.role === "nurse");
-      
-          const mapped = nursesOnly.map(u => ({
+          const mapped = nursesOnly.map((u) => ({
             id: u.id,
             name: `${u.first_name} ${u.last_name || ""}`.trim(),
             email: u.email,
             phone: u.phone_number || "",
             status: u.is_active ? "active" : "suspended",
             ward: "", // fill later if backend supports it
+            joinDate: u.member_since || u.created_at || null,
           }));
       
           setNurses(mapped);
@@ -53,15 +53,16 @@ export default function NursesPage() {
         }
       };
 
-    const filteredNurses = nurses.filter(u => {
+      const filteredNurses = nurses.filter((u) => {
         const matchesSearch =
-            u.name.toLowerCase().includes(search.toLowerCase()) ||
-            u.email.toLowerCase().includes(search.toLowerCase());
+          u.name.toLowerCase().includes(search.toLowerCase()) ||
+          u.email.toLowerCase().includes(search.toLowerCase());
         if (activeFilter === "All") return matchesSearch;
-        if (activeFilter === "Active") return matchesSearch && u.status === 'active';
-        if (activeFilter === "Suspended") return matchesSearch && u.status === 'suspended';
+        if (activeFilter === "Active") return matchesSearch && u.status === "active";
+        if (activeFilter === "Suspended")
+          return matchesSearch && u.status === "suspended";
         return matchesSearch;
-    });
+      });
 
     const filterOptions = [
         { value: "All", label: "All Nurses", icon: Heart },
@@ -79,96 +80,93 @@ export default function NursesPage() {
         currentPage * itemsPerPage
     );
 
-    const handleCreateNurse = async (e) => {
-        e.preventDefault();
-        setSubmitting(true);
+   const handleCreateNurse = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+        const rawName = (formData.name || "").trim();
+        const base = rawName.split(" ")[0].toLowerCase();
+        const email = `nurse.${base}@ppdrisk.com`;
+
+        const { data: created } = await api.post("/admin/users", {
+        first_name: rawName,
+        last_name: "",
+        email,
+        phone_number: formData.phone,
+        password: "TempPass123!",
+        role: "nurse",
+        });
+
         try {
-            const res = await api.post("/admin/users", {
-            first_name: formData.name,
-            last_name: "",
-            email: formData.email,
-            phone_number: formData.phone,
-            password: "TempPass123!",
-            role: "nurse",
-            });
-
-            if (!res.ok) {
-            throw new Error(`Failed to create nurse (${res.status})`);
-            }
-
-            const created = await res.json();
-
-            try {
-            await addAuditLog(
-                "User Created",
-                `Created nurse ${created.first_name} ${created.last_name || ""} (ID ${created.id})`
-            );
-            } catch (logErr) {
-            console.warn("Audit log failed", logErr);
-            }
-
-            toast.success(`Nurse ${formData.name} added successfully!`);
-            setFormData({ name: "", email: "", phone: "", role: "nurse" });
-            setShowModal(false);
-            loadNurses();
-        } catch {
-            toast.error("Failed to add nurse");
-        } finally {
-            setSubmitting(false);
+        await addAuditLog(
+            "User Created",
+            `Created nurse ${created.first_name} ${created.last_name || ""} (ID ${created.id})`
+        );
+        } catch (logErr) {
+        console.warn("Audit log failed", logErr);
         }
+
+        toast.success(`Nurse ${rawName} added successfully!`);
+        setFormData({ name: "", email: "", phone: "", role: "nurse" });
+        setShowModal(false);
+        loadNurses();
+    } catch (err) {
+        console.error(err);
+        toast.error("Failed to add nurse");
+    } finally {
+        setSubmitting(false);
+    }
     };
 
     const handleSuspend = async (id, currentStatus) => {
-        const newIsActive = currentStatus !== "active"; // active -> false, suspended -> true
+        const newIsActive = currentStatus !== "active";
         try {
-          const res = await api.patch(`/admin/users/${id}/status?is_active=${newIsActive}`);
-          if (!res.ok) throw new Error("Failed to update status");
-          toast.success(
-            `Account ${newIsActive ? "activated" : "suspended"}`
-          );
-          loadNurses(); // or loadNurses / loadPatients
+          await api.patch(`/admin/users/${id}/status?is_active=${newIsActive}`);
+          toast.success(`Account ${newIsActive ? "activated" : "suspended"}`);
+          loadNurses();
         } catch (err) {
+          console.error(err);
           toast.error("Failed to update status");
         }
       };
-
+      
       const handleDelete = async (id, name) => {
-        if (!window.confirm(`Are you sure you want to permanently delete ${name}?`)) return;
+        if (!window.confirm(`Are you sure you want to permanently delete ${name}?`))
+          return;
         try {
-          const res = await api.delete(`/admin/users/${id}`);
-          if (!res.ok) throw new Error("Failed to delete user");
+          await api.delete(`/admin/users/${id}`);
           toast.success("User record deleted");
-          loadNurses(); // or loadNurses / loadPatients
+          loadNurses();
         } catch (err) {
+          console.error(err);
           toast.error("Failed to delete user");
         }
       };
-
-      const handleResetPassword = async (doctor) => {
-        if (!window.confirm(`Reset password for ${doctor.name}?`)) return;
-    
+      
+      const handleResetPassword = async (nurse) => {
+        if (!window.confirm(`Reset password for ${nurse.name}?`)) return;
+      
         try {
-        const res = await api.post(`/admin/users/${doctor.id}/reset-password`);
-        if (!res.ok) throw new Error("Failed to reset password");
-    
-        const data = await res.json();
-        console.log("Reset response:", data);
-    
-        try {
+          const { data } = await api.post(
+            `/admin/users/${nurse.id}/reset-password`
+          );
+          console.log("Reset response:", data);
+      
+          try {
             await addAuditLog(
-            "Password Reset",
-            `Reset password for ${doctor.name} (ID ${doctor.id})`
+              "Password Reset",
+              `Reset password for ${nurse.name} (ID ${nurse.id})`
             );
-        } catch (logErr) {
+          } catch (logErr) {
             console.warn("Audit log failed", logErr);
-        }
-    
-        toast.success("Password reset successfully");
+          }
+      
+          toast.success("Password reset successfully");
         } catch (err) {
-        console.error(err);
-        toast.error("Failed to reset password");
+          console.error(err);
+          toast.error("Failed to reset password");
         }
-    };
+      };
 
     return (
         <AdminLayout pageTitle="Nurses Directory">
@@ -409,12 +407,13 @@ export default function NursesPage() {
 
                                             {/* Actions */}
                                             <td style={{ ...tdStyle(isTablet), textAlign: "right" }}>
-                                                <ActionButtons
-                                                    onReset={() => handleResetPassword(nurse)}
-                                                    onSuspend={() => handleSuspend(nurse.id, nurse.status)}
-                                                    onDelete={() => handleDelete(nurse.id, nurse.name)}
-                                                    status={nurse.status}
-                                                />
+                                            <ActionButtons
+                                                onReset={() => handleResetPassword(nurse)}
+                                                onSuspend={() => handleSuspend(nurse.id, nurse.status)}
+                                                onDelete={() => handleDelete(nurse.id, nurse.name)}
+                                                status={nurse.status}
+                                                theme={theme}
+                                            />
                                             </td>
                                         </tr>
                                     ))
@@ -544,7 +543,7 @@ const StatusBadge = ({ status, theme }) => (
     </div>
 );
 
-const ActionButtons = ({ onReset, onSuspend, onDelete, status }) => (
+const ActionButtons = ({ onReset, onSuspend, onDelete, status, theme }) => (
     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
         <button onClick={onReset} title="Reset Password" style={actionBtnStyle(theme)}>
             <KeyRound size={15} />

@@ -20,13 +20,25 @@ export default function DoctorAssessmentReview() {
     const fetchAssessment = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await api.get(`/doctor/assessments/${id}`);
-            if (res.ok) {
-                setAssessment(await res.json());
+            
+            console.log("Fetching assessment ID:", id);
+            
+            // Updated to use new API format
+            const { data } = await api.get(`/doctor/assessments/${id}`);
+            
+            console.log("Assessment data:", data);
+            
+            if (!data) {
+                throw new Error("No data received");
             }
+            
+            setAssessment(data);
+            console.log("✅ Assessment loaded successfully");
+            
         } catch (err) {
-            console.error("Failed to fetch assessment:", err);
+            console.error("❌ Failed to fetch assessment:", err);
             toast.error("Error loading clinical data");
+            setAssessment(null);
         } finally {
             setLoading(false);
         }

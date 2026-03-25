@@ -8,7 +8,8 @@ import {
     Loader2 
 } from "../../components/UI";
 import { api } from "../../utils/api";
-import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
+// import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/dummyData";
 import { useTheme } from "../../ThemeContext";
 import {
     User, Mail, Phone, Calendar, Droplet, Hash, Navigation,
@@ -25,36 +26,57 @@ export default function DoctorPatientProfile() {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            if (USE_DUMMY_DATA) {
-                const patients = await dummyApi.getPatients();
-                const p = patients.find(pt => String(pt.id) === String(id));
-                if (p) setPatient(p);
-                else {
-                    toast.error("Patient profile not found");
-                    return;
-                }
-                const assessments = await dummyApi.getAssessments();
-                const filtered = assessments.filter(a => String(a.patient_id) === String(id));
-                setHistory(filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
-            } else {
-                const [pRes, hRes] = await Promise.all([
-                    api.get(`/doctor/patients/${id}`),
-                    api.get(`/doctor/patients/${id}/history`)
-                ]);
-                if (pRes.ok) setPatient(await pRes.json());
-                if (hRes.ok) setHistory(await hRes.json());
+            console.log("=== FETCHING PATIENT PROFILE ===");
+            console.log("Patient ID:", id);
+            
+            // Fetch patient detail with assessments
+            const { data } = await api.get(`/doctor/patients/${id}`);
+            
+            console.log("Patient profile data:", data);
+            
+            if (!data) {
+                toast.error("Patient profile not found");
+                setLoading(false);
+                return;
             }
+            
+            // Extract patient info
+            if (data.patient) {
+                setPatient(data.patient);
+                console.log("Patient info:", data.patient);
+            } else if (data.name) {
+                // If response is just the patient object
+                setPatient(data);
+                console.log("Patient info:", data);
+            }
+            
+            // Extract assessment history
+            if (data.assessments && Array.isArray(data.assessments)) {
+                const sorted = data.assessments.sort(
+                    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                );
+                setHistory(sorted);
+                console.log("Assessment history:", sorted.length, "records");
+            } else {
+                setHistory([]);
+            }
+            
+            console.log("✅ Patient profile loaded successfully");
+            
         } catch (err) {
-            console.error(err);
+            console.error("❌ Failed to fetch patient data:", err);
             toast.error("Critical: Clinical record extraction failed");
+            setPatient(null);
+            setHistory([]);
         } finally {
             setLoading(false);
         }
     }, [id]);
-
+    
     useEffect(() => {
         fetchData();
     }, [fetchData]);

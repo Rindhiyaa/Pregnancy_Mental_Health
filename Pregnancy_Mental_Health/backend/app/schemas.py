@@ -39,6 +39,8 @@ class UserOut(BaseModel):
     role: str | None = None
     first_login: bool = True
     is_active: bool 
+    specialization: Optional[str] = None
+    member_since: Optional[datetime] = None  # <-- add this line
 
 
 class LoginRequest(BaseModel):
@@ -98,8 +100,8 @@ class NurseAssessmentOut(BaseModel):
     risk_level: str
     risk_score: float
 
-    doctor_id: Optional[int] = None
-    assigned_doctor: Optional[str] = None
+    #doctor_id: Optional[int] = None
+    assigned_doctor_id: Optional[int] = None
 
 class AppointmentCreate(BaseModel):
     patient_id: int
@@ -171,23 +173,36 @@ class AssessmentResult(BaseModel):
 
 
 class AssessmentSave(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+    model_config = ConfigDict(from_attributes=True)  # Keep this
+    
+    id: Optional[int] = None
     patient_name: str
     patient_id: Optional[int] = None
     patient_email: Optional[str] = None
-
+    
     risk_level: str
     risk_score: Optional[float] = None
-    epds_score: Optional[int] = None   # stays here, not used in model
-
+    clinician_risk: Optional[str] = None
     plan: Optional[str] = None
     notes: Optional[str] = None
     raw_data: Optional[Dict[str, Any]] = None
-
-    assigned_doctor_id: int
+    clinician_email: Optional[str] = None
+    
+    nurse_id: Optional[int] = None
+    doctor_id: Optional[int] = None
+    assigned_doctor_id: Optional[int] = None
+    
     status: str = "submitted"
-    is_draft: bool = False
+    risk_level_final: Optional[str] = None
+    overridden_by: Optional[int] = None
+    override_reason: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    
+    created_at: Optional[datetime] = None
+    
+    # DELETE THIS ENTIRE BLOCK:
+    # class Config:
+    #     from_attributes = True
 
 class AssessmentReview(BaseModel):
     risk_level_final: str

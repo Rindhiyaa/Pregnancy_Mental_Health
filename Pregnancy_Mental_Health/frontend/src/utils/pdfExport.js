@@ -133,7 +133,7 @@ export const exportAssessmentToPDF = (assessment) => {
   yPos += 8;
   
   // AI Score
-  const score = assessment.score != null ? Number(assessment.score).toFixed(1) : '0.0';
+  const score = assessment.risk_score != null ? Number(assessment.risk_score).toFixed(1) : '0.0';
   doc.setTextColor(...colors.mediumGrey);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');

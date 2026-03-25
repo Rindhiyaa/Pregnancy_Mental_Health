@@ -43,17 +43,33 @@ export default function ClinicianMessages() {
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const patUrl = user?.role === 'nurse' ? "/nurse/patients" : "/doctor/patients";
+            
+            const patUrl = user?.role === 'nurse' ? "/nurse/patients" : "/doctor/patients/with-assessments";
+            
+            console.log("Fetching messages and patients...");
+            
             const [msgRes, patRes] = await Promise.all([
-                api.get("/patient/messages"),
-                api.get(patUrl)
-            ]);
+                api.get("/messages/clinician"),   // new
+                api.get(patUrl),
+              ]);
 
-            if (msgRes.ok) setMessages(await msgRes.json());
-            if (patRes.ok) setPatients(await patRes.json());
+            console.log("Messages response:", msgRes);
+            console.log("Patients response:", patRes);
+    
+            // Extract data from the new API format
+            const messagesData = msgRes.data || [];
+            const patientsData = patRes.data?.patients || patRes.data || [];
+    
+            setMessages(Array.isArray(messagesData) ? messagesData : []);
+            setPatients(Array.isArray(patientsData) ? patientsData : []);
+            
+            console.log("✅ Loaded", messagesData.length, "messages and", patientsData.length, "patients");
+            
         } catch (err) {
             console.error("Failed to fetch messaging data:", err);
             toast.error("Could not load clinician messages");
+            setMessages([]);
+            setPatients([]);
         } finally {
             setLoading(false);
         }
@@ -77,41 +93,40 @@ export default function ClinicianMessages() {
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
+        
         if (!selectedPatientId || !messageBody) {
             toast.error("Validation failed: Recipient and content required");
             return;
         }
-
+    
         try {
-            const res = await api.post("/patient/messages", {
-                patient_id: selectedPatientId,
-                subject: messageSubject || "Medical Note from Care Team",
-                content: messageBody,
-                type: "general"
+            await api.post("/messages", {
+            patient_id: Number(selectedPatientId),
+            content: messageBody,
             });
-
-            if (res.ok) {
-                toast.success("Message delivered successfully");
-                setMessageBody("");
-                setMessageSubject("");
-                fetchData();
-            }
+    
+            toast.success("Message delivered successfully");
+            setMessageBody("");
+            setMessageSubject("");
+            fetchData();
+            
         } catch (err) {
+            console.error("Failed to send message:", err);
             toast.error("Failed to transmit message");
         }
     };
 
     const handleDeleteMessage = async (msgId) => {
         if (!window.confirm("Are you sure you want to delete this message?")) return;
+        
         try {
-            const res = await api.delete(`/patient/messages/${msgId}`);
-            if (res.ok) {
-                toast.success("Message deleted");
-                fetchData();
-            } else {
-                toast.error("Failed to delete message");
-            }
+            await api.delete(`/messages/${msgId}`);
+            
+            toast.success("Message deleted");
+            fetchData();
+            
         } catch (err) {
+            console.error("Failed to delete message:", err);
             toast.error("Error deleting message");
         }
     };
@@ -281,6 +296,7 @@ export default function ClinicianMessages() {
                                 </div>
                             ) : (
                                 messages.map((msg) => {
+                                    const subject = messageSubject || "Clinical follow-up";
                                     const patient = patients.find(p => p.id === msg.patient_id || p.id?.toString() === msg.patient_id?.toString());
                                     return (
                                         <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>

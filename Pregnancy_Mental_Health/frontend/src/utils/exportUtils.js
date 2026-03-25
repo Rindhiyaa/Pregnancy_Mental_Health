@@ -55,13 +55,32 @@ export const exportToPDF = (data, title, columns, filename) => {
 // Excel Export
 export const exportToExcel = (data, title, filename) => {
   const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(data);
-  XLSX.utils.sheet_add_aoa(ws, [[title]], { origin: 'A1' });
-  XLSX.utils.sheet_add_aoa(ws, [[`Generated on: ${new Date().toLocaleString()}`]], { origin: 'A2' });
+
+  // create an empty sheet first
+  const ws = XLSX.utils.aoa_to_sheet([]);
+
+  // Row 1: title
+  XLSX.utils.sheet_add_aoa(ws, [[title]], { origin: "A1" });
+
+  // Row 2: generated on
+  XLSX.utils.sheet_add_aoa(
+    ws,
+    [[`Generated on: ${new Date().toLocaleString()}`]],
+    { origin: "A2" }
+  );
+
+  // Row 4 onward: JSON table (headers + data)
+  const tableSheet = XLSX.utils.json_to_sheet(data, { origin: "A4" });
+
+  // merge tableSheet into ws
+  Object.assign(ws, tableSheet);
+
+  // column widths
   const colWidths = Object.keys(data[0] || {}).map(() => ({ wch: 18 }));
-  ws['!cols'] = colWidths;
-  XLSX.utils.book_append_sheet(wb, ws, 'Data');
-  XLSX.writeFile(wb, `${filename || 'export'}.xlsx`);
+  ws["!cols"] = colWidths;
+
+  XLSX.utils.book_append_sheet(wb, ws, "Data");
+  XLSX.writeFile(wb, `${filename || "export"}.xlsx`);
 };
 
 // CSV Export
@@ -89,33 +108,53 @@ export const exportToCSV = (data, filename) => {
 
 // ── Patients ──
 export const exportPatientsToPDF = (patients) => {
-  exportToPDF(patients, 'Patients Directory', [
-    { header: 'Name', accessor: 'name' },
-    { header: 'Email', accessor: 'email' },
-    { header: 'Phone', accessor: 'phone' },
-    { header: 'Age', accessor: 'age' },
-    { header: 'Status', accessor: 'status' },
-    { header: 'Created', accessor: (i) => new Date(i.created_at || i.member_since).toLocaleDateString() }
-  ], 'patients-directory');
+  exportToPDF(
+    patients,
+    "Patients Directory",
+    [
+      { header: "Name", accessor: "name" },
+      { header: "Email", accessor: "email" },
+      { header: "Phone", accessor: "phone" },
+      { header: "Status", accessor: "status" },
+      {
+        header: "Joined",
+        accessor: (i) =>
+          i.joinDate ? new Date(i.joinDate).toLocaleDateString() : "",
+      },
+    ],
+    "patients-directory"
+  );
 };
 
 export const exportPatientsToExcel = (patients) => {
-  exportToExcel(patients.map(p => ({
-    Name: p.name, Email: p.email, Phone: p.phone, Age: p.age,
-    'Blood Group': p.blood_group, Address: p.address, City: p.city,
-    'Pregnancy Week': p.pregnancy_week,
-    'Due Date': p.due_date ? new Date(p.due_date).toLocaleDateString() : '',
-    Status: p.status,
-    'Created Date': new Date(p.created_at || p.member_since).toLocaleDateString()
-  })), 'Patients Directory', 'patients-directory');
+  exportToExcel(
+    patients.map((p) => ({
+      Name: p.name,
+      Email: p.email,
+      Phone: p.phone,
+      Status: p.status,
+      "Join Date": p.joinDate
+        ? new Date(p.joinDate).toLocaleDateString()
+        : "",
+    })),
+    "Patients Directory",
+    "patients-directory"
+  );
 };
 
 export const exportPatientsToCSV = (patients) => {
-  exportToCSV(patients.map(p => ({
-    Name: p.name, Email: p.email, Phone: p.phone, Age: p.age,
-    'Blood Group': p.blood_group, Status: p.status,
-    'Created Date': new Date(p.created_at || p.member_since).toLocaleDateString()
-  })), 'patients-directory');
+  exportToCSV(
+    patients.map((p) => ({
+      Name: p.name,
+      Email: p.email,
+      Phone: p.phone ? `${p.phone}` : "",
+      Status: p.status,
+      "Join Date": p.joinDate
+        ? new Date(p.joinDate).toLocaleDateString()
+        : "",
+    })),
+    "patients-directory"
+  );
 };
 
 // ── Assessments ──
@@ -151,54 +190,126 @@ export const exportAssessmentsToCSV = (assessments) => {
 
 // ── Doctors ──
 export const exportDoctorsToPDF = (doctors) => {
-  exportToPDF(doctors, 'Doctors Directory', [
-    { header: 'Name', accessor: (i) => `Dr. ${i.name || i.fullName}` },
-    { header: 'Email', accessor: 'email' },
-    { header: 'Phone', accessor: 'phone' },
-    { header: 'Specialization', accessor: (i) => i.specialization || 'General Medicine' },
-    { header: 'Status', accessor: 'status' },
-    { header: 'Joined', accessor: (i) => new Date(i.member_since).toLocaleDateString() }
-  ], 'doctors-directory');
+  exportToPDF(
+    doctors,
+    "Doctors Directory",
+    [
+      {
+        header: "Name",
+        accessor: (i) => {
+          const name = i.name || i.fullName || "";
+          return name ? `Dr. ${name}` : "";
+        },
+      },
+      { header: "Email", accessor: "email" },
+      { header: "Phone", accessor: "phone" },
+      {
+        header: "Specialization",
+        accessor: (i) => i.specialization || "General Medicine",
+      },
+      { header: "Status", accessor: "status" },
+      {
+        header: "Joined",
+        accessor: (i) =>
+          i.joinDate ? new Date(i.joinDate).toLocaleDateString() : "",
+      },
+    ],
+    "doctors-directory"
+  );
 };
 
 export const exportDoctorsToExcel = (doctors) => {
-  exportToExcel(doctors.map(d => ({
-    Name: `Dr. ${d.name || d.fullName}`, Email: d.email, Phone: d.phone,
-    Specialization: d.specialization || 'General Medicine',
-    Status: d.status, 'Join Date': new Date(d.member_since).toLocaleDateString()
-  })), 'Doctors Directory', 'doctors-directory');
+  exportToExcel(
+    doctors.map((d) => {
+      const name = d.name || d.fullName || "";
+      return {
+        Name: name ? `Dr. ${name}` : "",
+        Email: d.email,
+        Phone: d.phone,
+        Specialization: d.specialization || "General Medicine",
+        Status: d.status,
+        "Join Date": d.joinDate
+          ? new Date(d.joinDate).toLocaleDateString()
+          : "",
+      };
+    }),
+    "Doctors Directory",
+    "doctors-directory"
+  );
 };
 
 export const exportDoctorsToCSV = (doctors) => {
-  exportToCSV(doctors.map(d => ({
-    Name: `Dr. ${d.name || d.fullName}`, Email: d.email, Phone: d.phone,
-    Specialization: d.specialization || 'General Medicine', Status: d.status
-  })), 'doctors-directory');
+  exportToCSV(
+    doctors.map((d) => {
+      const name = d.name || d.fullName || "";
+      return {
+        Name: name ? `Dr. ${name}` : "",
+        Email: d.email,
+        Phone: d.phone ? `${d.phone}` : "",
+        Specialization: d.specialization || "General Medicine",
+        Status: d.status,
+        "Join Date": d.joinDate
+          ? new Date(d.joinDate).toLocaleDateString()
+          : "",
+      };
+    }),
+    "doctors-directory"
+  );
 };
 
 // ── Nurses ──
 export const exportNursesToPDF = (nurses) => {
-  exportToPDF(nurses, 'Nurses Directory', [
-    { header: 'Name', accessor: 'name' },
-    { header: 'Email', accessor: 'email' },
-    { header: 'Phone', accessor: 'phone' },
-    { header: 'Department', accessor: (i) => i.department || 'Maternity' },
-    { header: 'Status', accessor: 'status' },
-    { header: 'Joined', accessor: (i) => new Date(i.member_since).toLocaleDateString() }
-  ], 'nurses-directory');
+  exportToPDF(
+    nurses,
+    "Nurses Directory",
+    [
+      { header: "Name", accessor: "name" },
+      { header: "Email", accessor: "email" },
+      { header: "Phone", accessor: "phone" },
+      {
+        header: "Department",
+        accessor: (i) => i.department || "Maternity",
+      },
+      { header: "Status", accessor: "status" },
+      {
+        header: "Joined",
+        accessor: (i) =>
+          i.joinDate ? new Date(i.joinDate).toLocaleDateString() : "",
+      },
+    ],
+    "nurses-directory"
+  );
 };
 
 export const exportNursesToExcel = (nurses) => {
-  exportToExcel(nurses.map(n => ({
-    Name: n.name, Email: n.email, Phone: n.phone,
-    Department: n.department || 'Maternity',
-    Status: n.status, 'Join Date': new Date(n.member_since).toLocaleDateString()
-  })), 'Nurses Directory', 'nurses-directory');
+  exportToExcel(
+    nurses.map((n) => ({
+      Name: n.name,
+      Email: n.email,
+      Phone: n.phone,
+      Department: n.department || "Maternity",
+      Status: n.status,
+      "Join Date": n.joinDate
+        ? new Date(n.joinDate).toLocaleDateString()
+        : "",
+    })),
+    "Nurses Directory",
+    "nurses-directory"
+  );
 };
 
 export const exportNursesToCSV = (nurses) => {
-  exportToCSV(nurses.map(n => ({
-    Name: n.name, Email: n.email, Phone: n.phone,
-    Department: n.department || 'Maternity', Status: n.status
-  })), 'nurses-directory');
+  exportToCSV(
+    nurses.map((n) => ({
+      Name: n.name,
+      Email: n.email,
+      Phone: n.phone ? `${n.phone}` : "",  // force text
+      Department: n.department || "Maternity",
+      Status: n.status,
+      "Join Date": n.joinDate
+        ? new Date(n.joinDate).toLocaleDateString()
+        : "",
+    })),
+    "nurses-directory"
+  );
 };

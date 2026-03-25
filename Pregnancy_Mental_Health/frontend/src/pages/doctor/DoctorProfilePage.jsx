@@ -4,7 +4,7 @@ import { useTheme } from "../../ThemeContext";
 import DoctorSidebar from "../../components/DoctorSidebar";
 import { PageTitle, Loader2 } from "../../components/UI";
 import { api } from "../../utils/api";
-import { USE_DUMMY_DATA, dummyApi } from "../../utils/dummyData";
+//import { USE_DUMMY_DATA, dummyApi } from "../../utils/dummyData";
 import toast from "react-hot-toast";
 import {
     User, Mail, Phone, ShieldCheck, ClipboardCheck, AlertTriangle,
@@ -31,17 +31,8 @@ export default function DoctorProfilePage() {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                if (USE_DUMMY_DATA) {
-                    const dashboard = await dummyApi.getDoctorDashboard();
-                    setStats({
-                        assessments_reviewed: 128, 
-                        high_risk_cases: dashboard.stats.high,
-                        patients_assigned: dashboard.stats.total
-                    });
-                } else {
-                    const res = await api.get("/doctor/stats");
-                    if (res.ok) setStats(await res.json());
-                }
+                const { data } = await api.get("/doctor/stats");
+                setStats(data);
             } catch (err) {
                 console.error("Failed to fetch clinical stats:", err);
             }
@@ -55,18 +46,14 @@ export default function DoctorProfilePage() {
             return toast.error("Validation Error: Passwords do not match");
         }
 
+
         setLoading(true);
         try {
-            const res = await api.post("/change-password", passwordData);
-            if (res.ok) {
-                toast.success("Security credentials updated successfully");
-                setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-            } else {
-                const err = await res.json();
-                toast.error(err.detail || "Authentication update failed");
-            }
+            await api.post("/change-password", passwordData);
+            toast.success("Security credentials updated successfully");
+            setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
         } catch (err) {
-            toast.error("An error occurred during security update");
+            toast.error(err.response?.data?.detail || "Authentication update failed");
         } finally {
             setLoading(false);
         }
@@ -74,7 +61,7 @@ export default function DoctorProfilePage() {
 
     const InfoRow = ({ icon, label, value }) => (
         <div className="np-info-item">
-            <div className="np-info-icon" style={{ background: `${theme.primary}10`, color: theme. primary }}>
+            <div className="np-info-icon" style={{ background: `${theme.primary}10`, color: theme.primary }}>
                 {icon}
             </div>
             <div className="np-info-content">

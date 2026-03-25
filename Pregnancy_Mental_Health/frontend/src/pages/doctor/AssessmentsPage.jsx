@@ -46,15 +46,38 @@ const AssessmentsPage = () => {
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await api.get('/doctor/assessments?status=submitted');
-            if (res.ok) {
-                const data = await res.json();
-                const sortedData = data.sort((a, b) => new Date(b.timestamp || b.created_at) - new Date(a.timestamp || a.created_at));
-                setAssessments(sortedData);
+            
+            console.log("Fetching assessments...");
+            
+            // Updated to use new API format that returns { data, response }
+            const { data } = await api.get("/doctor/assessments");
+            
+            console.log("Assessments data:", data);
+            
+            // Handle different response formats
+            let assessmentList = [];
+            if (Array.isArray(data)) {
+                assessmentList = data;
+            } else if (data && Array.isArray(data.assessments)) {
+                assessmentList = data.assessments;
             }
+            
+            console.log("Extracted assessments:", assessmentList);
+            
+            // Sort by timestamp/created_at
+            const sortedData = assessmentList.sort(
+                (a, b) =>
+                    new Date(b.timestamp || b.created_at) -
+                    new Date(a.timestamp || a.created_at)
+            );
+            
+            setAssessments(sortedData);
+            console.log("✅ Loaded", sortedData.length, "assessments");
+            
         } catch (err) {
-            console.error("Failed to fetch assessments queue:", err);
+            console.error("Failed to fetch assessments:", err);
             toast.error("Failed to load assessments queue");
+            setAssessments([]);
         } finally {
             setLoading(false);
         }
@@ -144,7 +167,7 @@ const AssessmentsPage = () => {
                         onPDFExport={handlePDFExport}
                         onExcelExport={handleExcelExport}
                         onCSVExport={handleCSVExport}
-                        placeholder="Search by patient ID..."
+                        placeholder="Search by patient or nurse name..."
                     />
                     <Table
                         headers={["Patient Profile", "Lead Nurse", "Risk Indicator", "Submited On", "Clinician Action"]}
@@ -164,7 +187,7 @@ const AssessmentsPage = () => {
                                         </div>
                                         <div>
                                             <div style={{ fontWeight: 700, color: theme.textPrimary }}>{a.patient_name}</div>
-                                            <div style={{ fontSize: "11px", color: theme.textMuted }}>Ref: {a.id?.slice(-8).toUpperCase()}</div>
+                                            <div style={{ fontSize: "11px", color: theme.textMuted }}>Ref: {String(a.id ?? "").slice(-8).toUpperCase()}</div>
                                         </div>
                                     </div>
                                 </TableCell>

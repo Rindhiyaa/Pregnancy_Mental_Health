@@ -67,11 +67,8 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
   
-      // 1) Load all users from backend
-      const usersRes = await api.get("/api/admin/users"); // include /api if your FastAPI prefix has it
-      const users = usersRes.data || [];
+      const { data: users } = await api.get("/admin/users");
   
-      // 2) recentUsers array used by the table
       const sorted = users
         .slice()
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -89,17 +86,17 @@ export default function AdminDashboard() {
   
       setAllUsers(users);
   
-      // 3) Derive stats from users
       const totalClinicians = users.filter(
         (u) => u.role === "doctor" || u.role === "nurse"
       ).length;
+  
       const totalPatients = users.filter((u) => u.role === "patient").length;
   
       setStats({
         totalUsers: users.length,
         totalClinicians,
         totalPatients,
-        totalAssessments: 0, // update when you have an analytics endpoint
+        totalAssessments: 0,
       });
     } catch (error) {
       console.error("Error fetching admin data:", error);
@@ -112,54 +109,53 @@ export default function AdminDashboard() {
   const handleEdit = (user) => setEditUser({ ...user });
 
   const handleEditSave = async () => {
-    if (!editUser) return;
-    try {
-      const [firstName, ...rest] = (editUser.name || "").trim().split(" ");
-      const lastName = rest.join(" ") || null;
-  
-      const res = await api.patch(`/api/admin/users/${editUser.id}`, {
-        first_name: firstName,
-        last_name: lastName,
-        email: editUser.email,
-      });
-  
-      // Axios throws on non-2xx by default, so no res.ok
-      toast.success(`User ${editUser.name} updated successfully`);
-      setEditUser(null);
-      fetchAdminData();
-    } catch {
-      toast.error("Failed to update user");
-    }
-  };
+  if (!editUser) return;
+  try {
+    const [firstName, ...rest] = (editUser.name || "").trim().split(" ");
+    const lastName = rest.join(" ") || null;
 
-  const handleDelete = async (user) => {
-    if (!window.confirm(`Are you sure you want to delete ${user.name}?`)) return;
-  
-    try {
-      await api.delete(`/api/admin/users/${user.id}`);
-  
-      try {
-        await addAuditLog(
-          "User Deleted",
-          `Deleted user ${user.name} (ID ${user.id})`
-        );
-      } catch (logErr) {
-        console.warn("Audit log failed", logErr);
-      }
-  
-      toast.success(`User ${user.name} deleted`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete user");
-    } finally {
-      fetchAdminData();
-    }
-  };
+    await api.patch(`/admin/users/${editUser.id}`, {
+      first_name: firstName,
+      last_name: lastName,
+      email: editUser.email,
+    });
 
-  const handleReviewCredentials = () => {
-    navigate("/admin/doctors");
-    toast("Reviewing pending clinician credentials...", { icon: "🔍" });
-  };
+    toast.success(`User ${editUser.name} updated successfully`);
+    setEditUser(null);
+    fetchAdminData();
+  } catch {
+    toast.error("Failed to update user");
+  }
+};
+
+const handleDelete = async (user) => {
+  if (!window.confirm(`Are you sure you want to delete ${user.name}?`)) return;
+
+  try {
+    await api.delete(`/admin/users/${user.id}`);
+
+    try {
+      await addAuditLog(
+        "User Deleted",
+        `Deleted user ${user.name} (ID ${user.id})`
+      );
+    } catch (logErr) {
+      console.warn("Audit log failed", logErr);
+    }
+
+    toast.success(`User ${user.name} deleted`);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to delete user");
+  } finally {
+    fetchAdminData();
+  }
+};
+
+  // const handleReviewCredentials = () => {
+  //   navigate("/admin/doctors");
+  //   toast("Reviewing pending clinician credentials...", { icon: "🔍" });
+  // };
 
   const filteredUsers = recentUsers.filter((u) => {
     const matchSearch =
@@ -623,7 +619,7 @@ export default function AdminDashboard() {
             </div>
           </Card>
 
-          {/* ── System Health ── */}
+          {/* ── System Health ──
           <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 16 : 24 }}>
             <Card>
               <h3 style={{ margin: "0 0 20px 0", fontSize: 18, fontWeight: 700, color: theme.textPrimary }}>
@@ -660,7 +656,7 @@ export default function AdminDashboard() {
                 Review Credentials
               </button>
             </Card>
-          </div>
+          </div> */}
         </div>
       </main>
 
@@ -785,12 +781,12 @@ const tableCellStyle = (isMobile) => ({
   verticalAlign: "middle",
 });
 
-const actionBtnStyle = ({
+const actionBtnStyle = (theme) => ({
   padding: "6px",
   borderRadius: "6px",
-  border: "1px solid #E5E7EB",
-  background: "white",
-  color: "#6B7280",
+  border: `1px solid ${theme.border}`,
+  background: theme.cardBg,
+  color: theme.textSecondary,
   cursor: "pointer",
   display: "flex",
   alignItems: "center",

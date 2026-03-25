@@ -20,14 +20,9 @@ export default function NurseAssessmentHistory() {
     const fetchAssessments = async () => {
       try {
         setLoading(true);
-         const res = await api.get("/nurse/assessments");
-         if (res.ok) {
-           const data = await res.json();
-           setAssessments(data || []);
-         } else {
-           const err = await res.json().catch(() => ({}));
-           toast.error(err.detail || "Failed to load history");
-         }
+  
+        const { data } = await api.get("/nurse/assessments");
+        setAssessments(data || []);
       } catch (err) {
         console.error("Failed to fetch assessments:", err);
         toast.error("Failed to load history");
@@ -35,6 +30,7 @@ export default function NurseAssessmentHistory() {
         setLoading(false);
       }
     };
+  
     fetchAssessments();
   }, []);
 
@@ -193,7 +189,7 @@ export default function NurseAssessmentHistory() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Stethoscope size={16} color={theme.textMuted} />
                         <span style={{ fontWeight: 600, fontSize: 14, color: theme.textSecondary }}>
-                          {a.assigned_doctor || 'Unassigned'}
+                         Dr. {a.assigned_doctor || 'Unassigned'}
                         </span>
                     </div>
                   </td>

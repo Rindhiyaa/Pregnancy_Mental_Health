@@ -33,14 +33,10 @@ export default function NursePatientsPage() {
     const fetchPatients = async () => {
       try {
         setLoading(true);
-        const res = await api.get("/nurse/patients");
-        if (res.ok) {
-          const data = await res.json();
-          setPatients(data || []);
-        } else {
-          const err = await res.json().catch(() => ({}));
-          toast.error(err.detail || "Failed to load patients");
-        }
+  
+        const { data } = await api.get("/nurse/patients");
+        // data is already JSON from backend
+        setPatients(data || []);
       } catch (err) {
         console.error("Failed to fetch patients:", err);
         toast.error("Failed to load patients");
@@ -48,21 +44,39 @@ export default function NursePatientsPage() {
         setLoading(false);
       }
     };
+  
     fetchPatients();
   }, []);
 
   const filteredPatients = patients.filter(p => {
-    const matchesSearch = p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const hasDraft = !!localStorage.getItem(
+      `ppd_draft_${(p.name || "").replace(/\s+/g, "_").toLowerCase()}`
+    );
+  
+    const matchesSearch =
+      p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.phone?.includes(searchQuery);
-    
+  
     const matchesDoctor = !doctorIdNum || p.doctor_id === doctorIdNum;
-
     if (!matchesDoctor) return false;
-
+  
     if (filter === "All") return matchesSearch;
-    if (filter === "Assessed") return matchesSearch;// && (p.last_assessment || p.last_assessment_date);
-    if (filter === "Pending") return matchesSearch && p.status === "Pending";
-    if (filter === "Draft") return matchesSearch && p.status === "Draft";
+  
+    if (filter === "Assessed") {
+      // Not pending, not draft-in-progress
+      return matchesSearch && !hasDraft && p.status !== "Pending";
+    }
+  
+    if (filter === "Pending") {
+      // Only real pending from backend
+      return matchesSearch && p.status === "Pending";
+    }
+  
+    if (filter === "Draft") {
+      // Draft tab: has local draft AND not pending
+      return matchesSearch && hasDraft && p.status !== "Pending";
+    }
+  
     return matchesSearch;
   });
 
@@ -109,41 +123,98 @@ export default function NursePatientsPage() {
     verticalAlign: 'middle'
   };
 
-  return (
-    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
-      <NurseSidebar />
 
-      <main className="portal-main" style={{ background: theme.pageBg, fontFamily: theme.fontBody }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
-          <PageTitle title="Patients Directory" subtitle="Manage all registered mothers and their assessment status" />
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        background: theme.pageBg,
+        fontFamily: theme.fontBody,
+      }}
+    >
+      <NurseSidebar />
+  
+      <main
+        className="portal-main"
+        style={{ background: theme.pageBg, fontFamily: theme.fontBody }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: 32,
+          }}
+        >
+          <PageTitle
+            title="Patients Directory"
+            subtitle="Manage all registered mothers and their assessment status"
+          />
           <button
             onClick={() => navigate("/nurse/patients/new")}
             style={{
-              padding: '12px 24px', borderRadius: 12, border: 'none',
-              background: theme.primary, color: 'white', fontWeight: 700,
-              display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
-              boxShadow: `0 8px 20px -6px ${theme.primary}50`
+              padding: "12px 24px",
+              borderRadius: 12,
+              border: "none",
+              background: theme.primary,
+              color: "white",
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              cursor: "pointer",
+              boxShadow: `0 8px 20px -6px ${theme.primary}50`,
             }}
           >
             <PlusCircle size={20} /> Register New Patient
           </button>
         </div>
-
+  
         {/* Filters & Search */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 20 }}>
-          <div style={{ display: 'flex', gap: 12 }}>
-            {["All", "Assessed", "Pending", "Draft"].map(t => (
-              <button key={t} onClick={() => setFilter(t)} style={tabStyle(filter === t)}>{t}</button>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 24,
+            gap: 20,
+          }}
+        >
+          <div style={{ display: "flex", gap: 12 }}>
+            {["All", "Assessed", "Pending", "Draft"].map((t) => (
+              <button
+                key={t}
+                onClick={() => setFilter(t)}
+                style={tabStyle(filter === t)}
+              >
+                {t}
+              </button>
             ))}
           </div>
-
-          <div style={{ position: 'relative', flex: 1, maxWidth: 400 }}>
-            <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: theme.textMuted }} />
+  
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <Search
+              size={18}
+              style={{
+                position: "absolute",
+                left: 16,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: theme.textMuted,
+              }}
+            />
             <input
               style={{
-                width: '100%', padding: '12px 16px 12px 48px', borderRadius: 14,
-                border: `1.5px solid ${theme.border}`, background: 'white',
-                fontSize: 15, outline: 'none', fontFamily: theme.fontBody
+                width: "100%",
+                padding: "12px 16px 12px 48px",
+                borderRadius: 14,
+                border: `1.5px solid ${theme.border}`,
+                background: "white",
+                fontSize: 15,
+                outline: "none",
+                fontFamily: theme.fontBody,
               }}
               placeholder="Search by name or phone..."
               value={searchQuery}
@@ -151,156 +222,401 @@ export default function NursePatientsPage() {
             />
           </div>
         </div>
-
+  
         {/* Doctor Filter Indicator */}
         {doctorId && (
-          <div style={{ 
-            marginBottom: 24, padding: '14px 24px', borderRadius: 16, 
-            background: `${theme.primary}08`, border: `1.5px dashed ${theme.primary}40`,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ padding: 8, background: theme.primary, borderRadius: 10, color: 'white' }}>
+          <div
+            style={{
+              marginBottom: 24,
+              padding: "14px 24px",
+              borderRadius: 16,
+              background: `${theme.primary}08`,
+              border: `1.5px dashed ${theme.primary}40`,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  padding: 8,
+                  background: theme.primary,
+                  borderRadius: 10,
+                  color: "white",
+                }}
+              >
                 <Stethoscope size={18} />
               </div>
               <div>
-                <div style={{ fontSize: 13, color: theme.textMuted, fontWeight: 600 }}>Filtering Patients for:</div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>
-                {patients.find(p => p.doctor_id === doctorIdNum)?.assigned_doctor || 'Assigned Doctor'}
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: theme.textMuted,
+                    fontWeight: 600,
+                  }}
+                >
+                  Filtering Patients for:
+                </div>
+                <div
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 800,
+                    color: theme.text,
+                  }}
+                >
+                  {patients.find((p) => p.doctor_id === doctorIdNum)
+                    ?.assigned_doctor || "Assigned Doctor"}
                 </div>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => {
-                searchParams.delete('doctor');
+                searchParams.delete("doctor");
                 setSearchParams(searchParams);
               }}
-              style={{ 
-                padding: '10px 20px', borderRadius: 12, border: 'none', 
-                background: theme.primary, color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-                boxShadow: `0 4px 12px ${theme.primary}30`
+              style={{
+                padding: "10px 20px",
+                borderRadius: 12,
+                border: "none",
+                background: theme.primary,
+                color: "white",
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: "pointer",
+                boxShadow: `0 4px 12px ${theme.primary}30`,
               }}
             >
               Show All Patients
             </button>
           </div>
         )}
-
+  
         <Card padding="0">
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: theme.cardBgSecondary }}>
-                <th style={{ ...tableHeaderStyle, width: '60px' }}>S.No</th>
+                <th style={{ ...tableHeaderStyle, width: "60px" }}>S.No</th>
                 <th style={tableHeaderStyle}>Patient Name</th>
                 <th style={tableHeaderStyle}>Phone / Week</th>
                 <th style={tableHeaderStyle}>Assigned Doctor</th>
                 <th style={tableHeaderStyle}>Last Assessment</th>
                 <th style={tableHeaderStyle}>Status</th>
-                <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>Actions</th>
+                <th style={{ ...tableHeaderStyle, textAlign: "right" }}>
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" style={{ padding: '60px', textAlign: 'center' }}>
-                    <Loader2 className="animate-spin" size={32} color={theme.primary} style={{ margin: '0 auto 16px' }} />
-                    <div style={{ color: theme.textMuted }}>Loading patients...</div>
-                  </td>
-                </tr>
-              ) : paginatedPatients.length > 0 ? paginatedPatients.map((p, idx) => (
-                <tr key={`${p.id}-${idx}`} style={tableRowStyle} onMouseEnter={(e) => e.currentTarget.style.background = theme.pageBg} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'} onClick={() => navigate(`/nurse/patients/${p.id}`)}>
-                  <td style={{ ...tableCellStyle, fontWeight: 700, color: theme.textMuted }}>
-                    {(currentPage - 1) * itemsPerPage + idx + 1}
-                  </td>
-                  <td style={tableCellStyle}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ 
-                        width: 40, height: 40, borderRadius: 10, 
-                        background: getAvatarColor(p.name) + '15', color: getAvatarColor(p.name), 
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: 800, fontSize: 16, flexShrink: 0 
-                      }}>
-                        {p.name?.charAt(0) || '?'}
-                      </div>
-                      <div style={{ fontWeight: 700, color: theme.text }}>{p.name}</div>
-                    </div>
-                  </td>
-                  <td style={tableCellStyle}>
-                    <div style={{ fontWeight: 600 }}>{p.phone || '-'}</div>
-                    <div style={{ fontSize: 13, color: theme.textMuted }}>Week {p.pregnancy_week || '-'}</div>
-                  </td>
-                  <td style={tableCellStyle}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Stethoscope size={16} color={theme.textMuted} />
-                      <span style={{ fontWeight: 600 }}>{p.assigned_doctor || 'Unassigned'}</span>
-                    </div>
-                  </td>
-                  <td style={tableCellStyle}>
-                    {/* <div style={{ color: theme.textMuted, fontSize: 14 }}>{p.last_assessment_date || p.last_assessment || 'No assessment yet'}</div> */}
-                    <div style={{ color: theme.textMuted, fontSize: 14 }}>No assessment yet</div>
-                  </td>
-                  <td style={tableCellStyle}>
-                    <Badge variant={
-                      p.status === 'Draft' ? 'warning' :
-                      p.status === 'Pending' ? 'secondary' : 'success'
-                    }>
-                      {['Draft', 'Pending', 'Active'].includes(p.status) ? p.status : 'Active'}
-                    </Badge>
-                  </td>
-                  <td style={tableCellStyle}>
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }} onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => navigate(`/nurse/assessment/new?patient=${p.id}`)} title="New Assessment" style={{ padding: 8, borderRadius: 8, border: 'none', background: `${theme.secondary}15`, color: theme.secondary, cursor: 'pointer' }}><ClipboardList size={18} /></button>
-                      <button onClick={() => navigate(`/nurse/messages?to=${p.id}`)} title="Send Message" style={{ padding: 8, borderRadius: 8, border: 'none', background: `${theme.primary}15`, color: theme.primary, cursor: 'pointer' }}><MessageSquare size={18} /></button>
-                      <button onClick={() => navigate(`/nurse/patients/${p.id}`)} title="View Profile" style={{ padding: 8, borderRadius: 8, border: 'none', background: `${theme.textMuted}15`, color: theme.textMuted, cursor: 'pointer' }}><ChevronRight size={18} /></button>
+                  <td
+                    colSpan="7"
+                    style={{ padding: "60px", textAlign: "center" }}
+                  >
+                    <Loader2
+                      className="animate-spin"
+                      size={32}
+                      color={theme.primary}
+                      style={{ margin: "0 auto 16px" }}
+                    />
+                    <div style={{ color: theme.textMuted }}>
+                      Loading patients...
                     </div>
                   </td>
                 </tr>
-              )) : (
+              ) : paginatedPatients.length > 0 ? (
+                paginatedPatients.map((p, idx) => {
+                  const hasDraft = !!localStorage.getItem(
+                    `ppd_draft_${(p.name || "")
+                      .replace(/\s+/g, "_")
+                      .toLowerCase()}`
+                  );
+  
+                  return (
+                    <tr
+                      key={`${p.id}-${idx}`}
+                      style={tableRowStyle}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = theme.pageBg)
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "transparent")
+                      }
+                      onClick={() => navigate(`/nurse/patients/${p.id}`)}
+                    >
+                      <td
+                        style={{
+                          ...tableCellStyle,
+                          fontWeight: 700,
+                          color: theme.textMuted,
+                        }}
+                      >
+                        {(currentPage - 1) * itemsPerPage + idx + 1}
+                      </td>
+                      <td style={tableCellStyle}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 10,
+                              background:
+                                getAvatarColor(p.name) + "15",
+                              color: getAvatarColor(p.name),
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontWeight: 800,
+                              fontSize: 16,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {p.name?.charAt(0) || "?"}
+                          </div>
+                          <div
+                            style={{
+                              fontWeight: 700,
+                              color: theme.text,
+                            }}
+                          >
+                            {p.name}
+                          </div>
+                        </div>
+                      </td>
+                      <td style={tableCellStyle}>
+                        <div style={{ fontWeight: 600 }}>
+                          {p.phone || "-"}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            color: theme.textMuted,
+                          }}
+                        >
+                          Week {p.pregnancy_week || "-"}
+                        </div>
+                      </td>
+                      <td style={tableCellStyle}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <Stethoscope size={16} color={theme.textMuted} />
+                          <span style={{ fontWeight: 600 }}>
+                            Dr. {p.assigned_doctor || "Unassigned"}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={tableCellStyle}>
+                        <div
+                          style={{
+                            color: theme.textMuted,
+                            fontSize: 14,
+                          }}
+                        >
+                          {p.last_assessment_date ? (
+                            new Date(
+                              p.last_assessment_date
+                            ).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          ) : hasDraft ? (
+                            "Draft in progress"
+                          ) : (
+                            "No assessment yet"
+                          )}
+                        </div>
+                        {p.last_assessment && (
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: theme.textMuted,
+                            }}
+                          >
+                            {p.last_assessment}
+                          </div>
+                        )}
+                      </td>
+                      <td style={tableCellStyle}>
+                      <Badge
+                        variant={
+                          p.status === "Draft"
+                            ? "warning"
+                            : p.status === "Pending"
+                            ? "secondary"
+                            : "success"
+                        }
+                      >
+                        {["Draft", "Pending", "Active"].includes(p.status)
+                          ? p.status
+                          : "Active"}
+                      </Badge>
+                      </td>
+                      <td style={tableCellStyle}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            justifyContent: "flex-end",
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/nurse/assessment/new?patient=${p.id}`
+                              )
+                            }
+                            title="New Assessment"
+                            style={{
+                              padding: 8,
+                              borderRadius: 8,
+                              border: "none",
+                              background: `${theme.secondary}15`,
+                              color: theme.secondary,
+                              cursor: "pointer",
+                            }}
+                          >
+                            <ClipboardList size={18} />
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(`/nurse/messages?to=${p.id}`)
+                            }
+                            title="Send Message"
+                            style={{
+                              padding: 8,
+                              borderRadius: 8,
+                              border: "none",
+                              background: `${theme.primary}15`,
+                              color: theme.primary,
+                              cursor: "pointer",
+                            }}
+                          >
+                            <MessageSquare size={18} />
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(`/nurse/patients/${p.id}`)
+                            }
+                            title="View Profile"
+                            style={{
+                              padding: 8,
+                              borderRadius: 8,
+                              border: "none",
+                              background: `${theme.textMuted}15`,
+                              color: theme.textMuted,
+                              cursor: "pointer",
+                            }}
+                          >
+                            <ChevronRight size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
                 <tr>
-                  <td colSpan="6" style={{ padding: '60px', textAlign: 'center', color: theme.textMuted }}>
+                  <td
+                    colSpan="6"
+                    style={{
+                      padding: "60px",
+                      textAlign: "center",
+                      color: theme.textMuted,
+                    }}
+                  >
                     No patients found matching your search.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
-
+  
           {/* Pagination Controls */}
           {!loading && totalPages > 1 && (
-            <div style={{ 
-              padding: '20px 40px', 
-              borderTop: `1px solid ${theme.border}`, 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              gap: 16,
-              background: theme.cardBgSecondary
-            }}>
-              <button 
-                onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.max(prev - 1, 1)); }}
+            <div
+              style={{
+                padding: "20px 40px",
+                borderTop: `1px solid ${theme.border}`,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 16,
+                background: theme.cardBgSecondary,
+              }}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentPage((prev) => Math.max(prev - 1, 1));
+                }}
                 disabled={currentPage === 1}
-                style={{ 
-                  padding: '8px 16px', borderRadius: 8, border: `1px solid ${theme.border}`, 
-                  background: currentPage === 1 ? 'transparent' : 'white', 
-                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                  color: currentPage === 1 ? theme.textMuted : theme.text,
-                  fontWeight: 600, fontSize: 13
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 8,
+                  border: `1px solid ${theme.border}`,
+                  background:
+                    currentPage === 1 ? "transparent" : "white",
+                  cursor:
+                    currentPage === 1 ? "not-allowed" : "pointer",
+                  color:
+                    currentPage === 1
+                      ? theme.textMuted
+                      : theme.text,
+                  fontWeight: 600,
+                  fontSize: 13,
                 }}
               >
                 Previous
               </button>
-              <div style={{ fontSize: 14, fontWeight: 700, color: theme.text }}>
-                 Page {currentPage} of {totalPages}
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: theme.text,
+                }}
+              >
+                Page {currentPage} of {totalPages}
               </div>
-              <button 
-                onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.min(prev + 1, totalPages)); }}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentPage((prev) =>
+                    Math.min(prev + 1, totalPages)
+                  );
+                }}
                 disabled={currentPage === totalPages}
-                style={{ 
-                  padding: '8px 16px', borderRadius: 8, border: `1px solid ${theme.border}`, 
-                  background: currentPage === totalPages ? 'transparent' : 'white', 
-                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                  color: currentPage === totalPages ? theme.textMuted : theme.text,
-                  fontWeight: 600, fontSize: 13
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 8,
+                  border: `1px solid ${theme.border}`,
+                  background:
+                    currentPage === totalPages
+                      ? "transparent"
+                      : "white",
+                  cursor:
+                    currentPage === totalPages
+                      ? "not-allowed"
+                      : "pointer",
+                  color:
+                    currentPage === totalPages
+                      ? theme.textMuted
+                      : theme.text,
+                  fontWeight: 600,
+                  fontSize: 13,
                 }}
               >
                 Next
@@ -312,5 +628,3 @@ export default function NursePatientsPage() {
     </div>
   );
 }
-
-

@@ -4,7 +4,7 @@ import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
 import { PageTitle, Card, Badge, Loader2 } from "../../components/UI";
 import { api } from "../../utils/api";
-import { dummyApi, USE_DUMMY_DATA } from "../../utils/dummyData";
+//import { dummyApi, USE_DUMMY_DATA } from "../../utils/dummyData";
 import toast from "react-hot-toast";
 import { User, Mail, Phone, Shield, Clock, Hospital, Key, LogOut, CheckCircle, Users, ClipboardList } from "lucide-react";
 import "../../styles/NurseProfile.css";
@@ -27,21 +27,13 @@ export default function NurseProfilePage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        if (USE_DUMMY_DATA) {
-          const data = await dummyApi.getNurseStats();
-          setStats({
-            total_patients: data.total_patients,
-            total_assessments: 0 // Placeholder
-          });
-        } else {
-          const res = await api.get("/nurse/stats");
-          if (res.ok) {
-            const data = await res.json();
-            setStats(data);
-          }
+        const { data } = await api.get("/nurse/stats");
+        if (data) {
+          setStats(data);
         }
       } catch (err) {
         console.error("Failed to fetch profile stats:", err);
+        toast.error("Failed to load profile stats");
       }
     };
     fetchStats();
@@ -55,16 +47,12 @@ export default function NurseProfilePage() {
 
     setLoading(true);
     try {
-      const res = await api.post("/change-password", passwordData);
-      if (res.ok) {
-        toast.success("Password updated successfully!");
-        setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-      } else {
-        const err = await res.json();
-        toast.error(err.detail || "Failed to update password");
-      }
+      await api.post("/change-password", passwordData);
+      toast.success("Password updated successfully!");
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (err) {
-      toast.error("An error occurred");
+      console.error("Password update error:", err);
+      toast.error("Failed to update password");
     } finally {
       setLoading(false);
     }

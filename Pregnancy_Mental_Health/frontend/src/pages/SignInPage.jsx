@@ -39,14 +39,7 @@ export default function SignInPage() {
         : { phone_number: form.identifier, password: form.password };
 
       // Try login using api utility (handles mocking)
-      const res = await api.post('/login', payload);
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || "Backend server error");
-      }
-
-      const data = await res.json();
+      const { data } = await api.post("/login", payload);
 
       // Clear any old, stale profile data before logging in
       localStorage.removeItem('ppd_user_email');

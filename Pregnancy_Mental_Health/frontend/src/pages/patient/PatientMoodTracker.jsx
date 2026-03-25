@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   LineChart, Line, XAxis, YAxis,
@@ -15,8 +14,6 @@ import {
   TrendingDown,
   Minus,
   Heart,
-  Loader2,
-  Calendar,
   Info
 } from 'lucide-react';
 import { useTheme } from "../../ThemeContext";
@@ -29,15 +26,6 @@ const getMoods = (theme) => [
   { score: 4, icon: <Smile size={28} />, label: "Good",      color: theme.primary, bg: theme.primaryBg },
   { score: 5, icon: <Smile size={28} />, label: "Great",     color: theme.primary, bg: theme.innerBg },
 ];
-
-const DUMMY_HISTORY = Array.from({ length: 14 }, (_, i) => {
-  const d = new Date();
-  d.setDate(d.getDate() - (13 - i));
-  return {
-    date: d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
-    score: Math.floor(Math.random() * 3) + 2,
-  };
-});
 
 const CustomTooltip = ({ active, payload, label, theme, moods }) => {
   if (active && payload?.length) {
@@ -58,22 +46,40 @@ const CustomTooltip = ({ active, payload, label, theme, moods }) => {
 export default function MoodTracker() {
   const { theme } = useTheme();
   const MOODS = getMoods(theme);
+
   const [selected, setSelected]   = useState(null);
   const [note, setNote]           = useState("");
   const [saved, setSaved]         = useState(false);
   const [savedMood, setSavedMood] = useState(null);
-  const [history, setHistory]     = useState(DUMMY_HISTORY);
+  const [history, setHistory]     = useState([]);
   const [loading, setLoading]     = useState(false);
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await api.get("/patient/mood/history");
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.length) setHistory(data);
+        const { data } = await api.get("/patient/mood/history");
+        if (Array.isArray(data) && data.length) {
+          // Expecting each item like { date: '18 Mar', score: 3 } or with ISO date
+          const normalized = data.map(item => {
+            if (item.date) return item;
+            if (item.created_at) {
+              const d = new Date(item.created_at);
+              return {
+                ...item,
+                date: d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+              };
+            }
+            return item;
+          });
+          setHistory(normalized);
+        } else {
+          setHistory([]);
         }
-      } catch {}
+      } catch (err) {
+        console.error("Failed to load mood history", err);
+        toast.error("Failed to load mood history");
+        setHistory([]);
+      }
     };
     fetchHistory();
   }, []);
@@ -82,29 +88,32 @@ export default function MoodTracker() {
     if (!selected) return;
     setLoading(true);
     try {
-      const res = await api.post("/patient/mood", {
+      const { data } = await api.post("/patient/mood", {
         mood_score: selected,
         note: note,
       });
-      if (res.ok) {
-        setSaved(true);
-        setSavedMood(MOODS.find(m => m.score === selected));
-        toast.success("Mood logged!");
-        const today = new Date().toLocaleDateString("en-GB", {
-          day: "numeric", month: "short"
-        });
-        setHistory(prev => [...prev, { date: today, score: selected }]);
-      } else {
-        const d = await res.json();
-        if (d.detail?.includes("already")) {
+      // If backend enforces "once per day", it should return a clear detail; otherwise this is success
+      setSaved(true);
+      setSavedMood(MOODS.find(m => m.score === selected));
+      toast.success("Mood logged!");
+
+      const today = new Date().toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+      });
+      setHistory(prev => [...prev, { date: today, score: selected }]);
+    } catch (err) {
+      try {
+        const parsed = JSON.parse(err.message || "{}");
+        if (parsed.detail && typeof parsed.detail === "string" && parsed.detail.toLowerCase().includes("already")) {
           toast("You already logged your mood today");
           setSaved(true);
         } else {
           toast.error("Could not save mood.");
         }
+      } catch {
+        toast.error("Could not save mood.");
       }
-    } catch {
-      toast.error("Network error.");
     } finally {
       setLoading(false);
     }
@@ -113,10 +122,10 @@ export default function MoodTracker() {
   const avgScore = history.length
     ? (history.reduce((s, h) => s + h.score, 0) / history.length).toFixed(1)
     : null;
-  const avgMood  = MOODS.find(m => m.score === Math.round(avgScore));
+  const avgMood  = avgScore ? MOODS.find(m => m.score === Math.round(avgScore)) : null;
   const last5    = history.slice(-5);
   const trend    = last5.length >= 2
-    ? last5[last5.length-1].score - last5[0].score
+    ? last5[last5.length - 1].score - last5[0].score
     : 0;
 
   return (
@@ -131,8 +140,7 @@ export default function MoodTracker() {
         <Divider />
 
         <div className="dashboard-grid" style={{ gap: 32 }}>
-
-          {/* ── LEFT: TODAY'S CHECK-IN ── */}
+          {/* LEFT: TODAY'S CHECK-IN */}
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             <Card>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
@@ -144,7 +152,9 @@ export default function MoodTracker() {
 
               {!saved ? (
                 <>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: theme.textSecondary, marginBottom: 20 }}>How are you feeling right now?</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: theme.textSecondary, marginBottom: 20 }}>
+                    How are you feeling right now?
+                  </p>
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 24 }}>
                     {MOODS.map(m => (
@@ -159,7 +169,9 @@ export default function MoodTracker() {
                         onClick={() => setSelected(m.score)}
                       >
                         <span style={{ color: selected === m.score ? m.color : theme.textMuted }}>{m.icon}</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: selected === m.score ? m.color : theme.textMuted, textTransform: "uppercase" }}>{m.label}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: selected === m.score ? m.color : theme.textMuted, textTransform: "uppercase" }}>
+                          {m.label}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -190,13 +202,17 @@ export default function MoodTracker() {
                     {savedMood?.icon ? React.cloneElement(savedMood.icon, { size: 64 }) : <Heart size={64} />}
                   </div>
                   <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.textPrimary, marginBottom: 8 }}>Mood Logged!</h3>
-                  <p style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 24 }}>You're feeling <strong>{savedMood?.label}</strong> today.</p>
+                  <p style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 24 }}>
+                    You're feeling <strong>{savedMood?.label}</strong> today.
+                  </p>
                   <Card style={{ background: theme.primaryBg, border: "none", marginBottom: 24 }}>
                     <p style={{ fontSize: 13, color: theme.primary, fontStyle: "italic", margin: 0 }}>
                       "Self-care is how you take your power back."
                     </p>
                   </Card>
-                  <div style={{ fontSize: 12, color: theme.textMuted }}>Logged at {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                  <div style={{ fontSize: 12, color: theme.textMuted }}>
+                    Logged at {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </div>
                 </div>
               )}
             </Card>
@@ -210,74 +226,95 @@ export default function MoodTracker() {
                 Consistent tracking helps your doctor spot patterns early and adjust your care plan to ensure you're getting the best support possible.
               </p>
             </Card>
-          </div> 
+          </div>
 
-          {/* ── RIGHT: HISTORY & TRENDS ── */} 
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}> 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}> 
-              <Card> 
-                <div style={{ fontSize: 12, fontWeight: 700, color: theme.textMuted, textTransform: "uppercase", marginBottom: 8 }}>Average Mood</div> 
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}> 
-                  <div style={{ fontSize: 28, fontWeight: 800, color: theme.textPrimary }}>{avgScore}</div> 
-                  <Badge type="warning">{avgMood?.label}</Badge> 
-                </div> 
-              </Card> 
-              <Card> 
-                <div style={{ fontSize: 12, fontWeight: 700, color: theme.textMuted, textTransform: "uppercase", marginBottom: 8 }}>Weekly Trend</div> 
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}> 
-                  {trend > 0 ? <TrendingUp color={theme.successText} /> : trend < 0 ? <TrendingDown color={theme.dangerText} /> : <Minus color={theme.textMuted} />} 
-                  <div style={{ fontSize: 14, fontWeight: 700, color: trend > 0 ? theme.successText : trend < 0 ? theme.dangerText : theme.textMuted }}> 
-                    {trend > 0 ? "Improving" : trend < 0 ? "Declining" : "Stable"} 
-                  </div> 
-                </div> 
-              </Card> 
-            </div> 
+          {/* RIGHT: HISTORY & TRENDS */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+              <Card>
+                <div style={{ fontSize: 12, fontWeight: 700, color: theme.textMuted, textTransform: "uppercase", marginBottom: 8 }}>
+                  Average Mood
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: theme.textPrimary }}>{avgScore ?? "—"}</div>
+                  {avgMood && <Badge type="warning">{avgMood.label}</Badge>}
+                </div>
+              </Card>
+              <Card>
+                <div style={{ fontSize: 12, fontWeight: 700, color: theme.textMuted, textTransform: "uppercase", marginBottom: 8 }}>
+                  Weekly Trend
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  {trend > 0 ? (
+                    <TrendingUp color={theme.successText} />
+                  ) : trend < 0 ? (
+                    <TrendingDown color={theme.dangerText} />
+                  ) : (
+                    <Minus color={theme.textMuted} />
+                  )}
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: trend > 0 ? theme.successText : trend < 0 ? theme.dangerText : theme.textMuted,
+                    }}
+                  >
+                    {trend > 0 ? "Improving" : trend < 0 ? "Declining" : "Stable"}
+                  </div>
+                </div>
+              </Card>
+            </div>
 
-            <Card> 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}> 
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: theme.textPrimary, margin: 0 }}>Mood History</h3> 
-                <Badge type="warning">Last 14 Days</Badge> 
-              </div> 
-              <div style={{ width: '100%', height: 300 }}> 
-                <ResponsiveContainer> 
-                  <LineChart data={history}> 
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.border} /> 
-                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: theme.textMuted, fontSize: 11 }} /> 
-                    <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} axisLine={false} tickLine={false} tick={{ fill: theme.textMuted, fontSize: 11 }} /> 
-                    <Tooltip content={<CustomTooltip theme={theme} moods={MOODS} />} /> 
-                    <Line 
-                      type="monotone" 
-                      dataKey="score" 
-                      stroke={theme.primary} 
-                      strokeWidth={4} 
-                      dot={{ r: 4, fill: theme.primary, strokeWidth: 0 }} 
-                      activeDot={{ r: 6, fill: theme.primary, stroke: '#fff', strokeWidth: 2 }} 
-                    /> 
-                  </LineChart> 
-                </ResponsiveContainer> 
-              </div> 
-            </Card> 
+            <Card>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: theme.textPrimary, margin: 0 }}>Mood History</h3>
+                <Badge type="warning">Last 14 Entries</Badge>
+              </div>
+              <div style={{ width: "100%", height: 300 }}>
+                <ResponsiveContainer>
+                  <LineChart data={history}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.border} />
+                    <XAxis
+                      dataKey="date"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: theme.textMuted, fontSize: 11 }}
+                    />
+                    <YAxis
+                      domain={[1, 5]}
+                      ticks={[1, 2, 3, 4, 5]}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: theme.textMuted, fontSize: 11 }}
+                    />
+                    <Tooltip content={<CustomTooltip theme={theme} moods={MOODS} />} />
+                    <Line
+                      type="monotone"
+                      dataKey="score"
+                      stroke={theme.primary}
+                      strokeWidth={4}
+                      dot={{ r: 4, fill: theme.primary, strokeWidth: 0 }}
+                      activeDot={{ r: 6, fill: theme.primary, stroke: "#fff", strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
 
             <Card>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: theme.textPrimary, marginBottom: 16 }}>Mood Insights</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: theme.primary, marginTop: 6 }} />
-                  <p style={{ fontSize: 13, color: theme.textSecondary, margin: 0 }}>Your mood tends to be higher in the mornings.</p>
-                </div>
-                <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: theme.primary, marginTop: 6 }} />
-                  <p style={{ fontSize: 13, color: theme.textSecondary, margin: 0 }}>You've logged your mood 5 days in a row! Keep it up.</p>
+                  <p style={{ fontSize: 13, color: theme.textSecondary, margin: 0 }}>
+                    Your mood trends over time will appear here as you log entries.
+                  </p>
                 </div>
               </div>
             </Card>
-          </div> 
-        </div> 
-
-      </main> 
-    </div> 
-  ); 
-} 
-
-
-
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

@@ -14,7 +14,7 @@ export default function NurseRegisterPatient() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [doctors, setDoctors] = useState([]);
-  const [tempPassword, setTempPassword] = useState("");
+  // const [tempPassword, setTempPassword] = useState("");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -31,31 +31,21 @@ export default function NurseRegisterPatient() {
     assignedDoctor: "",
     wardBed: ""
   });
-
+  const [tempPassword] = useState("TempPass123!");
   useEffect(() => {
-    // Generate temp password on mount
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-    let password = "";
-    for (let i = 0; i < 10; i++) {
-      password += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-    setTempPassword(password);
-
-    // Fetch doctors
-  const fetchDoctors = async () => {
-    try {
-      const res = await api.get("/nurse/doctors");
-      if (res.ok) {
-        const data = await res.json();
-        setDoctors(data);
+    // Only fetch doctors now
+    const fetchDoctors = async () => {
+      try {
+        const { data } = await api.get("/nurse/doctors");
+        setDoctors(data || []);
+      } catch (err) {
+        console.error("Failed to fetch doctors:", err);
+        toast.error("Failed to load doctors");
       }
-    } catch (err) {
-      console.error("Failed to fetch doctors:", err);
-      toast.error("Failed to load doctors");
-    }
-  };
-  fetchDoctors();
-}, []);
+    };
+  
+    fetchDoctors();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -66,26 +56,23 @@ export default function NurseRegisterPatient() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
+  
     try {
       const payload = {
         ...formData,
-        password: tempPassword,
-        role: "patient"
+        // optional: keep for documentation/debug, but backend forces same temp
+        password: "TempPass123!",
+        role: "patient",
       };
-
-      const res = await api.post("/nurse/register", payload);
-      if (res.ok) {
-        toast.success("Patient registered successfully!");
-        toast("Temporary password sent to patient email", { icon: '📧' });
-        navigate("/nurse/patients");
-      } else {
-        const err = await res.json();
-        toast.error(err.detail || "Registration failed");
-      }
+  
+      await api.post("/nurse/register", payload);
+  
+      toast.success("Patient registered successfully!");
+      toast("Temporary password: TempPass123!", { icon: "🔑" });
+      navigate("/nurse/patients");
     } catch (err) {
       console.error("Registration error:", err);
-      toast.error("An error occurred during registration");
+      toast.error("Registration failed");
     } finally {
       setLoading(false);
     }
@@ -178,7 +165,7 @@ export default function NurseRegisterPatient() {
                 <select className="rp-select" name="assignedDoctor" value={formData.assignedDoctor} onChange={handleChange} required>
                   <option value="">Select available doctor</option>
                   {doctors.map(doc => (
-                    <option key={doc.id} value={doc.id}>{doc.fullName} ({doc.specialization || 'OB/GYN'})</option>
+                    <option key={doc.id} value={doc.id}> Dr. {doc.fullName} ({doc.specialization || 'OB/GYN'})</option>
                   ))}
                 </select>
               </div>

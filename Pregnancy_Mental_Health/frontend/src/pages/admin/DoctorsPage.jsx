@@ -1,715 +1,903 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/admin/DoctorsPage.jsx
+import React, { useState, useEffect } from "react";
 import { useTheme } from "../../ThemeContext";
 import AdminLayout from "../../components/AdminLayout";
 import FilterToolbar from "../../components/FilterToolbar";
 import { PageTitle, Divider, Card, Badge, Pagination } from "../../components/UI";
-// import { getUsers, addUser, updateUser, deleteUser, addAuditLog } from "../../utils/dummyData";
-import { getUsers, addUser, updateUser, deleteUser, addAuditLog, api } from "../../utils/api";
-import { Search, Plus, Edit, Trash2, ShieldOff, KeyRound, CheckCircle, X, Shield } from "lucide-react";
+import { api, addAuditLog } from "../../utils/api";
+import {
+  Search,
+  Plus,
+  Trash2,
+  ShieldOff,
+  KeyRound,
+  CheckCircle,
+  X,
+  Shield,
+  Stethoscope,
+  UserCheck,
+  UserX,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
+import {
+    exportDoctorsToPDF,
+    exportDoctorsToExcel,
+    exportDoctorsToCSV,
+  } from "../../utils/exportUtils"; // adjust path if needed
 
 export default function DoctorsPage() {
-    const { theme } = useTheme();
-    const { isMobile, isTablet, isDesktop } = useBreakpoint();
+  const { theme } = useTheme();
+  const { isMobile, isTablet } = useBreakpoint();
 
-    const [doctors, setDoctors] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState("");
-    const [showModal, setShowModal] = useState(false);
-    const [formData, setFormData] = useState({
-        name: "", email: "", phone: "", role: "doctor", specialization: ""
-    });
-    const [submitting, setSubmitting] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState("All");
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    role: "doctor",
+    specialization: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-    useEffect(() => { loadDoctors(); }, []);
+  useEffect(() => {
+    loadDoctors();
+  }, []);
 
-    const loadDoctors = async () => {
-        setLoading(true);
-        try {
-          const res = await api.get("/admin/clinicians");
-          console.log("clinicians res", res);        // check status in console
-          if (!res.ok) throw new Error("Failed to load clinicians");
-          const data = await res.json();
-          console.log("clinicians data", data);      // confirm array & fields
-      
-          const doctorsOnly = data.filter(u => u.role === "doctor");
-          const mapped = doctorsOnly.map(u => ({
-            id: u.id,
-            name: `${u.first_name} ${u.last_name || ""}`.trim(),
-            email: u.email,
-            phone: u.phone_number || "",
-            status: u.is_active ? "active" : "suspended",
-            specialization: "",
-          }));
-      
-          setDoctors(mapped);
-        } catch (err) {
-          console.error("loadDoctors error", err);
-          toast.error("Failed to load doctors");
-        } finally {
-          setLoading(false);
-        }
-      };
+  
+const loadDoctors = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/admin/clinicians"); // <- changed
+      console.log("clinicians data:", data);
+  
+      const doctorsOnly = data.filter((u) => u.role === "doctor");
+      const mapped = doctorsOnly.map((u) => ({
+        id: u.id,
+        name: `${u.first_name} ${u.last_name || ""}`.trim(),
+        email: u.email,
+        phone: u.phone_number,
+        status: u.is_active ? "active" : "suspended",
+        specialization: u.specialization || "",
+        joinDate: u.member_since || u.created_at || null,
+      }));
+  
+      setDoctors(mapped);
+    } catch (err) {
+      console.error("loadDoctors error:", err);
+      toast.error("Failed to load doctors");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const filteredDoctors = doctors.filter(u => {
-        const matchesSearch =
-            u.name.toLowerCase().includes(search.toLowerCase()) ||
-            u.email.toLowerCase().includes(search.toLowerCase());
-        if (activeFilter === "All") return matchesSearch;
-        if (activeFilter === "Active") return matchesSearch && u.status === 'active';
-        if (activeFilter === "Suspended") return matchesSearch && u.status === 'suspended';
-        return matchesSearch;
-    });
+  const filteredDoctors = doctors.filter((u) => {
+    const matchesSearch =
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase());
 
-    const filterOptions = [
-        { value: "All", label: "All Doctors", icon: Stethoscope },
-        { value: "Active", label: "Active", icon: UserCheck },
-        { value: "Suspended", label: "Suspended", icon: UserX },
-    ];
+    if (activeFilter === "All") return matchesSearch;
+    if (activeFilter === "Active") return matchesSearch && u.status === "active";
+    if (activeFilter === "Suspended") return matchesSearch && u.status === "suspended";
+    return matchesSearch;
+  });
 
-    const handlePDFExport = () => { exportDoctorsToPDF(filteredDoctors); toast.success("PDF exported!"); };
-    const handleExcelExport = () => { exportDoctorsToExcel(filteredDoctors); toast.success("Excel exported!"); };
-    const handleCSVExport = () => { exportDoctorsToCSV(filteredDoctors); toast.success("CSV exported!"); };
+  const filterOptions = [
+    { value: "All", label: "All Doctors", icon: Stethoscope },
+    { value: "Active", label: "Active", icon: UserCheck },
+    { value: "Suspended", label: "Suspended", icon: UserX },
+  ];
 
-    const totalPages = Math.ceil(filteredDoctors.length / itemsPerPage);
-    const paginatedDoctors = filteredDoctors.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
+  const handlePDFExport = () => {
+    if (!filteredDoctors.length) {
+      toast.error("No doctors to export");
+      return;
+    }
+    exportDoctorsToPDF(filteredDoctors);
+    toast.success("PDF exported!");
+  };
+  
+  const handleExcelExport = () => {
+    if (!filteredDoctors.length) {
+      toast.error("No doctors to export");
+      return;
+    }
+    exportDoctorsToExcel(filteredDoctors);
+    toast.success("Excel exported!");
+  };
+  
+  const handleCSVExport = () => {
+    if (!filteredDoctors.length) {
+      toast.error("No doctors to export");
+      return;
+    }
+    exportDoctorsToCSV(filteredDoctors);
+    toast.success("CSV exported!");
+  };
 
-    const handleCreateDoctor = async (e) => {
-        e.preventDefault();
-        setSubmitting(true);
-        try {
-          const res = await api.post("/admin/users", {
-            first_name: formData.name,
-            last_name: "",
-            email: formData.email,
-            phone_number: formData.phone,
-            password: "TempPass123!",
-            role: "doctor",
-          });
-      
-          if (!res.ok) {
-            throw new Error(`Failed to create doctor (${res.status})`);
+  const totalPages = Math.ceil(filteredDoctors.length / itemsPerPage) || 1;
+  const paginatedDoctors = filteredDoctors.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleCreateDoctor = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const rawName = (formData.name || "").trim();
+      const base = rawName.split(" ")[0].toLowerCase();
+      const email = `doctor.${base}@ppdrisk.com`; // auto email
+  
+      const { data: created } = await api.post("/admin/users", { // <- changed
+        first_name: rawName,
+        last_name: "",
+        email,
+        phone_number: formData.phone,
+        password: "TempPass123!",
+        role: "doctor",
+      });
+  
+      try {
+        await addAuditLog(
+          "User Created",
+          `Created doctor ${created.first_name} ${created.last_name || ""} (ID ${created.id})`
+        );
+      } catch (logErr) {
+        console.warn("Audit log failed", logErr);
+      }
+  
+      toast.success(`Doctor ${rawName} added successfully!`);
+      setFormData({ name: "", email: "", phone: "", role: "doctor", specialization: "" });
+      setShowModal(false);
+      loadDoctors();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to add doctor");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSuspend = async (id, currentStatus) => {
+    const newIsActive = currentStatus !== "active";
+    try {
+      const { data: updated } = await api.patch(        // <- changed
+        `/admin/users/${id}/status?is_active=${newIsActive}`
+      );
+      console.log("updated user from API:", updated);
+  
+      toast.success(`Account ${newIsActive ? "activated" : "suspended"}`);
+      await loadDoctors();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update status");
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to permanently delete ${name}?`)) return;
+    try {
+      await api.delete(`/admin/users/${id}`);          // <- changed
+      toast.success("User record deleted");
+      await loadDoctors();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete user");
+    }
+  };
+
+  const handleResetPassword = async (doctor) => {
+    if (!window.confirm(`Reset password for Dr. ${doctor.name}?`)) return;
+  
+    try {
+      const { data } = await api.post(                 // <- changed
+        `/admin/users/${doctor.id}/reset-password`
+      );
+      console.log("Reset response:", data);
+  
+      try {
+        await addAuditLog(
+          "Password Reset",
+          `Reset password for Dr. ${doctor.name} (ID ${doctor.id})`
+        );
+      } catch (logErr) {
+        console.warn("Audit log failed", logErr);
+      }
+  
+      toast.success("Password reset successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to reset password");
+    }
+  };
+
+  return (
+    <AdminLayout pageTitle="Doctors Directory">
+      {/* Page Header */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          justifyContent: "space-between",
+          alignItems: isMobile ? "flex-start" : "center",
+          gap: isMobile ? 12 : 0,
+          marginBottom: 24,
+        }}
+      >
+        <PageTitle
+          title="Doctors Directory"
+          subtitle={
+            isMobile ? "Manage medical specialists" : "Manage hospital medical specialists and credentials"
           }
-      
-          const created = await res.json();
-      
-          try {
-            await addAuditLog(
-              "User Created",
-              `Created doctor ${created.first_name} ${created.last_name || ""} (ID ${created.id})`
-            );
-          } catch (logErr) {
-            console.warn("Audit log failed", logErr);
-          }
-      
-          toast.success(`Doctor ${formData.name} added successfully!`);
-          setFormData({ name: "", email: "", phone: "", role: "doctor", specialization: "" });
-          setShowModal(false);
-          loadDoctors();
-        } catch (err) {
-          console.error(err);
-          toast.error("Failed to add doctor");
-        } finally {
-          setSubmitting(false);
-        }
-      };
+        />
+        <button
+          onClick={() => setShowModal(true)}
+          style={{
+            ...primaryBtnStyle(theme),
+            alignSelf: isMobile ? "flex-start" : "auto",
+            fontSize: isMobile ? 13 : 14,
+            padding: isMobile ? "8px 14px" : "10px 16px",
+          }}
+        >
+          <Plus size={16} />
+          {isMobile ? "Add" : "Add Doctor"}
+        </button>
+      </div>
 
-      const handleSuspend = async (id, currentStatus) => {
-        const newIsActive = currentStatus !== "active";
-        try {
-          const res = await api.patch(`/admin/users/${id}/status?is_active=${newIsActive}`);
-          const updated = await res.json();
-          console.log("updated user from API", updated); // <— check updated.is_active here
-          if (!res.ok) throw new Error("Failed to update status");
-          toast.success(`Account ${newIsActive ? "activated" : "suspended"}`);
-          await loadDoctors();
-        } catch (err) {
-          console.error(err);
-          toast.error("Failed to update status");
-        }
-      };
+      <Divider style={{ marginBottom: 24 }} />
 
-    const handleDelete = async (id, name) => {
-        if (!window.confirm(`Are you sure you want to permanently delete ${name}?`)) return;
-        try {
-            const res = await api.delete(`/admin/users/${id}`);
-            if (!res.ok) throw new Error("Failed to delete user");
-            toast.success("User record deleted");
-            loadDoctors(); // or loadNurses / loadPatients
-        } catch (err) {
-            toast.error("Failed to delete user");
-        }
-    };
+      <Card style={{ padding: 0, overflow: "hidden" }}>
+        <FilterToolbar
+          searchValue={search}
+          onSearchChange={setSearch}
+          filters={filterOptions}
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          onPDFExport={handlePDFExport}
+          onExcelExport={handleExcelExport}
+          onCSVExport={handleCSVExport}
+          placeholder="Search by name or email..."
+        />
 
-    // Handler
-    const handleResetPassword = async (doctor) => {
-        if (!window.confirm(`Reset password for ${doctor.name}?`)) return;
-    
-        try {
-        const res = await api.post(`/admin/users/${doctor.id}/reset-password`);
-        if (!res.ok) throw new Error("Failed to reset password");
-    
-        const data = await res.json();
-        console.log("Reset response:", data);
-    
-        try {
-            await addAuditLog(
-            "Password Reset",
-            `Reset password for ${doctor.name} (ID ${doctor.id})`
-            );
-        } catch (logErr) {
-            console.warn("Audit log failed", logErr);
-        }
-    
-        toast.success("Password reset successfully");
-        } catch (err) {
-        console.error(err);
-        toast.error("Failed to reset password");
-        }
-    };
-
-    return (
-        <AdminLayout pageTitle="Doctors Directory">
-
-            {/* ── Page Header ── */}
-            <div style={{
-                display: "flex",
-                flexDirection: isMobile ? "column" : "row",
-                justifyContent: "space-between",
-                alignItems: isMobile ? "flex-start" : "center",
-                gap: isMobile ? 12 : 0,
-                marginBottom: 24,
-            }}>
-                <PageTitle
-                    title="Doctors Directory"
-                    subtitle={isMobile
-                        ? "Manage medical specialists"
-                        : "Manage hospital medical specialists and credentials"
-                    }
-                />
-                <button
-                    onClick={() => setShowModal(true)}
+        {/* MOBILE LIST */}
+        {isMobile ? (
+          <div style={{ padding: "8px 0" }}>
+            {loading ? (
+              <div style={loadingTdStyle(theme)}>Loading clinicians...</div>
+            ) : filteredDoctors.length === 0 ? (
+              <div style={loadingTdStyle(theme)}>No doctors found.</div>
+            ) : (
+              paginatedDoctors.map((doctor) => (
+                <div
+                  key={doctor.id}
+                  style={{
+                    padding: "14px 16px",
+                    borderBottom: `1px solid ${theme.divider}`,
+                    background:
+                      doctor.status === "suspended"
+                        ? theme.isDark
+                          ? "#451a1a"
+                          : "#fef2f2"
+                        : theme.cardBg,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                  }}
+                >
+                  {/* Name + Status */}
+                  <div
                     style={{
-                        ...primaryBtnStyle(theme),
-                        alignSelf: isMobile ? "flex-start" : "auto",
-                        fontSize: isMobile ? 13 : 14,
-                        padding: isMobile ? "8px 14px" : "10px 16px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
-                >
-                    <Plus size={16} />
-                    {isMobile ? "Add" : "Add Doctor"}
-                </button>
-            </div>
-
-            <Divider style={{ marginBottom: 24 }} />
-
-            <Card style={{ padding: 0, overflow: "hidden" }}>
-
-                <FilterToolbar
-                    searchValue={search}
-                    onSearchChange={setSearch}
-                    filters={filterOptions}
-                    activeFilter={activeFilter}
-                    onFilterChange={setActiveFilter}
-                    onPDFExport={handlePDFExport}
-                    onExcelExport={handleExcelExport}
-                    onCSVExport={handleCSVExport}
-                    placeholder="Search by name or email..."
-                />
-
-                {/* ── MOBILE: Stacked card rows ── */}
-                {isMobile ? (
-                    <div style={{ padding: "8px 0" }}>
-                        {loading ? (
-                            <div style={{ padding: 40, textAlign: "center", color: theme.textMuted }}>
-                                Loading clinicians...
-                            </div>
-                        ) : filteredDoctors.length === 0 ? (
-                            <div style={{ padding: 40, textAlign: "center", color: theme.textMuted }}>
-                                No doctors found.
-                            </div>
-                        ) : (
-                            paginatedDoctors.map(doctor => (
-                                <div
-                                    key={doctor.id}
-                                    style={{
-                                        padding: "14px 16px",
-                                        borderBottom: `1px solid ${theme.divider}`,
-                                        background: doctor.status === 'suspended'
-                                            ? (theme.isDark ? '#451a1a' : '#fef2f2')
-                                            : theme.cardBg,
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: 10,
-                                    }}
-                                >
-                                    {/* Name + Status row */}
-                                    <div style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                    }}>
-                                        <div>
-                                            <div style={{
-                                                fontWeight: 700, color: theme.textPrimary,
-                                                fontSize: 14,
-                                            }}>
-                                                Dr. {doctor.name}
-                                            </div>
-                                            <div style={{ fontSize: 11, color: theme.textMuted, marginTop: 2 }}>
-                                                ID: {doctor.id}
-                                            </div>
-                                        </div>
-                                        <StatusBadge status={doctor.status} theme={theme} />
-                                    </div>
-
-                                    {/* Specialization */}
-                                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                                        <span style={mobileLabelStyle}>Spec.</span>
-                                        <Badge type="warning">
-                                            {doctor.specialization || "General Medicine"}
-                                        </Badge>
-                                    </div>
-
-                                    {/* Contact */}
-                                    <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                                        <span style={{ ...mobileLabelStyle, paddingTop: 1 }}>Contact</span>
-                                        <div>
-                                            <div style={{ fontSize: 13, color: theme.textSecondary }}>
-                                                {doctor.email}
-                                            </div>
-                                            <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 2 }}>
-                                                {doctor.phone}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Action buttons */}
-                                    <div style={{
-                                        display: "flex", gap: 8,
-                                        justifyContent: "flex-end",
-                                        paddingTop: 4,
-                                        borderTop: `1px solid ${theme.divider}`,
-                                    }}>
-                                        <ActionButtons
-                                            onReset={() => handleResetPassword(doctor.name)}
-                                            onSuspend={() => handleSuspend(doctor.id, doctor.status)}
-                                            onDelete={() => handleDelete(doctor.id, doctor.name)}
-                                            status={doctor.status}
-                                            theme={theme}
-                                        />
-                                    </div>
-                                </div>
-                            ))
-                        )}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          color: theme.textPrimary,
+                          fontSize: 14,
+                        }}
+                      >
+                        Dr. {doctor.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: theme.textMuted,
+                          marginTop: 2,
+                        }}
+                      >
+                        ID: {doctor.id}
+                      </div>
                     </div>
-                ) : (
-                    // ── TABLET + DESKTOP: Standard table ──
-                    <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-                        <table style={{
-                            width: "100%", borderCollapse: "collapse",
-                            textAlign: "left",
-                            minWidth: isTablet ? 600 : 750,
-                        }}>
-                            <thead>
-                                <tr style={tableHeaderRowStyle(theme)}>
-                                    <th style={thStyle(theme, isTablet)}>Doctor Details</th>
-                                    <th style={thStyle(theme, isTablet)}>Specialization</th>
-                                    {/* Hide Contact column on tablet — shown inside Doctor Details */}
-                                    {!isTablet && <th style={thStyle(theme, isTablet)}>Contact</th>}
-                                    <th style={thStyle(theme, isTablet)}>Status</th>
-                                    <th style={{
-                                        ...thStyle(theme, isTablet),
-                                        textAlign: "right",
-                                    }}>
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan={isTablet ? 4 : 5} style={loadingTdStyle(theme)}>
-                                            Loading clinicians...
-                                        </td>
-                                    </tr>
-                                ) : filteredDoctors.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={isTablet ? 4 : 5} style={loadingTdStyle(theme)}>
-                                            No doctors found.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    paginatedDoctors.map(doctor => (
-                                        <tr
-                                            key={doctor.id}
-                                            style={{
-                                                ...tableRowStyle(theme, doctor.status),
-                                                transition: "background 0.2s",
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.background =
-                                                theme.tableHover || (theme.isDark ? "rgba(255,255,255,0.03)" : "#f8fafc")}
-                                            onMouseLeave={e => e.currentTarget.style.background =
-                                                doctor.status === 'suspended'
-                                                    ? (theme.isDark ? '#451a1a' : '#fef2f2')
-                                                    : theme.cardBg}
-                                        >
-                                            {/* Doctor Details */}
-                                            <td style={tdStyle(isTablet)}>
-                                                <div style={{
-                                                    fontWeight: 700, color: theme.textPrimary,
-                                                    fontSize: isTablet ? 13 : 14,
-                                                }}>
-                                                    Dr. {doctor.name}
-                                                </div>
-                                                <div style={{
-                                                    fontSize: 11, color: theme.textMuted, marginTop: 3,
-                                                }}>
-                                                    ID: {doctor.id}
-                                                </div>
-                                                {/* On tablet: show email inside this cell */}
-                                                {isTablet && (
-                                                    <div style={{
-                                                        fontSize: 11, color: theme.textSecondary,
-                                                        marginTop: 3,
-                                                        overflow: "hidden",
-                                                        textOverflow: "ellipsis",
-                                                        whiteSpace: "nowrap",
-                                                        maxWidth: 160,
-                                                    }}>
-                                                        {doctor.email}
-                                                    </div>
-                                                )}
-                                            </td>
+                    <StatusBadge status={doctor.status} theme={theme} />
+                  </div>
 
-                                            {/* Specialization */}
-                                            <td style={tdStyle(isTablet)}>
-                                                <Badge type="warning">
-                                                    {doctor.specialization || "General Medicine"}
-                                                </Badge>
-                                            </td>
+                  {/* Specialization */}
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={mobileLabelStyle}>Spec.</span>
+                    <Badge type="warning">
+                      {doctor.specialization || "General Medicine"}
+                    </Badge>
+                  </div>
 
-                                            {/* Contact — only on desktop */}
-                                            {!isTablet && (
-                                                <td style={tdStyle(isTablet)}>
-                                                    <div style={{
-                                                        fontSize: 13, color: theme.textSecondary,
-                                                        whiteSpace: "nowrap",
-                                                    }}>
-                                                        {doctor.email}
-                                                    </div>
-                                                    <div style={{
-                                                        fontSize: 12, color: theme.textMuted, marginTop: 4,
-                                                    }}>
-                                                        {doctor.phone}
-                                                    </div>
-                                                </td>
-                                            )}
-
-                                            {/* Status */}
-                                            <td style={tdStyle(isTablet)}>
-                                                <StatusBadge status={doctor.status} theme={theme} />
-                                            </td>
-
-                                            {/* Actions */}
-                                            <td style={{ ...tdStyle(isTablet), textAlign: "right" }}>
-                                                <ActionButtons
-                                                    onReset={() => handleResetPassword(doctor)}
-                                                    onSuspend={() => handleSuspend(doctor.id, doctor.status)}
-                                                    onDelete={() => handleDelete(doctor.id, doctor.name)}
-                                                    status={doctor.status}
-                                                />
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                  {/* Contact */}
+                  <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                    <span style={{ ...mobileLabelStyle, paddingTop: 1 }}>Contact</span>
+                    <div>
+                      <div style={{ fontSize: 13, color: theme.textSecondary }}>
+                        {doctor.email}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: theme.textMuted,
+                          marginTop: 2,
+                        }}
+                      >
+                        {doctor.phone}
+                      </div>
                     </div>
-                )}
+                  </div>
 
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                />
-            </Card>
-
-            {/* ── Add Doctor Modal ── */}
-            {showModal && (
-                <Modal
-                    onClose={() => setShowModal(false)}
-                    title="Add New Doctor"
-                    theme={theme}
-                    isMobile={isMobile}
-                >
-                    <form onSubmit={handleCreateDoctor}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                            <div>
-                                <label style={labelStyle(theme)}>Full Name *</label>
-                                <input
-                                    required type="text"
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    style={inputStyle(theme)}
-                                    placeholder="Jane Smith"
-                                />
-                            </div>
-                            <div>
-                                <label style={labelStyle(theme)}>Specialization</label>
-                                <input
-                                    type="text"
-                                    value={formData.specialization}
-                                    onChange={e => setFormData({ ...formData, specialization: e.target.value })}
-                                    style={inputStyle(theme)}
-                                    placeholder="e.g. Obstetrics & Gynecology"
-                                />
-                            </div>
-                            {/* Email + Phone: side by side on desktop, stacked on mobile */}
-                            <div style={{
-                                display: "grid",
-                                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-                                gap: 16,
-                            }}>
-                                <div>
-                                    <label style={labelStyle(theme)}>Email Address *</label>
-                                    <input
-                                        required type="email"
-                                        value={formData.email}
-                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        style={inputStyle(theme)}
-                                        placeholder="jane@hospital.com"
-                                    />
-                                </div>
-                                <div>
-                                    <label style={labelStyle(theme)}>Phone Number *</label>
-                                    <input
-                                        required type="text"
-                                        value={formData.phone}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        style={inputStyle(theme)}
-                                        placeholder="+1 234 567 8900"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                        <div style={{
-                            marginTop: 24,
-                            display: "flex",
-                            gap: 12,
-                            justifyContent: "flex-end",
-                            flexDirection: isMobile ? "column-reverse" : "row",
-                        }}>
-                            <button
-                                type="button"
-                                onClick={() => setShowModal(false)}
-                                style={{
-                                    ...secondaryBtnStyle(theme),
-                                    width: isMobile ? "100%" : "auto",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={submitting}
-                                style={{
-                                    ...primaryBtnStyle(theme),
-                                    width: isMobile ? "100%" : "auto",
-                                    justifyContent: "center",
-                                    opacity: submitting ? 0.7 : 1,
-                                }}
-                            >
-                                {submitting ? "Adding..." : "Add Doctor"}
-                            </button>
-                        </div>
-                    </form>
-                </Modal>
+                  {/* Actions */}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      justifyContent: "flex-end",
+                      paddingTop: 4,
+                      borderTop: `1px solid ${theme.divider}`,
+                    }}
+                  >
+                    <ActionButtons
+                      onReset={() => handleResetPassword(doctor)}
+                      onSuspend={() => handleSuspend(doctor.id, doctor.status)}
+                      onDelete={() => handleDelete(doctor.id, doctor.name)}
+                      status={doctor.status}
+                      theme={theme}
+                    />
+                  </div>
+                </div>
+              ))
             )}
-        </AdminLayout>
-    );
+          </div>
+        ) : (
+          // TABLET / DESKTOP
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                textAlign: "left",
+                minWidth: isTablet ? 600 : 750,
+              }}
+            >
+              <thead>
+                <tr style={tableHeaderRowStyle(theme)}>
+                  <th style={thStyle(theme, isTablet)}>Doctor Details</th>
+                  <th style={thStyle(theme, isTablet)}>Specialization</th>
+                  {!isTablet && <th style={thStyle(theme, isTablet)}>Contact</th>}
+                  <th style={thStyle(theme, isTablet)}>Status</th>
+                  <th
+                    style={{
+                      ...thStyle(theme, isTablet),
+                      textAlign: "right",
+                    }}
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td
+                      colSpan={isTablet ? 4 : 5}
+                      style={loadingTdStyle(theme)}
+                    >
+                      Loading clinicians...
+                    </td>
+                  </tr>
+                ) : filteredDoctors.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={isTablet ? 4 : 5}
+                      style={loadingTdStyle(theme)}
+                    >
+                      No doctors found.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedDoctors.map((doctor) => (
+                    <tr
+                      key={doctor.id}
+                      style={{
+                        ...tableRowStyle(theme, doctor.status),
+                        transition: "background 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = theme.tableHover
+                          ? theme.tableHover
+                          : theme.isDark
+                          ? "rgba(255,255,255,0.03)"
+                          : "#f8fafc";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background =
+                          doctor.status === "suspended"
+                            ? theme.isDark
+                              ? "#451a1a"
+                              : "#fef2f2"
+                            : theme.cardBg;
+                      }}
+                    >
+                      {/* Doctor Details */}
+                      <td style={tdStyle(isTablet)}>
+                        <div
+                          style={{
+                            fontWeight: 700,
+                            color: theme.textPrimary,
+                            fontSize: isTablet ? 13 : 14,
+                          }}
+                        >
+                          Dr. {doctor.name}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: theme.textMuted,
+                            marginTop: 3,
+                          }}
+                        >
+                          ID: {doctor.id}
+                        </div>
+                        {isTablet && (
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: theme.textSecondary,
+                              marginTop: 3,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              maxWidth: 160,
+                            }}
+                          >
+                            {doctor.email}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Specialization */}
+                      <td style={tdStyle(isTablet)}>
+                        <Badge type="warning">
+                          {doctor.specialization || "General Medicine"}
+                        </Badge>
+                      </td>
+
+                      {/* Contact (desktop only) */}
+                      {!isTablet && (
+                        <td style={tdStyle(isTablet)}>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              color: theme.textSecondary,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {doctor.email}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: theme.textMuted,
+                              marginTop: 4,
+                            }}
+                          >
+                            {doctor.phone}
+                          </div>
+                        </td>
+                      )}
+
+                      {/* Status */}
+                      <td style={tdStyle(isTablet)}>
+                        <StatusBadge status={doctor.status} theme={theme} />
+                      </td>
+
+                      {/* Actions */}
+                      <td
+                        style={{
+                          ...tdStyle(isTablet),
+                          textAlign: "right",
+                        }}
+                      >
+                        <ActionButtons
+                          onReset={() => handleResetPassword(doctor)}
+                          onSuspend={() =>
+                            handleSuspend(doctor.id, doctor.status)
+                          }
+                          onDelete={() =>
+                            handleDelete(doctor.id, doctor.name)
+                          }
+                          status={doctor.status}
+                          theme={theme}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      </Card>
+
+      {/* Add Doctor Modal */}
+      {showModal && (
+        <Modal
+          onClose={() => setShowModal(false)}
+          title="Add New Doctor"
+          theme={theme}
+          isMobile={isMobile}
+        >
+          <form onSubmit={handleCreateDoctor}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label style={labelStyle(theme)}>Full Name</label>
+                <input
+                  required
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  style={inputStyle(theme)}
+                  placeholder="Jane Smith"
+                />
+              </div>
+              <div>
+                <label style={labelStyle(theme)}>Specialization</label>
+                <input
+                  type="text"
+                  value={formData.specialization}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      specialization: e.target.value,
+                    })
+                  }
+                  style={inputStyle(theme)}
+                  placeholder="e.g. Obstetrics & Gynecology"
+                />
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                  gap: 16,
+                }}
+              >
+                <div>
+                  <label style={labelStyle(theme)}>Email Address</label>
+                  <input
+                    required
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    style={inputStyle(theme)}
+                    placeholder="jane@hospital.com"
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle(theme)}>Phone Number</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    style={inputStyle(theme)}
+                    placeholder="+1 234 567 8900"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              style={{
+                marginTop: 24,
+                display: "flex",
+                gap: 12,
+                justifyContent: "flex-end",
+                flexDirection: isMobile ? "column-reverse" : "row",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                style={{
+                  ...secondaryBtnStyle(theme),
+                  width: isMobile ? "100%" : "auto",
+                  justifyContent: "center",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                style={{
+                  ...primaryBtnStyle(theme),
+                  width: isMobile ? "100%" : "auto",
+                  justifyContent: "center",
+                  opacity: submitting ? 0.7 : 1,
+                }}
+              >
+                {submitting ? "Adding..." : "Add Doctor"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </AdminLayout>
+  );
 }
 
-// ─── Sub-components ─────────────────────────────────────────────────────────
+/* Sub-components */
 
-const StatusBadge = ({ status, theme }) => (
+const StatusBadge = ({ status, theme }) => {
+  const isActive = status === "active";
+  return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <div style={{
-            width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-            background: status === "active" ? theme.successText : theme.dangerText,
-        }} />
-        <span style={{
-            fontSize: 13, fontWeight: 600,
-            color: status === "active" ? theme.successText : theme.dangerText,
-            whiteSpace: "nowrap",
-        }}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-        </span>
+      <div
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: 50,
+          flexShrink: 0,
+          background: isActive ? theme.successText : theme.dangerText,
+        }}
+      />
+      <span
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          color: isActive ? theme.successText : theme.dangerText,
+          whiteSpace: "nowrap",
+        }}
+      >
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
     </div>
-);
+  );
+};
 
-const ActionButtons = ({ onReset, onSuspend, onDelete, status }) => (
+const ActionButtons = ({ onReset, onSuspend, onDelete, status, theme }) => {
+  const isActive = status === "active";
+  return (
     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-        <button onClick={onReset} title="Reset Password" style={actionBtnStyle(theme)}>
-            <KeyRound size={15} />
-        </button>
-        <button
-            onClick={onSuspend}
-            title={status === 'active' ? "Suspend" : "Activate"}
-            style={actionBtnStyle(theme)}
-        >
-            {status === 'active'
-                ? <ShieldOff size={15} color={theme.warningText} />
-                : <CheckCircle size={15} color={theme.successText} />
-            }
-        </button>
-        <button
-            onClick={onDelete}
-            title="Delete"
-            style={{
-                ...actionBtnStyle(theme),
-                color: theme.dangerText,
-                borderColor: theme.dangerText + '40',
-            }}
-        >
-            <Trash2 size={15} />
-        </button>
+      <button
+        onClick={onReset}
+        title="Reset Password"
+        style={actionBtnStyle(theme)}
+      >
+        <KeyRound size={15} />
+      </button>
+      <button
+        onClick={onSuspend}
+        title={isActive ? "Suspend" : "Activate"}
+        style={actionBtnStyle(theme)}
+      >
+        {isActive ? (
+          <ShieldOff size={15} color={theme.warningText} />
+        ) : (
+          <CheckCircle size={15} color={theme.successText} />
+        )}
+      </button>
+      <button
+        onClick={onDelete}
+        title="Delete"
+        style={{
+          ...actionBtnStyle(theme),
+          color: theme.dangerText,
+          borderColor: `${theme.dangerText}40`,
+        }}
+      >
+        <Trash2 size={15} />
+      </button>
     </div>
-);
+  );
+};
 
 const Modal = ({ children, title, onClose, theme, isMobile }) => (
-    <div style={{
-        position: "fixed", inset: 0,
-        background: "rgba(0,0,0,0.7)",
-        backdropFilter: "blur(4px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        zIndex: 1000,
-        padding: isMobile ? "16px" : 0,   // breathing room on mobile
-    }}>
-        <div style={{
-            background: theme.cardBg,
-            borderRadius: isMobile ? 12 : 16,
-            width: "100%",
-            maxWidth: 500,
-            boxShadow: theme.shadowPremium,
-            overflow: "hidden",
-            border: `1px solid ${theme.border}`,
-        }}>
-            <div style={{
-                padding: "20px 24px",
-                borderBottom: `1px solid ${theme.border}`,
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                background: theme.innerBg,
-            }}>
-                <h2 style={{
-                    margin: 0,
-                    fontSize: isMobile ? 16 : 18,
-                    color: theme.textPrimary,
-                    fontWeight: 700,
-                }}>
-                    {title}
-                </h2>
-                <button
-                    onClick={onClose}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: theme.textMuted }}
-                >
-                    <X size={20} />
-                </button>
-            </div>
-            <div style={{ padding: isMobile ? "16px" : "24px" }}>
-                {children}
-            </div>
-        </div>
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.7)",
+      backdropFilter: "blur(4px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000,
+      padding: isMobile ? "16px 0" : 0,
+    }}
+  >
+    <div
+      style={{
+        background: theme.cardBg,
+        borderRadius: isMobile ? 12 : 16,
+        width: "100%",
+        maxWidth: 500,
+        boxShadow: theme.shadowPremium,
+        overflow: "hidden",
+        border: `1px solid ${theme.border}`,
+      }}
+    >
+      <div
+        style={{
+          padding: "20px 24px",
+          borderBottom: `1px solid ${theme.border}`,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          background: theme.innerBg,
+        }}
+      >
+        <h2
+          style={{
+            margin: 0,
+            fontSize: isMobile ? 16 : 18,
+            color: theme.textPrimary,
+            fontWeight: 700,
+          }}
+        >
+          {title}
+        </h2>
+        <button
+          onClick={onClose}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: theme.textMuted,
+          }}
+        >
+          <X size={20} />
+        </button>
+      </div>
+      <div style={{ padding: isMobile ? "16px 24px" : "20px 24px" }}>{children}</div>
     </div>
+  </div>
 );
 
-// ─── Style helpers ───────────────────────────────────────────────────────────
+/* Theme-based style helpers – from your updated code */
 
 const primaryBtnStyle = (theme) => ({
-    background: theme.primary, color: "white",
-    padding: "10px 16px", borderRadius: 8, border: "none",
-    display: "flex", alignItems: "center", gap: 8,
-    fontWeight: 600, cursor: "pointer",
-    boxShadow: "0 4px 12px rgba(139, 92, 246, 0.2)",
-    whiteSpace: "nowrap",
+  background: theme.primary,
+  color: "white",
+  padding: "10px 16px",
+  borderRadius: 8,
+  border: "none",
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  fontWeight: 600,
+  cursor: "pointer",
+  boxShadow: "0 4px 12px rgba(139, 92, 246, 0.2)",
+  whiteSpace: "nowrap",
 });
 
 const secondaryBtnStyle = (theme) => ({
-    padding: "10px 16px", borderRadius: 8,
-    border: `1px solid ${theme.border}`,
-    background: theme.cardBg, color: theme.textPrimary,
-    cursor: "pointer", fontWeight: 600,
-    display: "flex", alignItems: "center",
+  padding: "10px 16px",
+  borderRadius: 8,
+  border: `1px solid ${theme.border}`,
+  background: theme.cardBg,
+  color: theme.textPrimary,
+  cursor: "pointer",
+  fontWeight: 600,
+  display: "flex",
+  alignItems: "center",
 });
 
 const inputStyle = (theme) => ({
-    width: "100%", padding: "10px 12px", borderRadius: 8,
-    border: `1px solid ${theme.border}`,
-    fontSize: 16,               // prevents iOS zoom
-    fontFamily: "inherit", outline: "none",
-    boxSizing: "border-box",
-    background: theme.inputBg, color: theme.textPrimary,
+  width: "100%",
+  padding: "10px 12px",
+  borderRadius: 8,
+  border: `1px solid ${theme.border}`,
+  fontSize: 16,
+  fontFamily: "inherit",
+  outline: "none",
+  boxSizing: "border-box",
+  background: theme.inputBg,
+  color: theme.textPrimary,
 });
 
 const tableHeaderRowStyle = (theme) => ({
-    background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : "#f8fafc"),
-    borderBottom: `2px solid ${theme.border}`,
+  background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : "#f8fafc"),
+  borderBottom: `2px solid ${theme.border}`,
 });
 
 const thStyle = (theme, isTablet) => ({
-    padding: isTablet ? "12px 12px" : "14px 16px",
-    fontSize: 11, fontWeight: 800,
-    color: theme.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    textAlign: "left",
-    whiteSpace: "nowrap",
+  padding: isTablet ? "12px 12px" : "14px 16px",
+  fontSize: 11,
+  fontWeight: 800,
+  color: theme.textSecondary,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  textAlign: "left",
+  whiteSpace: "nowrap",
 });
 
 const tdStyle = (isTablet) => ({
-    padding: isTablet ? "12px 12px" : "14px 16px",
-    verticalAlign: "middle",
+  padding: isTablet ? "12px 12px" : "14px 16px",
+  verticalAlign: "middle",
 });
 
 const tableRowStyle = (theme, status) => ({
-    borderBottom: `1px solid ${theme.border}`,
-    background: status === 'suspended'
-        ? (theme.isDark ? '#451a1a' : '#fef2f2')
-        : theme.cardBg,
+  borderBottom: `1px solid ${theme.border}`,
+  background:
+    status === "suspended"
+      ? theme.isDark
+        ? "#451a1a"
+        : "#fef2f2"
+      : theme.cardBg,
 });
 
 const loadingTdStyle = (theme) => ({
-    padding: 40, textAlign: "center", color: theme.textMuted,
+  padding: 40,
+  textAlign: "center",
+  color: theme.textMuted,
 });
 
 const actionBtnStyle = (theme) => ({
-    background: theme.cardBg,
-    border: `1px solid ${theme.border}`,
-    padding: 6, borderRadius: 6,
-    color: theme.textSecondary,
-    cursor: "pointer",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    minWidth: 30, minHeight: 30,   // tap target
+  background: theme.cardBg,
+  border: `1px solid ${theme.border}`,
+  padding: 6,
+  borderRadius: 6,
+  color: theme.textSecondary,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: 30,
+  minHeight: 30,
 });
 
 const labelStyle = (theme) => ({
-    display: "block", fontSize: 12, fontWeight: 800,
-    color: theme.textSecondary, marginBottom: 6,
-    textTransform: "uppercase", letterSpacing: "0.02em",
+  display: "block",
+  fontSize: 12,
+  fontWeight: 800,
+  color: theme.textSecondary,
+  marginBottom: 6,
+  textTransform: "uppercase",
+  letterSpacing: "0.02em",
 });
 
 const mobileLabelStyle = {
-    fontSize: 10, fontWeight: 700,
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    color: "#94A3B8",
-    minWidth: 44,
-    flexShrink: 0,
+  fontSize: 10,
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: "#94A3B8",
+  minWidth: 44,
+  flexShrink: 0,
 };

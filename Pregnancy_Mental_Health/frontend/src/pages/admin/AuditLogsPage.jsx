@@ -7,7 +7,6 @@ import { Calendar, Clock, Search, Filter, Download, ChevronDown, Menu, X } from 
 import { exportToPDF, exportToExcel, exportToCSV } from "../../utils/exportUtils";
 import ThemeToggle from "../../components/ThemeToggle";
 // import { getAuditLogs } from "../../utils/dummyData";
-import { Search, Filter, Calendar, Clock, Download } from "lucide-react";
 import toast from "react-hot-toast";
 import { api } from "../../utils/api";
 
@@ -62,9 +61,7 @@ export default function AuditLogsPage() {
     const loadLogs = async () => {
         setLoading(true);
         try {
-          const res = await api.get("/admin/audit-logs");
-          if (!res.ok) throw new Error("Failed to load logs");
-          const data = await res.json();
+          const { data } = await api.get("/admin/audit-logs");
           setLogs(data);
         } catch (err) {
           console.error(err);
@@ -72,7 +69,7 @@ export default function AuditLogsPage() {
         } finally {
           setLoading(false);
         }
-    };
+      };
 
     const filteredLogs = logs.filter(log => {
         const userName = log.user_name || log.user || "";

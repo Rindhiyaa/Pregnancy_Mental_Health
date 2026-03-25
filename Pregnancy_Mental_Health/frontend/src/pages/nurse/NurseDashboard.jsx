@@ -20,7 +20,9 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Users
+  Users,
+  Bell,
+  X
 } from "lucide-react";
 
 export default function NurseDashboard() {
@@ -38,30 +40,57 @@ export default function NurseDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-  
-        const res = await api.get("/nurse/dashboard");
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data.stats);
-          setRecentPatients(data.recentPatients || []);
-        } else {
-          const err = await res.json().catch(() => ({}));
-          toast.error(err.detail || "Failed to load nurse dashboard");
-        }
+
+        const [{ data }, notifRes, unreadRes] = await Promise.all([
+          api.get("/nurse/dashboard"),
+          api.get("/notifications"),
+          api.get("/notifications/unread-count"),
+        ]);
+
+        setStats(data.stats);
+        setRecentPatients(data.recentPatients || []);
+
+        const notifs = notifRes.data || [];
+        setNotifications(Array.isArray(notifs) ? notifs : []);
+        setUnreadCount(unreadRes.data?.count ?? 0);
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
-        toast.error("Error loading nurse dashboard");
+        toast.error("Failed to load nurse dashboard");
       } finally {
         setLoading(false);
       }
     };
+
     fetchDashboardData();
   }, []);
 
+  const handleMarkOneRead = async (id) => {
+    try {
+      await api.post(`/api/notifications/${id}/read`, {});
+      setNotifications(prev => prev.filter(n => n.id !== id)); // remove
+      setUnreadCount(c => Math.max(0, c - 1));
+    } catch (e) {
+      console.error("Failed to mark notification read", e);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.post("/api/notifications/read-all", {});
+      setNotifications([]);  // clear list
+      setUnreadCount(0);
+    } catch (e) {
+      console.error("Failed to mark all notifications read", e);
+    }
+  };
 
   const QuickAction = ({ icon, label, to, color }) => (
     <Link to={to} style={{ textDecoration: 'none', flex: 1 }}>
@@ -123,25 +152,242 @@ export default function NurseDashboard() {
 
       <main className="portal-main" style={{ background: theme.pageBg }}>
         {/* Welcome Header */}
-        <div style={{
-          background: theme.heroGradient,
-          padding: "40px",
-          borderRadius: 24,
-          color: "white",
-          marginBottom: 32,
-          position: "relative",
-          boxShadow: "0 10px 30px -10px rgba(79, 70, 229, 0.3)"
-        }}>
-          <h1 style={{
-            fontFamily: theme.fontHeading,
-            fontSize: 36, fontWeight: 800,
-            margin: "0 0 12px 0"
-          }}>
-            Welcome back, {user?.fullName?.split(' ')[0]}! 👋
-          </h1>
-          {/* <p style={{ color: "rgba(255,255,255,0.9)", fontSize: 18, maxWidth: 600, lineHeight: 1.6 }}>
-            You have {stats.pending_assessments} pending drafts and {stats.waiting_review} assessments waiting for doctor review.
-          </p> */}
+        <div
+          style={{
+            background: theme.heroGradient,
+            padding: "32px 40px",
+            borderRadius: 24,
+            color: "white",
+            marginBottom: 32,
+            position: "relative",
+            boxShadow: "0 10px 30px -10px rgba(79, 70, 229, 0.3)",
+            overflow: "visible"
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 16,
+              flexWrap: "wrap"
+            }}
+          >
+            <div>
+              <h1
+                style={{
+                  fontFamily: theme.fontHeading,
+                  fontSize: 32,
+                  fontWeight: 800,
+                  margin: "0 0 8px 0"
+                }}
+              >
+                Welcome back, {user?.fullName?.split(" ")[0]}! 👋
+              </h1>
+              <p style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, margin: 0 }}>
+                You have {stats.pending_assessments} drafts and {stats.waiting_review} assessments awaiting doctor review.
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                flexWrap: "wrap",
+                position: "relative",
+                overflow: "visible"
+              }}
+            >
+              {/* Notification bell */}
+              <div style={{ position: "relative" }}>
+                <button
+                  onClick={() => setShowNotifications(v => !v)}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 999,
+                    border: "1px solid rgba(255,255,255,0.6)",
+                    background: "rgba(255,255,255,0.08)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    position: "relative",
+                    color: "white"
+                  }}
+                >
+                  <Bell size={18} />
+                  {unreadCount > 0 && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        minWidth: 16,
+                        height: 16,
+                        borderRadius: 999,
+                        background: "#ef4444",
+                        color: "white",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "0 4px"
+                      }}
+                    >
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      marginTop: 24,
+                      width: 320,
+                      maxHeight: 360,
+                      overflowY: "auto",
+                      background: theme.cardBg,
+                      borderRadius: 16,
+                      boxShadow: theme.shadowPremium,
+                      border: `1px solid ${theme.glassBorder}`,
+                      zIndex: 100
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: "10px 14px",
+                        borderBottom: `1px solid ${theme.glassBorder}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between"
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: theme.textPrimary
+                        }}
+                      >
+                        Notifications
+                      </span>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={handleMarkAllRead}
+                            style={{
+                              border: "none",
+                              background: "none",
+                              color: theme.primary,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              cursor: "pointer"
+                            }}
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setShowNotifications(false)}
+                          style={{
+                            border: "none",
+                            background: "transparent",
+                            cursor: "pointer",
+                            padding: 2,
+                            color: theme.textMuted
+                          }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {notifications.length === 0 ? (
+                      <div
+                        style={{
+                          padding: 16,
+                          fontSize: 12,
+                          color: theme.textMuted,
+                          textAlign: "center"
+                        }}
+                      >
+                        No notifications yet.
+                      </div>
+                    ) : (
+                      notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          style={{
+                            padding: "10px 14px",
+                            borderBottom: `1px solid ${theme.glassBorder}`,
+                            background: n.is_read
+                              ? "transparent"
+                              : theme.primary + "10",
+                            cursor: "default"
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 700,
+                              color: theme.textPrimary,
+                              marginBottom: 4
+                            }}
+                          >
+                            {n.title}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: theme.textSecondary,
+                              marginBottom: 6
+                            }}
+                          >
+                            {n.message}
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              fontSize: 11,
+                              color: theme.textMuted
+                            }}
+                          >
+                            <span>
+                              {new Date(n.created_at).toLocaleString([], {
+                                dateStyle: "short",
+                                timeStyle: "short"
+                              })}
+                            </span>
+                            {!n.is_read && (
+                              <button
+                                onClick={() => handleMarkOneRead(n.id)}
+                                style={{
+                                  border: "none",
+                                  background: "none",
+                                  color: theme.primary,
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  cursor: "pointer"
+                                }}
+                              >
+                                Mark read
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Stats Row */}
@@ -219,7 +465,7 @@ export default function NurseDashboard() {
                     <div style={{ fontWeight: 700, color: theme.text }}>{p.name}</div>
                   </div>
                   <div style={{ color: theme.textMuted, fontSize: 14 }}>Week {p.pregnancy_week || '-'}</div>
-                  <div style={{ color: theme.textMuted, fontSize: 14 }}>{p.assigned_doctor || 'Unassigned'}</div>
+                  <div style={{ color: theme.textMuted, fontSize: 14 }}>Dr. {p.assigned_doctor || 'Unassigned'}</div>
                   <div>
                     <Badge variant={p.status === 'Draft' ? 'warning' : 'success'}>
                       {['Draft', 'Pending', 'Active'].includes(p.status) ? p.status : 'Active'}
