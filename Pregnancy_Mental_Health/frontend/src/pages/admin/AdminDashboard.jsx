@@ -311,11 +311,12 @@ const handleDelete = async (user) => {
                 fontSize: isMobile ? 24 : isTablet ? 28 : 36,
                 fontWeight: 800,
                 margin: "0 0 8px 0",
+                color: "white",
               }}>
                 Welcome back,{" "}
                 <span style={{ color: theme.isDark ? "#2DD4BF" : "#22D3EE" }}>Admin</span>
               </h1>
-              <p style={{ margin: 0, opacity: 0.9, fontSize: isMobile ? 13 : 14 }}>
+              <p style={{ margin: 0, color: "white", fontSize: isMobile ? 13 : 14 }}>
                 System-wide overview and user management
               </p>
             </div>

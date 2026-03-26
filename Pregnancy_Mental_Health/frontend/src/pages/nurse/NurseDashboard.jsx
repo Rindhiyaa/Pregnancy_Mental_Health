@@ -6,6 +6,7 @@ import { api } from "../../utils/api";
 import { getAvatarColor } from "../../utils/dummyData";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
+import ThemeToggle from "../../components/ThemeToggle";
 import { PageTitle, Divider, Card, Badge, Loader2 } from "../../components/UI";
 import toast from "react-hot-toast";
 
@@ -179,12 +180,13 @@ export default function NurseDashboard() {
                   fontFamily: theme.fontHeading,
                   fontSize: 32,
                   fontWeight: 800,
-                  margin: "0 0 8px 0"
+                  margin: "0 0 8px 0",
+                  color: "white"
                 }}
               >
                 Welcome back, {user?.fullName?.split(" ")[0]}! 👋
               </h1>
-              <p style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, margin: 0 }}>
+              <p style={{ color: "white", fontSize: 14, margin: 0 }}>
                 You have {stats.pending_assessments} drafts and {stats.waiting_review} assessments awaiting doctor review.
               </p>
             </div>
@@ -199,8 +201,7 @@ export default function NurseDashboard() {
               }}
             >
               {/* Notification bell */}
-              <div style={{ position: "relative" }}>
-                <button
+              <div style={{ position: "relative" }}>                <button
                   onClick={() => setShowNotifications(v => !v)}
                   style={{
                     width: 40,
@@ -386,6 +387,7 @@ export default function NurseDashboard() {
                   </div>
                 )}
               </div>
+              <ThemeToggle inHeader={true} />
             </div>
           </div>
         </div>

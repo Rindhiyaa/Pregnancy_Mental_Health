@@ -85,11 +85,12 @@ export default function PatientDashboard() {
               <h1 style={{
                 fontFamily: theme.fontHeading,
                 fontSize: 36, fontWeight: 800,
-                margin: "0 0 8px 0"
+                margin: "0 0 8px 0",
+                color: "white"
               }}>
                 {dashboardData?.welcome_message?.split(',')[0] || "Welcome back"}, <span style={{ color: theme.isDark ? '#2DD4BF' : '#22D3EE' }}>{user?.fullName?.split(' ')[0]}!</span>
               </h1>
-              <div style={{ display: "flex", gap: 16, alignItems: "center", opacity: 0.9, fontSize: 14 }}>
+              <div style={{ display: "flex", gap: 16, alignItems: "center", color: "white", fontSize: 14 }}>
                 <span>Week {dashboardData?.pregnancy_week || 'N/A'} of Pregnancy</span>
               </div>
             </div>

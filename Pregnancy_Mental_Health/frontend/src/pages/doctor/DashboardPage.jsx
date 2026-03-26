@@ -259,7 +259,8 @@ export default function DashboardPage() {
                   fontFamily: theme.fontHeading,
                   fontSize: 36,
                   fontWeight: 800,
-                  margin: "0 0 8px 0"
+                  margin: "0 0 8px 0",
+                  color: "white"
                 }}
               >
                 {greeting},{" "}
@@ -271,7 +272,7 @@ export default function DashboardPage() {
                     {displayName}
                 </span>
               </h1>
-              <p style={{ margin: 0, opacity: 0.9, fontSize: 14 }}>
+              <p style={{ margin: 0, color: "white", fontSize: 14 }}>
                 Clinical Command Center —{" "}
                 {new Date().toLocaleDateString("en-US", {
                   month: "long",
@@ -298,7 +299,7 @@ export default function DashboardPage() {
                         left: 12,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "rgba(255,255,255,0.7)"
+                        color: "rgba(0, 0, 0, 1)"
                     }}
                     />
                     <input
@@ -308,7 +309,7 @@ export default function DashboardPage() {
                         padding: "10px 10px 10px 40px",
                         borderRadius: 12,
                         border: "1px solid rgba(255, 255, 255, 0.89)",
-                        background: "rgba(255,255,255,0.1)",
+                        background: "rgba(255, 255, 255, 0.89)",
                         color: "white",
                         width: 240,
                         outline: "none"
