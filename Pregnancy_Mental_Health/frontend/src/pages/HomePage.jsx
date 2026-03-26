@@ -40,7 +40,7 @@ that protects both mother and baby.
 
           <div className="hero-buttons">
             <button className="btn-primary" onClick={() => navigate("/signin")}>
-              Start Risk Check
+              Sign in
             </button>
             <button className="btn-outline" onClick={() => navigate("/about")}>
               How it works

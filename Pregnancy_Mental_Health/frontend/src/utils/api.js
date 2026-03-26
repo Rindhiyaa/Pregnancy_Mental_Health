@@ -281,10 +281,12 @@ export const apiRequest = async (endpoint, options = {}) => {
         const errorData = await clonedRes.json();
         if (errorData.detail && errorData.detail.includes("First-time login")) {
           console.warn("🛡️ Security: First-time login detected. Redirecting to password change.");
-          // Clear token and redirect to login if user prefers, 
-          // but for first-time reset, we usually go to /change-password
-          // User requested redirect to login page:
+          // Clear all local session data to ensure Navbar/AuthContext sync
           localStorage.removeItem('ppd_access_token');
+          localStorage.removeItem('ppd_user_email');
+          localStorage.removeItem('ppd_user_role');
+          localStorage.removeItem('ppd_user_full_name');
+          
           window.location.href = '/signin?error=first_login';
           return response;
         }
