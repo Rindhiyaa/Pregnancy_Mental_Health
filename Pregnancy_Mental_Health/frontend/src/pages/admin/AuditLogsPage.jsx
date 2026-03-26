@@ -42,6 +42,7 @@ export default function AuditLogsPage() {
     const [searchUser, setSearchUser] = useState("");
     const [actionFilter, setActionFilter] = useState("all");
     const [dateFilter, setDateFilter] = useState("");
+    const [ipFilter, setIpFilter] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 15;
 
@@ -98,8 +99,9 @@ export default function AuditLogsPage() {
     const ts = log.timestamp || log.created_at || "";
     const logDate = ts && typeof ts === "string" ? ts.split("T")[0] : "";
     const matchesDate = !dateFilter || logDate === dateFilter;
+    const matchesIp = !ipFilter || (log.ip_address || "").toLowerCase().includes(ipFilter.toLowerCase());
 
-    return matchesUser && matchesAction && matchesDate;
+    return matchesUser && matchesAction && matchesDate && matchesIp;
   });
 
     const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
@@ -317,6 +319,33 @@ export default function AuditLogsPage() {
                                 />
                             </div>
 
+                            {/* IP Filter */}
+                            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                    style={{ position: "absolute", left: 10, color: "#94a3b8", pointerEvents: "none" }}>
+                                    <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                                </svg>
+                                <input
+                                    type="text"
+                                    placeholder="Filter by IP..."
+                                    value={ipFilter}
+                                    onChange={(e) => { setIpFilter(e.target.value); setCurrentPage(1); }}
+                                    style={{
+                                        padding: isMobile ? "8px 8px 8px 32px" : "9px 10px 9px 32px",
+                                        borderRadius: 8,
+                                        border: `1px solid ${ipFilter ? "#8b5cf6" : "#e2e8f0"}`,
+                                        fontSize: isMobile ? 12 : 13,
+                                        background: ipFilter ? "rgba(139,92,246,0.06)" : "white",
+                                        color: "#1e293b",
+                                        fontFamily: "inherit",
+                                        outline: "none",
+                                        width: isMobile ? 120 : 150,
+                                        transition: "border-color 0.2s",
+                                    }}
+                                />
+                            </div>
+
                             {/* Filter Dropdown */}
                             <div
                                 style={{ position: "relative" }}
@@ -445,12 +474,13 @@ export default function AuditLogsPage() {
                             </div>
 
                             {/* Clear filters */}
-                            {(searchUser || actionFilter !== 'all' || dateFilter) && (
+                            {(searchUser || actionFilter !== 'all' || dateFilter || ipFilter) && (
                                 <button
                                     onClick={() => {
                                         setSearchUser("");
                                         setActionFilter("all");
                                         setDateFilter("");
+                                        setIpFilter("");
                                         setCurrentPage(1);
                                     }}
                                     style={{
@@ -573,13 +603,13 @@ export default function AuditLogsPage() {
                                         <th style={thStyle(theme, isTablet)}>User</th>
                                         <th style={thStyle(theme, isTablet)}>Action Type</th>
                                         <th style={thStyle(theme, isTablet)}>Details</th>
-                                        {/* <th style={thStyle(theme, isTablet)}>IP Address</th> */}
+                                        {!isTablet && <th style={thStyle(theme, isTablet)}>IP Address</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {loading ? (
                                         <tr>
-                                            <td colSpan={4} style={{
+                                            <td colSpan={isTablet ? 4 : 5} style={{
                                                 padding: 40, textAlign: "center",
                                                 color: theme.textMuted
                                             }}>
@@ -588,7 +618,7 @@ export default function AuditLogsPage() {
                                         </tr>
                                     ) : filteredLogs.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} style={{
+                                            <td colSpan={isTablet ? 4 : 5} style={{
                                                 padding: 40, textAlign: "center",
                                                 color: theme.textMuted
                                             }}>
@@ -671,18 +701,20 @@ export default function AuditLogsPage() {
                                                         </div>
                                                     </td>
 
-                                                    {/* IP — always its own column */}
-                                                    {/* <td style={tdStyle(isTablet)}>
-                                                        <code style={{
-                                                            fontSize: 11, color: theme.textMuted,
-                                                            background: theme.innerBg,
-                                                            border: `1px solid ${theme.border}`,
-                                                            padding: "3px 7px", borderRadius: 4,
-                                                            whiteSpace: "nowrap",
-                                                        }}>
-                                                            {log.ip}
-                                                        </code>
-                                                    </td> */}
+                                                    {/* IP Address — hidden on tablet to save space */}
+                                                    {!isTablet && (
+                                                        <td style={tdStyle(isTablet)}>
+                                                            <code style={{
+                                                                fontSize: 11, color: theme.textMuted,
+                                                                background: theme.innerBg,
+                                                                border: `1px solid ${theme.border}`,
+                                                                padding: "3px 7px", borderRadius: 4,
+                                                                whiteSpace: "nowrap",
+                                                            }}>
+                                                                {log.ip_address || "—"}
+                                                            </code>
+                                                        </td>
+                                                    )}
                                                 </tr>
                                             );
                                         })

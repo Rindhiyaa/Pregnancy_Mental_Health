@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
 from ..database import get_db
@@ -275,15 +275,22 @@ def get_audit_logs(
 @router.post("/audit-logs", status_code=status.HTTP_201_CREATED)
 def create_audit_log(
     log_in: schemas.AuditLogCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    # Use IP from frontend if provided, otherwise extract from request
+    ip = log_in.ip_address
+    if not ip:
+        forwarded = request.headers.get("X-Forwarded-For")
+        ip = forwarded.split(",")[0].strip() if forwarded else request.client.host
+
     log_entry = models.AuditLog(
         user_id=current_user.id,
         user_name=f"{current_user.first_name} {current_user.last_name or ''}".strip(),
         action=log_in.action,
         details=log_in.details,
-        ip_address=log_in.ip_address,
+        ip_address=ip,
     )
     db.add(log_entry)
     db.commit()

@@ -143,9 +143,8 @@ def get_current_user(
             detail="User not found",
         )
     
-    # Enforce password reset for first-time users
-    # We allow access to the change-password endpoint itself
-    if user.first_login and not request.url.path.endswith("/change-password"):
+    # Enforce password reset for first-time users (not admin, not on change-password endpoint)
+    if user.first_login and user.role != "admin" and not request.url.path.endswith("/change-password"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="First-time login: Password reset required",

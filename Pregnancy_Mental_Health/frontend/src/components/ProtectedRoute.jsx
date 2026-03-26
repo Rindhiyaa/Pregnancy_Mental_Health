@@ -55,8 +55,8 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/signin" state={{ from: location }} replace />;
   }
 
-  // Force password reset if first_login is true (except when already on the change-password page)
-  if (user.first_login && location.pathname !== "/change-password") {
+  // Force password reset if first_login is true (except admin and change-password page)
+  if (user.first_login && user.role !== 'admin' && location.pathname !== "/change-password") {
     return <Navigate to="/change-password" replace />;
   }
 

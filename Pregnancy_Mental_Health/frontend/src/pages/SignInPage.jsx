@@ -80,8 +80,8 @@ export default function SignInPage() {
       // success → redirect based on role and first_login status
       const role = data.role ? data.role.toLowerCase() : 'patient';
 
-      // FORCE password change for ALL roles if first_login is true
-      if (data.first_login) {
+      // FORCE password change for non-admin roles if first_login is true
+      if (data.first_login && role !== 'admin') {
         navigate("/change-password", { replace: true });
         return;
       }
