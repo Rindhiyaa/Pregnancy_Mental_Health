@@ -73,8 +73,6 @@ export default function AuditLogsPage() {
 
       const filteredLogs = logs
   .map(log => {
-    console.log("log.user raw:", log.user);
-
     const userNameObj = log.user_name || log.user || "";
     const userName =
       typeof userNameObj === "string"
@@ -98,7 +96,7 @@ export default function AuditLogsPage() {
       (log.action || "").toLowerCase() === actionFilter.toLowerCase();
 
     const ts = log.timestamp || log.created_at || "";
-    const logDate = ts.split("T")[0];
+    const logDate = ts && typeof ts === "string" ? ts.split("T")[0] : "";
     const matchesDate = !dateFilter || logDate === dateFilter;
 
     return matchesUser && matchesAction && matchesDate;
@@ -542,7 +540,7 @@ export default function AuditLogsPage() {
                                             </div>
 
                                             {/* IP */}
-                                            {/* <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                                                 <span style={mobileLabel}>IP</span>
                                                 <code style={{
                                                     fontSize: 11, color: theme.textMuted,
@@ -550,9 +548,9 @@ export default function AuditLogsPage() {
                                                     border: `1px solid ${theme.border}`,
                                                     padding: "3px 7px", borderRadius: 4,
                                                 }}>
-                                                    {log.ip}
+                                                    {log.ip_address}
                                                 </code>
-                                            </div> */}
+                                            </div>
                                         </div>
                                     );
                                 })

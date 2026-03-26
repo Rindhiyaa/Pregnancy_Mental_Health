@@ -3,7 +3,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../ThemeContext";
 import DoctorSidebar from "../../components/DoctorSidebar";
 import { PageTitle, Loader2 } from "../../components/UI";
-import { api } from "../../utils/api";
+import { api, getErrorMessage } from "../../utils/api";
 //import { USE_DUMMY_DATA, dummyApi } from "../../utils/dummyData";
 import toast from "react-hot-toast";
 import {
@@ -53,7 +53,7 @@ export default function DoctorProfilePage() {
             toast.success("Security credentials updated successfully");
             setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
         } catch (err) {
-            toast.error(err.response?.data?.detail || "Authentication update failed");
+            toast.error(getErrorMessage(err, "Authentication update failed"));
         } finally {
             setLoading(false);
         }

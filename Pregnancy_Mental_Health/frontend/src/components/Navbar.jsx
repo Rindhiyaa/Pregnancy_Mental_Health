@@ -18,18 +18,6 @@ export default function Navbar() {
     setIsMenuOpen(false);
   };
 
-  const getDashboardLink = () => {
-    if (!user) return "/dashboard";
-    const role = user.role?.toLowerCase();
-    if (role === 'admin') return "/admin/dashboard";
-    if (role === 'nurse') return "/nurse/dashboard";
-    if (role === 'patient') return "/patient/dashboard";
-    if (role === 'doctor') return "/doctor/dashboard";
-    return "/signin";
-  };
-
-  console.log("User:",user);
-
   return (
     <header className="navbar">
       <div className="nav-inner">
@@ -49,52 +37,25 @@ export default function Navbar() {
 
         {/* Nav links (mobile + desktop) */}
         <nav className={`nav-links ${isMenuOpen ? "active" : ""}`}>
-        <NavLink
-              to="/"
-              end
-              className={({ isActive }) =>
-                isActive || window.location.pathname === "/signin"
-                  ? "active"
-                  : ""
-              }
-            >
-              Home
-        </NavLink>
+          <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
+            Home
+          </NavLink>
           <NavLink to="/about" className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
             About
           </NavLink>
-          {/* <NavLink to={getDashboardLink()} className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
-            Dashboard
-          </NavLink> */}
         </nav>
 
-        {/* Right side: Profile or Auth buttons */}
+        {/* Right side: Auth buttons */}
         <div className="nav-right">
-          {/* {user && user.isAuthenticated ? (
-            // Profile icon for logged-in users
-            <div className="profile-section">
-              <Link to="/profile" className="profile-icon" title="Profile" onClick={() => setIsMenuOpen(false)}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                <span className="user-name-display">{user.fullName || "User"}</span>
-              </Link>
-              <button className="logout-btn" onClick={handleLogout}>
-                Logout
-              </button>
-            </div>
-          ) : ( */}
-            {/* // Sign In and Sign Up buttons */}
-            <>
-              <Link to="/signin">
-                <button className="btn-signin">Sign In</button>
-              </Link>
-              {/* <Link to="/signup">
-                <button className="btn-signup">Sign Up</button>
-              </Link> */}
-            </>
-          {/* )} */}
+          {user && user.isAuthenticated ? (
+            <button className="logout-btn" onClick={handleLogout}>
+              Logout
+            </button>
+          ) : (
+            <Link to="/signin">
+              <button className="btn-signin">Sign In</button>
+            </Link>
+          )}
         </div>
       </div>
     </header>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 
 // Common Pages
@@ -9,6 +9,7 @@ import SignInPage from "../pages/SignInPage";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import ProfilePage from "../pages/ProfilePage";
+import ChangePasswordPage from "../pages/ChangePasswordPage";
 
 // Doctor Pages
 import DashboardPage from "../pages/doctor/DashboardPage";
@@ -59,6 +60,7 @@ export default function AppRouter() {
       <Route path="/signin" element={<SignInPage />} />
       {/* <Route path="/signup" element={<SignUpPage />} /> */}
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/change-password" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
 
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
@@ -98,7 +100,7 @@ export default function AppRouter() {
       <Route path="/patient/resources" element={<ProtectedRoute requiredRole="patient"><PatientResources /></ProtectedRoute>} />
       <Route path="/patient/messages" element={<ProtectedRoute requiredRole="patient"><PatientMessages /></ProtectedRoute>} />
       <Route path="/patient/profile" element={<ProtectedRoute requiredRole="patient"><PatientProfile /></ProtectedRoute>} />
-      <Route path="/patient/change-password" element={<ProtectedRoute requiredRole="patient"><PatientChangePassword /></ProtectedRoute>} />
+      <Route path="/patient/change-password" element={<Navigate to="/change-password" replace />} />
 
       {/* Catch-all */}
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />

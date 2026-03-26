@@ -230,7 +230,10 @@ export const apiRequest = async (endpoint, options = {}) => {
     const response = await fetch(url, config);
 
     // Handle 401 Unauthorized - token expired or invalid
-    if (response.status === 401 && !config._retry) {
+    // EXCLUDE login and refresh endpoints from auto-refresh logic
+    const isAuthEndpoint = endpoint.includes('/login') || endpoint.includes('/refresh');
+
+    if (response.status === 401 && !config._retry && !isAuthEndpoint) {
       console.log('🔑 Got 401, attempting token refresh...');
       // Mark this request as retried
       config._retry = true;
@@ -268,6 +271,25 @@ export const apiRequest = async (endpoint, options = {}) => {
         refreshSubscribers.forEach(callback => callback(null));
         refreshSubscribers = [];
         throw new Error('Session expired. Please login again.');
+      }
+    }
+
+    // Handle 403 Forbidden - specifically for first-time login
+    if (response.status === 403) {
+      const clonedRes = response.clone();
+      try {
+        const errorData = await clonedRes.json();
+        if (errorData.detail && errorData.detail.includes("First-time login")) {
+          console.warn("🛡️ Security: First-time login detected. Redirecting to password change.");
+          // Clear token and redirect to login if user prefers, 
+          // but for first-time reset, we usually go to /change-password
+          // User requested redirect to login page:
+          localStorage.removeItem('ppd_access_token');
+          window.location.href = '/signin?error=first_login';
+          return response;
+        }
+      } catch (e) {
+        // Not JSON or other error, proceed as normal
       }
     }
 
@@ -427,13 +449,33 @@ export const updateUser = (id, data) => api.put(`/admin/users/${id}`, data);
 
 export const deleteUser = (id) => api.delete(`/admin/users/${id}`);
 
-export const addAuditLog = async (action, details, ip = null) => {
-  const res = await api.post("/admin/audit-logs", { action, details, ip_address: ip });
+export const getErrorMessage = (err, defaultMsg) => {
+  try {
+    const errorData = JSON.parse(err.message);
+    if (errorData.detail) return errorData.detail;
+  } catch (e) {}
+  return defaultMsg || err.message || "An unexpected error occurred";
+};
 
-  // Do NOT assume JSON; just check ok
-  if (!res.ok) {
-    console.error("Failed to add audit log", res.status);
+export const addAuditLog = async (action, details) => {
+  let ip = null;
+  try {
+    const response = await fetch("https://api.ipify.org?format=json");
+    const data = await response.json();
+    ip = data.ip;
+  } catch (error) {
+    console.error("Failed to get IP address:", error);
   }
 
-  return res;
+  try {
+    const { response } = await api.post("/admin/audit-logs", { action, details, ip_address: ip });
+    
+    if (!response.ok) {
+      console.error("Failed to add audit log", response.status);
+    }
+    return { response };
+  } catch (error) {
+    console.error("Failed to add audit log", error.message);
+    return { error };
+  }
 };

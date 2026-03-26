@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional, List
 from ..database import get_db
 from .. import models, schemas
-from ..jwt_handler import get_current_user_email
+from ..jwt_handler import get_current_user_email, get_current_user
 from ..security import hash_password
 from sqlalchemy.exc import IntegrityError
 # from ..audit import log_admin_action  # Assuming you have this from admin panel
@@ -19,12 +19,11 @@ router = APIRouter(prefix="/nurse", tags=["nurse"])
 @router.get("/dashboard")
 def get_nurse_dashboard(
     db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email)
+    nurse: models.User = Depends(get_current_user)
 ):
     """Fetch dashboard stats for nurses"""
     try:
-        nurse = db.query(models.User).filter(models.User.email == current_user_email).first()
-        if not nurse or nurse.role != "nurse":
+        if nurse.role != "nurse":
             raise HTTPException(status_code=403, detail="Nurse role required")
         
         today = datetime.now().date()

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
-from fastapi import HTTPException, status, Depends, Response, Cookie
+from fastapi import HTTPException, status, Depends, Response, Cookie, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 import secrets
@@ -128,11 +128,13 @@ def get_current_user_email(credentials: HTTPAuthorizationCredentials = Depends(s
 
 
 def get_current_user(
+    request: Request,
     db: Session = Depends(get_db),
     email: str = Depends(get_current_user_email)
 ) -> models.User:
     """
     Dependency to get current user object from DB
+    Enforces password reset for first-time users except on the change-password endpoint
     """
     user = db.query(models.User).filter(models.User.email == email).first()
     if user is None:
@@ -140,6 +142,16 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
         )
+    
+    # Enforce password reset for first-time users
+    # We allow access to the change-password endpoint itself
+    if user.first_login and not request.url.path.endswith("/change-password"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="First-time login: Password reset required",
+            headers={"X-Action-Required": "PasswordReset"}
+        )
+        
     return user
 
 

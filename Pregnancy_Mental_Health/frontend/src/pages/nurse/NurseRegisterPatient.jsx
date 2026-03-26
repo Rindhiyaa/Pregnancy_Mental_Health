@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
 import { PageTitle, Card, Loader2 } from "../../components/UI";
-import { api } from "../../utils/api";
+import { api, getErrorMessage } from "../../utils/api";
 // import { dummyApi, USE_DUMMY_DATA } from "../../utils/dummyData";
 import toast from "react-hot-toast";
 import { User, Mail, Phone, Calendar, Droplet, Baby, Hospital, Stethoscope, Hash, Lock } from "lucide-react";
@@ -72,7 +72,7 @@ export default function NurseRegisterPatient() {
       navigate("/nurse/patients");
     } catch (err) {
       console.error("Registration error:", err);
-      toast.error("Registration failed");
+      toast.error(getErrorMessage(err, "Registration failed"));
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { api } from "../utils/api";
+import { api, getErrorMessage } from "../utils/api";
 
 export default function SignInPage() {
   const navigate = useNavigate();
@@ -11,6 +11,14 @@ export default function SignInPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check for error messages in the URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("error") === "first_login") {
+      setError("First-time login: Password reset required. Please log in again.");
+    }
+  }, [location.search]);
 
   // Get the page user was trying to access before being redirected to signin
   const from = location.state?.from?.pathname || "/dashboard";
@@ -72,6 +80,12 @@ export default function SignInPage() {
       // success → redirect based on role and first_login status
       const role = data.role ? data.role.toLowerCase() : 'patient';
 
+      // FORCE password change for ALL roles if first_login is true
+      if (data.first_login) {
+        navigate("/change-password", { replace: true });
+        return;
+      }
+
       if (role === 'admin') {
         navigate("/admin/dashboard", { replace: true });
       } else if (role === 'nurse') {
@@ -79,11 +93,7 @@ export default function SignInPage() {
       } else if (role === 'doctor') {
         navigate("/doctor/dashboard", { replace: true });
       } else if (role === 'patient') {
-        if (data.first_login) {
-          navigate("/patient/change-password", { replace: true });
-        } else {
-          navigate("/patient/dashboard", { replace: true });
-        }
+        navigate("/patient/dashboard", { replace: true });
       } else {
         // Fallback for any other roles
         navigate(from, { replace: true });
@@ -91,7 +101,7 @@ export default function SignInPage() {
 
     } catch (err) {
       console.warn("Backend login failed:", err.message);
-      setError(err.message || "Login failed. Please check your credentials.");
+      setError(getErrorMessage(err, "Login failed. Please check your credentials."));
       return;
     } finally {
       setIsLoading(false);
@@ -100,7 +110,7 @@ export default function SignInPage() {
 
 
   return (
-    <main className="page auth-page">
+    <main className="auth-page">
       <div className="auth-layout">
         <div className="auth-main">
           <div className="auth-brand">

@@ -5,7 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import models
-from ..schemas import UserCreate, UserOut, LoginRequest, ForgotPasswordRequest, ResetPasswordRequest
+from ..schemas import UserCreate, UserOut, LoginRequest, ForgotPasswordRequest, ResetPasswordRequest, ChangePasswordRequest
 from ..security import hash_password, verify_password
 from ..schemas import UserProfileOut, UserProfileUpdate
 from ..jwt_handler import (
@@ -15,6 +15,9 @@ from ..jwt_handler import (
     get_current_user_email
 )
 from ..config import ALLOWED_ORIGINS, IS_PRODUCTION
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
@@ -83,16 +86,40 @@ def login(credentials: LoginRequest, response: Response, db: Session = Depends(g
     try:
         # Support login with email or phone_number
         user = None
-        if credentials.email:
-            user = db.query(models.User).filter(models.User.email == credentials.email).first()
-        elif credentials.phone_number:
-            user = db.query(models.User).filter(models.User.phone_number == credentials.phone_number).first()
         
+        # Clean the input to handle potential spaces or formatting
+        identifier = credentials.email or credentials.phone_number
+        if not identifier:
+            raise HTTPException(status_code=400, detail="Email or phone number required")
+            
+        identifier = identifier.strip()
+        
+        # Try finding by email first
+        user = db.query(models.User).filter(models.User.email == identifier).first()
+        
+        # If not found, try by phone number
+        if not user:
+            user = db.query(models.User).filter(models.User.phone_number == identifier).first()
+        
+        # DEBUG: Log the identifier found
+        if user:
+            logger.info(f"User found for login: {user.email} (Role: {user.role})")
+            # Also log if verify_password fails
+            is_valid = verify_password(credentials.password, user.hashed_password)
+            if not is_valid:
+                logger.warning(f"Password verification failed for user: {user.email}")
+        else:
+            logger.warning(f"No user found for identifier: {identifier}")
+
         if not user or not verify_password(credentials.password, user.hashed_password):
+            logger.warning(f"Failed login attempt for identifier: {identifier}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials",
             )
+
+        # Log successful login
+        logger.info(f"User logged in: {user.email} (Role: {user.role})")
 
         # Mark as logged in
         if not user.is_active:
@@ -198,22 +225,53 @@ def refresh_access_token(request: Request, refresh_token: str = Cookie(None)):
             detail="Could not refresh token"
         )
 
-@router.patch("/patient/change-password")
+@router.post("/change-password")
 def change_password(
-    data: ResetPasswordRequest, 
+    data: ChangePasswordRequest, 
+    response: Response,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user_email)
 ):
+    # Validate password length
+    if len(data.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters",
+        )
+        
     user = db.query(models.User).filter(models.User.email == current_user_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
     user.hashed_password = hash_password(data.new_password)
     user.first_login = False
+    user.password_changed_at = datetime.utcnow()
     db.add(user)
     db.commit()
+    db.refresh(user)
     
-    return {"message": "Password updated successfully"}
+    logger.info(f"Password changed for user: {user.email}")
+
+    # Generate new tokens after password change
+    access_token = create_access_token(data={"sub": user.email})
+    refresh_token = create_refresh_token(data={"sub": user.email})
+    
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=IS_PRODUCTION,
+        samesite="lax",
+        max_age=7 * 24 * 3600,
+        path="/"
+    )
+    
+    return {
+        "message": "Password updated successfully",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "first_login": user.first_login
+    }
 
 
 

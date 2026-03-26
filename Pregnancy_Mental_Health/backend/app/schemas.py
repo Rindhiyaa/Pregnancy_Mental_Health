@@ -3,6 +3,22 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 
+class AuditLogCreate(BaseModel):
+    action: str
+    details: str
+    ip_address: Optional[str] = None
+
+class AuditLog(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: int
+    user_name: str
+    action: str
+    details: str
+    ip_address: Optional[str] = None
+    timestamp: datetime
+
 class UserCreate(BaseModel):
     first_name: str
     last_name: str | None = None
@@ -76,6 +92,9 @@ class ForgotPasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     email: EmailStr
+    new_password: str
+
+class ChangePasswordRequest(BaseModel):
     new_password: str
 
 
@@ -280,22 +299,6 @@ class PatientUpdate(BaseModel):
     assigned_doctor_id: Optional[int] = None
     status: Optional[str] = None
 
-class AuditLogCreate(BaseModel):
-    action: str
-    details: str
-    ip_address: str | None = None
-
-class AuditLogRead(BaseModel):
-    id: int
-    action: str
-    details: str
-    user_id: int
-    user_name: str
-    ip_address: Optional[str]
-    timestamp: datetime
-
-    class Config:
-        orm_mode = True
 
 class UserUpdate(BaseModel):
     first_name: str | None = None

@@ -8,7 +8,7 @@ import { exportNursesToPDF, exportNursesToExcel, exportNursesToCSV } from "../..
 import { Plus, Trash2, ShieldOff, KeyRound, CheckCircle, X, UserCheck, Heart, UserX } from "lucide-react";
 import toast from "react-hot-toast";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
-import { api, addAuditLog } from "../../utils/api";
+import { api, addAuditLog, getErrorMessage } from "../../utils/api";
 
 export default function NursesPage() {
     const { theme }  = useTheme();
@@ -112,7 +112,7 @@ export default function NursesPage() {
         loadNurses();
     } catch (err) {
         console.error(err);
-        toast.error("Failed to add nurse");
+        toast.error(getErrorMessage(err, "Failed to add nurse"));
     } finally {
         setSubmitting(false);
     }
@@ -126,7 +126,7 @@ export default function NursesPage() {
           loadNurses();
         } catch (err) {
           console.error(err);
-          toast.error("Failed to update status");
+          toast.error(getErrorMessage(err, "Failed to update status"));
         }
       };
       
@@ -139,7 +139,7 @@ export default function NursesPage() {
           loadNurses();
         } catch (err) {
           console.error(err);
-          toast.error("Failed to delete user");
+          toast.error(getErrorMessage(err, "Failed to delete user"));
         }
       };
       
@@ -164,7 +164,7 @@ export default function NursesPage() {
           toast.success("Password reset successfully");
         } catch (err) {
           console.error(err);
-          toast.error("Failed to reset password");
+          toast.error(getErrorMessage(err, "Failed to reset password"));
         }
       };
 

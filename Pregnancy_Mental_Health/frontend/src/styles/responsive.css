@@ -126,11 +126,19 @@ button, a, [role="button"] {
 
   /* Hero: stack vertically */
   .hero {
-    flex-direction: column-reverse !important;
+    grid-template-columns: 1fr !important;
     gap: 2rem !important;
-    padding: 0 1rem !important;
+    padding: 0 1.5rem !important;
     margin: 2rem auto !important;
-    text-align: left;
+    text-align: center;
+  }
+
+  .hero > div:first-child {
+    order: 2;
+  }
+
+  .hero-right {
+    order: 1;
   }
 
   .hero-title {
@@ -145,9 +153,24 @@ button, a, [role="button"] {
     flex-wrap: wrap;
   }
 
-  /* Navbar: hide center links */
-  .nav-links {
+  /* Navbar: hide center links unless active */
+  .nav-links:not(.active) {
     display: none !important;
+  }
+
+  .nav-links.active {
+    display: flex !important;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 2rem;
+    border-bottom: 1px solid #e5e7eb;
+    gap: 1.5rem;
+    margin-left: 0;
+    z-index: 100;
   }
 
   .nav-inner {

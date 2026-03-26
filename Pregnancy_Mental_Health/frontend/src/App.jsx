@@ -1,7 +1,6 @@
 // src/App.js
 import React from "react";
 import { useLocation } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
 import AppRouter from "./components/AppRouter";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -19,7 +18,6 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AuthProvider>
         <Toaster 
           position="top-right"
           toastOptions={{
@@ -45,8 +43,7 @@ export default function App() {
         {showNavbar && <Navbar />}
         <AppRouter />
         {/* {!isDashboard && <Footer />} */}
-      </AuthProvider>
-    </ThemeProvider>
-  </ErrorBoundary>
-);
+      </ThemeProvider>
+    </ErrorBoundary>
+  );
 }

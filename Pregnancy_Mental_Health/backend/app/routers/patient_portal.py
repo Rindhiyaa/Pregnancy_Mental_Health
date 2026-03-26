@@ -6,7 +6,7 @@ from sqlalchemy import func
 
 from ..database import get_db
 from .. import models, schemas
-from ..jwt_handler import get_current_user_email
+from ..jwt_handler import get_current_user_email, get_current_user
 
 router = APIRouter(prefix="/api/patient", tags=["patient"])
 
@@ -14,17 +14,12 @@ router = APIRouter(prefix="/api/patient", tags=["patient"])
 @router.get("/dashboard")
 def get_patient_dashboard(
     db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
+    user: models.User = Depends(get_current_user),
 ):
-    # Logged-in portal user
-    user = db.query(models.User).filter(models.User.email == current_user_email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
     # Linked patient record (by email)
     patient = (
         db.query(models.Patient)
-        .filter(models.Patient.email == current_user_email)
+        .filter(models.Patient.email == user.email)
         .first()
     )
     if not patient:

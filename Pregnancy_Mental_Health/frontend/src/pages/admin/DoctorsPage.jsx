@@ -4,7 +4,7 @@ import { useTheme } from "../../ThemeContext";
 import AdminLayout from "../../components/AdminLayout";
 import FilterToolbar from "../../components/FilterToolbar";
 import { PageTitle, Divider, Card, Badge, Pagination } from "../../components/UI";
-import { api, addAuditLog } from "../../utils/api";
+import { api, addAuditLog, getErrorMessage } from "../../utils/api";
 import {
   Search,
   Plus,
@@ -159,7 +159,7 @@ const loadDoctors = async () => {
       loadDoctors();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to add doctor");
+      toast.error(getErrorMessage(err, "Failed to add doctor"));
     } finally {
       setSubmitting(false);
     }
@@ -168,53 +168,50 @@ const loadDoctors = async () => {
   const handleSuspend = async (id, currentStatus) => {
     const newIsActive = currentStatus !== "active";
     try {
-      const { data: updated } = await api.patch(        // <- changed
-        `/admin/users/${id}/status?is_active=${newIsActive}`
-      );
-      console.log("updated user from API:", updated);
-  
+      await api.patch(`/admin/users/${id}/status?is_active=${newIsActive}`);
       toast.success(`Account ${newIsActive ? "activated" : "suspended"}`);
-      await loadDoctors();
+      loadDoctors();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update status");
+      toast.error(getErrorMessage(err, "Failed to update status"));
     }
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to permanently delete ${name}?`)) return;
+    if (!window.confirm(`Are you sure you want to permanently delete ${name}?`))
+      return;
     try {
-      await api.delete(`/admin/users/${id}`);          // <- changed
+      await api.delete(`/admin/users/${id}`);
       toast.success("User record deleted");
-      await loadDoctors();
+      loadDoctors();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to delete user");
+      toast.error(getErrorMessage(err, "Failed to delete user"));
     }
   };
 
   const handleResetPassword = async (doctor) => {
-    if (!window.confirm(`Reset password for Dr. ${doctor.name}?`)) return;
-  
+    if (!window.confirm(`Reset password for ${doctor.name}?`)) return;
+
     try {
-      const { data } = await api.post(                 // <- changed
+      const { data } = await api.post(
         `/admin/users/${doctor.id}/reset-password`
       );
       console.log("Reset response:", data);
-  
+
       try {
         await addAuditLog(
           "Password Reset",
-          `Reset password for Dr. ${doctor.name} (ID ${doctor.id})`
+          `Reset password for ${doctor.name} (ID ${doctor.id})`
         );
       } catch (logErr) {
         console.warn("Audit log failed", logErr);
       }
-  
+
       toast.success("Password reset successfully");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to reset password");
+      toast.error(getErrorMessage(err, "Failed to reset password"));
     }
   };
 

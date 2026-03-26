@@ -3,7 +3,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
 import { PageTitle, Card, Badge, Loader2 } from "../../components/UI";
-import { api } from "../../utils/api";
+import { api, getErrorMessage } from "../../utils/api";
 //import { dummyApi, USE_DUMMY_DATA } from "../../utils/dummyData";
 import toast from "react-hot-toast";
 import { User, Mail, Phone, Shield, Clock, Hospital, Key, LogOut, CheckCircle, Users, ClipboardList } from "lucide-react";
@@ -52,7 +52,7 @@ export default function NurseProfilePage() {
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (err) {
       console.error("Password update error:", err);
-      toast.error("Failed to update password");
+      toast.error(getErrorMessage(err, "Failed to update password"));
     } finally {
       setLoading(false);
     }

@@ -138,15 +138,12 @@
 }
 
 /* Right side buttons */
-/* .nav-right {
+.nav-right {
   display: flex;
   gap: 1.2rem;
   align-items: center;
   flex-shrink: 0;
   white-space: nowrap;
-  margin-left: auto;
-} */
-.nav-right {
   margin-left: auto;
 }
 .btn-signin,

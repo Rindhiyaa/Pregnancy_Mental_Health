@@ -56,7 +56,22 @@ export default function AdminDashboard() {
   const itemsPerPage = 5;
   const navigate = useNavigate();
 
-  useEffect(() => { fetchAdminData(); }, []);
+  useEffect(() => {
+    fetchAdminData();
+
+    const ws = new WebSocket("ws://localhost:8000/ws");
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "user_deleted") {
+        fetchAdminData();
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
 
   // Close sidebar when resizing to desktop
   useEffect(() => {

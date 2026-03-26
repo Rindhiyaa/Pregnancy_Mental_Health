@@ -578,7 +578,7 @@ export default function DashboardPage() {
               </div>
               <div style={{ height: 300, width: "100%" }}>
                 {trendData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <AreaChart data={trendData}>
                       <defs>
                         <linearGradient
@@ -944,7 +944,7 @@ export default function DashboardPage() {
               </h3>
               <div style={{ height: 200 }}>
                 {distributionData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <PieChart>
                       <Pie
                         data={distributionData}

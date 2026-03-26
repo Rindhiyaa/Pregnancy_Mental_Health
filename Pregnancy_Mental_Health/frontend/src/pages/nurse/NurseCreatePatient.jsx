@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../../utils/api";
+import { api, getErrorMessage } from "../../utils/api";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
 import { Card } from "../../components/UI";
@@ -41,18 +41,13 @@ export default function NurseCreatePatient() {
         return;
       }
 
-      const res = await api.post("/patients", form);
-      if (res.ok) {
-        toast.success("Patient created successfully!");
-        toast.info("Patient login: " + (form.email || form.phone) + " / Patient@123", { duration: 6000 });
-        navigate("/nurse/patients");
-      } else {
-        const data = await res.json();
-        toast.error(data.detail || "Failed to create patient");
-      }
+      await api.post("/patients", form);
+      toast.success("Patient created successfully!");
+      toast.info("Patient login: " + (form.email || form.phone) + " / Patient@123", { duration: 6000 });
+      navigate("/nurse/patients");
     } catch (err) {
       console.error("Create patient error:", err);
-      toast.error("Network error");
+      toast.error(getErrorMessage(err, "Failed to create patient"));
     } finally {
       setLoading(false);
     }

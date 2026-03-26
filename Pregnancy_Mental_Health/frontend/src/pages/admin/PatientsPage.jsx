@@ -9,7 +9,7 @@ import {
   exportPatientsToExcel,
   exportPatientsToCSV,
 } from "../../utils/exportUtils";
-import { api, addAuditLog } from "../../utils/api";
+import { api, addAuditLog, getErrorMessage } from "../../utils/api";
 import {
   Search,
   Plus,
@@ -164,7 +164,7 @@ export default function PatientsPage() {
       loadPatients();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to add patient");
+      toast.error(getErrorMessage(err, "Failed to add patient"));
     } finally {
       setSubmitting(false);
     }
@@ -179,7 +179,7 @@ export default function PatientsPage() {
       loadPatients();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update status");
+      toast.error(getErrorMessage(err, "Failed to update status"));
     }
   };
   
@@ -197,7 +197,7 @@ export default function PatientsPage() {
       loadPatients();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to delete user");
+      toast.error(getErrorMessage(err, "Failed to delete user"));
     }
   };
   
@@ -223,7 +223,7 @@ export default function PatientsPage() {
       toast.success("Password reset successfully");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to reset password");
+      toast.error(getErrorMessage(err, "Failed to reset password"));
     }
   };
 
