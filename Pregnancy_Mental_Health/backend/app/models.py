@@ -84,6 +84,9 @@ class Assessment(Base):
     # Status: draft, submitted, reviewed, complete
     status = Column(String, default="submitted") 
     
+    # SHAP top risk factors — computed once at submission, read by doctor
+    top_risk_factors = Column(JSON, nullable=True)
+
     # Final decision (if overridden)
     risk_level_final = Column(String, nullable=True)
     overridden_by = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)

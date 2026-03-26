@@ -149,19 +149,7 @@ export default function DoctorPatientProfile() {
                             </div>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 12 }}>
-                        <button 
-                            onClick={() => navigate(`/doctor/messages?to=${patient.id}`)}
-                            style={{ 
-                                padding: '12px 24px', borderRadius: '14px', background: theme.primary, 
-                                color: 'white', border: 'none', fontWeight: 800, display: 'flex', 
-                                alignItems: 'center', gap: 10, cursor: 'pointer',
-                                boxShadow: `0 8px 20px ${theme.primary}40`
-                            }}
-                        >
-                            <MessageSquare size={18} /> Send Instruction
-                        </button>
-                    </div>
+                   
                 </header>
 
                 <div className="stats-grid-2" style={{ gap: "32px", alignItems: "start" }}>

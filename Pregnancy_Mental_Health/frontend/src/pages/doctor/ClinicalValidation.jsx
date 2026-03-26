@@ -158,33 +158,63 @@ const handleSubmit = async (status) => {
 
   const getRiskFactors = () => {
     if (!assessment) return [];
-    if (assessment.top_risk_factors?.length) return assessment.top_risk_factors;
+    
+    // Use real SHAP factors if available (new format: { feature, impact })
+    if (assessment.top_risk_factors?.length) {
+      return assessment.top_risk_factors.map(f => ({
+        name: (f.feature || f.feature_name || "").replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        weight: f.impact !== undefined
+          ? Math.round(Math.abs(f.impact) * 100)
+          : (f.importance || 0),
+        impact: f.impact !== undefined ? f.impact : null
+      }));
+    }
 
+    // Fallback: score each clinical field from raw_data using actual stored values
     const raw = assessment.raw_data || {};
-    const factors = [];
+    const score = Number(assessment.risk_score || assessment.score || 50);
 
-    if (raw.history_of_depression === "yes") {
-      factors.push({ name: "History of Depression", weight: 85 });
-    }
-    if (raw.social_support === "poor" || raw.social_support === "none") {
-      factors.push({ name: "Low Social Support", weight: 78 });
-    }
-    if (raw.sleep_quality === "poor") {
-      factors.push({ name: "Poor Sleep Quality", weight: 70 });
-    }
-    if (raw.anxiety_level === "high" || raw.anxiety_level === "severe") {
-      factors.push({ name: "High Anxiety", weight: 75 });
-    }
-    if (raw.relationship_satisfaction === "poor") {
-      factors.push({ name: "Relationship Strain", weight: 60 });
-    }
+    const allFactors = [
+      { name: "Depression During Pregnancy", weight: 90, impact: 0.90,
+        show: raw.depression_during_pregnancy === "Positive" },
+      { name: "History of Depression", weight: 85, impact: 0.85,
+        show: raw.depression_before_pregnancy === "Positive" },
+      { name: "Abuse During Pregnancy", weight: 82, impact: 0.82,
+        show: raw.abuse_during_pregnancy === "Yes" },
+      { name: "High Need for Support", weight: 75, impact: 0.75,
+        show: raw.need_more_support === "High" },
+      { name: "Major Life Changes", weight: 70, impact: 0.70,
+        show: raw.major_life_changes_pregnancy === "Yes" },
+      { name: "Fear of Childbirth", weight: 65, impact: 0.65,
+        show: raw.fear_pregnancy_childbirth === "Yes" },
+      { name: "Unplanned Pregnancy", weight: 60, impact: 0.60,
+        show: raw.pregnancy_planned === "No" },
+      { name: "Low Social Support", weight: 58, impact: 0.58,
+        show: raw.support_during_pregnancy === "Low" || raw.support_during_pregnancy === "None" },
+      { name: "Irregular Checkups", weight: 50, impact: 0.50,
+        show: raw.regular_checkups === "No" },
+      { name: "Relationship with In-laws", weight: 45, impact: 0.45,
+        show: raw.relationship_inlaws === "Conflict" || raw.relationship_inlaws === "Poor" },
+      { name: "Relationship with Partner", weight: 42, impact: 0.42,
+        show: raw.relationship_husband === "Conflict" || raw.relationship_husband === "Poor" },
+      { name: "Medical Conditions", weight: 40, impact: 0.40,
+        show: raw.medical_conditions_pregnancy && raw.medical_conditions_pregnancy !== "None" },
+      { name: "Moderate Support Level", weight: 35, impact: 0.35,
+        show: raw.support_during_pregnancy === "Medium" },
+      { name: "Moderate Need for Support", weight: 32, impact: 0.32,
+        show: raw.need_more_support === "Medium" },
+      { name: "Overall Risk Profile", weight: Math.round(score * 0.6), impact: score / 100,
+        show: true }, // always available as last resort
+    ];
 
-    if (factors.length === 0) {
-      factors.push({ name: "Screening Profile", weight: 55 });
-      factors.push({ name: "Clinical Indicators", weight: 42 });
+    const matched = allFactors.filter(f => f.show);
+    // Always return exactly 5 — pad with lower-weight items if needed
+    const result = matched.slice(0, 5);
+    if (result.length < 5) {
+      const remaining = allFactors.filter(f => !result.includes(f));
+      result.push(...remaining.slice(0, 5 - result.length));
     }
-
-    return factors.sort((a, b) => b.weight - a.weight).slice(0, 5);
+    return result.sort((a, b) => b.weight - a.weight).slice(0, 5);
   };
 
   if (loading) {
@@ -458,10 +488,24 @@ const handleSubmit = async (status) => {
                           border: `1px solid ${theme.glassBorder}`,
                           color: theme.textPrimary
                         }}
+                        formatter={(value, name, props) => {
+                          const impact = props.payload?.impact;
+                          if (impact !== null && impact !== undefined) {
+                            const sign = impact >= 0 ? "🔴 +" : "🟢 ";
+                            return [`${sign}${impact.toFixed(3)}`, "SHAP Impact"];
+                          }
+                          return [`${value}%`, "Weight"];
+                        }}
                       />
                       <Bar dataKey="weight" radius={[0, 6, 6, 0]} barSize={18}>
-                        {getRiskFactors().map((_, i) => (
-                          <Cell key={i} fill={theme.primary} opacity={1 - i * 0.15} />
+                        {getRiskFactors().map((f, i) => (
+                          <Cell
+                            key={i}
+                            fill={f.impact !== null && f.impact !== undefined
+                              ? (f.impact >= 0 ? "#ef4444" : "#10b981")
+                              : theme.primary}
+                            opacity={1 - i * 0.12}
+                          />
                         ))}
                       </Bar>
                     </BarChart>

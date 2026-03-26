@@ -11,3 +11,6 @@ pydantic[email]==2.10.3
 joblib==1.5.3
 fastapi-mail==1.4.1
 websockets==12.0
+numpy<2.0
+pandas>=2.0
+shap>=0.49

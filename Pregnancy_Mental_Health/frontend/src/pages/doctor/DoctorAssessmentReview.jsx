@@ -87,20 +87,7 @@ export default function DoctorAssessmentReview() {
                             subtitle={`Patient: ${assessment.patient_id?.toString().slice(-8).toUpperCase()} • Nurse: ${assessment.nurse_name || "Assigned Nurse"}`}
                         />
                     </div>
-                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                        <button style={{
-                            padding: "9px 16px", borderRadius: 10,
-                            border: `1px solid ${theme.glassBorder}`,
-                            background: theme.glassBg, color: theme.textPrimary,
-                            fontWeight: 600, fontSize: 12, cursor: "pointer",
-                            display: "flex", alignItems: "center", gap: 6
-                        }}>
-                            <MessageSquare size={15} /> Consult Nurse
-                        </button>
-                        <Badge variant={assessment.status === "approved" ? "success" : "warning"} size="lg">
-                            {assessment.status === "approved" ? "Validated" : "Pending Review"}
-                        </Badge>
-                    </div>
+                   
                 </header>
 
                 {/* Section Pager Card */}

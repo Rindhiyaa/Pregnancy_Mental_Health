@@ -4,10 +4,11 @@ from typing import List
 from ..database import get_db
 from .. import models, schemas
 from ..jwt_handler import get_current_user_email, get_current_user
-from sqlalchemy import func
-from datetime import datetime, timedelta
+from sqlalchemy import func, and_
+from datetime import datetime, timedelta, date
 import logging
 from app.models import User, Assessment, Patient
+from app.ml_model import model, feature_columns, build_model_input_from_form
 
 logger = logging.getLogger(__name__)
 
@@ -391,7 +392,7 @@ def get_doctor_assessment_by_id(
             "nurse_name": nurse_name,
             "assigned_doctor_id": assessment.assigned_doctor_id,
             "epds_score": epds_score,
-            "score": assessment.risk_score,  # Combined risk score (0-100)
+            "score": assessment.risk_score,
             "risk_score": assessment.risk_score,
             "risk_level": assessment.risk_level,
             "clinician_risk": assessment.clinician_risk,
@@ -400,14 +401,15 @@ def get_doctor_assessment_by_id(
             "plan": assessment.plan,
             "notes": assessment.notes,
             "override_reason": assessment.override_reason,
-            "followup_urgency": None,  # Add default values for fields ClinicalValidation expects
+            "followup_urgency": None,
             "followup_window": None,
             "nurse_instruction": None,
             "raw_data": assessment.raw_data,
             "created_at": assessment.created_at.isoformat() if assessment.created_at else None,
             "reviewed_at": assessment.reviewed_at.isoformat() if assessment.reviewed_at else None,
+            "top_risk_factors": assessment.top_risk_factors or [],
         }
-        
+
         logger.info(f"Returning assessment {assessment_id}")
         return result
         

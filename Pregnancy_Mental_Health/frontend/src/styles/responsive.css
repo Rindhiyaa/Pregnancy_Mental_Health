@@ -25,6 +25,370 @@ button, a, [role="button"] {
   max-width: 1600px;
 }
 
+/* ── All tables scroll on small screens ── */
+table {
+  min-width: 560px;
+}
+.table-wrapper,
+[style*="overflowX"] {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================================
+   PORTAL LAYOUT — sidebar + main content
+   ============================================================ */
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+}
+
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 200;
+  background: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+@media (max-width: 1024px) {
+  .sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .portal-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  .portal-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay.open {
+    display: block;
+  }
+
+  .portal-main {
+    margin-left: 0 !important;
+    padding: 72px 20px 24px !important;
+  }
+}
+
+/* ============================================================
+   HOMEPAGE — hero section
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+    padding: 0 1.5rem !important;
+    margin: 2rem auto !important;
+    text-align: center;
+  }
+
+  .hero > div:first-child { order: 2; }
+  .hero-right { order: 1; justify-content: center; }
+
+  .hero-title { font-size: 1.9rem !important; }
+  .hero-sub { font-size: 0.95rem !important; max-width: 100% !important; }
+
+  .hero-buttons {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .hero-tags { justify-content: center; }
+
+  .hero-image { max-width: 240px !important; }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 0 1rem !important;
+    margin: 1.5rem auto !important;
+  }
+
+  .hero-title { font-size: 1.55rem !important; }
+
+  .btn-primary,
+  .btn-outline {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .hero-buttons { flex-direction: column; gap: 0.75rem; }
+
+  .hero-image { max-width: 180px !important; }
+}
+
+/* ============================================================
+   NAVBAR — mobile hamburger
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .nav-right-links {
+    display: none !important;
+  }
+
+  .nav-right-links.mobile-active {
+    display: flex !important;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: white;
+    padding: 5rem 2rem 2rem;
+    gap: 1.5rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    z-index: 150;
+  }
+
+  .mobile-menu {
+    display: block !important;
+  }
+
+  .nav-container {
+    padding: 0.75rem 1rem !important;
+    height: 64px !important;
+  }
+
+  .logo-img {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .logo-text {
+    font-size: 1.1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-container {
+    padding: 0.6rem 0.75rem !important;
+  }
+}
+
+/* ============================================================
+   AUTH PAGES — SignIn, ForgotPassword, ChangePassword
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .auth-page {
+    padding: 1rem;
+    align-items: flex-start;
+  }
+
+  .auth-layout {
+    grid-template-columns: 1fr !important;
+    max-width: 100% !important;
+    border-radius: 20px !important;
+    margin: 0 auto;
+  }
+
+  .auth-main {
+    padding: 2rem 1.5rem !important;
+    border-radius: 20px 20px 0 0 !important;
+  }
+
+  .auth-side {
+    border-radius: 0 0 20px 20px !important;
+    padding: 1.5rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .auth-page {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .auth-layout {
+    border-radius: 0 !important;
+    min-height: 100vh;
+    box-shadow: none !important;
+  }
+
+  .auth-main {
+    padding: 1.5rem 1.25rem !important;
+    border-radius: 0 !important;
+  }
+
+  .auth-side {
+    display: none !important;
+  }
+
+  .auth-main h1 {
+    font-size: 1.5rem !important;
+  }
+
+  .auth-main .lead {
+    font-size: 0.9rem !important;
+  }
+
+  .two-col-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .btn-primary.full-width {
+    font-size: 0.9rem !important;
+    padding: 0.85rem 1rem !important;
+  }
+}
+
+/* ============================================================
+   TABLES — all portal tables scroll horizontally
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .page-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .stats-grid,
+  .stats-grid-3,
+  .stats-grid-4 {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  .filter-toolbar {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0 0 12px 12px;
+  }
+
+  .modal-content,
+  [style*="maxWidth: 500"],
+  [style*="maxWidth: 440"] {
+    width: 95vw !important;
+    max-width: 95vw !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid,
+  .stats-grid-3,
+  .stats-grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pagination-btn {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .page {
+    padding: 0 1rem !important;
+  }
+}
+
+/* ============================================================
+   INPUT FONT SIZE — prevent iOS zoom
+   ============================================================ */
+
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ============================================================
+   HAMBURGER NAV — homepage mobile menu
+   ============================================================ */
+
+.nav-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: #111827;
+}
+
+.nav-mobile-menu {
+  display: none;
+  flex-direction: column;
+  gap: 0;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  padding: 8px 0;
+}
+
+.nav-mobile-menu a,
+.nav-mobile-menu button {
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  color: #374151;
+  text-decoration: none;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.nav-mobile-menu.open {
+  display: flex;
+}
+
+@media (max-width: 768px) {
+  .nav-hamburger {
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+
+@media print {
+  aside, .sidebar-toggle, nav, footer, button:not(.print-btn) {
+    display: none !important;
+  }
+
+  main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+
+  body {
+    font-size: 12pt;
+    color: #000;
+  }
+}
+
+/* ============================================================
+   ULTRA-WIDE
+   ============================================================ */
+
+@media (min-width: 1440px) {
+  .hero { max-width: 1300px; }
+}
+
+
 /* ============================================================
    PORTAL LAYOUT — sidebar + main content
    ============================================================ */

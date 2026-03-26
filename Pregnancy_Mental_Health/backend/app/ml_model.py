@@ -5,7 +5,8 @@ from typing import Any, Dict
 from catboost import CatBoostClassifier
 import joblib
 import pandas as pd
-from fastapi import HTTPException
+import shap
+import numpy as np
 
 BASE_DIR = Path(__file__).parent
 MODEL_DIR = BASE_DIR / "model_files"
@@ -23,14 +24,7 @@ feature_columns = joblib.load(str(FEATURE_COLS_PATH))  # [file:14]
 def _require(value: Any, field_name: str) -> Any:
     """Strictly require a value from Pydantic model; no defaults."""
     if value is None or value == "" or value == "Select":
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "error": "missing_field",
-                "field": field_name,
-                "message": f"{field_name} is required.",
-            },
-        )
+        raise ValueError(f"{field_name} is required.")
     return value
 
 
@@ -158,3 +152,62 @@ def build_model_input_from_form(data) -> pd.DataFrame:
     X_encoded = X_encoded[feature_columns]
 
     return X_encoded
+
+
+def get_top_features(X: pd.DataFrame, feature_names: list) -> list:
+    """
+    Compute SHAP top-5 risk factors safely using shap.Explainer (not TreeExplainer).
+    Called ONCE at assessment submission — result stored in DB.
+    """
+    try:
+        explainer = shap.Explainer(model, X.sample(min(50, len(X))))
+        shap_values = explainer(X)
+        values = shap_values.values[0]  # first (only) sample
+        importance = np.abs(values)
+        top_idx = np.argsort(importance)[-5:][::-1]
+
+        return [
+            {
+                "feature": feature_names[i],
+                "impact": round(float(values[i]), 4)
+            }
+            for i in top_idx
+        ]
+    except Exception as e:
+        print(f"SHAP ERROR (non-fatal): {e}")
+        return []
+
+
+def predict_with_explanation(data) -> dict:
+    """
+    Build model input, predict, compute SHAP top factors.
+    Returns risk_score, risk_level, top_risk_factors.
+    Safe version — uses shap.Explainer, not TreeExplainer.
+    """
+    X = build_model_input_from_form(data)
+    feature_names = list(X.columns)
+
+    # Predict
+    proba = model.predict_proba(X)[0]
+    # CatBoost class order: [High, Low, Medium] → indices 0,1,2
+    high_prob = float(proba[0])
+    med_prob  = float(proba[2])
+    low_prob  = float(proba[1])
+
+    if high_prob >= med_prob and high_prob >= low_prob:
+        risk_level = "High Risk"
+        risk_score = round(high_prob * 100, 1)
+    elif med_prob >= low_prob:
+        risk_level = "Moderate Risk"
+        risk_score = round(med_prob * 100, 1)
+    else:
+        risk_level = "Low Risk"
+        risk_score = round(low_prob * 100, 1)
+
+    top_factors = get_top_features(X, feature_names)
+
+    return {
+        "risk_level": risk_level,
+        "risk_score": risk_score,
+        "top_risk_factors": top_factors,
+    }

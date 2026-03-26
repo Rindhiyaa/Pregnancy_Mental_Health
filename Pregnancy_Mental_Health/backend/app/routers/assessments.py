@@ -39,7 +39,10 @@ mail_conf = ConnectionConfig(
 @router.post("/assessments/predict", response_model=AssessmentResult)
 def predict_assessment(payload: AssessmentCreate):
     # 1) Build 1-row dataframe with same raw columns as training
-    df_input = build_model_input_from_form(payload)  # DataFrame with 26 cols
+    try:
+        df_input = build_model_input_from_form(payload)  # DataFrame with 26 cols
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # 2) Align columns with training feature_columns (fill missing with 0)
     X_aligned = df_input.reindex(columns=feature_columns, fill_value=0)
@@ -207,6 +210,18 @@ def save_assessment(
     from .. import models
     current_user = db.query(models.User).filter(models.User.email == current_user_email).first()
 
+    # Compute SHAP top risk factors once at submission (safe, stored in DB)
+    top_risk_factors = []
+    if payload.raw_data:
+        try:
+            from types import SimpleNamespace
+            from ..ml_model import get_top_features, build_model_input_from_form
+            data_obj = SimpleNamespace(**payload.raw_data)
+            X = build_model_input_from_form(data_obj)
+            top_risk_factors = get_top_features(X, list(X.columns))
+        except Exception as shap_err:
+            logger.warning(f"SHAP computation skipped at submission: {shap_err}")
+
     assessment = models.Assessment(
         patient_name=payload.patient_name,
         patient_id=final_patient_id,
@@ -218,10 +233,10 @@ def save_assessment(
         plan=payload.plan,
         notes=payload.notes,
         clinician_email=payload.clinician_email or current_user_email,
-        # New Nurse Workflow Fields
         nurse_id=current_user.id if current_user and current_user.role == "nurse" else payload.nurse_id,
         doctor_id=payload.doctor_id,
-        status=payload.status, # draft, submitted, etc.
+        status=payload.status,
+        top_risk_factors=top_risk_factors,
     )
     db.add(assessment)
     db.commit()
