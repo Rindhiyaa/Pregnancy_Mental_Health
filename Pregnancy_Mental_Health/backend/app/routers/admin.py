@@ -315,3 +315,12 @@ def export_audit_logs_csv(db: Session = Depends(get_db)):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=audit_logs.csv"},
     )
+
+@router.get("/assessments/count")
+def get_assessments_count(db: Session = Depends(get_db)):
+    try:
+        total_assessments = db.query(models.Assessment).count()
+        return {"total_assessments": total_assessments}
+    except Exception as e:
+        print("Error counting assessments:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch assessments count")

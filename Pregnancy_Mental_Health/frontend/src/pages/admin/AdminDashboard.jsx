@@ -82,30 +82,33 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
   
-      const { data: users } = await api.get("/admin/users");
+      const [{ data: users }, { data: assessmentStats }] = await Promise.all([
+        api.get("/admin/users"),
+        api.get("/admin/assessments/count"),
+      ]);
   
       const sorted = users
         .slice()
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   
-        setRecentUsers(
-          sorted.map((u) => {
-            const joinedSource = u.created_at || u.member_since; // or whatever your column is
-            const joined =
-              joinedSource && !Number.isNaN(new Date(joinedSource).getTime())
-                ? new Date(joinedSource).toLocaleDateString()
-                : "-";
-        
-            return {
-              id: u.id,
-              name: `${u.first_name} ${u.last_name || ""}`.trim().replace(/[{}]/g, ""),
-              email: u.email,
-              role: u.role.charAt(0).toUpperCase() + u.role.slice(1),
-              status: u.is_active ? "Active" : "Suspended",
-              joined,
-            };
-          })
-        );
+      setRecentUsers(
+        sorted.map((u) => {
+          const joinedSource = u.created_at || u.member_since;
+          const joined =
+            joinedSource && !Number.isNaN(new Date(joinedSource).getTime())
+              ? new Date(joinedSource).toLocaleDateString()
+              : "-";
+  
+          return {
+            id: u.id,
+            name: `${u.first_name} ${u.last_name || ""}`.trim().replace(/[{}]/g, ""),
+            email: u.email,
+            role: u.role.charAt(0).toUpperCase() + u.role.slice(1),
+            status: u.is_active ? "Active" : "Suspended",
+            joined,
+          };
+        })
+      );
   
       setAllUsers(users);
   
@@ -119,7 +122,7 @@ export default function AdminDashboard() {
         totalUsers: users.length,
         totalClinicians,
         totalPatients,
-        totalAssessments: 0,
+        totalAssessments: assessmentStats.total_assessments ?? 0,
       });
     } catch (error) {
       console.error("Error fetching admin data:", error);
