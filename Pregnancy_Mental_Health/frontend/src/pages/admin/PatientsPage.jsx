@@ -55,7 +55,7 @@ export default function PatientsPage() {
   
       const mapped = patientsOnly.map((u) => ({
         id: u.id,
-        name: `${u.first_name} ${u.last_name || ""}`.trim(),
+        name: `${u.first_name} ${u.last_name || ""}`.trim().replace(/[{}]/g, ""),
         email: u.email,
         phone: u.phone_number || "",
         status: u.is_active ? "active" : "suspended",

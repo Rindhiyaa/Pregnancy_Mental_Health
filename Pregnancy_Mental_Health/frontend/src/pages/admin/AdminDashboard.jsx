@@ -73,16 +73,24 @@ export default function AdminDashboard() {
         .slice()
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   
-      setRecentUsers(
-        sorted.map((u) => ({
-          id: u.id,
-          name: `${u.first_name} ${u.last_name || ""}`.trim(),
-          email: u.email,
-          role: u.role.charAt(0).toUpperCase() + u.role.slice(1),
-          status: u.is_active ? "Active" : "Suspended",
-          joined: new Date(u.created_at).toLocaleDateString(),
-        }))
-      );
+        setRecentUsers(
+          sorted.map((u) => {
+            const joinedSource = u.created_at || u.member_since; // or whatever your column is
+            const joined =
+              joinedSource && !Number.isNaN(new Date(joinedSource).getTime())
+                ? new Date(joinedSource).toLocaleDateString()
+                : "-";
+        
+            return {
+              id: u.id,
+              name: `${u.first_name} ${u.last_name || ""}`.trim().replace(/[{}]/g, ""),
+              email: u.email,
+              role: u.role.charAt(0).toUpperCase() + u.role.slice(1),
+              status: u.is_active ? "Active" : "Suspended",
+              joined,
+            };
+          })
+        );
   
       setAllUsers(users);
   
@@ -497,7 +505,6 @@ const handleDelete = async (user) => {
               </div>
             </div>
 
-            {/* Scrollable table wrapper — critical for mobile */}
              {/* Scrollable table wrapper — critical for mobile */}
              <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
               <table style={{
@@ -507,7 +514,7 @@ const handleDelete = async (user) => {
                 <thead>
                   <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#F1F5F9") }}>
                     <th style={tableHeaderStyle(theme)}>User</th>
-                    <th style={tableHeaderStyle(theme)}>Role</th>
+                    <th style={{ ...tableHeaderStyle(theme), textAlign: "center" }}>Role</th>
                     <th style={tableHeaderStyle(theme)}>Status</th>
                     {!isMobile && <th style={tableHeaderStyle(theme)}>Joined</th>}
                     <th style={{ ...tableHeaderStyle(theme), textAlign: "right" }}>Actions</th>
@@ -536,7 +543,7 @@ const handleDelete = async (user) => {
                       >
                         <td style={tableCellStyle(isMobile)}>
                           <div style={{ fontWeight: 700, color: theme.textPrimary, fontSize: isMobile ? 13 : 14 }}>
-                            {user.name}
+                            {user.role.toLowerCase() === "doctor" ? `Dr. ${user.name}` : user.name}
                           </div>
                           <div style={{
                             fontSize: 11, color: theme.textMuted,
@@ -546,11 +553,19 @@ const handleDelete = async (user) => {
                             {user.email}
                           </div>
                         </td>
-                        <td style={tableCellStyle(isMobile)}>
-                          <Badge type={user.role === "Clinician" || user.role === "Doctor" ? "warning" : "success"}>
+                        
+                        <td style={{ ...tableCellStyle(isMobile), textAlign: "center" }}>
+                          <Badge
+                            type={
+                              user.role === "Clinician" || user.role === "Doctor"
+                                ? "warning"
+                                : "success"
+                            }
+                          >
                             {user.role}
                           </Badge>
                         </td>
+                        
                         <td style={tableCellStyle(isMobile)}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <div style={{
@@ -618,45 +633,6 @@ const handleDelete = async (user) => {
               </button>
             </div>
           </Card>
-
-          {/* ── System Health ──
-          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 16 : 24 }}>
-            <Card>
-              <h3 style={{ margin: "0 0 20px 0", fontSize: 18, fontWeight: 700, color: theme.textPrimary }}>
-                System Status
-              </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <StatusRow label="Database" status="Operational" color="#10B981" />
-                <StatusRow label="ML Prediction API" status="Operational" color="#10B981" />
-                <StatusRow label="Email Service" status="Operational" color="#10B981" />
-                <StatusRow label="Storage" status="82% Full" color="#F59E0B" />
-              </div>
-              <Divider style={{ margin: "20px 0" }} />
-              <div style={{ fontSize: 13, color: theme.textMuted }}>
-                Last backup: Today at 03:00 AM
-              </div>
-            </Card>
-
-            <Card style={{ background: theme.heroGradient, color: "white" }}>
-              <h3 style={{ margin: "0 0 12px 0", fontSize: 18, fontWeight: 700 }}>
-                Security Notice
-              </h3>
-              <p style={{ fontSize: 14, lineHeight: 1.6, opacity: 0.9, marginBottom: 20 }}>
-                There are 3 pending clinician verifications. Please review their credentials before approving system access.
-              </p>
-              <button
-                onClick={handleReviewCredentials}
-                style={{
-                  width: "100%", padding: "10px",
-                  borderRadius: 8, background: theme.cardBg,
-                  color: theme.primary, border: "none",
-                  fontWeight: 700, cursor: "pointer",
-                }}
-              >
-                Review Credentials
-              </button>
-            </Card>
-          </div> */}
         </div>
       </main>
 

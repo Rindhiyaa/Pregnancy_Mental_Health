@@ -91,7 +91,7 @@ export default function DoctorProfilePage() {
                                     {user?.fullName?.charAt(0) || "D"}
                                 </div>
                                 <div>
-                                    <div className="np-name">{user?.fullName || "Dr. Sarah Johnson"}</div>
+                                    <div className="np-name">Dr. {user?.fullName || "Dr. Sarah Johnson"}</div>
                                     <div className="np-role">
                                         <div className="np-badge-role">Senior Perinatal Specialist</div>
                                         <div className="np-id">ID: <span>MD-{user?.id?.toString().slice(-5).toUpperCase() || '88120'}</span></div>

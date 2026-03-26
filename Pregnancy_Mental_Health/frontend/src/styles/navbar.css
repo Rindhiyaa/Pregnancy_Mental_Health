@@ -8,21 +8,20 @@
   z-index: 100;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.25s ease;
+  backdrop-filter: blur(6px); /* modern glass effect */
 }
+
 
 .navbar.scrolled {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .nav-inner {
-  max-width: 1400px;
+  max-width: 1200px;   /* reduced for tighter look */
   margin: 0 auto;
-  padding: 1.2rem 2rem;
+  padding: 1rem 2rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 3rem;
-  position: relative;
 }
 
 /* Logo left */
@@ -87,25 +86,25 @@
   transition: all 0.3s ease;
 }
 
-/* Nav links */
+
+/* Push nav-links slightly left instead of perfect center */
 .nav-links {
   display: flex;
-  gap: 3.5rem;
-  flex: 1;
-  justify-content: center;
-  margin: 0;
+  gap: 2.5rem;
+  margin-left: 3rem;   /* key fix */
 }
 
 .nav-links a {
-  color: #111827;
+  position: relative;   /* IMPORTANT: needed for underline */
+  color: #374151;
   font-weight: 600;
-  font-size: 1.1rem;
-  transition: all 0.25s ease;
+  font-size: 1rem;
+  padding-bottom: 4px;  /* gives space for underline */
   text-decoration: none;
-  position: relative;
-  padding-bottom: 0.35rem;
-  cursor: pointer;
+  transition: color 0.2s ease, transform 0.15s ease;
 }
+
+
 
 /* Underline effect */
 .nav-links a::after {
@@ -114,10 +113,14 @@
   bottom: 0;
   left: 0;
   width: 0;
-  height: 3px;
-  background: linear-gradient(135deg, #8b5cf6, #ec4899);
-  transition: width 0.3s ease;
+  height: 2px;
+  background: #8b5cf6;
+  transition: width 0.25s ease;
   border-radius: 2px;
+}
+
+.nav-links a:hover {
+  color: #8b5cf6;
 }
 
 .nav-links a:hover::after {
@@ -127,8 +130,6 @@
 .nav-links a.active {
   color: #8b5cf6;
   font-weight: 700;
-  background: transparent;
-  padding-bottom: 0.35rem;
 }
 
 .nav-links a.active::after {
@@ -137,15 +138,17 @@
 }
 
 /* Right side buttons */
-.nav-right {
+/* .nav-right {
   display: flex;
   gap: 1.2rem;
   align-items: center;
   flex-shrink: 0;
   white-space: nowrap;
   margin-left: auto;
+} */
+.nav-right {
+  margin-left: auto;
 }
-
 .btn-signin,
 .btn-signup {
   padding: 0.9rem 2.2rem;

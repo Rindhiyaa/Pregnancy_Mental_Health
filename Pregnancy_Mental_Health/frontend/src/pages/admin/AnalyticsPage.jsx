@@ -62,8 +62,21 @@ export default function AnalyticsPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const { data: analytics } = await api.get("/admin/dashboard");
-        setData(analytics);
+        // 1) totals + recent users
+        const { data: dashboard } = await api.get("/admin/dashboard");
+        // 2) chart series
+        const { data: analytics } = await api.get("/admin/dashboard-analytics");
+  
+        setData({
+          totals: {
+            totalUsers: dashboard.totalUsers,
+            totalClinicians: dashboard.totalClinicians,
+            totalPatients: dashboard.totalPatients,
+            totalAssessments: dashboard.totalAssessments,
+          },
+          accuracyData: analytics.accuracyData,
+          usageStats: analytics.usageStats,
+        });
       } catch (err) {
         console.error("Failed to load analytics", err);
       } finally {
@@ -285,8 +298,8 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Area Chart */}
-            <div style={{ height: areaChartHeight, width: "100%" }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ height: areaChartHeight, width: "100%", minWidth: 0, minHeight: 150 }}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <AreaChart
                   data={data.accuracyData}
                   margin={{

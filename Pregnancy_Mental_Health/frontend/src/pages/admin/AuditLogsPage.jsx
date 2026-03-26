@@ -71,22 +71,38 @@ export default function AuditLogsPage() {
         }
       };
 
-    const filteredLogs = logs.filter(log => {
-        const userName = log.user_name || log.user || "";
-        const details = log.details || "";
-        const matchesUser =
-            log.user.toLowerCase().includes(searchUser.toLowerCase()) ||
-            log.details.toLowerCase().includes(searchUser.toLowerCase());
-        const matchesAction =
-            actionFilter === "all" ||
-            (log.action || "").toLowerCase() === actionFilter.toLowerCase();
-      
-        const ts = log.timestamp || log.created_at || "";
-        const logDate = ts.split("T")[0];
-        const matchesDate = !dateFilter || logDate === dateFilter;
-      
-        return matchesUser && matchesAction && matchesDate;
-      });
+      const filteredLogs = logs
+  .map(log => {
+    console.log("log.user raw:", log.user);
+
+    const userNameObj = log.user_name || log.user || "";
+    const userName =
+      typeof userNameObj === "string"
+        ? userNameObj
+        : (userNameObj.first_name || userNameObj.name || "") +
+          " " +
+          (userNameObj.last_name || "");
+
+    return {
+      ...log,
+      userDisplay: userName.trim() || "Unknown",
+    };
+  })
+  .filter(log => {
+    const matchesUser =
+      log.userDisplay.toLowerCase().includes(searchUser.toLowerCase()) ||
+      (log.details || "").toLowerCase().includes(searchUser.toLowerCase());
+
+    const matchesAction =
+      actionFilter === "all" ||
+      (log.action || "").toLowerCase() === actionFilter.toLowerCase();
+
+    const ts = log.timestamp || log.created_at || "";
+    const logDate = ts.split("T")[0];
+    const matchesDate = !dateFilter || logDate === dateFilter;
+
+    return matchesUser && matchesAction && matchesDate;
+  });
 
     const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
     const paginatedLogs = filteredLogs.slice(
@@ -510,7 +526,7 @@ export default function AuditLogsPage() {
                                             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                                                 <span style={mobileLabel}>User</span>
                                                 <span style={{ fontSize: 13, fontWeight: 600, color: theme.textPrimary }}>
-                                                    {log.user}
+                                                    {log.userDisplay}
                                                 </span>
                                             </div>
 
@@ -526,7 +542,7 @@ export default function AuditLogsPage() {
                                             </div>
 
                                             {/* IP */}
-                                            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                            {/* <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                                                 <span style={mobileLabel}>IP</span>
                                                 <code style={{
                                                     fontSize: 11, color: theme.textMuted,
@@ -536,7 +552,7 @@ export default function AuditLogsPage() {
                                                 }}>
                                                     {log.ip}
                                                 </code>
-                                            </div>
+                                            </div> */}
                                         </div>
                                     );
                                 })
@@ -559,13 +575,13 @@ export default function AuditLogsPage() {
                                         <th style={thStyle(theme, isTablet)}>User</th>
                                         <th style={thStyle(theme, isTablet)}>Action Type</th>
                                         <th style={thStyle(theme, isTablet)}>Details</th>
-                                        <th style={thStyle(theme, isTablet)}>IP Address</th>
+                                        {/* <th style={thStyle(theme, isTablet)}>IP Address</th> */}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {loading ? (
                                         <tr>
-                                            <td colSpan={5} style={{
+                                            <td colSpan={4} style={{
                                                 padding: 40, textAlign: "center",
                                                 color: theme.textMuted
                                             }}>
@@ -574,7 +590,7 @@ export default function AuditLogsPage() {
                                         </tr>
                                     ) : filteredLogs.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} style={{
+                                            <td colSpan={4} style={{
                                                 padding: 40, textAlign: "center",
                                                 color: theme.textMuted
                                             }}>
@@ -629,7 +645,7 @@ export default function AuditLogsPage() {
                                                             fontWeight: 600, color: theme.textPrimary,
                                                             fontSize: 13, whiteSpace: "nowrap",
                                                         }}>
-                                                            {log.user}
+                                                            {log.userDisplay}
                                                         </div>
                                                     </td>
 
@@ -658,7 +674,7 @@ export default function AuditLogsPage() {
                                                     </td>
 
                                                     {/* IP — always its own column */}
-                                                    <td style={tdStyle(isTablet)}>
+                                                    {/* <td style={tdStyle(isTablet)}>
                                                         <code style={{
                                                             fontSize: 11, color: theme.textMuted,
                                                             background: theme.innerBg,
@@ -668,7 +684,7 @@ export default function AuditLogsPage() {
                                                         }}>
                                                             {log.ip}
                                                         </code>
-                                                    </td>
+                                                    </td> */}
                                                 </tr>
                                             );
                                         })

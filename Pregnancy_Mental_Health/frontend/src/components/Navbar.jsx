@@ -49,15 +49,23 @@ export default function Navbar() {
 
         {/* Nav links (mobile + desktop) */}
         <nav className={`nav-links ${isMenuOpen ? "active" : ""}`}>
-          <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
-            Home
-          </NavLink>
+        <NavLink
+              to="/"
+              end
+              className={({ isActive }) =>
+                isActive || window.location.pathname === "/signin"
+                  ? "active"
+                  : ""
+              }
+            >
+              Home
+        </NavLink>
           <NavLink to="/about" className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
             About
           </NavLink>
-          <NavLink to={getDashboardLink()} className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
+          {/* <NavLink to={getDashboardLink()} className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setIsMenuOpen(false)}>
             Dashboard
-          </NavLink>
+          </NavLink> */}
         </nav>
 
         {/* Right side: Profile or Auth buttons */}
@@ -78,24 +86,14 @@ export default function Navbar() {
             </div>
           ) : ( */}
             {/* // Sign In and Sign Up buttons */}
-            {/* <>
+            <>
               <Link to="/signin">
                 <button className="btn-signin">Sign In</button>
               </Link>
-              <Link to="/signup">
+              {/* <Link to="/signup">
                 <button className="btn-signup">Sign Up</button>
-              </Link>
-            </> */}
-            {!user && (
-              <>
-                <Link to="/signin">
-                  <button className="btn-signin">Sign In</button>
-                </Link>
-                <Link to="/signup">
-                  <button className="btn-signup">Sign Up</button>
-                </Link>
-              </>
-            )}
+              </Link> */}
+            </>
           {/* )} */}
         </div>
       </div>
