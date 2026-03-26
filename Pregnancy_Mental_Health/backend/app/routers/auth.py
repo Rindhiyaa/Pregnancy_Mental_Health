@@ -381,21 +381,21 @@ def forgot_password(
 ):
     """
     Check if user exists with this email.
-    Returns same response regardless of whether email exists (prevents user enumeration).
     In production, this would send a reset email if the account exists.
     """
     user = db.query(models.User).filter(models.User.email == request.email).first()
     
-    # Security: Always return same message to prevent user enumeration
-    # Don't reveal whether the email exists in the database
-    if user:
-        # TODO: In production, send actual password reset email here
-        # Example: send_password_reset_email(user.email, generate_reset_token(user))
-        pass
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No account found with this email address."
+        )
     
-    # Return same response whether user exists or not
+    # TODO: In production, send actual password reset email here
+    # Example: send_password_reset_email(user.email, generate_reset_token(user))
+    
     return {
-        "message": "If an account exists with this email, a password reset link has been sent.",
+        "message": "User verified. You can now reset your password.",
         "email": request.email
     }
 
@@ -427,8 +427,10 @@ def reset_password(
             detail="Password must be at least 8 characters"
         )
     
-    # Update password
+    # Update password and metadata
     user.hashed_password = hash_password(request.new_password)
+    user.first_login = False
+    user.password_changed_at = datetime.now()
     db.commit()
     
     return {"message": "Password reset successful. You can now login with your new password."}

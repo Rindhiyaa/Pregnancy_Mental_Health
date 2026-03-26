@@ -89,12 +89,17 @@ export default function ChangePasswordPage() {
     <main className="auth-page">
       <div className="auth-layout">
         <div className="auth-main">
+          <div className="auth-brand">
+            <div className="logo-mark"></div>
+            <span className="logo-text">Postpartum Risk Insight</span>
+          </div>
+
           <h1>Set Your New Password</h1>
           <p className="lead">
             Welcome {user?.firstName || user?.fullName}! Please set a new password before continuing.
           </p>
 
-          {error && <div className="error-message">{error}</div>}
+          {error && <div className="error" role="alert" aria-live="polite">{error}</div>}
 
           <form onSubmit={handleSubmit} noValidate>
             <label>
@@ -131,12 +136,12 @@ export default function ChangePasswordPage() {
               </div>
             </label>
 
-            <div className="password-rules">
-              <p>Password must be:</p>
-              <ul>
-                <li>At least 8 characters</li>
-                <li>One number</li>
-                <li>One special character</li>
+            <div className="password-rules" style={{ marginBottom: '1rem' }}>
+              <p style={{ fontWeight: '600', fontSize: '0.9rem', color: '#4b5563', marginBottom: '0.5rem' }}>Password must be:</p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
+                <li>• At least 8 characters</li>
+                <li>• One number</li>
+                <li>• One special character</li>
               </ul>
             </div>
 
@@ -153,15 +158,13 @@ export default function ChangePasswordPage() {
         <aside className="auth-side">
           <div>
             <div className="side-header">Account Security</div>
-            <div className="side-title">Protect your clinical workspace.</div>
+            <div className="side-title">Protecting patient information is our priority.</div>
             <p className="side-text">
-              Setting a strong, unique password ensures that sensitive patient data remains
-              confidential and accessible only to authorized personnel.
+              By setting a strong, unique password, you help ensure that sensitive maternal mental health data remains secure and accessible only to authorized clinical staff.
             </p>
           </div>
           <p className="side-footer">
-            Your security is our priority. If you have trouble resetting your password, please contact
-            your system administrator.
+            Your account is being initialized. Once you set your password, you'll have full access to your clinical workspace.
           </p>
         </aside>
       </div>

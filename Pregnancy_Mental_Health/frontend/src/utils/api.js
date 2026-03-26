@@ -452,10 +452,47 @@ export const updateUser = (id, data) => api.put(`/admin/users/${id}`, data);
 export const deleteUser = (id) => api.delete(`/admin/users/${id}`);
 
 export const getErrorMessage = (err, defaultMsg) => {
-  try {
-    const errorData = JSON.parse(err.message);
-    if (errorData.detail) return errorData.detail;
-  } catch (e) {}
+  if (!err) return defaultMsg || "An unexpected error occurred";
+  
+  // Handle string errors (common for thrown strings)
+  if (typeof err === 'string') return err;
+
+  // If the error message is a JSON string (our api utility throws these)
+  if (err.message && typeof err.message === 'string') {
+    try {
+      const errorData = JSON.parse(err.message);
+      
+      // Handle FastAPI "detail" field
+      if (errorData.detail) {
+        // detail can be a string or an array of objects (422 validation errors)
+        if (typeof errorData.detail === 'string') {
+          return errorData.detail;
+        }
+        
+        if (Array.isArray(errorData.detail)) {
+          // Format validation errors: "field: message"
+          return errorData.detail
+            .map(e => `${e.loc ? e.loc[e.loc.length - 1] : 'Error'}: ${e.msg}`)
+            .join(', ');
+        }
+        
+        if (typeof errorData.detail === 'object') {
+          return JSON.stringify(errorData.detail);
+        }
+      }
+    } catch (e) {
+      // Not JSON, return the raw message
+      return err.message;
+    }
+  }
+
+  // Handle standard Error objects or custom objects with 'detail'
+  if (err.detail) {
+    if (typeof err.detail === 'string') return err.detail;
+    if (Array.isArray(err.detail)) return err.detail.map(e => e.msg).join(', ');
+    return JSON.stringify(err.detail);
+  }
+
   return defaultMsg || err.message || "An unexpected error occurred";
 };
 

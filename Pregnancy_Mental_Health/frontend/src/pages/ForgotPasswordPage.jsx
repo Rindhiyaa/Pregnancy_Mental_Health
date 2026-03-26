@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { API_BASE_URL } from "../utils/api";
+import { api, getErrorMessage } from "../utils/api";
+
+const EyeIcon = ({ open }) => open ? (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+    <line x1="1" y1="1" x2="23" y2="23" />
+  </svg>
+) : (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -27,18 +39,7 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.detail || "Failed to process request");
-      }
-
+      const { data } = await api.post('/forgot-password', { email });
       setSuccess(data.message);
       
       // Move to step 2 (reset password)
@@ -47,7 +48,7 @@ export default function ForgotPasswordPage() {
         setSuccess("");
       }, 1500);
     } catch (err) {
-      setError(err.message || "An error occurred. Please try again.");
+      setError(getErrorMessage(err, "An error occurred. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -71,6 +72,15 @@ export default function ForgotPasswordPage() {
       return;
     }
 
+    const hasNumber = /\d/.test(newPassword);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+
+    if (!hasNumber || !hasSpecial) {
+      setError("Password must contain at least one number and one special character.");
+      setLoading(false);
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match.");
       setLoading(false);
@@ -78,36 +88,26 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          new_password: newPassword,
-        }),
+      const { data } = await api.post('/reset-password', {
+        email,
+        new_password: newPassword,
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || "Failed to reset password");
-      }
-
-      const data = await res.json();
       setSuccess(data.message);
 
-      // Redirect to signin after 2 secondss
+      // Redirect to signin after 2 seconds
       setTimeout(() => {
         navigate("/signin");
       }, 2000);
     } catch (err) {
-      setError(err.message || "An error occurred. Please try again.");
+      setError(getErrorMessage(err, "An error occurred. Please try again."));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="page auth-page">
+    <main className="auth-page">
       <div className="auth-layout">
         <div className="auth-main">
           <div className="auth-brand">
@@ -136,14 +136,15 @@ export default function ForgotPasswordPage() {
                     type="email"
                     name="email"
                     placeholder="you@hospital.org"
+                    className="auth-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
                   />
                 </label>
 
-                {error && <div className="error">{error}</div>}
-                {success && <div className="success">{success}</div>}
+                {error && <div className="error" role="alert">{error}</div>}
+                {success && <div className="success" role="alert">{success}</div>}
 
                 <button type="submit" className="btn-primary full-width" disabled={loading}>
                   {loading ? "Processing..." : "Continue"}
@@ -165,6 +166,7 @@ export default function ForgotPasswordPage() {
                       type={showNewPassword ? "text" : "password"}
                       name="newPassword"
                       placeholder="At least 8 characters"
+                      className="auth-input"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       disabled={loading}
@@ -175,17 +177,7 @@ export default function ForgotPasswordPage() {
                       onClick={() => setShowNewPassword(!showNewPassword)}
                       aria-label={showNewPassword ? "Hide password" : "Show password"}
                     >
-                      {showNewPassword ? (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                          <line x1="1" y1="1" x2="23" y2="23"/>
-                        </svg>
-                      ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                          <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                      )}
+                      <EyeIcon open={showNewPassword} />
                     </button>
                   </div>
                 </label>
@@ -197,6 +189,7 @@ export default function ForgotPasswordPage() {
                       type={showConfirmPassword ? "text" : "password"}
                       name="confirmPassword"
                       placeholder="Re-enter your password"
+                      className="auth-input"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       disabled={loading}
@@ -207,23 +200,22 @@ export default function ForgotPasswordPage() {
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                     >
-                      {showConfirmPassword ? (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                          <line x1="1" y1="1" x2="23" y2="23"/>
-                        </svg>
-                      ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                          <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                      )}
+                      <EyeIcon open={showConfirmPassword} />
                     </button>
                   </div>
                 </label>
 
-                {error && <div className="error">{error}</div>}
-                {success && <div className="success">{success}</div>}
+                <div className="password-rules" style={{ marginBottom: '1rem' }}>
+                  <p style={{ fontWeight: '600', fontSize: '0.9rem', color: '#4b5563', marginBottom: '0.5rem' }}>Password must be:</p>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
+                    <li>• At least 8 characters</li>
+                    <li>• One number</li>
+                    <li>• One special character</li>
+                  </ul>
+                </div>
+
+                {error && <div className="error" role="alert">{error}</div>}
+                {success && <div className="success" role="alert">{success}</div>}
 
                 <button type="submit" className="btn-primary full-width" disabled={loading}>
                   {loading ? "Resetting..." : "Reset Password"}
@@ -231,7 +223,7 @@ export default function ForgotPasswordPage() {
 
                 <button
                   type="button"
-                  className="btn-outline full-width"
+                  className="link-button"
                   onClick={() => {
                     setStep(1);
                     setNewPassword("");
@@ -239,9 +231,9 @@ export default function ForgotPasswordPage() {
                     setError("");
                   }}
                   disabled={loading}
-                  style={{ marginTop: "0.75rem" }}
+                  style={{ marginTop: "1rem", textAlign: 'center', width: '100%', fontSize: '0.9rem' }}
                 >
-                  Back
+                  Back to email entry
                 </button>
               </form>
             </>

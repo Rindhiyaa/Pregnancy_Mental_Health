@@ -22,13 +22,13 @@ export default function Navbar() {
   return (
     <header className="navbar">
       <div className="nav-container">
-        {/* 1. LEFT END: Logo Section */}
+        {/* LEFT: Logo Section */}
         <Link to="/" className="logo-section" onClick={() => setIsMenuOpen(false)}>
           <img src={logo} alt="Logo" className="logo-img" />
           <span className="logo-text">Postpartum Risk Insight</span>
         </Link>
 
-        {/* 2. RIGHT END: Nav Links */}
+        {/* RIGHT: Nav Links (Home, About) */}
         <nav className={`nav-right-links ${isMenuOpen ? 'mobile-active' : ''}`}>
           <NavLink 
             to="/" 

@@ -112,7 +112,9 @@ class ErrorBoundary extends Component {
                   fontSize: '12px',
                   marginTop: '8px'
                 }}>
-                  {this.state.error.toString()}
+                  {typeof this.state.error === 'object' 
+                    ? JSON.stringify(this.state.error, null, 2) 
+                    : this.state.error.toString()}
                   {this.state.errorInfo && this.state.errorInfo.componentStack}
                 </pre>
               </details>

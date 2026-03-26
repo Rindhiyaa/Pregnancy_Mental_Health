@@ -17,10 +17,10 @@ box-shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
 /* ===== CONTAINER ===== */
 .nav-container {
 width: 100%;                      /* Full width */
-max-width: 100%;                  /* Ensure it spans edges */
+max-width: 100vw;                 /* Viewport width */
 margin: 0;                        /* Remove centering */
-padding: 0.8rem 3rem 0.8rem 1.5rem; /* Reduced left gap */
-height: 80px;
+padding: 0 4rem 0 2rem;           /* Increased right padding, minimal left */
+height: 85px;
 
 display: flex;
 align-items: center;
@@ -34,6 +34,7 @@ align-items: center;
 gap: 12px;
 text-decoration: none;
 flex-shrink: 0;
+margin-left: 0;                   /* Flush to left */
 }
 
 /* LOGO IMAGE */
@@ -71,7 +72,8 @@ color: #8b5cf6;
 .nav-right-links {
 display: flex;
 align-items: center;
-gap: 2.5rem;
+gap: 3rem;                        /* Increased gap */
+margin-left: auto;                /* Ensure it's pushed to the right */
 }
 
 /* ===== SIGN IN BUTTON (navbar) ===== */

@@ -121,7 +121,7 @@ export default function DashboardPage() {
 
         // today's appointments
         try {
-          const { data: appData } = await api.get("/appointments/today");
+          const { data: appData } = await api.get("/doctor/appointments/today");
           setAppointments(Array.isArray(appData) ? appData : []);
         } catch {
           setAppointments([]);
@@ -943,7 +943,7 @@ export default function DashboardPage() {
               >
                 Patient Breakdown
               </h3>
-              <div style={{ height: 200 }}>
+              <div style={{ height: 200, width: "100%" }}>
                 {distributionData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <PieChart>

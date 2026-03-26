@@ -54,12 +54,14 @@ const FilterToolbar = ({
       borderBottom: `1px solid ${theme.border}`,
       background: theme.innerBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#f8fafc"),
       display: "flex",
-      flexDirection: "column",   // always column: search on top, buttons below
-      gap: isMobile ? 10 : 12,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      gap: isMobile ? 8 : 10,
     }}>
 
-      {/* ── Row 1: Search — full width ── */}
-      <div style={{ position: "relative", width: "100%" }}>
+      {/* ── Search — fixed width, grows but capped ── */}
+      <div style={{ position: "relative", flex: "1 1 200px", maxWidth: 320 }}>
         <Search
           size={16}
           style={{
@@ -89,16 +91,8 @@ const FilterToolbar = ({
         />
       </div>
 
-      {/* ── Row 2: Filter + Export — always horizontal ── */}
-      <div style={{
-        display: "flex",
-        flexDirection: "row",       // ← KEY FIX: always row, never column
-        flexWrap: "wrap",
-        gap: 8,
-        alignItems: "center",
-      }}>
-
-        {/* Filter Dropdown */}
+      {/* ── Filter + Export pushed to the right ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>
         {filters.length > 0 && (
           <div
             style={{ position: "relative" }}
