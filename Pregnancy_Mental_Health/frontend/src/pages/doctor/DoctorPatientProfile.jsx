@@ -9,7 +9,7 @@ import {
 } from "../../components/UI";
 import { api } from "../../utils/api";
 // import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
-import { getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/helpers";
 import { useTheme } from "../../ThemeContext";
 import {
     User, Mail, Phone, Calendar, Droplet, Hash, Navigation,
@@ -259,3 +259,4 @@ export default function DoctorPatientProfile() {
         </div>
     );
 }
+

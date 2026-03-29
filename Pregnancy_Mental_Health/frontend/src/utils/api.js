@@ -8,7 +8,7 @@
 // Use .env.production for production URL (committed to Git)
 // Use .env.development for local developmentt
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api';
-import { dummyApi, USE_DUMMY_DATA } from './dummyData';
+
 
 // Export for use in other components
 export { API_BASE_URL };
@@ -139,93 +139,6 @@ export const apiRequest = async (endpoint, options = {}) => {
   }
 
   try {
-    // Intercept with Dummy Data if enabled
-    if (false && USE_DUMMY_DATA) {
-      console.log(`[MOCK] Intercepting ${config.method || 'GET'} ${endpoint}`);
-
-      // Define a mock response helper
-      const mockRes = (data, ok = true, status = 200) => ({
-        ok,
-        status,
-        json: async () => data,
-        text: async () => JSON.stringify(data),
-      });
-
-      if (endpoint === '/login') {
-        const payload = JSON.parse(config.body);
-        const result = await dummyApi.loginMock(payload);
-        return mockRes(result.data || result, result.ok, result.ok ? 200 : 401);
-      }
-
-      if (endpoint.startsWith('/doctor/dashboard')) {
-        const result = await dummyApi.getDoctorDashboard();
-        return mockRes(result);
-      }
-
-      if (endpoint.startsWith('/doctor/assessments')) {
-        const urlParams = new URLSearchParams(endpoint.split('?')[1]);
-        const status = urlParams.get('status');
-        const result = await dummyApi.getDoctorAssessments(status);
-        return mockRes(result);
-      }
-
-      if (endpoint === '/nurse/patients' || endpoint === '/doctor/patients') {
-        const result = await dummyApi.getPatients();
-        return mockRes(result);
-      }
-
-      if (endpoint.startsWith('/assessment/')) {
-        const id = endpoint.split('/').pop();
-        const assessments = await dummyApi.getAssessments();
-        const result = assessments.find(a => a.id === id || a.id === parseInt(id));
-        return mockRes(result, !!result, result ? 200 : 404);
-      }
-
-      if (endpoint.startsWith('/doctor/review/')) {
-        const id = endpoint.split('/').pop();
-        if (config.method === 'POST') {
-          const payload = JSON.parse(config.body);
-          const result = await dummyApi.reviewAssessment(id, payload);
-          return mockRes(result.data, result.ok);
-        }
-      }
-
-      if (endpoint === '/assessments' && config.method === 'POST') {
-        const payload = JSON.parse(config.body);
-        const result = await dummyApi.saveAssessment(payload);
-        return mockRes(result.data, result.ok);
-      }
-
-      // Intercept Messaging
-      if (endpoint.startsWith('/patient/messages')) {
-        const userEmail = localStorage.getItem('ppd_user_email');
-        const userRole = localStorage.getItem('ppd_user_role');
-        const userFullName = localStorage.getItem('ppd_user_full_name');
-
-        if (config.method === 'POST') {
-          const payload = (config.body && config.body !== 'undefined') ? JSON.parse(config.body) : {};
-          const result = await dummyApi.sendMessage(
-            { email: userEmail, role: userRole, fullName: userFullName },
-            payload
-          );
-          return mockRes(result.data, result.ok);
-        } else {
-          // GET
-          const result = await dummyApi.getMessages(userEmail, userRole);
-          return mockRes(result);
-        }
-      }
-
-      // Default fallback for other GET requests
-      if (config.method === 'GET' || !config.method) {
-        if (endpoint.includes('patients')) return mockRes(await dummyApi.getPatients());
-        if (endpoint.includes('assessments')) return mockRes(await dummyApi.getAssessments());
-        if (endpoint.includes('doctors')) return mockRes(await dummyApi.getDoctors());
-        if (endpoint.includes('appointments')) return mockRes(await dummyApi.getAppointments());
-      }
-
-      return mockRes({ detail: "Endpoint not mocked" }, false, 404);
-    }
 
     const response = await fetch(url, config);
 

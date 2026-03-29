@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
 // import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
-import { getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/helpers";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
 import ThemeToggle from "../../components/ThemeToggle";
@@ -526,3 +526,4 @@ export default function NurseDashboard() {
     </div>
   );
 }
+

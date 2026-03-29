@@ -23,7 +23,7 @@ import {
     Mail,
     AlertCircle
 } from 'lucide-react';
-import { getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/helpers";
 
 const SchedulePage = () => {
     const { user, logout } = useAuth();
@@ -461,3 +461,4 @@ const SchedulePage = () => {
 };
 
 export default SchedulePage;
+

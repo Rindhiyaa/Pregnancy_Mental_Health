@@ -28,7 +28,7 @@ import {
     History as HistoryIcon,
     ClipboardList
 } from 'lucide-react';
-import { getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/helpers";
 
 const AssessmentsPage = () => {
     const navigate = useNavigate();
@@ -252,3 +252,4 @@ const AssessmentsPage = () => {
 };
 
 export default AssessmentsPage;
+

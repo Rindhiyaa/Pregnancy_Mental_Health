@@ -13,7 +13,7 @@ import {
   Pagination
 } from "../../components/UI";
 import { api } from "../../utils/api";
-import { getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/helpers";
 import toast from "react-hot-toast";
 import { useSearchParams } from "react-router-dom";
 import {

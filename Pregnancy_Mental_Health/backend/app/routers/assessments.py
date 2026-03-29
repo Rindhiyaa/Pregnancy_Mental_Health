@@ -234,7 +234,7 @@ def save_assessment(
         notes=payload.notes,
         clinician_email=payload.clinician_email or current_user_email,
         nurse_id=current_user.id if current_user and current_user.role == "nurse" else payload.nurse_id,
-        doctor_id=payload.doctor_id,
+        assigned_doctor_id=payload.assigned_doctor_id or payload.doctor_id,
         status=payload.status,
         top_risk_factors=top_risk_factors,
     )
@@ -259,8 +259,8 @@ def save_assessment(
                 db.add(high_risk_notif)
             
             # 2. Assessment Submitted Notification for Doctor
-            if assessment.doctor_id:
-                doctor = db.query(models.User).filter(models.User.id == assessment.doctor_id).first()
+            if assessment.assigned_doctor_id:
+                doctor = db.query(models.User).filter(models.User.id == assessment.assigned_doctor_id).first()
                 if doctor:
                     doc_notif = models.Notification(
                         title="📋 New Assessment for Review",
@@ -284,7 +284,7 @@ def save_assessment(
             db.add(comp_notif)
             
             # 4. Auto-Scheduling Logic (Only if not assigning to a doctor for review first, or as a baseline)
-            if assessment.patient_id and not assessment.doctor_id:
+            if assessment.patient_id and not assessment.assigned_doctor_id:
                 # Schedule rules based on risk
                 plans = []
                 if assessment.risk_level == "High Risk":

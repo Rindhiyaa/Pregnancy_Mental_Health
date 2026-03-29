@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { jwtDecode } from 'jwt-decode';
-import { USE_DUMMY_DATA } from '../utils/dummyData';
+
 import { useEffect } from 'react';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -15,10 +15,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     const token = localStorage.getItem('ppd_access_token');
     if (!token) return;
 
-    // Bypass strict JWT decoding for dummy data
-    if (USE_DUMMY_DATA && token.startsWith('mock-')) {
-      return;
-    }
+
 
     try {
       const decoded = jwtDecode(token);

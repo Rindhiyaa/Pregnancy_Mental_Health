@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from "../../ThemeContext";
 import AdminSidebar from "../../components/AdminSidebar";
 import { PageTitle, Divider, Card, Badge, Pagination } from "../../components/UI";
-import { getAuditLogs } from "../../utils/dummyData";
+
 import { Calendar, Clock, Search, Filter, Download, ChevronDown, Menu, X } from "lucide-react";
 import { exportToPDF, exportToExcel, exportToCSV } from "../../utils/exportUtils";
 import ThemeToggle from "../../components/ThemeToggle";
-// import { getAuditLogs } from "../../utils/dummyData";
+
 import toast from "react-hot-toast";
 import { api } from "../../utils/api";
 

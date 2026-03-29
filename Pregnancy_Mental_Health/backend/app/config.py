@@ -40,8 +40,8 @@ TRUSTED_HOSTS_STR = os.getenv(
 TRUSTED_HOSTS = [host.strip() for host in TRUSTED_HOSTS_STR.split(",")]
 
 # JWT Configuration
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-fallback-secret-key")
-JWT_REFRESH_SECRET = os.getenv("JWT_REFRESH_SECRET", "your-fallback-refresh-secret")
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+JWT_REFRESH_SECRET = os.getenv("JWT_REFRESH_SECRET")
 
 # API Configuration
 API_HOST = os.getenv("API_HOST", "0.0.0.0")
@@ -54,11 +54,11 @@ MAIL_FROM = os.getenv("MAIL_FROM")
 
 # Debug: Print configuration status (without sensitive data)
 import sys
-print(f"📧 Email Config Loaded: USER={MAIL_USERNAME}, SERVER={os.getenv('MAIL_SERVER')}", file=sys.stderr)
+print(f"Email Config Loaded: USER={MAIL_USERNAME}, SERVER={os.getenv('MAIL_SERVER')}", file=sys.stderr)
 if not MAIL_PASSWORD:
-    print("⚠️ WARNING: MAIL_PASSWORD is NOT set!", file=sys.stderr)
+    print(" WARNING: MAIL_PASSWORD is NOT set!", file=sys.stderr)
 else:
-    print(f"✅ MAIL_PASSWORD is set (length: {len(MAIL_PASSWORD)})", file=sys.stderr)
+    print(f" MAIL_PASSWORD is set (length: {len(MAIL_PASSWORD)})", file=sys.stderr)
 MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME", "PPD Risk Insight System")
 MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
 MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")

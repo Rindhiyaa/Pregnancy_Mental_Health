@@ -8,7 +8,7 @@ import FilterToolbar from "../../components/FilterToolbar";
 import { 
     Card, Badge, PageTitle, Table, TableRow, TableCell, Pagination, Loader2 
 } from "../../components/UI";
-import { getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/helpers";
 import { exportPatientsToPDF, exportPatientsToExcel, exportPatientsToCSV } from "../../utils/exportUtils";
 import { Users, AlertCircle, AlertTriangle, UserCheck, TrendingUp, ExternalLink, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import toast from "react-hot-toast";

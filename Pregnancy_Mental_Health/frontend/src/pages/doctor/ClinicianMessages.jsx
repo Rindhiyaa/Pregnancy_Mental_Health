@@ -17,7 +17,7 @@ import {
     CheckCircle,
     Trash2
 } from "lucide-react";
-import { getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/helpers";
 
 export default function ClinicianMessages() {
     const { user } = useAuth();
@@ -345,3 +345,4 @@ export default function ClinicianMessages() {
         </div>
     );
 }
+

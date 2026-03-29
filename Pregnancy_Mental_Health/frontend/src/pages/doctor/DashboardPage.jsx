@@ -10,7 +10,7 @@ import {
   StatCard,
   Loader2
 } from "../../components/UI";
-import { getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/helpers";
 import {
     AlertCircle,
     Clock,

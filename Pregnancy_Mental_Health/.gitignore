@@ -23,10 +23,8 @@ build/
 
 # Environment variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 frontend/.env
 
 # IDE
@@ -61,3 +59,27 @@ logs/
 *.tmp
 *.temp
 .cache/
+
+# Sensitive Backend Scripts and Tests
+backend/tests/
+backend/test_*.py
+backend/reset_all_passwords.py
+backend/seed_audit_log.py
+backend/seed_followups.py
+backend/check_users.py
+backend/check_tables.py
+backend/update_db.py
+
+# Database files
+*.db
+*.sqlite3
+backend/*.db
+
+# Secret config files
+*secrets*.json
+*credentials*.json
+serviceAccountKey.json
+
+# Coverage reports
+.coverage
+htmlcov/

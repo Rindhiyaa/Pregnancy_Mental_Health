@@ -5,7 +5,7 @@ import NurseSidebar from "../../components/NurseSidebar";
 import { PageTitle, Card, Badge, Loader2 } from "../../components/UI";
 import { api } from "../../utils/api";
 // import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
-import { getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/helpers";
 import toast from "react-hot-toast";
 import { Search, Filter, PlusCircle, User, Phone, Calendar, Stethoscope, MessageSquare, MoreHorizontal, ChevronRight, ClipboardList } from "lucide-react";
 

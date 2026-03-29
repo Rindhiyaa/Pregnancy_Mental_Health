@@ -4,7 +4,7 @@ import NurseSidebar from "../../components/NurseSidebar";
 import { PageTitle, Card, Badge, Loader2 } from "../../components/UI";
 import { api } from "../../utils/api";
 // import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
-import { getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/helpers";
 import { useTheme } from "../../ThemeContext";
 import { User, Mail, Phone, Calendar, Droplet, Hash, Navigation, ClipboardList, ChevronLeft } from "lucide-react";
 import toast from "react-hot-toast";
@@ -159,3 +159,4 @@ export default function NursePatientProfile() {
         </div>
     );
 }
+

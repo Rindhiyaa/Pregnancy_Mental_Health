@@ -25,7 +25,7 @@ import {
     Eye,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getAvatarColor } from "../../utils/dummyData";
+import { getAvatarColor } from "../../utils/helpers";
 
 const HistoryPage = () => {
     const navigate = useNavigate();
@@ -314,3 +314,4 @@ const HistoryPage = () => {
 };
 
 export default HistoryPage;
+
