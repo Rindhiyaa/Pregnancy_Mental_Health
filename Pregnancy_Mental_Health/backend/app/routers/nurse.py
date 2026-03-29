@@ -6,6 +6,7 @@ from typing import Optional, List
 from ..database import get_db
 from .. import models, schemas
 from ..jwt_handler import get_current_user_email, get_current_user
+from ..config import DEFAULT_USER_PASSWORD
 from ..security import hash_password
 from sqlalchemy.exc import IntegrityError
 # from ..audit import log_admin_action  # Assuming you have this from admin panel
@@ -166,7 +167,7 @@ def register_patient(
         first_name = name_parts[0]
         last_name = name_parts[1] if len(name_parts) > 1 else ""
 
-        TEMP_PASSWORD = "TempPass123!"
+        TEMP_PASSWORD = DEFAULT_USER_PASSWORD
 
         new_user = models.User(
             first_name=first_name,

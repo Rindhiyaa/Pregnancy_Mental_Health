@@ -39,14 +39,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS - FIXES localhost:5173 → 127.0.0.1:8000
+# CORS - Centralized in config.py
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5175", "http://127.0.0.1:5175", *ALLOWED_ORIGINS],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "*"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # In production: only allow configured hosts
 if IS_PRODUCTION:

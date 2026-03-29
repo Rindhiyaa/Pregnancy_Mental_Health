@@ -8,3 +8,4 @@ Pregnancy_Mental_Health/backend/test_temp.db
 *.env
 Pregnancy_Mental_Health/backend/.env
 # Pregnancy_Mental_Health/backend/app/config.py  <-- Remove this to allow committing config.py logic
+Pregnancy_Mental_Health/backend/test_backend_smtp.py担

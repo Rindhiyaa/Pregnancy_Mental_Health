@@ -22,18 +22,45 @@ def log_event(db: Session, action: str, user_id: int | None = None, actor_id: in
             user_name = f"{user.first_name} {user.last_name or ''}".strip()
 
     ip_address = metadata.get("ip") if metadata else None
-    details = f"Action: {action} | Meta: {metadata}"
+    # Create human-readable details based on action and metadata
+    readable_details = f"Action: {action}"
+    
+    if action == "RECOVERY_SUCCESS":
+        readable_details = "Successfully completed password recovery and reset."
+    elif action == "RECOVERY_APPROVED":
+        request_id = metadata.get('request_id') if metadata else "Unknown"
+        readable_details = f"Recovery request approved (Req ID: {request_id})"
+    elif action == "RECOVERY_AUTO_APPROVED":
+        readable_details = "Recovery request automatically approved (Patient role)."
+    elif action == "RECOVERY_REQUEST_PENDING_ADMIN":
+        readable_details = "Recovery request submitted for clinician (Waiting for Admin approval)."
+    elif action == "RECOVERY_FAILED_BAD_CODE":
+        readable_details = "Failed recovery attempt: Incorrect code entered."
+    elif action == "RECOVERY_FAILED_EXPIRED":
+        readable_details = "Failed recovery attempt: Code has expired."
+    elif action == "RECOVERY_FAILED_LOCKED":
+        readable_details = "Account recovery locked: Too many failed attempts."
+    elif action == "RECOVERY_REQUEST_UNKNOWN_EMAIL":
+        email = metadata.get('email') if metadata else "Unknown"
+        readable_details = f"Recovery attempt for unknown email: {email}"
+    elif metadata:
+        # Fallback for other actions: include specific keys if they exist
+        clean_meta = {k: v for k, v in metadata.items() if k not in ["ip", "user_agent"]}
+        if clean_meta:
+            readable_details = f"{action} | {clean_meta}"
+
     
     entry = AuditLog(
         user_id=actor_id or user_id or 0,
         user_name=user_name,
         action=action,
-        details=details,
+        details=readable_details,
         ip_address=ip_address,
         timestamp=datetime.utcnow()
     )
     db.add(entry)
     db.commit()
+
 
 
 async def send_recovery_push(user: User, code: str):
