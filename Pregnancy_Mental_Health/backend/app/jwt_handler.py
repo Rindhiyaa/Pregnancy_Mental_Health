@@ -50,7 +50,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    to_encode.update({"exp": expire, "type": "access"})
+    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc), "type": "access"})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -62,7 +62,7 @@ def create_refresh_token(data: dict) -> str:
     """
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode.update({"exp": expire, "type": "refresh"})
+    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc), "type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, JWT_REFRESH_SECRET, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -130,7 +130,8 @@ def get_current_user_email(credentials: HTTPAuthorizationCredentials = Depends(s
 def get_current_user(
     request: Request,
     db: Session = Depends(get_db),
-    email: str = Depends(get_current_user_email)
+    email: str = Depends(get_current_user_email),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> models.User:
     """
     Dependency to get current user object from DB
@@ -142,6 +143,20 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
         )
+    
+    payload = decode_access_token(credentials.credentials)
+    iat_timestamp = payload.get("iat")
+    if iat_timestamp and getattr(user, "password_changed_at", None):
+        iat_datetime = datetime.fromtimestamp(iat_timestamp, tz=timezone.utc)
+        pwd_changed = user.password_changed_at
+        if pwd_changed.tzinfo is None:
+            pwd_changed = pwd_changed.replace(tzinfo=timezone.utc)
+        if iat_datetime < pwd_changed:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session expired due to password change. Please log in again.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
     
     # Enforce password reset for first-time users (not admin, not on change-password endpoint)
     if user.first_login and user.role != "admin" and not request.url.path.endswith("/change-password"):

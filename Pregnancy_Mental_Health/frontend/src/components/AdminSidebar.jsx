@@ -9,7 +9,8 @@ import {
   Shield,
   BarChart3,
   Menu,
-  X
+  X,
+  KeyRound
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../ThemeContext";
@@ -20,6 +21,7 @@ const ADMIN_NAV_ITEMS = [
   { to: "/admin/doctors", icon: <Shield size={18} />, label: "Doctors" },
   { to: "/admin/nurses", icon: <UserPlus size={18} />, label: "Nurses" },
   { to: "/admin/patients", icon: <Users size={18} />, label: "Patients" },
+  { to: "/admin/recovery", icon: <KeyRound size={18} />, label: "Recoveries" },
   { to: "/admin/analytics", icon: <BarChart3 size={18} />, label: "Analytics" },
   { to: "/admin/audit", icon: <FileText size={18} />, label: "Audit Logs" },
 ];

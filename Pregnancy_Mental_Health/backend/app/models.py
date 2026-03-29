@@ -230,3 +230,42 @@ class Appointment(Base):
     doctor = relationship("User", backref="appointments")
 
 
+class RecoveryRequest(Base):
+    __tablename__ = "recovery_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_email = Column(String, nullable=False, index=True)
+    user_role = Column(String(20), nullable=False, index=True)
+    status = Column(String(20), nullable=False, default="pending", index=True)
+    requested_from_ip = Column(String(64), nullable=True)
+    requested_user_agent = Column(String, nullable=True)
+    approved_by_admin_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    rejected_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    challenges = relationship("RecoveryChallenge", back_populates="request", cascade="all, delete-orphan")
+
+
+class RecoveryChallenge(Base):
+    __tablename__ = "recovery_challenges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    recovery_request_id = Column(Integer, ForeignKey("recovery_requests.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash = Column(String, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+    attempt_count = Column(Integer, nullable=False, default=0)
+    max_attempts = Column(Integer, nullable=False, default=3)
+    device_id = Column(String, nullable=True)
+    push_subscription_id = Column(String, nullable=True)
+    created_by_admin_ip = Column(String(64), nullable=True)
+    used_from_ip = Column(String(64), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    request = relationship("RecoveryRequest", back_populates="challenges")
+
+

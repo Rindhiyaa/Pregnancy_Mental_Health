@@ -305,3 +305,31 @@ class UserUpdate(BaseModel):
     last_name: str | None = None
     email: EmailStr | None = None
     phone_number: str | None = None
+
+class RecoveryRequestCreate(BaseModel):
+    email: EmailStr
+
+class RecoveryRequestOut(BaseModel):
+    id: int
+    user_email: EmailStr
+    user_role: str
+    status: str
+    requested_from_ip: Optional[str] = None
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class RecoveryVerifyIn(BaseModel):
+    email: EmailStr
+    code: str
+    new_password: str
+    device_id: Optional[str] = None
+
+class ApproveRecoveryResponse(BaseModel):
+    message: str
+    request_id: int
+    expires_at: datetime
+
+class GenericMessage(BaseModel):
+    message: str
+    auto_approved: Optional[bool] = None
+    code: Optional[str] = None

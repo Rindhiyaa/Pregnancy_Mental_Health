@@ -225,54 +225,6 @@ def refresh_access_token(request: Request, refresh_token: str = Cookie(None)):
             detail="Could not refresh token"
         )
 
-@router.post("/change-password")
-def change_password(
-    data: ChangePasswordRequest, 
-    response: Response,
-    db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email)
-):
-    # Validate password length
-    if len(data.new_password) < 8:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 8 characters",
-        )
-        
-    user = db.query(models.User).filter(models.User.email == current_user_email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    user.hashed_password = hash_password(data.new_password)
-    user.first_login = False
-    user.password_changed_at = datetime.utcnow()
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    
-    logger.info(f"Password changed for user: {user.email}")
-
-    # Generate new tokens after password change
-    access_token = create_access_token(data={"sub": user.email})
-    refresh_token = create_refresh_token(data={"sub": user.email})
-    
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=IS_PRODUCTION,
-        samesite="lax",
-        max_age=7 * 24 * 3600,
-        path="/"
-    )
-    
-    return {
-        "message": "Password updated successfully",
-        "access_token": access_token,
-        "token_type": "bearer",
-        "first_login": user.first_login
-    }
-
 
 
 def get_user_or_404(user_id: int, db: Session) -> models.User:
@@ -373,67 +325,6 @@ def set_logout_inactive(
     
     return
 
-
-@router.post("/forgot-password")
-def forgot_password(
-    request: ForgotPasswordRequest,
-    db: Session = Depends(get_db),
-):
-    """
-    Check if user exists with this email.
-    In production, this would send a reset email if the account exists.
-    """
-    user = db.query(models.User).filter(models.User.email == request.email).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No account found with this email address."
-        )
-    
-    # TODO: In production, send actual password reset email here
-    # Example: send_password_reset_email(user.email, generate_reset_token(user))
-    
-    return {
-        "message": "User verified. You can now reset your password.",
-        "email": request.email
-    }
-
-
-@router.post("/reset-password")
-def reset_password(
-    request: ResetPasswordRequest,
-    db: Session = Depends(get_db),
-):
-    """
-    Reset user password.
-    In production, you would verify a reset token first.
-    Returns same error for non-existent users to prevent enumeration.
-    """
-    user = db.query(models.User).filter(models.User.email == request.email).first()
-    
-    # Security: Don't reveal whether user exists
-    if not user:
-        # Return same error as invalid password to prevent user enumeration
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired reset request."
-        )
-    
-    # Validate new password
-    if len(request.new_password) < 8:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 8 characters"
-        )
-    
-    # Update password and metadata
-    user.hashed_password = hash_password(request.new_password)
-    user.first_login = False
-    user.password_changed_at = datetime.now()
-    db.commit()
-    
-    return {"message": "Password reset successful. You can now login with your new password."}
 
 
 @router.post("/change-password")

@@ -50,6 +50,7 @@ import AdminNursesPage from "../pages/admin/NursesPage";
 import AdminPatientsPage from "../pages/admin/PatientsPage";
 import AnalyticsPage from "../pages/admin/AnalyticsPage";
 import AuditLogsPage from "../pages/admin/AuditLogsPage";
+import RecoveryRequestsPage from "../pages/admin/RecoveryRequestsPage";
 
 export default function AppRouter() {
   return (
@@ -67,6 +68,7 @@ export default function AppRouter() {
       <Route path="/admin/doctors" element={<ProtectedRoute requiredRole="admin"><AdminDoctorsPage /></ProtectedRoute>} />
       <Route path="/admin/nurses" element={<ProtectedRoute requiredRole="admin"><AdminNursesPage /></ProtectedRoute>} />
       <Route path="/admin/patients" element={<ProtectedRoute requiredRole="admin"><AdminPatientsPage /></ProtectedRoute>} />
+      <Route path="/admin/recovery" element={<ProtectedRoute requiredRole="admin"><RecoveryRequestsPage /></ProtectedRoute>} />
       <Route path="/admin/analytics" element={<ProtectedRoute requiredRole="admin"><AnalyticsPage /></ProtectedRoute>} />
       <Route path="/admin/audit" element={<ProtectedRoute requiredRole="admin"><AuditLogsPage /></ProtectedRoute>} />
 
