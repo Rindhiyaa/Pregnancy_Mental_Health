@@ -203,7 +203,7 @@ export default function PatientsPage() {
                                 </TableCell>
                                 <TableCell>
                                     <span style={{ fontWeight: 800, fontSize: 15, color: p.latest_score >= 13 ? theme.dangerText : theme.textPrimary }}>
-                                        {p.latest_score}/30
+                                        {p.latest_score !== null && p.latest_score !== undefined ? `${p.latest_score}/30` : '—'}
                                     </span>
                                 </TableCell>
                                 <TableCell>

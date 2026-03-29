@@ -75,7 +75,7 @@ export default function NurseDashboard() {
 
   const handleMarkOneRead = async (id) => {
     try {
-      await api.post(`/api/notifications/${id}/read`, {});
+      await api.post(`/notifications/${id}/read`, {});
       setNotifications(prev => prev.filter(n => n.id !== id)); // remove
       setUnreadCount(c => Math.max(0, c - 1));
     } catch (e) {
@@ -85,7 +85,7 @@ export default function NurseDashboard() {
 
   const handleMarkAllRead = async () => {
     try {
-      await api.post("/api/notifications/read-all", {});
+      await api.post("/notifications/read-all", {});
       setNotifications([]);  // clear list
       setUnreadCount(0);
     } catch (e) {

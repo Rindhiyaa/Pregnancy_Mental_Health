@@ -37,7 +37,7 @@ async def get_doctor_dashboard(
         week_ago = datetime.now() - timedelta(days=7)
         reviewed_week = db.query(Assessment).filter(
             Assessment.assigned_doctor_id == current_user.id,
-            Assessment.status == 'validated',
+            Assessment.status.in_(["reviewed", "approved"]),
             Assessment.reviewed_at >= week_ago,
             Assessment.reviewed_at.isnot(None)
         ).count()
@@ -53,20 +53,13 @@ async def get_doctor_dashboard(
             Assessment.risk_level == 'high',
             Assessment.status.in_(['submitted', 'pending'])
         ).limit(5).all()
-        
+
         urgent_list = []
         for a in urgent_cases:
-            # Get EPDS score from raw_data
-            epds_score = 0
-            if a.raw_data and isinstance(a.raw_data, dict):
-                epds_data = a.raw_data.get('epds', {})
-                if isinstance(epds_data, dict):
-                    epds_score = sum(epds_data.values()) if epds_data else 0
-            
             urgent_list.append({
                 "id": a.id,
                 "patient_name": a.patient.name if a.patient else a.patient_name,
-                "score": epds_score,
+                "score": None,  # ✅ Changed: Don't show EPDS until validated
                 "risk_score": a.risk_score
             })
         
@@ -251,11 +244,18 @@ def analyze_existing_assessment(
         
         # Call the prediction
         result = predict_assessment(payload)
+
+        assessment.status = "reviewed"
+        assessment.reviewed_at = datetime.now()
         
         # 4️⃣ Update the assessment with results
         assessment.risk_level = result.risk_level
         assessment.risk_score = result.score
+        assessment.status = "reviewed"
+        assessment.reviewed_at = datetime.now()
+
         db.commit()
+        db.refresh(assessment)
         
         logger.info(f"Analyzed assessment #{assessment_id} -> {result.risk_level}, score: {result.score:.1f}")
         
@@ -279,70 +279,59 @@ def band_and_first_days(risk_level: str) -> int:
     return 14   # Low
 
 
-@router.patch("/assessments/{assessment_id}/review")
-def review_assessment(
-    assessment_id: int,
-    payload: dict,
-    db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
+@router.get("/assessments")
+def get_doctor_assessments(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    doctor = (
-        db.query(models.User)
-        .filter(models.User.email == current_user_email)
-        .first()
-    )
-    if not doctor or doctor.role != "doctor":
-        raise HTTPException(status_code=403, detail="Doctor role required")
-
-    a = (
-        db.query(models.Assessment)
-        .filter(models.Assessment.id == assessment_id)
-        .first()
-    )
-    if not a:
-        raise HTTPException(status_code=404, detail="Assessment not found")
-
-    # 1) Apply updates from ClinicalValidation.jsx payload
-    a.clinician_risk   = payload.get("clinicianrisk")
-    a.risk_level_final = payload.get("risklevelfinal")
-    a.override_reason  = payload.get("overridereason")
-    a.plan             = payload.get("plan")
-    a.notes            = payload.get("notes")
-
-    new_status = payload.get("status")  # "reviewed" or "approved"
-    if new_status:
-        a.status = new_status
-
-    db.commit()
-    db.refresh(a)
-
-    # 2) Notification to the nurse who created this assessment
-    # Only send when we have a final risk AND status moved to reviewed/approved
-    final_band = a.risk_level_final or a.clinician_risk or a.risk_level
-    if a.nurse_id and final_band and new_status in {"reviewed", "approved"}:
-        nurse = db.query(models.User).filter(models.User.id == a.nurse_id).first()
-        if nurse and nurse.email:
-            patient_name = a.patient_name or f"Patient #{a.patient_id}"
-            title = "Risk Score Validated"
-            message = (
-                f"Dr. {(doctor.first_name or '').strip()} {(doctor.last_name or '').strip()} "
-                f"has reviewed the assessment for {patient_name} and confirmed the "
-                f"risk as {final_band}."
-            )
-
-            priority = "high" if str(final_band).lower().startswith("high") else "medium"
-
-            notification = models.Notification(
-                title=title,
-                message=message,
-                type="info",
-                priority=priority,
-                clinician_email=nurse.email,
-            )
-            db.add(notification)
-            db.commit()
-
-    return a
+    """Get all assessments assigned to this doctor"""
+    try:
+        if current_user.role != "doctor":
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        logger.info(f"Doctor {current_user.id} ({current_user.email}) fetching assessments")
+        
+        assessments = db.query(Assessment).filter(
+            Assessment.assigned_doctor_id == current_user.id
+        ).order_by(Assessment.created_at.desc()).all()
+        
+        logger.info(f"Found {len(assessments)} assessments for doctor {current_user.id}")
+        
+        assessments_list = []
+        for assessment in assessments:
+            # Get nurse info
+            nurse = db.query(User).filter(User.id == assessment.nurse_id).first()
+            nurse_name = f"{nurse.first_name} {nurse.last_name}".strip() if nurse else "Unknown"
+            
+            # ✅ CHANGED: Only show EPDS if already validated
+            epds_score = assessment.epds_score  # Use stored value, not calculated
+            
+            assessments_list.append({
+                "id": assessment.id,
+                "patient_id": assessment.patient_id,
+                "patient_name": assessment.patient_name,
+                "patient_email": assessment.patient_email,
+                "nurse_id": assessment.nurse_id,
+                "nurse_name": nurse_name,
+                "assigned_doctor_id": assessment.assigned_doctor_id,
+                "epds_score": epds_score,  # Will be None until doctor validates
+                "score": epds_score,
+                "risk_score": assessment.risk_score,
+                "risk_level": assessment.risk_level,
+                "status": assessment.status,
+                "plan": assessment.plan,
+                "notes": assessment.notes,
+                "clinician_risk": assessment.clinician_risk,
+                "created_at": assessment.created_at.isoformat() if assessment.created_at else None,
+                "timestamp": assessment.created_at.isoformat() if assessment.created_at else None,
+            })
+        
+        logger.info(f"Returning {len(assessments_list)} assessments")
+        return assessments_list
+        
+    except Exception as e:
+        logger.error(f"Error in get_doctor_assessments: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
     
 @router.get("/assessments/{assessment_id}")
 def get_doctor_assessment_by_id(
@@ -357,21 +346,21 @@ def get_doctor_assessment_by_id(
         
         logger.info(f"Fetching assessment {assessment_id} for doctor {current_user.id}")
         
-        # Get the assessment
         assessment = db.query(Assessment).filter(
             Assessment.id == assessment_id,
             Assessment.assigned_doctor_id == current_user.id
         ).first()
         
         if not assessment:
-            logger.warning(f"Assessment {assessment_id} not found or not assigned to doctor {current_user.id}")
+            logger.warning(f"Assessment {assessment_id} not found")
             raise HTTPException(status_code=404, detail="Assessment not found")
         
         # Get nurse info
         nurse = db.query(User).filter(User.id == assessment.nurse_id).first()
         nurse_name = f"{nurse.first_name} {nurse.last_name}".strip() if nurse else "Unknown"
         
-        # Extract EPDS score from raw_data
+        # ✅ CHANGED: Calculate EPDS here for the doctor to review
+        # This is ONLY for display in the validation screen
         epds_score = 0
         if assessment.raw_data and isinstance(assessment.raw_data, dict):
             epds_items = []
@@ -391,7 +380,7 @@ def get_doctor_assessment_by_id(
             "nurse_id": assessment.nurse_id,
             "nurse_name": nurse_name,
             "assigned_doctor_id": assessment.assigned_doctor_id,
-            "epds_score": epds_score,
+            "epds_score": epds_score,  # Show calculated EPDS to doctor for review
             "score": assessment.risk_score,
             "risk_score": assessment.risk_score,
             "risk_level": assessment.risk_level,
@@ -418,73 +407,6 @@ def get_doctor_assessment_by_id(
     except Exception as e:
         logger.error(f"Error getting assessment {assessment_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/assessments")
-def get_doctor_assessments(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Get all assessments assigned to this doctor"""
-    try:
-        if current_user.role != "doctor":
-            raise HTTPException(status_code=403, detail="Access denied")
-        
-        # Check which doctor is logged in
-        logger.info(f"Doctor {current_user.id} ({current_user.email}) fetching assessments")
-        
-        assessments = db.query(Assessment).filter(
-            Assessment.assigned_doctor_id == current_user.id
-        ).order_by(Assessment.created_at.desc()).all()
-        
-        logger.info(f"Found {len(assessments)} assessments for doctor {current_user.id}")
-        
-        assessments_list = []
-        for assessment in assessments:
-            # Get nurse info
-            nurse = db.query(User).filter(User.id == assessment.nurse_id).first()
-            nurse_name = f"{nurse.first_name} {nurse.last_name}".strip() if nurse else "Unknown"
-            
-            # Extract EPDS score from raw_data JSON
-            epds_score = 0
-            if assessment.raw_data and isinstance(assessment.raw_data, dict):
-                # Calculate EPDS total from individual items
-                epds_items = []
-                for i in range(1, 11):
-                    val = assessment.raw_data.get(f'epds_{i}', '0')
-                    try:
-                        epds_items.append(int(val))
-                    except:
-                        epds_items.append(0)
-                epds_score = sum(epds_items)
-            
-            # Convert to dict with all required fields
-            assessments_list.append({
-                "id": assessment.id,
-                "patient_id": assessment.patient_id,
-                "patient_name": assessment.patient_name,
-                "patient_email": assessment.patient_email,
-                "nurse_id": assessment.nurse_id,
-                "nurse_name": nurse_name,
-                "assigned_doctor_id": assessment.assigned_doctor_id,  # IMPORTANT: Include this!
-                "epds_score": epds_score,
-                "score": epds_score,
-                "risk_score": assessment.risk_score,
-                "risk_level": assessment.risk_level,
-                "status": assessment.status,
-                "plan": assessment.plan,
-                "notes": assessment.notes,
-                "clinician_risk": assessment.clinician_risk,
-                "created_at": assessment.created_at.isoformat() if assessment.created_at else None,
-                "timestamp": assessment.created_at.isoformat() if assessment.created_at else None,
-            })
-        
-        logger.info(f"Returning {len(assessments_list)} assessments")
-        return assessments_list  # Return array directly
-        
-    except Exception as e:
-        logger.error(f"Error in get_doctor_assessments: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
     
 @router.get("/assessments/test")
 def test_assessments(
@@ -508,6 +430,85 @@ def test_assessments(
         "created_at": assessment.created_at,
         "raw_assessment": str(assessment.__dict__)
     }
+
+@router.patch("/assessments/{assessment_id}/review")
+def review_assessment(
+    assessment_id: int,
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user_email),
+):
+    doctor = (
+        db.query(models.User)
+        .filter(models.User.email == current_user_email)
+        .first()
+    )
+    if not doctor or doctor.role != "doctor":
+        raise HTTPException(status_code=403, detail="Doctor role required")
+
+    a = (
+        db.query(models.Assessment)
+        .filter(models.Assessment.id == assessment_id)
+        .first()
+    )
+    if not a:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+
+    # ✅ ADDED: Calculate and save EPDS score when doctor validates
+    if a.raw_data and isinstance(a.raw_data, dict):
+        epds_items = []
+        for i in range(1, 11):
+            val = a.raw_data.get(f'epds_{i}', '0')
+            try:
+                epds_items.append(int(val))
+            except:
+                epds_items.append(0)
+        a.epds_score = sum(epds_items)  # Save EPDS to database
+
+    # Apply updates from ClinicalValidation.jsx payload
+    a.clinician_risk   = payload.get("clinicianrisk")
+    a.risk_level_final = payload.get("risklevelfinal")
+    a.override_reason  = payload.get("overridereason")
+    a.plan             = payload.get("plan")
+    a.notes            = payload.get("notes")
+    a.reviewed_at      = datetime.now()  # ✅ ADDED: Mark when reviewed
+
+    new_status = payload.get("status")
+
+    if new_status == "approved":
+        a.status = "approved"
+    else:
+        a.status = "reviewed"
+
+    db.commit()
+    db.refresh(a)
+
+    # Notification logic (existing code)
+    final_band = a.risk_level_final or a.clinician_risk or a.risk_level
+    if a.nurse_id and final_band and new_status in {"reviewed", "approved"}:
+        nurse = db.query(models.User).filter(models.User.id == a.nurse_id).first()
+        if nurse and nurse.email:
+            patient_name = a.patient_name or f"Patient #{a.patient_id}"
+            title = "Risk Score Validated"
+            message = (
+                f"Dr. {(doctor.first_name or '').strip()} {(doctor.last_name or '').strip()} "
+                f"has reviewed the assessment for {patient_name} and confirmed the "
+                f"risk as {final_band}."
+            )
+
+            priority = "high" if str(final_band).lower().startswith("high") else "medium"
+
+            notification = models.Notification(
+                title=title,
+                message=message,
+                type="info",
+                priority=priority,
+                clinician_email=nurse.email,
+            )
+            db.add(notification)
+            db.commit()
+
+    return a
 
 @router.get("/profile")
 def get_doctor_profile(
@@ -657,17 +658,21 @@ def get_patients_with_assessment_data(
             latest = patient_assessments[0] if patient_assessments else None
             
             # Extract EPDS from raw_data
+            # Extract EPDS from raw_data - ONLY if validated
             epds_score = 0
-            if latest and latest.raw_data and isinstance(latest.raw_data, dict):
-                # Calculate EPDS total from individual items
-                epds_items = []
-                for i in range(1, 11):
-                    val = latest.raw_data.get(f'epds_{i}', '0')
-                    try:
-                        epds_items.append(int(val))
-                    except:
-                        epds_items.append(0)
-                epds_score = sum(epds_items)
+            if latest and latest.epds_score is not None:
+                epds_score = latest.epds_score  # Use stored value
+            elif latest and latest.status in ['reviewed', 'approved'] and latest.raw_data:
+                # Fallback: calculate if validated but not stored
+                if isinstance(latest.raw_data, dict):
+                    epds_items = []
+                    for i in range(1, 11):
+                        val = latest.raw_data.get(f'epds_{i}', '0')
+                        try:
+                            epds_items.append(int(val))
+                        except:
+                            epds_items.append(0)
+                    epds_score = sum(epds_items)
             
             # Calculate trend if there are multiple assessments
             trend = 'stable'
@@ -817,7 +822,7 @@ def compute_band_and_days(score: float) -> tuple[str, int]:
         return "Medium", 7
     return "Low", 14
 
-@router.post("/doctor/assessments/{assessment_id}/review")
+@router.post("/assessments/{assessment_id}/review")
 def review_assessment(
     assessment_id: int,
     db: Session = Depends(get_db),

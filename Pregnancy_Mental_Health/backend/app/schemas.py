@@ -231,6 +231,19 @@ class AssessmentReview(BaseModel):
     status: str = "reviewed" # reviewed, complete
 
 
+class NotificationOut(BaseModel):
+    id: int
+    title: str
+    message: str
+    type: str
+    priority: str
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class PredictRequest(BaseModel):
     feature_1: float
     feature_2: float

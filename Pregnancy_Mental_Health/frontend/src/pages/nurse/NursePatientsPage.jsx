@@ -63,18 +63,18 @@ export default function NursePatientsPage() {
     if (filter === "All") return matchesSearch;
   
     if (filter === "Assessed") {
-      // Not pending, not draft-in-progress
-      return matchesSearch && !hasDraft && p.status !== "Pending";
+      // Assessed: status is "Active" (doctor reviewed) AND no draft in progress
+      return matchesSearch && (p.status === "Active" || p.status === "Assessed");
     }
   
     if (filter === "Pending") {
-      // Only real pending from backend
+      // Pending: status is "Pending" (submitted, waiting review)
       return matchesSearch && p.status === "Pending";
     }
   
     if (filter === "Draft") {
-      // Draft tab: has local draft AND not pending
-      return matchesSearch && hasDraft && p.status !== "Pending";
+      // Draft: local draft in progress AND status is "Draft"
+      return matchesSearch && hasDraft && p.status === "Draft";
     }
   
     return matchesSearch;

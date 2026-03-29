@@ -16,22 +16,30 @@ export default function NurseAssessmentHistory() {
   const [filter, setFilter] = useState("All"); // All | Draft | Submitted | Reviewed | Complete
   const [searchQuery, setSearchQuery] = useState("");
 
+  const fetchAssessments = async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get("/nurse/assessments");
+      setAssessments(data || []);
+    } catch (err) {
+      console.error("Failed to fetch assessments:", err);
+      toast.error("Failed to load history");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch on mount
   useEffect(() => {
-    const fetchAssessments = async () => {
-      try {
-        setLoading(true);
-  
-        const { data } = await api.get("/nurse/assessments");
-        setAssessments(data || []);
-      } catch (err) {
-        console.error("Failed to fetch assessments:", err);
-        toast.error("Failed to load history");
-      } finally {
-        setLoading(false);
-      }
-    };
-  
     fetchAssessments();
+  }, []);
+
+  // Poll every 30 seconds for updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchAssessments();
+    }, 30000); // 30 seconds
+    return () => clearInterval(interval);
   }, []);
 
     const filteredAssessments = assessments.filter(a => {
@@ -107,7 +115,25 @@ export default function NurseAssessmentHistory() {
       <NurseSidebar />
 
       <main className="portal-main" style={{ background: theme.pageBg, fontFamily: theme.fontBody }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
         <PageTitle title="Assessment History" subtitle="Review and manage all patient mental health screenings" />
+        / {/* Add refresh button */}
+         <button
+            onClick={fetchAssessments}
+            style={{
+              padding: '10px 24px',
+              borderRadius: 12,
+              border: 'none',
+              background: theme.primary,
+              color: 'white',
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontSize: 14
+            }}
+          >
+            Refresh
+          </button>
+        </div>
 
         {/* Filter Tabs & Search */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '32px 0 24px', gap: 20 }}>

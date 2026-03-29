@@ -121,26 +121,21 @@ export default function NurseNewAssessment() {
   
     setLoading(true);
     try {
-      const epdsScore = Object.keys(formData)
-        .filter(k => k.startsWith("epds_"))
-        .reduce((acc, k) => acc + (parseInt(formData[k]) || 0), 0);
-  
       const payload = {
         patient_name: formData.patient_name,
         patient_id: selectedPatient?.id ?? null,
         patient_email: selectedPatient?.email ?? null,
-        risk_level: "Pending",
-        risk_score: null,
-        epds_score: epdsScore,
+        risk_level: "Pending",        // ✅ Stays as pending
+        risk_score: null,              // ✅ Null until doctor reviews
+        epds_score: null,              // ✅ Changed: Don't calculate here
         plan: null,
         notes: null,
-        raw_data: formData,
+        raw_data: formData,            // ✅ Store all form data for doctor to process
         assigned_doctor_id: selectedDoctorId ? Number(selectedDoctorId) : null,
         status: "submitted",
         is_draft: false,
       };
   
-      // api.post throws on non-2xx and returns { data, response } on success
       await api.post("/nurse/assessments", payload);
   
       const doctor = doctors.find(
@@ -154,7 +149,6 @@ export default function NurseNewAssessment() {
       navigate("/nurse/dashboard");
     } catch (error) {
       console.error("Submit failed:", error);
-      // error.message contains backend text from api.js
       toast.error(
         error.message || "Submission failed. Please check required fields."
       );
