@@ -61,19 +61,21 @@ logs/
 .cache/
 
 # Sensitive Backend Scripts and Tests
-backend/tests/
+backend/tests/*
+!backend/tests/.gitkeep
 backend/test_*.py
-backend/reset_all_passwords.py
-backend/seed_audit_log.py
-backend/seed_followups.py
-backend/check_users.py
-backend/check_tables.py
-backend/update_db.py
+backend/reset_*.py
+backend/seed_*.py
+backend/check_*.py
+backend/*_db.py
 
 # Database files
 *.db
 *.sqlite3
 backend/*.db
+*.sql
+*.dump
+*.bak
 
 # Secret config files
 *secrets*.json
