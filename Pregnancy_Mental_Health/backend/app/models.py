@@ -226,6 +226,7 @@ class Appointment(Base):
     notes = Column(String, nullable=True)
     urgency = Column(String, default="Routine")     # "Routine", "Urgent", etc.
     department = Column(String, default="OBGYN")
+    status = Column(String, default="pending")       # pending, confirmed, completed, cancelled, no-show
 
     patient = relationship("Patient", backref="appointments")
     doctor = relationship("User", backref="appointments")

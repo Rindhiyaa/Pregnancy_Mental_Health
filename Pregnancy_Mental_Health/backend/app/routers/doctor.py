@@ -900,3 +900,127 @@ def get_today_appointments(
         }
         for a in apps
     ]
+
+
+@router.get("/appointments")
+def get_doctor_appointments(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get all appointments assigned to this doctor with full clinical context"""
+    if current_user.role != "doctor":
+        raise HTTPException(status_code=403, detail="Doctor role required")
+
+    appointments = (
+        db.query(models.Appointment)
+        .filter(models.Appointment.doctor_id == current_user.id)
+        .order_by(models.Appointment.date.asc(), models.Appointment.time.asc())
+        .all()
+    )
+
+    results = []
+    for a in appointments:
+        patient = db.query(Patient).filter(Patient.id == a.patient_id).first()
+
+        # Get latest assessment for this patient assigned to this doctor
+        latest_assessment = (
+            db.query(Assessment)
+            .filter(
+                Assessment.patient_id == a.patient_id,
+                Assessment.assigned_doctor_id == current_user.id,
+            )
+            .order_by(Assessment.created_at.desc())
+            .first()
+        )
+
+        # Get nurse info from assessment
+        nurse_name = None
+        if latest_assessment and latest_assessment.nurse_id:
+            nurse = db.query(User).filter(User.id == latest_assessment.nurse_id).first()
+            if nurse:
+                nurse_name = f"{nurse.first_name} {nurse.last_name or ''}".strip()
+
+        # Calculate EPDS from raw_data if available
+        epds_score = None
+        if latest_assessment:
+            epds_score = latest_assessment.epds_score
+            if epds_score is None and latest_assessment.raw_data:
+                try:
+                    items = [int(latest_assessment.raw_data.get(f"epds_{i}", 0)) for i in range(1, 11)]
+                    epds_score = sum(items)
+                except Exception:
+                    epds_score = None
+
+        results.append({
+            "id": a.id,
+            "date": a.date.isoformat() if a.date else None,
+            "time": str(a.time) if a.time else None,
+            "type": a.type or "Follow-up",
+            "urgency": a.urgency or "Routine",
+            "department": a.department or "OBGYN",
+            "notes": a.notes,
+            "status": getattr(a, "status", "pending") or "pending",
+            # Patient
+            "patient_id": a.patient_id,
+            "patient_name": patient.name if patient else "Unknown",
+            "patient_age": patient.age if patient else None,
+            "patient_phone": patient.phone if patient else None,
+            "patient_email": patient.email if patient else None,
+            "pregnancy_week": patient.pregnancy_week if patient else None,
+            # Clinical
+            "assessment_id": latest_assessment.id if latest_assessment else None,
+            "risk_level": latest_assessment.risk_level if latest_assessment else None,
+            "risk_score": latest_assessment.risk_score if latest_assessment else None,
+            "epds_score": epds_score,
+            "top_risk_factors": latest_assessment.top_risk_factors if latest_assessment else [],
+            # Workflow
+            "submitted_by_nurse": nurse_name,
+            "assessment_status": latest_assessment.status if latest_assessment else None,
+            "assessment_created_at": latest_assessment.created_at.isoformat() if latest_assessment and latest_assessment.created_at else None,
+        })
+
+    return results
+
+
+@router.patch("/appointments/{appointment_id}/status")
+def update_doctor_appointment_status(
+    appointment_id: int,
+    payload: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Doctor confirms, completes, or cancels an appointment"""
+    if current_user.role != "doctor":
+        raise HTTPException(status_code=403, detail="Doctor role required")
+
+    appt = db.query(models.Appointment).filter(
+        models.Appointment.id == appointment_id,
+        models.Appointment.doctor_id == current_user.id,
+    ).first()
+
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    new_status = payload.get("status")
+    if new_status not in ["pending", "confirmed", "completed", "cancelled", "no-show"]:
+        raise HTTPException(status_code=400, detail="Invalid status value")
+
+    appt.status = new_status
+
+    # Sync the related FollowUp row when completed
+    if new_status == "completed":
+        followup = (
+            db.query(models.FollowUp)
+            .filter(
+                models.FollowUp.patient_id == appt.patient_id,
+                models.FollowUp.status == "pending",
+            )
+            .order_by(models.FollowUp.scheduled_date.desc())
+            .first()
+        )
+        if followup:
+            followup.status = "completed"
+
+    db.commit()
+    db.refresh(appt)
+    return {"id": appt.id, "status": appt.status}

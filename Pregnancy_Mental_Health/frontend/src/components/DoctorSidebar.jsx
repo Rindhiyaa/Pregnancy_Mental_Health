@@ -9,6 +9,7 @@ import {
   ClipboardCheck,
   Menu,
   X,
+  Calendar,
 } from "lucide-react";
 import { THEME } from "../theme";
 import { useTheme } from "../ThemeContext";
@@ -16,10 +17,11 @@ import { useAuth } from "../contexts/AuthContext";
 import logo from "../Images/Postpartum_Risk_Insight_Logo.png";
 
 const NAV_ITEMS = [
-  { to: "/doctor/dashboard", icon: <Home size={18} />, label: "Dashboard" },
+  { to: "/doctor/dashboard",    icon: <Home size={18} />,          label: "Dashboard" },
+  { to: "/doctor/appointments", icon: <Calendar size={18} />,      label: "Appointments" },
   { to: "/doctor/assessments", icon: <ClipboardCheck size={18} />, label: "Assessments" },
-  { to: "/doctor/patients", icon: <Users size={18} />, label: "Patients" },
-  { to: "/doctor/history", icon: <History size={18} />, label: "History" },
+  { to: "/doctor/patients",    icon: <Users size={18} />,          label: "Patients" },
+  { to: "/doctor/history",     icon: <History size={18} />,        label: "History" },
 ];
 
 export default function DoctorSidebar() {
