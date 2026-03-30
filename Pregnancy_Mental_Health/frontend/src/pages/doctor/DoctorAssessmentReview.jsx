@@ -25,14 +25,15 @@ export default function DoctorAssessmentReview() {
             
             // Updated to use new API format
             const { data } = await api.get(`/doctor/assessments/${id}`);
+            const payload = data?.data ?? (Array.isArray(data) ? data[0] : data);
             
-            console.log("Assessment data:", data);
+            console.log("Assessment data:", payload);
             
-            if (!data) {
-                throw new Error("No data received");
+            if (!payload || typeof payload !== "object") {
+                throw new Error("No assessment data received");
             }
             
-            setAssessment(data);
+            setAssessment(payload);
             console.log("✅ Assessment loaded successfully");
             
         } catch (err) {
@@ -59,9 +60,10 @@ export default function DoctorAssessmentReview() {
     );
 
     const sections = ASSESSMENT_SECTIONS.filter(s => s.id < 6);
-    const section = sections[currentSection];
+    const section = sections[currentSection] || { title: "Assessment", questions: [] };
     const isFirst = currentSection === 0;
     const isLast = currentSection === sections.length - 1;
+    const rawData = typeof assessment?.raw_data === "object" && assessment.raw_data !== null ? assessment.raw_data : {}; 
 
     return (
         <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
@@ -132,7 +134,7 @@ export default function DoctorAssessmentReview() {
                     <div style={{ flex: 1, overflowY: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }} className="hide-scrollbar">
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
                             {section.questions.map((q, qIdx) => {
-                                const raw = assessment.raw_data?.[q.name] || "Declined to answer";
+                                const raw = rawData[q.name] || "Declined to answer";
                                 let display = raw;
                                 if (q.options && typeof q.options[0] === "object") {
                                     const opt = q.options.find(o => o.value === raw);
@@ -155,11 +157,11 @@ export default function DoctorAssessmentReview() {
                                             }}>
                                                 {String(qIdx + 1).padStart(2, "0")}
                                             </span>
-                                            <span style={{ fontSize: 11, fontWeight: 500, color: theme.textMuted, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                                            <span style={{ fontSize: 12, fontWeight: 700, color: theme.textMuted, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                                                 {q.label}
                                             </span>
                                         </div>
-                                        <div style={{ fontSize: 14, fontWeight: 400, color: theme.textPrimary, lineHeight: 1.55, paddingLeft: 28 }}>
+                                        <div style={{ fontSize: 15, fontWeight: 600, color: theme.textPrimary, lineHeight: 1.55, paddingLeft: 28, fontFamily: "inherit" }}>
                                             {display}
                                         </div>
                                     </div>

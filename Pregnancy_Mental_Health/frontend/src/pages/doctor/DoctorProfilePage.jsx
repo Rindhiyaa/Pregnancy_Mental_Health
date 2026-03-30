@@ -32,7 +32,7 @@ export default function DoctorProfilePage() {
         const fetchStats = async () => {
             try {
                 const { data } = await api.get("/doctor/stats");
-                setStats(data);
+                setStats(data || {});
             } catch (err) {
                 console.error("Failed to fetch clinical stats:", err);
             }

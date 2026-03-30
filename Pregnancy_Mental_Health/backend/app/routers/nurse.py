@@ -15,7 +15,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/nurse", tags=["nurse"])
+router = APIRouter(prefix="/api/nurse", tags=["nurse"])
 
 @router.get("/dashboard")
 def get_nurse_dashboard(
@@ -62,7 +62,7 @@ def get_nurse_dashboard(
                     .first()
                 )
                 if doctor:
-                    doctor_name = f"{doctor.first_name} {doctor.last_name}".strip()
+                    doctor_name = f"{doctor.first_name or ''} {doctor.last_name or ''}".strip()
 
             recentPatients.append(
                 {
@@ -577,7 +577,7 @@ def get_scheduling_tasks(
             "patient_id": p.id,
             "patient_name": p.name,
             "doctor_id": d.id,
-            "doctor_name": f"{d.first_name} {d.last_name}".strip() or d.email,
+            "doctor_name": f"{d.first_name or ''} {d.last_name or ''}".strip() or d.email,
             "urgency": a.risk_level,            # "High"/"Medium"/"Low"
         })
     return items

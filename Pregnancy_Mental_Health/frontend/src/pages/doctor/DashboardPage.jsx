@@ -69,12 +69,13 @@ export default function DashboardPage() {
       try {
         setLoading(true);
 
-        const [{ data: dashData }, notifRes, unreadRes] = await Promise.all([
+        const [{ data: dashDataRaw }, notifRes, unreadRes] = await Promise.all([
           api.get("/doctor/dashboard"),
           api.get("/notifications"),
           api.get("/notifications/unread-count"),
         ]);
 
+        const dashData = dashDataRaw || {};
         const statsFromApi = dashData.stats || {};
 
         setStats({

@@ -80,8 +80,13 @@ export default function PatientCarePlan() {
 
         // 2) Appointments -> followups
         const { data: appData } = await api.get("/patient/appointments");
+        const appointmentRecords = Array.isArray(appData)
+          ? appData
+          : Array.isArray(appData?.data)
+          ? appData.data
+          : [];
 
-        const followups = (appData || []).map((app, idx) => ({
+        const followups = appointmentRecords.map((app, idx) => ({
           id: app.id,
           type: app.type || `Follow-up #${idx + 1}`,
           date: new Date(app.scheduled_date).toLocaleDateString("en-GB", {

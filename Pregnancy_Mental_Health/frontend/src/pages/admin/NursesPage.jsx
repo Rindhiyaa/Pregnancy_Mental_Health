@@ -32,7 +32,8 @@ export default function NursesPage() {
         setLoading(true);
         try {
           const { data } = await api.get("/admin/clinicians");
-          const nursesOnly = data.filter((u) => u.role === "nurse");
+          const clinicians = Array.isArray(data) ? data : [];
+          const nursesOnly = clinicians.filter((u) => u.role === "nurse");
       
           const mapped = nursesOnly.map((u) => ({
             id: u.id,

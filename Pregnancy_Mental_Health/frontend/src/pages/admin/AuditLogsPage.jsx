@@ -4,11 +4,10 @@ import AdminSidebar from "../../components/AdminSidebar";
 import { PageTitle, Divider, Card, Badge, Pagination } from "../../components/UI";
 
 import { Calendar, Clock, Search, Filter, Download, ChevronDown, Menu, X } from "lucide-react";
-import { exportToPDF, exportToExcel, exportToCSV } from "../../utils/exportUtils";
 import ThemeToggle from "../../components/ThemeToggle";
 
 import toast from "react-hot-toast";
-import { api } from "../../utils/api";
+import { api, apiRequest } from "../../utils/api";
 
 // ─── Responsive Hook ────────────────────────────────────────────────────────
 function useBreakpoint() {
@@ -63,7 +62,7 @@ export default function AuditLogsPage() {
         setLoading(true);
         try {
           const { data } = await api.get("/admin/audit-logs");
-          setLogs(data);
+          setLogs(Array.isArray(data) ? data : []);
         } catch (err) {
           console.error(err);
           toast.error("Failed to load audit logs");
@@ -120,12 +119,8 @@ export default function AuditLogsPage() {
 
     const handleExport = async () => {
         try {
-          const token = localStorage.getItem("token"); // or whatever key you use
-          const res = await fetch("http://127.0.0.1:8000/api/admin/audit-logs/export", {
+          const res = await apiRequest("/admin/audit-logs/export", {
             method: "GET",
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-            },
           });
           if (!res.ok) throw new Error("Failed to export CSV");
       

@@ -95,7 +95,9 @@ const AssessmentsPage = () => {
         } else if (activeFilter === "moderate") {
             filtered = filtered.filter(a => (a.risk_level || "").toLowerCase().includes("moderate"));
         } else if (activeFilter === "mine") {
-            filtered = filtered.filter(a => a.doctor_id === user?.id);
+            filtered = filtered.filter(a =>
+                a.assigned_doctor_id === user?.id || a.doctor_id === user?.id
+            );
         }
 
         if (searchTerm) {

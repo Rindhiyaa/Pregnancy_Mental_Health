@@ -34,8 +34,9 @@ export default function RecoveryRequestsPage() {
     try {
       // The backend route is GET /api/recovery/admin/pending
       const { data } = await api.get("/recovery/admin/pending");
+      const requestsData = Array.isArray(data) ? data : [];
       
-      const mapped = data.map((r) => ({
+      const mapped = requestsData.map((r) => ({
         id: r.id,
         userEmail: r.user_email,
         userRole: r.user_role,

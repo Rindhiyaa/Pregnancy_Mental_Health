@@ -57,19 +57,13 @@ export default function PatientChangePassword() {
 
     setLoading(true);
     try {
-      const res = await api.patch('/patient/change-password', {
-        email: user.email,
-        new_password: form.newPassword
+      await api.post('/change-password', {
+        newPassword: form.newPassword
       });
 
-      if (res.ok) {
-        toast.success("Password updated successfully!");
-        setTimeout(() => navigate("/patient/dashboard", { replace: true }), 2000);
-      } else {
-        const data = await res.json();
-        setError(data.detail || "Failed to update password.");
-      }
-    } catch (err) {
+      toast.success("Password updated successfully!");
+      setTimeout(() => navigate("/patient/dashboard", { replace: true }), 2000);
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
@@ -80,7 +74,7 @@ export default function PatientChangePassword() {
     <main className="page auth-page">
       <div className="auth-layout">
         <div className="auth-main">
-          <h1>🔐 Set Your New Password</h1>
+          <h1> Set Your New Password</h1>
           <p className="lead">
             Welcome {user?.firstName}! Please set a new password before continuing.
           </p>
@@ -123,9 +117,9 @@ export default function PatientChangePassword() {
             <div className="password-rules" style={{ fontSize: '0.85rem', color: '#64748b', margin: '1rem 0' }}>
               <p>Password must be:</p>
               <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-                <li>✅ At least 8 characters</li>
-                <li>✅ One number</li>
-                <li>✅ One special character</li>
+                <li> At least 8 characters</li>
+                <li> One number</li>
+                <li> One special character</li>
               </ul>
             </div>
 

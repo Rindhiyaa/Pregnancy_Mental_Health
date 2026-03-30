@@ -40,7 +40,7 @@ export default function PatientDashboard() {
       try {
         setLoading(true);
         const { data } = await api.get('/patient/dashboard');
-        setDashboardData(data);
+        setDashboardData(data?.data ?? data);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -113,9 +113,9 @@ export default function PatientDashboard() {
             {dashboardData?.doctor_info?.name ? (
               <div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: theme.textPrimary, marginBottom: 4 }}>Dr. {dashboardData.doctor_info.name}</div>
-                <div style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 12 }}>{dashboardData.doctor_info.department}</div>
+                <div style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 12 }}>{dashboardData.doctor_info?.department || "Clinician"}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: theme.textMuted }}>
-                  <Phone size={14} /> {dashboardData.doctor_info.phone}
+                  <Phone size={14} /> {dashboardData.doctor_info?.phone || "No contact available"}
                 </div>
               </div>
             ) : (
@@ -134,7 +134,7 @@ export default function PatientDashboard() {
             {dashboardData?.next_appointment?.date ? (
               <div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: theme.textPrimary, marginBottom: 4 }}>{dashboardData.next_appointment.date}</div>
-                <div style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 12 }}>{dashboardData.next_appointment.time} • {dashboardData.next_appointment.type}</div>
+                <div style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 12 }}>{dashboardData.next_appointment?.time || "TBD"} • {dashboardData.next_appointment?.type || "Appointment"}</div>
                 <NavLink to="/patient/appointments" style={{ textDecoration: "none" }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: theme.primary, display: "flex", alignItems: "center", gap: 4 }}>
                     Manage Visits <ArrowRight size={14} />
@@ -156,10 +156,10 @@ export default function PatientDashboard() {
             </div>
             {dashboardData?.risk_status?.level && dashboardData?.risk_status?.level !== 'N/A' ? (
               <div>
-                <Badge type={dashboardData.risk_status.level === 'High' ? 'danger' : dashboardData.risk_status.level === 'Moderate' ? 'warning' : 'success'}>
-                  {dashboardData.risk_status.level === 'High' ? 'Needs Extra Care' : dashboardData.risk_status.level === 'Moderate' ? 'Stay Consistent' : 'Feeling Well'}
+                <Badge type={dashboardData.risk_status?.level === 'High' ? 'danger' : dashboardData.risk_status?.level === 'Moderate' ? 'warning' : 'success'}>
+                  {dashboardData.risk_status?.level === 'High' ? 'Needs Extra Care' : dashboardData.risk_status?.level === 'Moderate' ? 'Stay Consistent' : 'Feeling Well'}
                 </Badge>
-                <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 12 }}>Last checked: {dashboardData.risk_status.date}</div>
+                <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 12 }}>Last checked: {dashboardData.risk_status?.date || 'Unknown'}</div>
                 <NavLink to="/patient/results" style={{ textDecoration: "none", display: "block", marginTop: 8 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: theme.primary, display: "flex", alignItems: "center", gap: 4 }}>
                     View Trends <ArrowRight size={14} />

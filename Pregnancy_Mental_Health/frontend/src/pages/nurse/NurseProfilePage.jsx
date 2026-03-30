@@ -28,9 +28,7 @@ export default function NurseProfilePage() {
     const fetchStats = async () => {
       try {
         const { data } = await api.get("/nurse/stats");
-        if (data) {
-          setStats(data);
-        }
+        setStats(data || {});
       } catch (err) {
         console.error("Failed to fetch profile stats:", err);
         toast.error("Failed to load profile stats");

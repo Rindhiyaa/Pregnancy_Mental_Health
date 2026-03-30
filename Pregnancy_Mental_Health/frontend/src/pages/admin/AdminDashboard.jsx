@@ -34,7 +34,7 @@ function useBreakpoint() {
 
 export default function AdminDashboard() {
   const { theme } = useTheme();
-  const { isMobile, isTablet, isDesktop, width } = useBreakpoint();
+  const { isMobile, isTablet, isDesktop } = useBreakpoint();
 
   // ─── Sidebar drawer state (mobile/tablet) ──────────────────────────────────
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -46,8 +46,6 @@ export default function AdminDashboard() {
     totalAssessments: 0,
   });
   const [recentUsers, setRecentUsers] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
   const [showFilter, setShowFilter] = useState(false);
@@ -80,13 +78,12 @@ export default function AdminDashboard() {
 
   const fetchAdminData = async () => {
     try {
-      setLoading(true);
-  
-      const [{ data: users }, { data: assessmentStats }] = await Promise.all([
+      const [{ data: usersData }, { data: assessmentStats }] = await Promise.all([
         api.get("/admin/users"),
         api.get("/admin/assessments/count"),
       ]);
   
+      const users = Array.isArray(usersData) ? usersData : [];
       const sorted = users
         .slice()
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -110,8 +107,6 @@ export default function AdminDashboard() {
         })
       );
   
-      setAllUsers(users);
-  
       const totalClinicians = users.filter(
         (u) => u.role === "doctor" || u.role === "nurse"
       ).length;
@@ -127,8 +122,6 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Error fetching admin data:", error);
       toast.error("Failed to load admin data");
-    } finally {
-      setLoading(false);
     }
   };
 

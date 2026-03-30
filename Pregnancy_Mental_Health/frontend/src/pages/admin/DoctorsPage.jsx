@@ -55,9 +55,10 @@ const loadDoctors = async () => {
     setLoading(true);
     try {
       const { data } = await api.get("/admin/clinicians"); // <- changed
-      console.log("clinicians data:", data);
+      const clinicians = Array.isArray(data) ? data : [];
+      console.log("clinicians data:", clinicians);
   
-      const doctorsOnly = data.filter((u) => u.role === "doctor");
+      const doctorsOnly = clinicians.filter((u) => u.role === "doctor");
       const mapped = doctorsOnly.map((u) => ({
         id: u.id,
         name: `${u.first_name} ${u.last_name || ""}`.trim(),

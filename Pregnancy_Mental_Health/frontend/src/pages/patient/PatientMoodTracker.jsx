@@ -58,9 +58,14 @@ export default function MoodTracker() {
     const fetchHistory = async () => {
       try {
         const { data } = await api.get("/patient/mood/history");
-        if (Array.isArray(data) && data.length) {
+        const dataArray = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+          ? data.data
+          : [];
+        if (dataArray.length) {
           // Expecting each item like { date: '18 Mar', score: 3 } or with ISO date
-          const normalized = data.map(item => {
+          const normalized = dataArray.map(item => {
             if (item.date) return item;
             if (item.created_at) {
               const d = new Date(item.created_at);

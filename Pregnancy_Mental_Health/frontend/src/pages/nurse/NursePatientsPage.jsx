@@ -35,8 +35,12 @@ export default function NursePatientsPage() {
         setLoading(true);
   
         const { data } = await api.get("/nurse/patients");
-        // data is already JSON from backend
-        setPatients(data || []);
+        const patientsData = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.patients)
+          ? data.patients
+          : [];
+        setPatients(patientsData);
       } catch (err) {
         console.error("Failed to fetch patients:", err);
         toast.error("Failed to load patients");

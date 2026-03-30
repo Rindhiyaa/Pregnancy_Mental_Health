@@ -50,14 +50,20 @@ export default function NurseDashboard() {
       try {
         setLoading(true);
 
-        const [{ data }, notifRes, unreadRes] = await Promise.all([
+        const [{ data: dashData }, notifRes, unreadRes] = await Promise.all([
           api.get("/nurse/dashboard"),
           api.get("/notifications"),
           api.get("/notifications/unread-count"),
         ]);
 
-        setStats(data.stats);
-        setRecentPatients(data.recentPatients || []);
+        const dashboardInfo = dashData || {};
+        setStats(dashboardInfo.stats || {
+          new_patients_today: 0,
+          pending_assessments: 0,
+          waiting_review: 0,
+          total_patients: 0,
+        });
+        setRecentPatients(Array.isArray(dashboardInfo.recentPatients) ? dashboardInfo.recentPatients : []);
 
         const notifs = notifRes.data || [];
         setNotifications(Array.isArray(notifs) ? notifs : []);

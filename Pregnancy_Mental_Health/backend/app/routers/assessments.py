@@ -383,7 +383,7 @@ def list_assessments(
             query = query.filter(models.Assessment.status == status)
             
         if doctor_id:
-            query = query.filter(models.Assessment.doctor_id == doctor_id)
+            query = query.filter(models.Assessment.assigned_doctor_id == doctor_id)
         
         records = query.order_by(models.Assessment.created_at.desc()).all()
         

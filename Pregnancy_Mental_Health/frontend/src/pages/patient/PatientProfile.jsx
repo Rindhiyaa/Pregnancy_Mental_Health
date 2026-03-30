@@ -291,23 +291,24 @@ export default function PatientProfile() {
       try {
         setFetching(true);
         const { data } = await api.get("/patient/profile");
+        const profile = data || {};
         setForm({
-          fullName: data.name || "",
-          email: data.email || "",
-          phone: data.phone || "",
-          dob: data.dob ? data.dob.split("T")[0] : "",
-          age: data.age ? String(data.age) : "",
-          bloodGroup: data.blood_group || "",
-          address: data.address || "",
-          city: data.city || "",
-          emergencyName: data.emergency_name || "",
-          emergencyPhone: data.emergency_phone || "",
-          emergencyRelation: data.emergency_relation || "",
-          currentWeek: data.pregnancy_week ? String(data.pregnancy_week) : "",
-          doctorName: data.doctor_name || "",
-          hospitalName: data.hospital_name || "",
-          gravida: data.gravida ? String(data.gravida) : "",
-          para: data.para ? String(data.para) : "",
+          fullName: profile.name || "",
+          email: profile.email || "",
+          phone: profile.phone || "",
+          dob: profile.dob ? profile.dob.split("T")[0] : "",
+          age: profile.age ? String(profile.age) : "",
+          bloodGroup: profile.blood_group || "",
+          address: profile.address || "",
+          city: profile.city || "",
+          emergencyName: profile.emergency_name || "",
+          emergencyPhone: profile.emergency_phone || "",
+          emergencyRelation: profile.emergency_relation || "",
+          currentWeek: profile.pregnancy_week ? String(profile.pregnancy_week) : "",
+          doctorName: profile.doctor_name || "",
+          hospitalName: profile.hospital_name || "",
+          gravida: profile.gravida ? String(profile.gravida) : "",
+          para: profile.para ? String(profile.para) : "",
         });
       } catch (error) {
         console.error("Error fetching profile:", error);

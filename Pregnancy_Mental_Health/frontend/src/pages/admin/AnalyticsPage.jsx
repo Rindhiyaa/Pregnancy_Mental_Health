@@ -67,15 +67,18 @@ export default function AnalyticsPage() {
         // 2) chart series
         const { data: analytics } = await api.get("/admin/dashboard-analytics");
   
+        const dashboardData = dashboard || {};
+        const analyticsData = analytics || {};
+
         setData({
           totals: {
-            totalUsers: dashboard.totalUsers,
-            totalClinicians: dashboard.totalClinicians,
-            totalPatients: dashboard.totalPatients,
-            totalAssessments: dashboard.totalAssessments,
+            totalUsers: dashboardData.totalUsers ?? 0,
+            totalClinicians: dashboardData.totalClinicians ?? 0,
+            totalPatients: dashboardData.totalPatients ?? 0,
+            totalAssessments: dashboardData.totalAssessments ?? 0,
           },
-          accuracyData: analytics.accuracyData,
-          usageStats: analytics.usageStats,
+          accuracyData: Array.isArray(analyticsData.accuracyData) ? analyticsData.accuracyData : [],
+          usageStats: Array.isArray(analyticsData.usageStats) ? analyticsData.usageStats : [],
         });
       } catch (err) {
         console.error("Failed to load analytics", err);

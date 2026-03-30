@@ -51,7 +51,8 @@ export default function PatientsPage() {
     try {
       const { data } = await api.get("/admin/users");
   
-      const patientsOnly = data.filter((u) => u.role === "patient");
+      const usersData = Array.isArray(data) ? data : [];
+      const patientsOnly = usersData.filter((u) => u.role === "patient");
   
       const mapped = patientsOnly.map((u) => ({
         id: u.id,

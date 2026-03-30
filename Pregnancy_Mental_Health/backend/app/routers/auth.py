@@ -329,33 +329,42 @@ def set_logout_inactive(
 
 @router.post("/change-password")
 def change_password_auth(
-    data: dict, 
+    data: dict,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user_email)
 ):
     """
-    Change password for currently authenticated user
+    Change password for currently authenticated user.
+    Supports both camelCase and snake_case request bodies and allows
+    first-time login users to set a new password without providing the old one.
     """
     user = db.query(models.User).filter(models.User.email == current_user_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    current_password = data.get("currentPassword")
-    new_password = data.get("newPassword")
-    
-    if not current_password or not new_password:
-        raise HTTPException(status_code=400, detail="Missing password fields")
-        
-    if not verify_password(current_password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect current password")
-        
+
+    current_password = data.get("currentPassword") or data.get("current_password")
+    new_password = data.get("newPassword") or data.get("new_password")
+
+    if not new_password:
+        raise HTTPException(status_code=400, detail="Missing new password")
+
+    if current_password:
+        if not verify_password(current_password, user.hashed_password):
+            raise HTTPException(status_code=400, detail="Incorrect current password")
+    elif not user.first_login:
+        raise HTTPException(status_code=400, detail="Current password is required")
+
     if len(new_password) < 8:
         raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
-        
+
     user.hashed_password = hash_password(new_password)
+    user.password_changed_at = datetime.utcnow()
+    if user.first_login:
+        user.first_login = False
+
     db.add(user)
     db.commit()
-    
+
     return {"message": "Password updated successfully"}
 
 

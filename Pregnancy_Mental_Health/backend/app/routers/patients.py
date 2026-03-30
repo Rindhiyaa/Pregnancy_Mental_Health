@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/", response_model=List[PatientOut])
-@router.get("", response_model=List[PatientOut])
 def get_patients(
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user_email),
@@ -60,7 +59,6 @@ def get_patients(
 
 
 @router.post("/", response_model=PatientOut, status_code=status.HTTP_201_CREATED)
-@router.post("", response_model=PatientOut, status_code=status.HTTP_201_CREATED)
 def create_patient(
     patient_data: PatientCreate,
     db: Session = Depends(get_db),

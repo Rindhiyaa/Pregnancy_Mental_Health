@@ -264,7 +264,7 @@ def reset_user_password(
 
     # (optional) audit log here
 
-    return {"detail": "Password reset", "temp_password": new_password}
+    return {"detail": "Password reset successfully"}
 
 @router.get("/audit-logs", response_model=List[schemas.AuditLog])
 def get_audit_logs(

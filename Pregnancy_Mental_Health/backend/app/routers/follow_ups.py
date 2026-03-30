@@ -13,7 +13,6 @@ router = APIRouter(prefix="/api/follow-ups", tags=["follow-ups"])
 logger = logging.getLogger(__name__)
 
 @router.get("/")
-@router.get("")
 def get_follow_ups(
     current_user_email: str = Depends(get_current_user_email),
     db: Session = Depends(get_db)

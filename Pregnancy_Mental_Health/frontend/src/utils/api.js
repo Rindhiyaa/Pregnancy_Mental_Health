@@ -155,6 +155,9 @@ export const apiRequest = async (endpoint, options = {}) => {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           subscribeTokenRefresh((newToken) => {
+            if (!newToken) {
+              return reject(new Error('Session expired. Please login again.'));
+            }
             // Update authorization header with new token
             config.headers['Authorization'] = `Bearer ${newToken}`;
             // Retry the original request
@@ -178,7 +181,7 @@ export const apiRequest = async (endpoint, options = {}) => {
         // Retry original request with new token
         config.headers['Authorization'] = `Bearer ${newToken}`;
         return await fetch(url, config);
-      } catch (refreshError) {
+      } catch {
         isRefreshing = false;
         // Notify queued requests of failure
         refreshSubscribers.forEach(callback => callback(null));
@@ -203,7 +206,7 @@ export const apiRequest = async (endpoint, options = {}) => {
           window.location.href = '/signin?error=first_login';
           return response;
         }
-      } catch (e) {
+      } catch {
         // Not JSON or other error, proceed as normal
       }
     }
@@ -215,8 +218,14 @@ export const apiRequest = async (endpoint, options = {}) => {
 
     return response;
   } catch (error) {
+    const networkMessage =
+      error instanceof TypeError ||
+      /Failed to fetch|NetworkError when attempting to fetch resource/i.test(error?.message)
+        ? 'Network error. Please check your connection and try again.'
+        : error?.message || 'API request failed.';
+
     console.error('API request failed:', error);
-    throw error;
+    throw new Error(networkMessage);
   }
 };
 
@@ -393,7 +402,7 @@ export const getErrorMessage = (err, defaultMsg) => {
           return JSON.stringify(errorData.detail);
         }
       }
-    } catch (e) {
+    } catch {
       // Not JSON, return the raw message
       return err.message;
     }

@@ -34,7 +34,8 @@ export default function PatientResults() {
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
-    const cfg = WELLNESS_CONFIG[payload[0].payload.wellness_status];
+    const wellnessKey = payload[0]?.payload?.wellness_status;
+    const cfg = WELLNESS_CONFIG[wellnessKey] || {};
     return (
       <Card style={{ padding: "10px 14px", border: `1px solid ${theme.divider}`, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
         <div style={{ fontSize: 11, color: theme.textMuted, marginBottom: 4 }}>{label}</div>
@@ -50,6 +51,11 @@ export default function PatientResults() {
       try {
         setLoading(true);
         const { data } = await api.get("/patient/assessments");
+        const assessmentsData = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+          ? data.data
+          : [];
   
         const riskToWellness = {
           high: "extra-care",
@@ -57,11 +63,12 @@ export default function PatientResults() {
           low: "feeling-well",
         };
   
-        const normalized = (data || []).map((a) => {
+        const normalized = assessmentsData.map((a) => {
           const riskLevel = a.risk_level?.toLowerCase().split(" ")[0];
           const wellnessStatus =
             a.wellness_status || riskToWellness[riskLevel] || "feeling-well";
   
+          const rawData = typeof a.raw_data === "object" && a.raw_data !== null ? a.raw_data : {};
           const createdAt = a.created_at ? new Date(a.created_at) : new Date();
   
           return {
@@ -83,36 +90,32 @@ export default function PatientResults() {
             score: a.score ?? a.risk_score ?? 0,
             epds_total:
               a.epds_total ??
-              (a.raw_data
-                ? Object.keys(a.raw_data)
-                    .filter((k) => k.startsWith("epds_"))
-                    .reduce((acc, k) => acc + (a.raw_data[k] || 0), 0)
-                : 0),
+              (Object.keys(rawData)
+                .filter((k) => k.startsWith("epds_"))
+                .reduce((acc, k) => acc + (rawData[k] || 0), 0)),
             doctor_name: a.doctor_name || a.clinician_name || "Care Team",
             epds_questions:
               a.epds_questions ||
-              (a.raw_data
-                ? Object.keys(a.raw_data)
-                    .filter((k) => k.startsWith("epds_"))
-                    .map((k, i) => ({
-                      q: `Question ${i + 1}`,
-                      answer: "Reported",
-                      score: a.raw_data[k],
-                    }))
-                : []),
+              (Object.keys(rawData)
+                .filter((k) => k.startsWith("epds_"))
+                .map((k, i) => ({
+                  q: `Question ${i + 1}`,
+                  answer: "Reported",
+                  score: rawData[k],
+                }))),
             clinical_factors:
               a.clinical_factors || {
-                sleep_quality: a.raw_data?.epds_7 > 1 ? "Poor" : "Good",
+                sleep_quality: rawData.epds_7 > 1 ? "Poor" : "Good",
                 appetite: "Normal",
                 social_support:
-                  a.raw_data?.support_during_pregnancy === "No"
+                  rawData.support_during_pregnancy === "No"
                     ? "Weak"
                     : "Strong",
                 partner_support: "Good",
                 anxiety_level: "Normal",
                 financial_stress: false,
                 previous_depression:
-                  a.raw_data?.depression_before_pregnancy === "Yes",
+                  rawData.depression_before_pregnancy === "Yes",
               },
             plan: a.plan || null,      // no default text
             followups:
@@ -133,12 +136,6 @@ export default function PatientResults() {
   
     fetchAssessments();
   }, []);
-
-  const trendData = [...assessments].map(a => ({
-    date: a.short_date,
-    score: a.score,
-    wellness_status: a.wellness_status,
-  })).reverse();
 
   const latest = assessments[0];
 
