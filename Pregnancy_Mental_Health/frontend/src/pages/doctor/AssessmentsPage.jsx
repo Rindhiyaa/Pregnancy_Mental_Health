@@ -170,7 +170,7 @@ const AssessmentsPage = () => {
                         placeholder="Search by patient or nurse name..."
                     />
                     <Table
-                        headers={["Patient Profile", "Lead Nurse", "Risk Indicator", "Submited On", "Clinician Action"]}
+                        headers={["Patient Profile", "Lead Nurse", "Risk Indicator", "Submitted On", "Clinician Action"]}
                         loading={false}
                         emptyMessage="No screenings found in this category."
                     >

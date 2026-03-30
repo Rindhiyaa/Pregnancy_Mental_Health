@@ -334,7 +334,7 @@ def get_doctor_assessments(
             # 👩‍⚕️ Nurse info
             nurse = db.query(User).filter(User.id == assessment.nurse_id).first()
             nurse_name = (
-                f"{nurse.first_name} {nurse.last_name}".strip()
+                f"{nurse.first_name} {nurse.last_name or ''}".strip()
                 if nurse else "Unknown"
             )
 
@@ -408,7 +408,7 @@ def get_doctor_assessment_by_id(
         
         # Get nurse info
         nurse = db.query(User).filter(User.id == assessment.nurse_id).first()
-        nurse_name = f"{nurse.first_name} {nurse.last_name}".strip() if nurse else "Unknown"
+        nurse_name = f"{nurse.first_name} {nurse.last_name or ''}".strip() if nurse else "Unknown"
         
         # ✅ CHANGED: Calculate EPDS here for the doctor to review
         # This is ONLY for display in the validation screen
@@ -895,14 +895,14 @@ def review_assessment(
     if not a:
         raise HTTPException(status_code=404, detail="Assessment not found")
 
-    # ✅ EPDS calculation
+    #  EPDS calculation
     if a.raw_data and isinstance(a.raw_data, dict):
         try:
             a.epds_score = sum(int(a.raw_data.get(f"epds_{i}", 0)) for i in range(1, 11))
         except:
             a.epds_score = 0
 
-    # ✅ Apply doctor inputs
+    #  Apply doctor inputs
     a.clinician_risk   = payload.get("clinicianrisk")
     a.risk_level_final = payload.get("risklevelfinal")
     a.override_reason  = payload.get("overridereason")
@@ -913,10 +913,10 @@ def review_assessment(
     new_status = payload.get("status")
     a.status = "approved" if new_status == "approved" else "reviewed"
 
-    # ✅ FINAL BAND LOGIC (use final override first)
+    #  FINAL BAND LOGIC (use final override first)
     final_band = a.risk_level_final or a.clinician_risk or a.risk_level
 
-    # ✅ AUTO FOLLOW-UP GENERATION
+    #  AUTO FOLLOW-UP GENERATION
     if a.risk_score is not None and a.patient_id:
         band, first_days = compute_band_and_days(a.risk_score)
         a.risk_level = band
@@ -938,7 +938,7 @@ def review_assessment(
     db.commit()
     db.refresh(a)
 
-    # ✅ NOTIFICATION
+    #  NOTIFICATION
     if a.nurse_id and final_band:
         nurse = db.query(models.User).filter(
             models.User.id == a.nurse_id
@@ -1148,3 +1148,4 @@ def update_doctor_appointment_status(
     db.commit()
     db.refresh(appt)
     return {"id": appt.id, "status": appt.status}
+
