@@ -149,138 +149,26 @@ const SchedulePage = () => {
         return () => document.removeEventListener("mousedown", handler);
     }, []);
 
-    // ── Mock data ──────────────────────────────────────────────────────────────
-    const MOCK = [
-        {
-            id: 1, date: today, time: "09:00",
-            type: "Initial Assessment", urgency: "Urgent", department: "OBGYN", status: "pending",
-            patient_id: 101, patient_name: "Priya Sharma", patient_age: 28, pregnancy_week: 34,
-            patient_phone: "+91 98765 43210", patient_email: "priya@example.com",
-            risk_level: "High Risk", risk_score: 82.4, epds_score: 18, assessment_id: 201,
-            top_risk_factors: [
-                { feature: "Depression during pregnancy", shap_value: 0.41 },
-                { feature: "Lack of social support",     shap_value: 0.35 },
-                { feature: "History of anxiety",         shap_value: 0.28 },
-                { feature: "Financial stress",           shap_value: 0.19 },
-            ],
-            submitted_by_nurse: "Nurse Divya K.",
-            notes: "Patient reports persistent low mood and difficulty sleeping for the past 3 weeks.",
-        },
-        {
-            id: 2, date: today, time: "10:30",
-            type: "Follow-up", urgency: "Routine", department: "OBGYN", status: "confirmed",
-            patient_id: 102, patient_name: "Anitha Rajan", patient_age: 31, pregnancy_week: 38,
-            patient_phone: "+91 87654 32109", patient_email: "anitha@example.com",
-            risk_level: "Moderate Risk", risk_score: 55.2, epds_score: 11, assessment_id: 202,
-            top_risk_factors: [
-                { feature: "Relationship with in-laws", shap_value: 0.29 },
-                { feature: "Pregnancy complications",   shap_value: 0.22 },
-            ],
-            submitted_by_nurse: "Nurse Meena S.",
-            notes: "Second follow-up. Responds well to counselling.",
-        },
-        {
-            id: 3, date: today, time: "11:00",
-            type: "Care Plan Review", urgency: "Routine", department: "Psychiatry", status: "completed",
-            patient_id: 103, patient_name: "Meera Nair", patient_age: 25, pregnancy_week: 26,
-            patient_phone: "+91 76543 21098", patient_email: "meera@example.com",
-            risk_level: "Low Risk", risk_score: 22.1, epds_score: 5, assessment_id: 203,
-            top_risk_factors: [],
-            submitted_by_nurse: "Nurse Kavitha R.",
-            notes: "Patient doing well. Continue monthly check-ins.",
-        },
-        {
-            id: 4,
-            date: (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split("T")[0]; })(),
-            time: "14:00",
-            type: "Urgent Review", urgency: "Urgent", department: "OBGYN", status: "pending",
-            patient_id: 104, patient_name: "Lakshmi Patel", patient_age: 33, pregnancy_week: 36,
-            patient_phone: "+91 65432 10987", patient_email: "lakshmi@example.com",
-            risk_level: "High Risk", risk_score: 78.9, epds_score: 16, assessment_id: 204,
-            top_risk_factors: [
-                { feature: "Domestic abuse screening", shap_value: 0.52 },
-                { feature: "No support network",       shap_value: 0.44 },
-                { feature: "Major life changes",        shap_value: 0.31 },
-            ],
-            submitted_by_nurse: "Nurse Divya K.",
-            notes: "Flagged by nurse for urgent review.",
-        },
-        {
-            id: 5,
-            date: (() => { const d = new Date(); d.setDate(d.getDate() + 2); return d.toISOString().split("T")[0]; })(),
-            time: "09:30",
-            type: "Screening", urgency: "Routine", department: "OBGYN", status: "confirmed",
-            patient_id: 105, patient_name: "Sunita Bose", patient_age: 29, pregnancy_week: 30,
-            patient_phone: "+91 54321 09876", patient_email: "sunita@example.com",
-            risk_level: "Moderate Risk", risk_score: 48.3, epds_score: 10, assessment_id: 205,
-            top_risk_factors: [
-                { feature: "Fear of childbirth", shap_value: 0.33 },
-                { feature: "First pregnancy",    shap_value: 0.20 },
-            ],
-            submitted_by_nurse: "Nurse Meena S.", notes: "",
-        },
-        {
-            id: 6,
-            date: (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split("T")[0]; })(),
-            time: "15:00",
-            type: "Follow-up", urgency: "Routine", department: "OBGYN", status: "no-show",
-            patient_id: 106, patient_name: "Rekha Iyer", patient_age: 27, pregnancy_week: 32,
-            patient_phone: "+91 43210 98765", patient_email: "rekha@example.com",
-            risk_level: "Moderate Risk", risk_score: 51.0, epds_score: 12, assessment_id: 206,
-            top_risk_factors: [{ feature: "Partner support issues", shap_value: 0.27 }],
-            submitted_by_nurse: "Nurse Kavitha R.",
-            notes: "Patient did not show. Reschedule needed.",
-        },
-        {
-            id: 7,
-            date: (() => { const d = new Date(); d.setDate(d.getDate() - 2); return d.toISOString().split("T")[0]; })(),
-            time: "10:00",
-            type: "Mental Health Review", urgency: "Routine", department: "Psychiatry", status: "completed",
-            patient_id: 107, patient_name: "Geetha Arjun", patient_age: 35, pregnancy_week: 39,
-            patient_phone: "+91 32109 87654", patient_email: "geetha@example.com",
-            risk_level: "Low Risk", risk_score: 19.5, epds_score: 4, assessment_id: 207,
-            top_risk_factors: [],
-            submitted_by_nurse: "Nurse Divya K.",
-            notes: "Cleared for discharge planning.",
-        },
-        {
-            id: 8,
-            date: (() => { const d = new Date(); d.setDate(d.getDate() + 3); return d.toISOString().split("T")[0]; })(),
-            time: "11:30",
-            type: "Intervention Follow-up", urgency: "Urgent", department: "Psychiatry", status: "pending",
-            patient_id: 108, patient_name: "Nanditha Krishnan", patient_age: 30, pregnancy_week: 28,
-            patient_phone: "+91 21098 76543", patient_email: "nanditha@example.com",
-            risk_level: "High Risk", risk_score: 88.1, epds_score: 21, assessment_id: 208,
-            top_risk_factors: [
-                { feature: "Severe depression history",    shap_value: 0.61 },
-                { feature: "No regular check-ups",         shap_value: 0.45 },
-                { feature: "Abuse during pregnancy",       shap_value: 0.38 },
-                { feature: "Financial stress",             shap_value: 0.27 },
-                { feature: "Lack of trust with partner",   shap_value: 0.21 },
-            ],
-            submitted_by_nurse: "Nurse Meena S.",
-            notes: "High priority — coordinate with psychiatry before appointment.",
-        },
-    ];
-
-    // ── Load data ──────────────────────────────────────────────────────────────
     const loadData = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await api.get("/doctor/appointments");
-            if (res.ok) {
-                const data = await res.json();
-                if (data.length > 0) {
-                    setAppointments(data);
-                    setSelected(data.find(a => a.date === today) || data[0]);
-                    return;
-                }
-            }
-        } catch (_) {}
-        setAppointments(MOCK);
-        setSelected(MOCK[0]);
-        setLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+            const { data } = await api.get("/doctor/appointments");
+    
+            console.log("API DATA:", data);  // 🔍 debug
+    
+            setAppointments(data || []);
+            setSelected(data?.find(a => a.date === today) || data?.[0] || null);
+    
+        } catch (err) {
+            console.error("Error loading appointments:", err.message);
+            toast.error("Failed to load appointments");
+    
+            setAppointments([]);
+            setSelected(null);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     useEffect(() => { loadData(); }, [loadData]);
@@ -290,7 +178,8 @@ const SchedulePage = () => {
         setUpdatingId(appt.id);
         try {
             const res = await api.patch(`/doctor/appointments/${appt.id}/status`, { status: newStatus });
-            if (!res.ok) throw new Error();
+            if (!res.response.ok) throw new Error();
+            if (!window.confirm("Mark this appointment as completed?")) return;
             toast.success(`Marked as ${newStatus}`);
         } catch (_) {
             toast.success(`Marked as ${newStatus} (mock)`);
@@ -764,6 +653,38 @@ const SchedulePage = () => {
                                                 onMouseLeave={e => e.currentTarget.style.background = "#F1F5F9"}
                                                 style={{ width: "100%", padding: 12, borderRadius: 12, border: "none", background: "#F1F5F9", color: "#334155", fontWeight: 600, fontSize: 14, cursor: "pointer", transition: "all 0.2s ease", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                                                 <User size={16} /> View Patient Profile
+                                            </button>
+                                        )}
+                                        {selected.status !== "completed" && (
+                                            <button
+                                                onClick={() => {
+                                                    updateStatus(selected, "completed");
+                                                    setModalOpen(false);
+                                                }}
+                                                disabled={updatingId === selected.id}
+                                                onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+                                                onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+                                                style={{
+                                                    width: "100%",
+                                                    padding: 13,
+                                                    borderRadius: 12,
+                                                    border: "none",
+                                                    background: "linear-gradient(135deg,#16A34A,#22C55E)",
+                                                    color: "white",
+                                                    fontWeight: 700,
+                                                    fontSize: 14,
+                                                    cursor: "pointer",
+                                                    boxShadow: "0 6px 18px rgba(34,197,94,0.3)",
+                                                    transition: "all 0.2s ease",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    gap: 8,
+                                                    opacity: updatingId === selected.id ? 0.6 : 1
+                                                }}
+                                            >
+                                                <CheckCircle size={16} />
+                                                {updatingId === selected.id ? "Updating..." : "Mark as Completed"}
                                             </button>
                                         )}
                                     </div>

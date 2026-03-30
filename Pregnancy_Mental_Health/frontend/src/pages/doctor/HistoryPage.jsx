@@ -199,7 +199,7 @@ const HistoryPage = () => {
                                 </TableCell>
                                 <TableCell>
                                     <div style={{ fontWeight: 800, fontSize: 16, color: (row.score || 0) >= 13 ? theme.dangerText : theme.textPrimary }}>
-                                        {row.score || row.epds_score || 0}/30
+                                        {(row.score ?? 0).toFixed(0)}/100
                                     </div>
                                 </TableCell>
                                 <TableCell>

@@ -30,7 +30,7 @@ async def get_doctor_dashboard(
         
         high_risk = db.query(Assessment).filter(
             Assessment.assigned_doctor_id == current_user.id,
-            Assessment.risk_level == 'high'
+            func.lower(func.trim(Assessment.risk_level)).in_(['high', 'high risk'])
         ).count()
         
         # Reviewed this week
@@ -50,8 +50,8 @@ async def get_doctor_dashboard(
         # Urgent cases (high risk + submitted)
         urgent_cases = db.query(Assessment).filter(
             Assessment.assigned_doctor_id == current_user.id,
-            Assessment.risk_level == 'high',
-            Assessment.status.in_(['submitted', 'pending'])
+            func.lower(func.trim(Assessment.risk_level)).in_(['high', 'high risk']),
+            func.lower(Assessment.status).in_(['submitted', 'pending'])
         ).limit(5).all()
 
         urgent_list = []
@@ -59,7 +59,7 @@ async def get_doctor_dashboard(
             urgent_list.append({
                 "id": a.id,
                 "patient_name": a.patient.name if a.patient else a.patient_name,
-                "score": None,  # ✅ Changed: Don't show EPDS until validated
+                "score": a.risk_score,  # ✅ Changed: Don't show EPDS until validated
                 "risk_score": a.risk_score
             })
         
@@ -83,17 +83,19 @@ async def get_doctor_dashboard(
        # Risk distribution - Match the exact database values with spaces
         low_count = db.query(Assessment).filter(
             Assessment.assigned_doctor_id == current_user.id,
-            func.lower(Assessment.risk_level).in_(['low risk', 'low'])
+            func.lower(func.trim(Assessment.risk_level)).in_(['low risk', 'low'])
         ).count()
 
         moderate_count = db.query(Assessment).filter(
             Assessment.assigned_doctor_id == current_user.id,
-            func.lower(Assessment.risk_level).in_(['moderate risk', 'moderate', 'medium risk', 'medium'])
+            func.lower(func.trim(Assessment.risk_level)).in_([
+                'moderate risk', 'moderate', 'medium risk', 'medium'
+            ])
         ).count()
 
         high_count = db.query(Assessment).filter(
             Assessment.assigned_doctor_id == current_user.id,
-            func.lower(Assessment.risk_level).in_(['high risk', 'high'])
+            func.lower(func.trim(Assessment.risk_level)).in_(['high', 'high risk'])
         ).count()
 
         print(f"Risk Distribution - Low: {low_count}, Moderate: {moderate_count}, High: {high_count}")
@@ -103,13 +105,24 @@ async def get_doctor_dashboard(
             {"name": "Moderate Risk", "value": moderate_count},
             {"name": "High Risk", "value": high_count}
         ]
+
+        today = datetime.now().date()
+
+        today_start = datetime.combine(datetime.today(), datetime.min.time())
+        today_end = datetime.combine(datetime.today(), datetime.max.time())
+
+        today_apps = db.query(Assessment).filter(
+            Assessment.assigned_doctor_id == current_user.id,
+            Assessment.created_at >= today_start,
+            Assessment.created_at <= today_end
+        ).count()
         
         return {
             "stats": {
                 "pending": pending,
                 "high": high_risk,
                 "reviewed_week": reviewed_week,
-                "today_apps": 0,
+                "today_apps": today_apps,
                 "total": total_patients
             },
             "urgent_cases": urgent_list,
@@ -133,11 +146,11 @@ def predict_assessment(payload: schemas.AssessmentCreate):
         proba = model.predict_proba(X_aligned)[0]             # probability array
 
         # Map numeric class → label
-        label_map = {0: "High", 1: "Low", 2: "Medium"}        # based on your model
+        label_map = {0: "High Risk", 1: "Low Risk", 2: "Moderate Risk"}    # based on your model
         pred_label = label_map.get(int(pred_class_num), "Medium")
 
         # 3) Determine model score as % confidence
-        class_idx = list(model.classes_).index(pred_class_num)
+        class_idx = int(pred_class_num)
         confidence = float(proba[class_idx])
         model_score = round(confidence * 100, 1)              # 0-100%
 
@@ -244,9 +257,6 @@ def analyze_existing_assessment(
         
         # Call the prediction
         result = predict_assessment(payload)
-
-        assessment.status = "reviewed"
-        assessment.reviewed_at = datetime.now()
         
         # 4️⃣ Update the assessment with results
         assessment.risk_level = result.risk_level
@@ -315,7 +325,7 @@ def get_doctor_assessments(
                 "nurse_name": nurse_name,
                 "assigned_doctor_id": assessment.assigned_doctor_id,
                 "epds_score": epds_score,  # Will be None until doctor validates
-                "score": epds_score,
+                "score": assessment.risk_score,
                 "risk_score": assessment.risk_score,
                 "risk_level": assessment.risk_level,
                 "status": assessment.status,
@@ -431,84 +441,6 @@ def test_assessments(
         "raw_assessment": str(assessment.__dict__)
     }
 
-@router.patch("/assessments/{assessment_id}/review")
-def review_assessment(
-    assessment_id: int,
-    payload: dict,
-    db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
-):
-    doctor = (
-        db.query(models.User)
-        .filter(models.User.email == current_user_email)
-        .first()
-    )
-    if not doctor or doctor.role != "doctor":
-        raise HTTPException(status_code=403, detail="Doctor role required")
-
-    a = (
-        db.query(models.Assessment)
-        .filter(models.Assessment.id == assessment_id)
-        .first()
-    )
-    if not a:
-        raise HTTPException(status_code=404, detail="Assessment not found")
-
-    # ✅ ADDED: Calculate and save EPDS score when doctor validates
-    if a.raw_data and isinstance(a.raw_data, dict):
-        epds_items = []
-        for i in range(1, 11):
-            val = a.raw_data.get(f'epds_{i}', '0')
-            try:
-                epds_items.append(int(val))
-            except:
-                epds_items.append(0)
-        a.epds_score = sum(epds_items)  # Save EPDS to database
-
-    # Apply updates from ClinicalValidation.jsx payload
-    a.clinician_risk   = payload.get("clinicianrisk")
-    a.risk_level_final = payload.get("risklevelfinal")
-    a.override_reason  = payload.get("overridereason")
-    a.plan             = payload.get("plan")
-    a.notes            = payload.get("notes")
-    a.reviewed_at      = datetime.now()  # ✅ ADDED: Mark when reviewed
-
-    new_status = payload.get("status")
-
-    if new_status == "approved":
-        a.status = "approved"
-    else:
-        a.status = "reviewed"
-
-    db.commit()
-    db.refresh(a)
-
-    # Notification logic (existing code)
-    final_band = a.risk_level_final or a.clinician_risk or a.risk_level
-    if a.nurse_id and final_band and new_status in {"reviewed", "approved"}:
-        nurse = db.query(models.User).filter(models.User.id == a.nurse_id).first()
-        if nurse and nurse.email:
-            patient_name = a.patient_name or f"Patient #{a.patient_id}"
-            title = "Risk Score Validated"
-            message = (
-                f"Dr. {(doctor.first_name or '').strip()} {(doctor.last_name or '').strip()} "
-                f"has reviewed the assessment for {patient_name} and confirmed the "
-                f"risk as {final_band}."
-            )
-
-            priority = "high" if str(final_band).lower().startswith("high") else "medium"
-
-            notification = models.Notification(
-                title=title,
-                message=message,
-                type="info",
-                priority=priority,
-                clinician_email=nurse.email,
-            )
-            db.add(notification)
-            db.commit()
-
-    return a
 
 @router.get("/profile")
 def get_doctor_profile(
@@ -795,7 +727,7 @@ async def get_doctor_stats(
     # Count assessments reviewed by this doctor
     assessments_reviewed = db.query(Assessment).filter(
         Assessment.assigned_doctor_id == current_user.id,
-        Assessment.status.in_(['validated', 'completed'])
+        Assessment.status.in_(['reviewed', 'approved'])
     ).count()
     
     # Count high risk cases assigned to this doctor
@@ -825,21 +757,47 @@ def compute_band_and_days(score: float) -> tuple[str, int]:
 @router.post("/assessments/{assessment_id}/review")
 def review_assessment(
     assessment_id: int,
+    payload: dict,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user_email),
-    # keep your existing payload model here, e.g. payload: DoctorReviewIn
 ):
-    a = (
-        db.query(models.Assessment)
-        .filter(models.Assessment.id == assessment_id)
-        .first()
-    )
+    doctor = db.query(models.User).filter(
+        models.User.email == current_user_email
+    ).first()
+
+    if not doctor or doctor.role != "doctor":
+        raise HTTPException(status_code=403, detail="Doctor role required")
+
+    a = db.query(models.Assessment).filter(
+        models.Assessment.id == assessment_id
+    ).first()
+
     if not a:
         raise HTTPException(status_code=404, detail="Assessment not found")
 
-    # ... your existing code that sets a.risk_score, a.risk_level, etc ...
+    # ✅ EPDS calculation
+    if a.raw_data and isinstance(a.raw_data, dict):
+        try:
+            a.epds_score = sum(int(a.raw_data.get(f"epds_{i}", 0)) for i in range(1, 11))
+        except:
+            a.epds_score = 0
 
-    if a.risk_score is not None and a.patient_id and a.assigned_doctor_id:
+    # ✅ Apply doctor inputs
+    a.clinician_risk   = payload.get("clinicianrisk")
+    a.risk_level_final = payload.get("risklevelfinal")
+    a.override_reason  = payload.get("overridereason")
+    a.plan             = payload.get("plan")
+    a.notes            = payload.get("notes")
+    a.reviewed_at      = datetime.now()
+
+    new_status = payload.get("status")
+    a.status = "approved" if new_status == "approved" else "reviewed"
+
+    # ✅ FINAL BAND LOGIC (use final override first)
+    final_band = a.risk_level_final or a.clinician_risk or a.risk_level
+
+    # ✅ AUTO FOLLOW-UP GENERATION
+    if a.risk_score is not None and a.patient_id:
         band, first_days = compute_band_and_days(a.risk_score)
         a.risk_level = band
 
@@ -847,12 +805,11 @@ def review_assessment(
         offsets = [first_days, first_days + 30, first_days + 60]
 
         for i, offset in enumerate(offsets):
-            scheduled_date = base_date + timedelta(days=offset)
             fup = models.FollowUp(
                 patient_id=a.patient_id,
-                scheduled_date=scheduled_date,
+                scheduled_date=base_date + timedelta(days=offset),
                 type=f"Auto follow-up #{i+1}",
-                notes=f"Auto-scheduled {band} risk follow-up #{i+1}",
+                notes=f"{band} risk follow-up #{i+1}",
                 status="pending",
                 clinician_email=current_user_email,
             )
@@ -860,6 +817,24 @@ def review_assessment(
 
     db.commit()
     db.refresh(a)
+
+    # ✅ NOTIFICATION
+    if a.nurse_id and final_band:
+        nurse = db.query(models.User).filter(
+            models.User.id == a.nurse_id
+        ).first()
+
+        if nurse and nurse.email:
+            notification = models.Notification(
+                title="Risk Score Validated",
+                message=f"Doctor reviewed {a.patient_name} → {final_band}",
+                type="info",
+                priority="high" if "high" in final_band.lower() else "medium",
+                clinician_email=nurse.email,
+            )
+            db.add(notification)
+            db.commit()
+
     return a
 
 
@@ -893,7 +868,7 @@ def get_today_appointments(
     return [
         {
             "id": a.id,
-            "patient_name": a.patient_name,
+            "patient_name": a.patient_name or (a.patient.name if a.patient else "Unknown"),
             "date": a.date.isoformat() if hasattr(a.date, "isoformat") else str(a.date),
             "time": str(a.time) if a.time else "N/A",
             "type": a.type or "Follow-up",
@@ -940,11 +915,12 @@ def get_doctor_appointments(
             if nurse:
                 nurse_name = f"{nurse.first_name} {nurse.last_name or ''}".strip()
 
-        # Calculate EPDS from raw_data if available
+        # Calculate EPDS from stored value or raw_data if validated
         epds_score = None
         if latest_assessment:
             epds_score = latest_assessment.epds_score
-            if epds_score is None and latest_assessment.raw_data:
+            # If not stored but assessment is validated, calculate it
+            if epds_score is None and latest_assessment.status in ['reviewed', 'approved'] and latest_assessment.raw_data:
                 try:
                     items = [int(latest_assessment.raw_data.get(f"epds_{i}", 0)) for i in range(1, 11)]
                     epds_score = sum(items)
@@ -966,7 +942,7 @@ def get_doctor_appointments(
             "patient_age": patient.age if patient else None,
             "patient_phone": patient.phone if patient else None,
             "patient_email": patient.email if patient else None,
-            "pregnancy_week": patient.pregnancy_week if patient else None,
+            "pregnancy_week": getattr(patient, 'pregnancy_week', None) if patient else None,
             # Clinical
             "assessment_id": latest_assessment.id if latest_assessment else None,
             "risk_level": latest_assessment.risk_level if latest_assessment else None,
@@ -1023,4 +999,4 @@ def update_doctor_appointment_status(
 
     db.commit()
     db.refresh(appt)
-    return {"id": appt.id, "status": appt.status}
+    return {"id": appt.id, "status": appt.status}

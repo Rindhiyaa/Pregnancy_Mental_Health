@@ -100,17 +100,15 @@ def get_nurse_doctors(
     if not nurse or nurse.role != "nurse":
         raise HTTPException(status_code=403, detail="Nurse role required")
 
-    # All doctors
     doctors = (
         db.query(models.User)
         .filter(models.User.role == "doctor")
         .all()
     )
 
-    # Count patients per doctor_id, using the patients table
     counts = dict(
-        db.query(models.Patient.doctor_id, func.count(models.Patient.id))
-        .group_by(models.Patient.doctor_id)
+        db.query(models.Patient.assigned_doctor_id, func.count(models.Patient.id))
+        .group_by(models.Patient.assigned_doctor_id)
         .all()
     )
 
@@ -432,7 +430,6 @@ def create_nurse_assessment(
     if not nurse or nurse.role != "nurse":
         raise HTTPException(status_code=403, detail="Nurse role required")
 
-    # 1) Create assessment
     new_assessment = models.Assessment(
         patient_id=payload.patient_id,
         patient_name=payload.patient_name,
@@ -451,15 +448,13 @@ def create_nurse_assessment(
     db.commit()
     db.refresh(new_assessment)
 
-    # 2) Ensure patient is linked to assigned doctor
     if payload.patient_id:
         patient = db.query(models.Patient).filter(models.Patient.id == payload.patient_id).first()
         if patient:
-            patient.doctor_id = payload.assigned_doctor_id
+            patient.assigned_doctor_id = payload.assigned_doctor_id
             db.add(patient)
             db.commit()
 
-    # 3) Create notification for the assigned doctor (only when submitted)
     if new_assessment.assigned_doctor_id and new_assessment.status == "submitted":
         doctor = (
             db.query(models.User)
@@ -470,24 +465,23 @@ def create_nurse_assessment(
         if doctor and doctor.email:
             title = "New Assessment Submitted"
             patient_name = new_assessment.patient_name or f"Patient #{new_assessment.patient_id}"
+            nurse_name = f"{nurse.first_name or ''} {nurse.last_name or ''}".strip() or nurse.email
             message = (
                 f"A new postpartum assessment for {patient_name} has been submitted "
-                f"by Nurse {nurse.first_name or ''} {nurse.last_name or ''} "
-                f"and is awaiting your review."
+                f"by Nurse {nurse_name} and is awaiting your review."
             )
 
             notification = models.Notification(
                 title=title,
                 message=message,
-                type="alert",          # alert | info | success
-                priority="high",       # high | medium | low
+                type="alert",
+                priority="high",
                 clinician_email=doctor.email,
             )
             db.add(notification)
             db.commit()
 
     return new_assessment
-
 
 @router.delete("/assessments/{assessment_id}", status_code=204)
 def delete_nurse_assessment(
@@ -606,7 +600,6 @@ def list_nurse_appointments(
 
     results = []
     for a in appts:
-        patient = db.query(models.Patient).filter(models.Patient.id == a.patient_id).first()
         doctor = db.query(models.User).filter(models.User.id == a.doctor_id).first()
 
         results.append(
@@ -639,34 +632,44 @@ def create_nurse_appointment(
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user_email),
 ):
-    # 1) Create the Appointment (you already have similar code)
-    appt = models.Appointment(
-        patient_id=payload["patientid"],
-        doctor_id=payload["doctorid"],
-        date=payload["date"],          # "2026-03-30"
-        time=payload["time"],          # "19:30:00" or "19:30"
-        type=payload.get("type", "Follow-up"),
-        notes=payload.get("notes", ""),
-        urgency=payload.get("urgency", "Routine"),
-        department=payload.get("department", "General"),
-       # status="pending",
-    )
-    db.add(appt)
-    db.commit()
-    db.refresh(appt)
+    nurse = db.query(models.User).filter(models.User.email == current_user_email).first()
+    if not nurse or nurse.role != "nurse":
+        raise HTTPException(status_code=403, detail="Nurse role required")
 
-    # 2) Also create a FollowUp row used by patient dashboard
     try:
-        # Combine date + time into a single datetime
-        date_str = str(payload["date"])          # if it's already a string/date
-        time_str = str(payload["time"])          # "HH:MM" or "HH:MM:SS"
-        if len(time_str) == 5:                   # "HH:MM" -> add seconds
-            time_str = time_str + ":00"
-        scheduled_dt = datetime.fromisoformat(f"{date_str}T{time_str}")
+        date_str = str(payload["date"])
+        time_str = str(payload["time"])
 
+        appt_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+
+        if len(time_str) == 5:
+            appt_time = datetime.strptime(time_str, "%H:%M").time()
+            time_str = f"{time_str}:00"
+        else:
+            appt_time = datetime.strptime(time_str, "%H:%M:%S").time()
+
+        # ✅ Fetch patient first
         patient = db.query(models.Patient).filter(
             models.Patient.id == payload["patientid"]
         ).first()
+
+        appt = models.Appointment(
+            patient_id=payload["patientid"],
+            doctor_id=payload["doctorid"],
+            patient_name=patient.name if patient else "Unknown",  # ✅ ADD THIS LINE
+            date=appt_date,
+            time=appt_time,
+            type=payload.get("type", "Follow-up"),
+            notes=payload.get("notes", ""),
+            urgency=payload.get("urgency", "Routine"),
+            department=payload.get("department", "General"),
+        )
+        db.add(appt)
+        db.commit()
+        db.refresh(appt)
+
+        scheduled_dt = datetime.fromisoformat(f"{date_str}T{time_str}")
+
         doctor = db.query(models.User).filter(
             models.User.id == payload["doctorid"]
         ).first()
@@ -676,7 +679,7 @@ def create_nurse_appointment(
             patient_email=patient.email if patient else None,
             assessment_id=None,
             scheduled_date=scheduled_dt,
-            status="pending",                         # important for filters
+            status="pending",
             type=payload.get("type", "check-in"),
             notes=payload.get("notes", ""),
             clinician_email=doctor.email if doctor else current_user_email,
@@ -684,12 +687,20 @@ def create_nurse_appointment(
         db.add(followup)
         db.commit()
         db.refresh(followup)
+
+        return appt
+
+    except KeyError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Missing field: {str(e)}")
+    except ValueError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Invalid date or time format")
     except Exception as e:
         db.rollback()
-        logger.error(f"Failed to create FollowUp for appointment {appt.id}: {e}")
-
-    return appt
-
+        logger.exception("Failed to create appointment")
+        raise HTTPException(status_code=500, detail="Failed to create appointment")
+    
 @router.put("/appointments/{appointment_id}")
 def update_nurse_appointment(
     appointment_id: int,
@@ -779,9 +790,14 @@ def delete_nurse_appointment(
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user_email),
 ):
+    nurse = db.query(models.User).filter(models.User.email == current_user_email).first()
+    if not nurse or nurse.role != "nurse":
+        raise HTTPException(status_code=403, detail="Nurse role required")
+
     appt = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
+
     db.delete(appt)
     db.commit()
 

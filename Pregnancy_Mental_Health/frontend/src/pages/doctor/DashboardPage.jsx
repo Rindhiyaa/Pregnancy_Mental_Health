@@ -78,12 +78,14 @@ export default function DashboardPage() {
         const statsFromApi = dashData.stats || {};
 
         setStats({
-          pending: statsFromApi.pending || 0,
-          highRisk: statsFromApi.high || 0,
-          reviewedThisWeek: statsFromApi.reviewed_week || 0,
-          todayAppointments: statsFromApi.today_apps || 0,
-          totalPatients: statsFromApi.total || 0
+          pending: statsFromApi.pending ?? 0,
+          highRisk: statsFromApi.high ?? statsFromApi.highRisk ?? 0,
+          reviewedThisWeek: statsFromApi.reviewed_week ?? 0,
+          todayAppointments: statsFromApi.today_apps ?? statsFromApi.todayAppointments ?? 0,
+          totalPatients: statsFromApi.total ?? 0
         });
+
+        console.log("Dashboard API:", dashData);
 
         setUrgentCases(dashData.urgent_cases || []);
         setTrendData(dashData.trend || []);
@@ -895,7 +897,7 @@ export default function DashboardPage() {
                             fontWeight: 700
                           }}
                         >
-                          Score: {p.score || p.epds_score}/30
+                          Score: {p.risk_score ?? "N/A"}/30
                         </div>
                       </div>
                       <button
