@@ -4,7 +4,7 @@ from typing import List
 from ..database import get_db
 from .. import models, schemas
 from ..jwt_handler import get_current_user_email, get_current_user
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, or_
 from datetime import datetime, timedelta, date
 import logging
 from app.models import User, Assessment, Patient, Appointment
@@ -482,6 +482,85 @@ def test_assessments(
         "raw_assessment": str(assessment.__dict__)
     }
 
+@router.patch("/assessments/{assessment_id}/review")
+def review_assessment(
+    assessment_id: int,
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user_email),
+):
+    doctor = (
+        db.query(models.User)
+        .filter(models.User.email == current_user_email)
+        .first()
+    )
+    if not doctor or doctor.role != "doctor":
+        raise HTTPException(status_code=403, detail="Doctor role required")
+
+    a = (
+        db.query(models.Assessment)
+        .filter(models.Assessment.id == assessment_id)
+        .first()
+    )
+    if not a:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+
+    # ✅ ADDED: Calculate and save EPDS score when doctor validates
+    if a.raw_data and isinstance(a.raw_data, dict):
+        epds_items = []
+        for i in range(1, 11):
+            val = a.raw_data.get(f'epds_{i}', '0')
+            try:
+                epds_items.append(int(val))
+            except:
+                epds_items.append(0)
+        a.epds_score = sum(epds_items)  # Save EPDS to database
+
+    # Apply updates from ClinicalValidation.jsx payload
+    a.clinician_risk   = payload.get("clinicianrisk")
+    a.risk_level_final = payload.get("risklevelfinal")
+    a.override_reason  = payload.get("overridereason")
+    a.plan             = payload.get("plan")
+    a.notes            = payload.get("notes")
+    a.reviewed_at      = datetime.now()  # ✅ ADDED: Mark when reviewed
+
+    new_status = payload.get("status")
+
+    if new_status == "approved":
+        a.status = "approved"
+    else:
+        a.status = "reviewed"
+
+    db.commit()
+    db.refresh(a)
+
+    # Notification logic (existing code)
+    final_band = a.risk_level_final or a.clinician_risk or a.risk_level
+    if a.nurse_id and final_band and new_status in {"reviewed", "approved"}:
+        nurse = db.query(models.User).filter(models.User.id == a.nurse_id).first()
+        if nurse and nurse.email:
+            patient_name = a.patient_name or f"Patient #{a.patient_id}"
+            title = "Risk Score Validated"
+            message = (
+                f"Dr. {(doctor.first_name or '').strip()} {(doctor.last_name or '').strip()} "
+                f"has reviewed the assessment for {patient_name} and confirmed the "
+                f"risk as {final_band}."
+            )
+
+            priority = "high" if str(final_band).lower().startswith("high") else "medium"
+
+            notification = models.Notification(
+                title=title,
+                message=message,
+                type="info",
+                priority=priority,
+                clinician_email=nurse.email,
+            )
+            db.add(notification)
+            db.commit()
+
+    return a
+
 
 @router.get("/profile")
 def get_doctor_profile(
@@ -923,14 +1002,18 @@ def get_doctor_appointments(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get all appointments assigned to this doctor with full clinical context"""
     if current_user.role != "doctor":
         raise HTTPException(status_code=403, detail="Doctor role required")
 
     appointments = (
         db.query(models.Appointment)
-        .filter(models.Appointment.doctor_id == current_user.id)
-        .order_by(models.Appointment.date.asc(), models.Appointment.time.asc())
+        .filter(
+            or_(
+                models.Appointment.doctor_id == current_user.id,
+                models.Appointment.assigned_doctor_id == current_user.id,
+            )
+        )
+        .order_by(models.Appointment.date.desc(), models.Appointment.time.desc())
         .all()
     )
 
@@ -1010,10 +1093,18 @@ def update_doctor_appointment_status(
     if current_user.role != "doctor":
         raise HTTPException(status_code=403, detail="Doctor role required")
 
-    appt = db.query(models.Appointment).filter(
-        models.Appointment.id == appointment_id,
-        models.Appointment.doctor_id == current_user.id,
-    ).first()
+    appt = (
+        db.query(models.Appointment)
+        .filter(
+            models.Appointment.id == appointment_id,
+            or_(
+                models.Appointment.doctor_id == current_user.id,
+                models.Appointment.assigned_doctor_id == current_user.id,
+            )
+            
+        )
+        .first()
+    )
 
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")

@@ -219,19 +219,22 @@ class Appointment(Base):
     patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
     patient_name = Column(String, nullable=True)
     doctor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    assigned_doctor_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # new column
 
     date = Column(Date, nullable=False)
     time = Column(Time, nullable=False)
 
-    type = Column(String, default="Follow-up")      # e.g. "Follow-up", "Urgent Review"
+    type = Column(String, default="Follow-up")      
     notes = Column(String, nullable=True)
-    urgency = Column(String, default="Routine")     # "Routine", "Urgent", etc.
+    urgency = Column(String, default="Routine")     
     department = Column(String, default="OBGYN")
-    status = Column(String, default="pending")       # pending, confirmed, completed, cancelled, no-show
+    status = Column(String, default="pending")       
 
     patient = relationship("Patient", backref="appointments")
-    doctor = relationship("User", backref="appointments")
-
+    
+    # Explicitly specify foreign keys to avoid ambiguity
+    doctor = relationship("User", foreign_keys=[doctor_id], backref="appointments_as_doctor")
+    assigned_doctor = relationship("User", foreign_keys=[assigned_doctor_id], backref="appointments_as_assigned_doctor")
 
 class RecoveryRequest(Base):
     __tablename__ = "recovery_requests"

@@ -600,30 +600,27 @@ def list_nurse_appointments(
 
     results = []
     for a in appts:
-        doctor = db.query(models.User).filter(models.User.id == a.doctor_id).first()
+        # Get doctor: nurse-assigned first, fallback to doctor_id
+        doctor = db.query(models.User).filter(
+            models.User.id == (a.assigned_doctor_id or a.doctor_id)
+        ).first()
+        patient = db.query(models.Patient).filter(models.Patient.id == a.patient_id).first()
 
-        results.append(
-            {
-                "id": a.id,
-                "date": a.date.strftime("%Y-%m-%d") if a.date else None,
-                "time": a.time.strftime("%H:%M") if a.time else None,
-                "patientid": a.patient_id,
-                "patientname": patient.name if patient else None,
-                "doctorid": a.doctor_id,
-                "doctorname": (
-                    f"{doctor.first_name or ''} {doctor.last_name or ''}".strip()
-                    if doctor
-                    else None
-                ),
-                "type": a.type,
-                "notes": a.notes,
-                "urgency": a.urgency,
-                "department": a.department,
-            }
-        )
+        results.append({
+            "id": a.id,
+            "date": a.date.strftime("%Y-%m-%d") if a.date else None,
+            "time": a.time.strftime("%H:%M") if a.time else None,
+            "patientid": a.patient_id,
+            "patientname": patient.name if patient else None,
+            "doctorid": a.assigned_doctor_id or a.doctor_id,
+            "doctorname": f"{doctor.first_name or ''} {doctor.last_name or ''}".strip() if doctor else None,
+            "type": a.type,
+            "notes": a.notes,
+            "urgency": a.urgency,
+            "department": a.department,
+        })
 
     return results
-
 
 
 @router.post("/appointments")
@@ -637,26 +634,31 @@ def create_nurse_appointment(
         raise HTTPException(status_code=403, detail="Nurse role required")
 
     try:
-        date_str = str(payload["date"])
+        # Parse date and time
+        appt_date = datetime.strptime(str(payload["date"]), "%Y-%m-%d").date()
         time_str = str(payload["time"])
-
-        appt_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-
         if len(time_str) == 5:
             appt_time = datetime.strptime(time_str, "%H:%M").time()
             time_str = f"{time_str}:00"
         else:
             appt_time = datetime.strptime(time_str, "%H:%M:%S").time()
 
-        # ✅ Fetch patient first
-        patient = db.query(models.Patient).filter(
-            models.Patient.id == payload["patientid"]
-        ).first()
+        # Fetch patient
+        patient = db.query(models.Patient).filter(models.Patient.id == payload["patientid"]).first()
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found")
 
+        # Fetch doctor
+        doctor = db.query(models.User).filter(models.User.id == payload["doctorid"]).first()
+        if not doctor or doctor.role != "doctor":
+            raise HTTPException(status_code=404, detail="Doctor not found")
+
+        # Create appointment with assigned_doctor_id
         appt = models.Appointment(
-            patient_id=payload["patientid"],
-            doctor_id=payload["doctorid"],
-            patient_name=patient.name if patient else "Unknown",  # ✅ ADD THIS LINE
+            patient_id=patient.id,
+            doctor_id=doctor.id,
+            assigned_doctor_id=doctor.id,  # ✅ ensures doctor sees this
+            patient_name=patient.name,
             date=appt_date,
             time=appt_time,
             type=payload.get("type", "Follow-up"),
@@ -668,27 +670,30 @@ def create_nurse_appointment(
         db.commit()
         db.refresh(appt)
 
-        scheduled_dt = datetime.fromisoformat(f"{date_str}T{time_str}")
-
-        doctor = db.query(models.User).filter(
-            models.User.id == payload["doctorid"]
-        ).first()
-
+        # Create follow-up entry
+        scheduled_dt = datetime.fromisoformat(f"{payload['date']}T{time_str}")
         followup = models.FollowUp(
-            patient_id=payload["patientid"],
-            patient_email=patient.email if patient else None,
+            patient_id=patient.id,
+            patient_email=patient.email,
             assessment_id=None,
             scheduled_date=scheduled_dt,
             status="pending",
             type=payload.get("type", "check-in"),
             notes=payload.get("notes", ""),
-            clinician_email=doctor.email if doctor else current_user_email,
+            clinician_email=doctor.email,
         )
         db.add(followup)
         db.commit()
         db.refresh(followup)
 
-        return appt
+        return {
+            "appointment_id": appt.id,
+            "patient_name": patient.name,
+            "doctor_name": f"{doctor.first_name} {doctor.last_name or ''}".strip(),
+            "date": appt.date,
+            "time": appt.time,
+            "status": appt.status,
+        }
 
     except KeyError as e:
         db.rollback()

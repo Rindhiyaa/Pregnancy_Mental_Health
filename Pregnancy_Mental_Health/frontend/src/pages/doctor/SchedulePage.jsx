@@ -138,7 +138,7 @@ const SchedulePage = () => {
     const [selected, setSelected]         = useState(null);
     const [filter, setFilter]             = useState("upcoming");
     const [searchQ, setSearchQ]           = useState("");
-    const [dateFilter, setDateFilter]     = useState(today);  // null = all, "week" = this week, or "YYYY-MM-DD"
+    const [dateFilter, setDateFilter]     = useState(null); // null = all, "week" = this week, or "YYYY-MM-DD"
     const [calOpen, setCalOpen]           = useState(false);
     const [updatingId, setUpdatingId]     = useState(null);
 
