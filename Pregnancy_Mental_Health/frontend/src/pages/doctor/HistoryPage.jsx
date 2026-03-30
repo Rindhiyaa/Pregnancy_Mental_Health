@@ -169,7 +169,7 @@ const HistoryPage = () => {
 
                 <Card glass noPadding>
                     <Table
-                        headers={["Patient", "Assessment Date", "Diagnostic Risk", "Score", "Care Plan Preview", "Clinical Actions"]}
+                        headers={["Patient", "Assessment Date", "Diagnostic Risk", "Score", "Appointment Status", "Care Plan Preview", "Clinical Actions"]}
                         loading={false}
                         emptyMessage="No historical records found matching your criteria."
                     >
@@ -201,6 +201,21 @@ const HistoryPage = () => {
                                     <div style={{ fontWeight: 800, fontSize: 16, color: (row.score || 0) >= 13 ? theme.dangerText : theme.textPrimary }}>
                                         {(row.score ?? 0).toFixed(0)}/100
                                     </div>
+                                </TableCell>
+                                <TableCell>
+                                <Badge
+                                    variant={
+                                    (row.appointment_status || "").toLowerCase() === "completed"
+                                        ? "success"
+                                        : (row.appointment_status || "").toLowerCase() === "pending"
+                                        ? "warning"
+                                        : (row.appointment_status || "").toLowerCase() === "cancelled"
+                                        ? "danger"
+                                        : "default"
+                                    }
+                                >
+                                    {row.appointment_status || "Not Scheduled"}
+                                </Badge>
                                 </TableCell>
                                 <TableCell>
                                     <div style={{ fontSize: 12, color: theme.textMuted, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

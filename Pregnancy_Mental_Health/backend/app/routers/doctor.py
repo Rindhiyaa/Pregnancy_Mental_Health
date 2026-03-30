@@ -7,7 +7,7 @@ from ..jwt_handler import get_current_user_email, get_current_user
 from sqlalchemy import func, and_
 from datetime import datetime, timedelta, date
 import logging
-from app.models import User, Assessment, Patient
+from app.models import User, Assessment, Patient, Appointment
 from app.ml_model import model, feature_columns, build_model_input_from_form
 
 logger = logging.getLogger(__name__)
@@ -294,28 +294,53 @@ def get_doctor_assessments(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get all assessments assigned to this doctor"""
+    """Get all assessments assigned to this doctor with appointment status"""
     try:
+        # 🔐 Role check
         if current_user.role != "doctor":
             raise HTTPException(status_code=403, detail="Access denied")
-        
-        logger.info(f"Doctor {current_user.id} ({current_user.email}) fetching assessments")
-        
+
+        logger.info(f"Doctor {current_user.id} fetching assessments")
+
+        # 📌 Get assessments
         assessments = db.query(Assessment).filter(
             Assessment.assigned_doctor_id == current_user.id
         ).order_by(Assessment.created_at.desc()).all()
-        
-        logger.info(f"Found {len(assessments)} assessments for doctor {current_user.id}")
-        
+
+        logger.info(f"Found {len(assessments)} assessments")
+
+        # 📌 Get all appointments
+        appointments = db.query(Appointment).all()
+
+        # 📌 Map latest appointment per patient
+        appointment_map = {}
+
+        for app in appointments:
+            app_datetime = datetime.combine(app.date, app.time)
+
+            if (
+                app.patient_id not in appointment_map or
+                app_datetime > appointment_map[app.patient_id]["datetime"]
+            ):
+                appointment_map[app.patient_id] = {
+                    "status": app.status,
+                    "datetime": app_datetime
+                }
+
+        # 📌 Build response
         assessments_list = []
+
         for assessment in assessments:
-            # Get nurse info
+            # 👩‍⚕️ Nurse info
             nurse = db.query(User).filter(User.id == assessment.nurse_id).first()
-            nurse_name = f"{nurse.first_name} {nurse.last_name}".strip() if nurse else "Unknown"
-            
-            # ✅ CHANGED: Only show EPDS if already validated
-            epds_score = assessment.epds_score  # Use stored value, not calculated
-            
+            nurse_name = (
+                f"{nurse.first_name} {nurse.last_name}".strip()
+                if nurse else "Unknown"
+            )
+
+            # 📅 Get appointment for this patient
+            appointment = appointment_map.get(assessment.patient_id)
+
             assessments_list.append({
                 "id": assessment.id,
                 "patient_id": assessment.patient_id,
@@ -324,21 +349,37 @@ def get_doctor_assessments(
                 "nurse_id": assessment.nurse_id,
                 "nurse_name": nurse_name,
                 "assigned_doctor_id": assessment.assigned_doctor_id,
-                "epds_score": epds_score,  # Will be None until doctor validates
+
+                # ✅ Scores
+                "epds_score": assessment.epds_score,
                 "score": assessment.risk_score,
                 "risk_score": assessment.risk_score,
                 "risk_level": assessment.risk_level,
+
+                # ✅ Status
                 "status": assessment.status,
+
+                # ✅ Appointment Status (FIXED)
+                "appointment_status": (
+                    appointment["status"] if appointment else "Not Scheduled"
+                ),
+
+                # ✅ Clinical Data
                 "plan": assessment.plan,
                 "notes": assessment.notes,
                 "clinician_risk": assessment.clinician_risk,
-                "created_at": assessment.created_at.isoformat() if assessment.created_at else None,
-                "timestamp": assessment.created_at.isoformat() if assessment.created_at else None,
+
+                # ✅ Time
+                "created_at": assessment.created_at.isoformat()
+                if assessment.created_at else None,
+                "timestamp": assessment.created_at.isoformat()
+                if assessment.created_at else None,
             })
-        
+
         logger.info(f"Returning {len(assessments_list)} assessments")
+
         return assessments_list
-        
+
     except Exception as e:
         logger.error(f"Error in get_doctor_assessments: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
