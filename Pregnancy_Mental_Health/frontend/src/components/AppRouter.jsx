@@ -20,6 +20,7 @@ import ClinicalValidation from "../pages/doctor/ClinicalValidation";
 import DoctorPatientProfile from "../pages/doctor/DoctorPatientProfile";
 import HistoryPage from "../pages/doctor/HistoryPage";
 import DoctorProfilePage from "../pages/doctor/DoctorProfilePage";
+import SchedulePage from "../pages/doctor/SchedulePage";
 
 // Nurse Pages
 import NurseDashboard from "../pages/nurse/NurseDashboard";
@@ -86,6 +87,7 @@ export default function AppRouter() {
 
       {/* Doctor Routes */}
       <Route path="/doctor/dashboard" element={<ProtectedRoute requiredRole="doctor"><DashboardPage /></ProtectedRoute>} />
+      <Route path="/doctor/appointments" element={<ProtectedRoute requiredRole="doctor"><SchedulePage /></ProtectedRoute>} />
       <Route path="/doctor/patients" element={<ProtectedRoute requiredRole="doctor"><PatientsPage /></ProtectedRoute>} />
       <Route path="/doctor/patients/:id" element={<ProtectedRoute requiredRole="doctor"><DoctorPatientProfile /></ProtectedRoute>} />
       <Route path="/doctor/assessments" element={<ProtectedRoute requiredRole="doctor"><AssessmentsPage /></ProtectedRoute>} />

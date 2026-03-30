@@ -27,7 +27,7 @@ IS_PRODUCTION = os.getenv("ENVIRONMENT") == "production"
 # In production, set ALLOWED_ORIGINS env var: "https://domain1.com,https://domain2.com"
 ALLOWED_ORIGINS_STR = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000,http://127.0.0.1:3000"
+    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5175,http://127.0.0.1:5175"
 )
 ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS_STR.split(",")]
 
@@ -42,6 +42,8 @@ TRUSTED_HOSTS = [host.strip() for host in TRUSTED_HOSTS_STR.split(",")]
 # JWT Configuration
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 JWT_REFRESH_SECRET = os.getenv("JWT_REFRESH_SECRET")
+DEFAULT_USER_PASSWORD = os.getenv("DEFAULT_USER_PASSWORD", "TempPass123!")
+
 
 # API Configuration
 API_HOST = os.getenv("API_HOST", "0.0.0.0")

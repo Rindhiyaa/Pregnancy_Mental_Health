@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 from ..database import get_db
 from .. import models, schemas
-from ..jwt_handler import get_current_user_email,get_db, get_current_user  
+from ..jwt_handler import get_current_user_email, get_current_user
+from ..config import DEFAULT_USER_PASSWORD
 from sqlalchemy import func, cast, Date
 from datetime import datetime, timedelta, timezone
 from ..security import hash_password, pwd_context
@@ -254,7 +255,7 @@ def reset_user_password(
         raise HTTPException(status_code=404, detail="User not found")
 
     # Fixed temporary password for account initialization
-    new_password = "TempPass123!"
+    new_password = DEFAULT_USER_PASSWORD
     
     user.hashed_password = pwd_context.hash(new_password)
     user.first_login = True  # Reset first_login flag on password reset
