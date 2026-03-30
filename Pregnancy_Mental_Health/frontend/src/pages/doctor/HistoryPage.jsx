@@ -148,7 +148,7 @@ const HistoryPage = () => {
                     <PageTitle title="Comprehensive History" subtitle="Review all previous clinical interventions and AI diagnostic records." />
                 </header>
 
-                <Card glass noPadding style={{ marginBottom: 24 }}>
+                <Card glass noPadding style={{ marginBottom: 24, overflow: "visible" }}>
                     <FilterToolbar
                         searchValue={searchTerm}
                         onSearchChange={setSearchTerm}

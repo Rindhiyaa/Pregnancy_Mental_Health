@@ -138,7 +138,7 @@ const FilterToolbar = ({
                 border: `1px solid ${theme.border}`,
                 borderRadius: 8,
                 boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                zIndex: 1000,
+                zIndex: 9999,
                 overflow: "hidden",
                 minWidth: 170,
               }}>

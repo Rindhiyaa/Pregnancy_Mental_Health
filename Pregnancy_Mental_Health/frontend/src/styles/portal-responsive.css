@@ -1,7 +1,4 @@
-/* ============================================================
-   PORTAL RESPONSIVE — Doctor, Nurse, Admin portals
-   Handles the fixed sidebar + main content layout at all sizes
-   ============================================================ */
+
 
 /* ── Base: sidebar is fixed 240px wide ── */
 .portal-layout {
@@ -46,6 +43,10 @@
   grid-template-columns: 2fr 1fr;
   gap: 32px;
   margin-bottom: 40px;
+}
+
+.dashboard-grid > * {
+  min-width: 0;
 }
 
 /* ── Schedule 2-col layout ── */
@@ -224,9 +225,8 @@
   }
 }
 
-/* ============================================================
-   BREAKPOINT: 480px — small mobile
-   ============================================================ */
+/* 
+   BREAKPOINT: 480px — small mobile*/
 @media (max-width: 480px) {
   .portal-main {
     padding: 12px;

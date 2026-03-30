@@ -579,7 +579,7 @@ export default function DashboardPage() {
                   </Badge>
                 </div>
               </div>
-              <div style={{ height: 300, width: "100%" }}>
+              <div style={{ height: 300, width: "100%", minWidth: 0 }}>
                 {trendData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <AreaChart data={trendData}>
@@ -945,7 +945,7 @@ export default function DashboardPage() {
               >
                 Patient Breakdown
               </h3>
-              <div style={{ height: 200, width: "100%" }}>
+              <div style={{ height: 200, width: "100%", minWidth: 0 }}>
                 {distributionData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <PieChart>
@@ -1111,7 +1111,7 @@ export default function DashboardPage() {
                 )}
               </div>
               <button
-                onClick={() => navigate("/doctor/schedule")}
+                onClick={() => navigate("/doctor/appointments")}
                 style={{
                   width: "100%",
                   marginTop: 20,

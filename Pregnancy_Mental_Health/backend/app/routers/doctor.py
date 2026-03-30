@@ -985,6 +985,21 @@ def get_today_appointments(
         .all()
     )
 
+    # Fallback: show next 5 upcoming if nothing today
+    if not apps:
+        apps = (
+            db.query(models.Appointment)
+            .filter(
+                and_(
+                    models.Appointment.doctor_id == user.id,
+                    models.Appointment.date >= today,
+                )
+            )
+            .order_by(models.Appointment.date.asc(), models.Appointment.time.asc())
+            .limit(5)
+            .all()
+        )
+
     return [
         {
             "id": a.id,
@@ -992,6 +1007,7 @@ def get_today_appointments(
             "date": a.date.isoformat() if hasattr(a.date, "isoformat") else str(a.date),
             "time": str(a.time) if a.time else "N/A",
             "type": a.type or "Follow-up",
+            "status": a.status or "pending",
         }
         for a in apps
     ]

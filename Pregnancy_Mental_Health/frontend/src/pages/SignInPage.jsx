@@ -149,7 +149,7 @@ export default function SignInPage() {
               <input
                 type="text"
                 name="identifier"
-                placeholder="you@hospital.com or 8148282009"
+                placeholder="name@gmail.com"
                 value={form.identifier}
                 onChange={handleChange}
               />

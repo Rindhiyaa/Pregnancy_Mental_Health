@@ -501,19 +501,17 @@ const SchedulePage = () => {
                                     {/* ── Quick info rows ── */}
                                     <div style={{ padding: "14px 20px 0" }}>
                                         {[
-                                            ["📅", "Date",  fmtDate(selected.date)],
-                                            ["🕐", "Time",  fmtTime(selected.time)],
-                                            ["🏥", "Type",  selected.type],
-                                            ["🏢", "Dept.", selected.department],
-                                        ].map(([icon, label, val]) => (
+                                            ["Date",  fmtDate(selected.date)],
+                                            ["Time",  fmtTime(selected.time)],
+                                            ["Type",  selected.type],
+                                            ["Dept.", selected.department],
+                                        ].map(([label, val]) => (
                                             <div key={label} style={{
                                                 display: "flex", alignItems: "center", justifyContent: "space-between",
                                                 padding: "9px 0",
                                                 borderBottom: `1px solid ${theme.isDark ? "rgba(255,255,255,0.06)" : "#F3F4F6"}`,
                                             }}>
-                                                <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#9CA3AF", fontWeight: 500 }}>
-                                                    <span style={{ fontSize: 13 }}>{icon}</span>{label}
-                                                </span>
+                                                <span style={{ fontSize: 12, color: "#9CA3AF", fontWeight: 500 }}>{label}</span>
                                                 <span style={{ fontSize: 12, fontWeight: 700, color: theme.isDark ? "#F1F5F9" : "#111827", maxWidth: "55%", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{val || "—"}</span>
                                             </div>
                                         ))}
