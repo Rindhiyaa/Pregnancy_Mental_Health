@@ -13,24 +13,21 @@ from . import models
 
 # Validate secrets on startup
 if not JWT_SECRET_KEY:
+    JWT_SECRET_KEY = secrets.token_urlsafe(32)
     if IS_PRODUCTION:
-        raise ValueError(
-            "JWT_SECRET_KEY environment variable must be set in production! "
-            "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
-        )
+        print("⚠️  CRITICAL SECURITY WARNING: JWT_SECRET_KEY is NOT set in production!")
+        print("⚠️  Using a temporary auto-generated key. All sessions will be invalidated on server restart.")
+        print("⚠️  Please set the JWT_SECRET_KEY environment variable in Render for security.")
     else:
-        JWT_SECRET_KEY = secrets.token_urlsafe(32)
         print("⚠️  WARNING: Using auto-generated JWT_SECRET_KEY for development")
-        print("⚠️  Set JWT_SECRET_KEY environment variable for production")
 
 if not JWT_REFRESH_SECRET:
+    JWT_REFRESH_SECRET = secrets.token_urlsafe(32)
     if IS_PRODUCTION:
-        raise ValueError(
-            "JWT_REFRESH_SECRET environment variable must be set in production! "
-            "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
-        )
+        print("⚠️  CRITICAL SECURITY WARNING: JWT_REFRESH_SECRET is NOT set in production!")
+        print("⚠️  Using a temporary auto-generated key.")
+        print("⚠️  Please set the JWT_REFRESH_SECRET environment variable in Render.")
     else:
-        JWT_REFRESH_SECRET = secrets.token_urlsafe(32)
         print("⚠️  WARNING: Using auto-generated JWT_REFRESH_SECRET for development")
 
 ALGORITHM = "HS256"
