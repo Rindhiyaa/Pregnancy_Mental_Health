@@ -41,7 +41,7 @@ def seed_admin():
             logging.info("Default admin user created: admin@ppd.com")
         else:
             # Always ensure password and role are correct on startup
-            existing.hashed_password = hash_password("Admin@1234")
+            existing.hashed_password = hash_password("Admin@123")
             existing.role = "admin"
             existing.first_login = False
             existing.is_active = True
