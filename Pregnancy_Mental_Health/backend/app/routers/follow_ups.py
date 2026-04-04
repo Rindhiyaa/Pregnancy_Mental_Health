@@ -8,7 +8,7 @@ from ..database import get_db
 from .. import models, config
 from ..jwt_handler import get_current_user_email
 
-router = APIRouter(prefix="/api/follow-ups", tags=["follow-ups"])
+router = APIRouter(prefix="/follow-ups", tags=["follow-ups"])
 logger = logging.getLogger(__name__)
 
 @router.get("/")

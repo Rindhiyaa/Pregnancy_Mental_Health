@@ -8,7 +8,7 @@ from ..database import get_db
 from .. import models, schemas
 from ..jwt_handler import get_current_user_email, get_current_user
 
-router = APIRouter(prefix="/api/patient", tags=["patient"])
+router = APIRouter(prefix="/patient", tags=["patient"])
 
 
 @router.get("/dashboard")

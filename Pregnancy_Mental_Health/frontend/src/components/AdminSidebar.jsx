@@ -26,63 +26,49 @@ const ADMIN_NAV_ITEMS = [
   { to: "/admin/audit", icon: <FileText size={18} />, label: "Audit Logs" },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ onClose }) {
   const { logout } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
-
-  // Close sidebar on route change (mobile)
-  useEffect(() => { setIsOpen(false); }, [location.pathname]);
-
-  // Close on outside click
-  useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') setIsOpen(false); };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, []);
 
   const handleLogout = () => { logout(); navigate("/signin"); };
 
+  const handleNavClick = () => {
+    if (onClose) onClose();
+  };
+
   return (
-    <>
-      {/* Mobile toggle button */}
-      <button
-        className="sidebar-toggle"
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Toggle navigation"
-        aria-expanded={isOpen}
-      >
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
-
-      {/* Overlay */}
-      {isOpen && (
-        <div
-          className="sidebar-overlay open"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      <aside
-        className={`portal-sidebar${isOpen ? ' open' : ''}`}
-        style={{
-          width: 240, height: "100vh", position: "fixed",
-          background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`,
-          display: "flex", flexDirection: "column", zIndex: 100, color: "white",
-          transition: "transform 0.25s ease"
-        }}
-      >
-
-      <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "-8px" }}>
-          <img src={logo} alt="Logo" style={{ width: "54px", height: "54px", objectFit: "contain" }} />
+    <aside
+      className="portal-sidebar"
+      style={{
+        width: 240, height: "100%", position: "relative",
+        background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`,
+        display: "flex", flexDirection: "column", zIndex: 100, color: "white",
+        transition: "transform 0.25s ease"
+      }}
+    >
+      <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "-8px" }}>
+            <img src={logo} alt="Logo" style={{ width: "54px", height: "54px", objectFit: "contain" }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>PPD Risk Insight</div>
+            <div style={{ fontSize: 10, color: theme.sidebarMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Management Portal</div>
+          </div>
         </div>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>PPD Risk Insight</div>
-          <div style={{ fontSize: 10, color: theme.sidebarMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Management Portal</div>
-        </div>
+
+        {/* Mobile close button */}
+        <button 
+          onClick={onClose}
+          style={{ 
+            background: 'none', border: 'none', color: 'white', 
+            cursor: 'pointer', display: window.innerWidth < 1024 ? 'block' : 'none' 
+          }}
+        >
+          <X size={24} />
+        </button>
       </div>
 
       {/* Nav Section */}
@@ -91,6 +77,7 @@ export default function AdminSidebar() {
           <NavLink
             key={item.to}
             to={item.to}
+            onClick={handleNavClick}
             style={({ isActive }) => ({
               display: "flex", alignItems: "center", gap: 10,
               padding: "10px 14px", margin: "2px 0", borderRadius: 8,
@@ -107,18 +94,6 @@ export default function AdminSidebar() {
       </nav>
 
       <div style={{ padding: "12px 16px", borderTop: `1px solid ${theme.sidebarBorder}` }}>
-
-        {/* <button
-          onClick={handleLogout}
-          style={{
-            width: "100%", padding: "10.5px", borderRadius: 10, border: "none",
-            background: "rgba(239, 68, 68, 0.1)", color: "#EF4444",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            fontWeight: 700, cursor: "pointer", fontSize: 13
-          }}
-        >
-          <LogOut size={16} /> Logout
-        </button> */}
         <button
           style={{ ...S.logoutBtn, color: theme.sidebarText }}
           onClick={handleLogout}
@@ -128,7 +103,6 @@ export default function AdminSidebar() {
         </button>
       </div>
     </aside>
-    </>
   );
 }
 

@@ -7,7 +7,7 @@ from ..schemas import PredictRequest, PredictResponse, HistoryItem
 from ..ml_model import model
 from .. import models
 
-router = APIRouter(prefix="/api", tags=["predictions"])
+router = APIRouter(prefix="/predictions", tags=["predictions"])
 
 @router.post("/predict", response_model=PredictResponse)
 def predict(payload: PredictRequest, db: Session = Depends(get_db)):

@@ -89,7 +89,7 @@ async def rate_limit_middleware(request: Request, call_next):
     return response
 
 # CORS - Centralized in config.py
-# ⚠️ Add this LAST to ensure it wraps all other middlewares (including error responses)
+# ⚠️ Add this before routers to ensure it handles preflight correctly
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -98,20 +98,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Removed old CORS Configuration from bottom
-
-app.include_router(predictions.router)
-app.include_router(auth.router)
-app.include_router(assessments.router)
-app.include_router(patients_router)
-app.include_router(notifications.router)
-app.include_router(follow_ups.router)
-app.include_router(patient_portal.router)
-app.include_router(admin.router)
-app.include_router(nurse.router)
-app.include_router(doctor.router)
-app.include_router(messages.router)
-app.include_router(recovery.router)
+# API Routers - all prefixed with /api
+app.include_router(auth.router, prefix="/api")
+app.include_router(predictions.router, prefix="/api")
+app.include_router(assessments.router, prefix="/api")
+app.include_router(patients_router, prefix="/api")
+app.include_router(notifications.router, prefix="/api")
+app.include_router(follow_ups.router, prefix="/api")
+app.include_router(patient_portal.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
+app.include_router(nurse.router, prefix="/api")
+app.include_router(doctor.router, prefix="/api")
+app.include_router(messages.router, prefix="/api")
+app.include_router(recovery.router, prefix="/api")
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

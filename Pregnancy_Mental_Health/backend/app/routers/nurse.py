@@ -15,7 +15,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/nurse", tags=["nurse"])
+router = APIRouter(prefix="/nurse", tags=["nurse"])
 
 @router.get("/dashboard")
 def get_nurse_dashboard(

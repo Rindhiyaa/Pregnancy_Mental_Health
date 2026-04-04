@@ -12,7 +12,7 @@ from app.ml_model import model, feature_columns, build_model_input_from_form
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/doctor", tags=["doctor"])
+router = APIRouter(prefix="/doctor", tags=["doctor"])
 
 
 @router.get("/dashboard")

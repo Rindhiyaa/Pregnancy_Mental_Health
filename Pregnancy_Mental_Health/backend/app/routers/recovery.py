@@ -17,7 +17,7 @@ from ..services.recovery_service import (
 from ..jwt_handler import get_current_user
 from ..models import User
 
-router = APIRouter(prefix="/api/recovery", tags=["Recovery"])
+router = APIRouter(prefix="/recovery", tags=["Recovery"])
 
 def require_admin(user: User):
     if user.role != "admin":

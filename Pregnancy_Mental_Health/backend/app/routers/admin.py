@@ -17,7 +17,7 @@ import json
 from ..utils.websocket_manager import manager
 # from app.schemas.audit import AuditLogCreate, AuditLogRead
 
-router = APIRouter(prefix="/api/admin", tags=["admin"])
+router = APIRouter(prefix="/admin", tags=["admin"])
 
 def require_admin(
     admin=Depends(get_current_user),

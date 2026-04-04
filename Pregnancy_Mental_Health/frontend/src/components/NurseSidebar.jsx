@@ -30,43 +30,54 @@ const NAV_ITEMS = [
   { to: "/nurse/messages", icon: <MessageSquare size={18} />, label: "Messages" },
 ];
 
-export default function NurseSidebar() {
+export default function NurseSidebar({ onClose }) {
   const { logout } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => { setIsOpen(false); }, [location.pathname]);
+  const handleLogout = async () => { 
+    logout(); 
+    navigate("/signin"); 
+  };
 
-  const handleLogout = async () => { logout(); navigate("/signin"); };
+  const handleNavClick = () => {
+    if (onClose) onClose();
+  };
 
   return (
-    <>
-      <button
-        className="sidebar-toggle"
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Toggle navigation"
-        aria-expanded={isOpen}
-      >
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
-
-      {isOpen && <div className="sidebar-overlay open" onClick={() => setIsOpen(false)} />}
-
-      <aside
-        className={`portal-sidebar${isOpen ? ' open' : ''}`}
-        style={{ ...S.sidebar, background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}` }}
-      >
-
-      <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "-8px" }}>
-          <img src={logo} alt="Logo" style={{ width: "54px", height: "54px", objectFit: "contain" }} />
+    <aside
+      className="portal-sidebar"
+      style={{ 
+        ...S.sidebar, 
+        background: theme.sidebarBg, 
+        borderRight: `1px solid ${theme.sidebarBorder}`,
+        position: 'relative', // Override fixed from S.sidebar for use in PortalLayout
+        height: '100%',
+        minHeight: '100vh'
+      }}
+    >
+      <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "-8px" }}>
+            <img src={logo} alt="Logo" style={{ width: "54px", height: "54px", objectFit: "contain" }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>PPD Risk Insight</div>
+            <div style={{ fontSize: 10, color: theme.sidebarMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Nurse Workspace</div>
+          </div>
         </div>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>PPD Risk Insight</div>
-          <div style={{ fontSize: 10, color: theme.sidebarMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Nurse Workspace</div>
-        </div>
+        
+        {/* Mobile close button */}
+        <button 
+          onClick={onClose}
+          style={{ 
+            background: 'none', border: 'none', color: 'white', 
+            cursor: 'pointer', display: window.innerWidth < 1024 ? 'block' : 'none' 
+          }}
+        >
+          <X size={24} />
+        </button>
       </div>
 
       <div style={{ ...S.topDivider, background: theme.sidebarBorder, marginBottom: 8 }} />
@@ -78,6 +89,7 @@ export default function NurseSidebar() {
             key={to}
             to={to}
             end
+            onClick={handleNavClick}
             style={({ isActive }) => ({
               display: "flex", alignItems: "center", gap: 10,
               padding: "10px 14px", margin: "2px 0", borderRadius: 8,
@@ -100,6 +112,7 @@ export default function NurseSidebar() {
         
         <NavLink
           to="/nurse/profile"
+          onClick={handleNavClick}
           style={({ isActive }) => ({
             ...S.navItem,
             background: isActive ? theme.sidebarActiveBg : "transparent",
@@ -119,9 +132,7 @@ export default function NurseSidebar() {
           <span style={S.navLabel}>Logout</span>
         </button>
       </div>
-
     </aside>
-    </>
   );
 }
 

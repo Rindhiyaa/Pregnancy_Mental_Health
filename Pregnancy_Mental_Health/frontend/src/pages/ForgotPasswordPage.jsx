@@ -106,7 +106,9 @@ export default function ForgotPasswordPage() {
   useEffect(() => {
     if (!email || success === "") return;
 
-    const wsUrl = `ws://${window.location.hostname}:8000/ws`;
+    const wsUrl = import.meta.env.VITE_API_URL 
+      ? import.meta.env.VITE_API_URL.replace("http", "ws").replace("/api", "/ws")
+      : `ws://${window.location.hostname}:8000/ws`;
     const socket = new WebSocket(wsUrl);
     let isMounted = true;
 
