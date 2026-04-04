@@ -6,20 +6,30 @@ from .. import config
 logger = logging.getLogger(__name__)
 
 # Email configuration
-mail_conf = ConnectionConfig(
-    MAIL_USERNAME=config.MAIL_USERNAME,
-    MAIL_PASSWORD=config.MAIL_PASSWORD,
-    MAIL_FROM=config.MAIL_FROM,
-    MAIL_FROM_NAME=config.MAIL_FROM_NAME,
-    MAIL_PORT=config.MAIL_PORT,
-    MAIL_SERVER=config.MAIL_SERVER,
-    MAIL_STARTTLS=config.MAIL_STARTTLS,
-    MAIL_SSL_TLS=config.MAIL_SSL_TLS,
-    USE_CREDENTIALS=True
-)
+EMAIL_ENABLED = all([config.MAIL_USERNAME, config.MAIL_PASSWORD, config.MAIL_FROM])
+
+if EMAIL_ENABLED:
+    mail_conf = ConnectionConfig(
+        MAIL_USERNAME=config.MAIL_USERNAME,
+        MAIL_PASSWORD=config.MAIL_PASSWORD,
+        MAIL_FROM=config.MAIL_FROM,
+        MAIL_FROM_NAME=config.MAIL_FROM_NAME,
+        MAIL_PORT=config.MAIL_PORT,
+        MAIL_SERVER=config.MAIL_SERVER,
+        MAIL_STARTTLS=config.MAIL_STARTTLS,
+        MAIL_SSL_TLS=config.MAIL_SSL_TLS,
+        USE_CREDENTIALS=True
+    )
+else:
+    mail_conf = None
+    logger.warning("Email configuration is incomplete. Email features will be disabled.")
 
 async def send_followup_email(patient_email: str, patient_name: str, scheduled_date: datetime, ftype: str):
     """Utility to send follow-up confirmation email"""
+    if not EMAIL_ENABLED or not mail_conf:
+        logger.warning(f"Skipping email to {patient_email} - Email not configured")
+        return
+
     date_str = scheduled_date.strftime("%d %B %Y")
     time_str = scheduled_date.strftime("%I:%M %p")
     

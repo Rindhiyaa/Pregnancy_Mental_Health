@@ -22,18 +22,7 @@ from ..utils.email_utils import send_followup_email
 router = APIRouter(prefix="/api", tags=["assessments"])
 logger = logging.getLogger(__name__)
 
-# Email configuration
-mail_conf = ConnectionConfig(
-    MAIL_USERNAME=config.MAIL_USERNAME,
-    MAIL_PASSWORD=config.MAIL_PASSWORD,
-    MAIL_FROM=config.MAIL_FROM,
-    MAIL_FROM_NAME=config.MAIL_FROM_NAME,
-    MAIL_PORT=config.MAIL_PORT,
-    MAIL_SERVER=config.MAIL_SERVER,
-    MAIL_STARTTLS=config.MAIL_STARTTLS,
-    MAIL_SSL_TLS=config.MAIL_SSL_TLS,
-    USE_CREDENTIALS=True
-)
+# Email configuration (unused global config removed to prevent pydantic validation errors when env vars are missing)
 
 
 @router.post("/assessments/predict", response_model=AssessmentResult)
@@ -657,6 +646,11 @@ async def send_referral_email(
     """
     Sends a professional clinical referral email to the specified recipients with a PDF attachment.
     """
+    # Check if email is configured
+    if not all([config.MAIL_USERNAME, config.MAIL_PASSWORD, config.MAIL_FROM]):
+        logger.warning("Email configuration is incomplete. Skipping referral email.")
+        return
+
     # Create dynamic config to show clinician name as sender
     dynamic_mail_conf = ConnectionConfig(
         MAIL_USERNAME=config.MAIL_USERNAME,
