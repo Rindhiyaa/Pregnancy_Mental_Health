@@ -31,7 +31,7 @@ def seed_admin():
                 first_name="Admin",
                 last_name="User",
                 email="admin@ppd.com",
-                hashed_password=hash_password("Admin@1234"),
+                hashed_password=hash_password("Admin@123"),
                 role="admin",
                 first_login=False,
                 is_active=True,
@@ -40,7 +40,16 @@ def seed_admin():
             db.commit()
             logging.info("Default admin user created: admin@ppd.com")
         else:
-            logging.info("Admin user already exists, skipping seed.")
+            # Always ensure password and role are correct on startup
+            existing.hashed_password = hash_password("Admin@1234")
+            existing.role = "admin"
+            existing.first_login = False
+            existing.is_active = True
+            db.commit()
+            logging.info("Admin user password reset to default on startup.")
+    except Exception as e:
+        logging.error(f"seed_admin failed: {e}")
+        db.rollback()
     finally:
         db.close()
 
