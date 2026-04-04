@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from .utils.websocket_manager import manager
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from .database import engine
@@ -9,7 +8,7 @@ from . import models
 from .routers import predictions, auth, assessments, notifications, follow_ups, patient_portal, admin, nurse, doctor, messages, recovery
 from .routers.patients import router as patients_router
 from .rate_limiter import rate_limiter
-from .config import ALLOWED_ORIGINS, TRUSTED_HOSTS, IS_PRODUCTION
+from .config import ALLOWED_ORIGINS, IS_PRODUCTION
 import asyncio
 import logging
 import sys
@@ -39,18 +38,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# In production: only allow configured hosts
-if IS_PRODUCTION:
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=TRUSTED_HOSTS
-    )
-else:
-    # Development: allow all hosts (localhost, 127.0.0.1, etc.)
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=["*"]
-    )
+# CORS - Centralized in config.py
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # Security Headers Middleware
 @app.middleware("http")
@@ -80,6 +76,7 @@ async def rate_limit_middleware(request: Request, call_next):
         except Exception as e:
             # When returning response from middleware, we MUST manually add CORS headers 
             # OR ensure CORSMiddleware is the OUTERMOST (added last).
+            # We'll move CORSMiddleware to the bottom.
             return JSONResponse(
                 status_code=429,
                 content={"detail": str(e.detail) if hasattr(e, 'detail') else "Rate limit exceeded"}
@@ -88,29 +85,20 @@ async def rate_limit_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-# CORS - Centralized in config.py
-# ⚠️ Add this before routers to ensure it handles preflight correctly
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Removed old CORS Configuration from bottom
 
-# API Routers - all prefixed with /api
-app.include_router(auth.router, prefix="/api")
-app.include_router(predictions.router, prefix="/api")
-app.include_router(assessments.router, prefix="/api")
-app.include_router(patients_router, prefix="/api")
-app.include_router(notifications.router, prefix="/api")
-app.include_router(follow_ups.router, prefix="/api")
-app.include_router(patient_portal.router, prefix="/api")
-app.include_router(admin.router, prefix="/api")
-app.include_router(nurse.router, prefix="/api")
-app.include_router(doctor.router, prefix="/api")
-app.include_router(messages.router, prefix="/api")
-app.include_router(recovery.router, prefix="/api")
+app.include_router(predictions.router)
+app.include_router(auth.router)
+app.include_router(assessments.router)
+app.include_router(patients_router)
+app.include_router(notifications.router)
+app.include_router(follow_ups.router)
+app.include_router(patient_portal.router)
+app.include_router(admin.router)
+app.include_router(nurse.router)
+app.include_router(doctor.router)
+app.include_router(messages.router)
+app.include_router(recovery.router)
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

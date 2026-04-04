@@ -38,14 +38,6 @@ ALLOWED_ORIGINS_STR = os.getenv(
 )
 ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS_STR.split(",")]
 
-# Trusted Hosts - For TrustedHostMiddleware
-# In production, set TRUSTED_HOSTS env var: "your-domain.com,api.your-domain.com"
-TRUSTED_HOSTS_STR = os.getenv(
-    "TRUSTED_HOSTS",
-    "localhost,127.0.0.1,postpartum-risk-insight.onrender.com,ppd-backend-23ni.onrender.com,*.onrender.com"
-)
-TRUSTED_HOSTS = [host.strip() for host in TRUSTED_HOSTS_STR.split(",")]
-
 # JWT Configuration
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 JWT_REFRESH_SECRET = os.getenv("JWT_REFRESH_SECRET")

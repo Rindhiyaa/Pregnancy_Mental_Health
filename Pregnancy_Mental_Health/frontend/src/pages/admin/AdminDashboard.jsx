@@ -57,10 +57,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchAdminData();
 
-    const wsUrl = import.meta.env.VITE_API_URL 
-      ? import.meta.env.VITE_API_URL.replace("http", "ws").replace("/api", "/ws")
-      : "ws://localhost:8000/ws";
-    const ws = new WebSocket(wsUrl);
+    const ws = new WebSocket("ws://localhost:8000/ws");
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);

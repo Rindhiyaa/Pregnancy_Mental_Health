@@ -19,7 +19,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/api", tags=["auth"])
 
 # @router.post("/signup", status_code=status.HTTP_201_CREATED)
 # def signup(user_in: UserCreate, response: Response, db: Session = Depends(get_db)):

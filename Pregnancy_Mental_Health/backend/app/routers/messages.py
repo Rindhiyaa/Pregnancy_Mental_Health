@@ -6,7 +6,7 @@ from ..database import get_db
 from .. import models, schemas
 from ..jwt_handler import get_current_user_email
 
-router = APIRouter(prefix="/messages", tags=["messages"])
+router = APIRouter(prefix="/api/messages", tags=["messages"])
 
 
 def get_current_user(db: Session, current_user_email: str):

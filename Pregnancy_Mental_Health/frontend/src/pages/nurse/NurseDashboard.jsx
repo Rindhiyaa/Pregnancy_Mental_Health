@@ -5,7 +5,7 @@ import { api } from "../../utils/api";
 // import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
 import { getAvatarColor } from "../../utils/helpers";
 import { useTheme } from "../../ThemeContext";
-import NurseLayout from "../../components/NurseLayout";
+import NurseSidebar from "../../components/NurseSidebar";
 import ThemeToggle from "../../components/ThemeToggle";
 import { PageTitle, Divider, Card, Badge, Loader2 } from "../../components/UI";
 import toast from "react-hot-toast";
@@ -100,7 +100,7 @@ export default function NurseDashboard() {
   };
 
   const QuickAction = ({ icon, label, to, color }) => (
-    <Link to={to} style={{ textDecoration: 'none', flex: 1, minWidth: '200px' }}>
+    <Link to={to} style={{ textDecoration: 'none', flex: 1 }}>
       <Card padding="20px" hover style={{ display: 'flex', alignItems: 'center', gap: 16, height: '100%' }}>
         <div style={{
           background: `${color}15`,
@@ -142,18 +142,22 @@ export default function NurseDashboard() {
   );
 
   if (loading) return (
-    <NurseLayout pageTitle="Nurse Dashboard">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
+      <NurseSidebar />
+      <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
         <div style={{ textAlign: 'center' }}>
           <Loader2 className="animate-spin" size={40} color={theme.primary} style={{ marginBottom: 16 }} />
           <div style={{ color: theme.textMuted, fontWeight: 500 }}>Loading Nurse Portal...</div>
         </div>
-      </div>
-    </NurseLayout>
+      </main>
+    </div>
   );
 
   return (
-    <NurseLayout pageTitle="Nurse Dashboard">
+    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
+      <NurseSidebar />
+
+      <main className="portal-main" style={{ background: theme.pageBg }}>
         {/* Welcome Header */}
         <div
           style={{
@@ -416,7 +420,7 @@ export default function NurseDashboard() {
 
          <div style={{ marginBottom: 40 }}>
           <h3 style={{ fontFamily: theme.fontHeading, fontSize: 20, fontWeight: 600, marginBottom: 20 }}>Quick Actions</h3>
-          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 20 }}>
             <QuickAction icon={<UserPlus size={22} />} label="Register New Patient" to="/nurse/patients/new" color="#4f46e5" />
             <QuickAction icon={<ClipboardList size={22} />} label="Start New Assessment" to="/nurse/assessment/new" color="#ec4899" />
             <QuickAction icon={<Calendar size={22} />} label="Schedule Appointment" to="/nurse/appointments" color="#10b981" />
@@ -425,7 +429,7 @@ export default function NurseDashboard() {
         </div>
         <div style={{ marginBottom: 40 }}>
           <Card padding="32px">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <div>
                 <h3 style={{ fontFamily: theme.fontHeading, fontSize: 20, fontWeight: 800, margin: "0 0 4px 0" }}>Recent Patients</h3>
                 <p style={{ fontSize: 13, color: theme.textMuted, margin: 0 }}>View and manage recently registered mothers</p>
@@ -435,10 +439,9 @@ export default function NurseDashboard() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {recentPatients.length > 0 ? recentPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p, idx) => (
-                <div key={`${p.id}-${idx}`} 
-                className="patient-dashboard-row"
-                style={{
+                <div key={`${p.id}-${idx}`} style={{
                   display: 'grid',
+                  gridTemplateColumns: '40px 1.5fr 1fr 1.5fr 1fr 40px',
                   alignItems: 'center',
                   padding: '16px',
                   borderRadius: 16,
@@ -525,7 +528,8 @@ export default function NurseDashboard() {
             )}
           </Card>
         </div>
-    </NurseLayout>
+      </main>
+    </div>
   );
 }
 

@@ -17,11 +17,11 @@ from ..ml_model import model, feature_columns, build_model_input_from_form
 from .. import models, config
 from ..jwt_handler import get_current_user_email, get_current_user
 
-router = APIRouter(prefix="/assessments", tags=["assessments"])
+router = APIRouter(prefix="/api", tags=["assessments"])
 logger = logging.getLogger(__name__)
 
 
-@router.post("/predict", response_model=AssessmentResult)
+@router.post("/assessments/predict", response_model=AssessmentResult)
 def predict_assessment(payload: AssessmentCreate):
     # 1) Build 1-row dataframe with same raw columns as training
     try:

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../ThemeContext";
 import { api } from "../../utils/api";
-import DoctorLayout from "../../components/DoctorLayout";
+import DoctorSidebar from "../../components/DoctorSidebar";
 import {
   Card,
   Badge,
@@ -198,7 +198,15 @@ export default function DashboardPage() {
     hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
-    <DoctorLayout pageTitle="Doctor Dashboard">
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        background: theme.pageBg
+      }}
+    >
+      <DoctorSidebar />
+      <main className="portal-main" style={{ background: theme.pageBg }}>
         {/* Hero Header */}
         <div
             className="dashboard-hero"
@@ -1123,6 +1131,7 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
-    </DoctorLayout>
+      </main>
+    </div>
   );
 }

@@ -9,7 +9,7 @@ from ..models import Patient, Assessment
 from ..schemas import PatientCreate, PatientOut, PatientUpdate
 from ..jwt_handler import get_current_user_email
 
-router = APIRouter(prefix="/patients", tags=["patients"])
+router = APIRouter(prefix="/api/patients", tags=["patients"])
 logger = logging.getLogger(__name__)
 
 
