@@ -70,7 +70,7 @@ async def rate_limit_middleware(request: Request, call_next):
     if not IS_PRODUCTION:
         return await call_next(request)
         
-    if request.url.path.startswith("/api/"):
+    if not request.url.path.startswith("/docs") and not request.url.path.startswith("/redoc"):
         try:
             await rate_limiter.check_rate_limit(request)
         except Exception as e:

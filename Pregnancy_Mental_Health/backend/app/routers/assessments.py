@@ -17,7 +17,7 @@ from ..ml_model import model, feature_columns, build_model_input_from_form
 from .. import models, config
 from ..jwt_handler import get_current_user_email, get_current_user
 
-router = APIRouter(prefix="/api", tags=["assessments"])
+router = APIRouter(prefix="", tags=["assessments"])
 logger = logging.getLogger(__name__)
 
 
