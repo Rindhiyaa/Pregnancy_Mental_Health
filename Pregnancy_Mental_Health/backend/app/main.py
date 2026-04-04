@@ -39,16 +39,6 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS - Centralized in config.py
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 # In production: only allow configured hosts
 if IS_PRODUCTION:
     app.add_middleware(
@@ -90,7 +80,6 @@ async def rate_limit_middleware(request: Request, call_next):
         except Exception as e:
             # When returning response from middleware, we MUST manually add CORS headers 
             # OR ensure CORSMiddleware is the OUTERMOST (added last).
-            # We'll move CORSMiddleware to the bottom.
             return JSONResponse(
                 status_code=429,
                 content={"detail": str(e.detail) if hasattr(e, 'detail') else "Rate limit exceeded"}
@@ -98,6 +87,16 @@ async def rate_limit_middleware(request: Request, call_next):
     
     response = await call_next(request)
     return response
+
+# CORS - Centralized in config.py
+# ⚠️ Add this LAST to ensure it wraps all other middlewares (including error responses)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Removed old CORS Configuration from bottom
 

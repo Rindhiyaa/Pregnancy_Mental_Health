@@ -1,4 +1,7 @@
-
+/* ============================================================
+   PORTAL RESPONSIVE — covers all portal pages, tables, grids
+   Breakpoints: 1280 | 1024 | 768 | 480
+   ============================================================ */
 
 /* ── Base: sidebar is fixed 240px wide ── */
 .portal-layout {
@@ -12,7 +15,36 @@
   padding: 40px;
   box-sizing: border-box;
   transition: margin-left 0.25s ease;
-  min-width: 0; /* prevent flex blowout */
+  min-width: 0;
+}
+
+/* ── ALL tables: always scrollable ── */
+table {
+  min-width: 520px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-wrapper,
+div[style*="overflowX"],
+div[style*="overflow-x"] {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Wrap any bare table that isn't already in a scroll wrapper */
+.portal-main table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+}
+
+/* But don't double-wrap tables already inside overflow divs */
+.portal-main div[style*="overflowX"] table,
+.portal-main .table-wrapper table {
+  display: table;
+  white-space: normal;
 }
 
 /* ── Stats grids ── */
@@ -37,16 +69,109 @@
   margin-bottom: 40px;
 }
 
-/* ── Dashboard 2-col layout ── */
+/* Dashboard Hero Responsiveness */
+@media (max-width: 768px) {
+  .dashboard-hero {
+    padding: 20px !important;
+    border-radius: 16px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .dashboard-hero h1 {
+    font-size: 24px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .dashboard-hero p {
+    font-size: 12px !important;
+  }
+
+  .dashboard-hero-inner {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 20px !important;
+  }
+
+  .dashboard-hero-inner > div:last-child {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .dashboard-hero-inner input {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+/* Stats Grid Responsiveness */
+.stats-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 1200px) {
+  .stats-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-grid-4 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* Dashboard Layout Grid */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1.6fr 1fr;
   gap: 32px;
   margin-bottom: 40px;
 }
 
 .dashboard-grid > * {
   min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+/* Patient Dashboard Row Grid */
+.patient-dashboard-row {
+  grid-template-columns: 40px 1.5fr 1fr 1.5fr 1fr 40px;
+}
+
+@media (max-width: 1024px) {
+  .patient-dashboard-row {
+    grid-template-columns: 40px 1fr 1fr 40px;
+  }
+  /* Hide middle columns on medium screens */
+  .patient-dashboard-row > div:nth-child(3),
+  .patient-dashboard-row > div:nth-child(4) {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .patient-dashboard-row {
+    grid-template-columns: 1fr 40px;
+    gap: 8px;
+  }
+  /* Hide index, and doctor columns on mobile */
+  .patient-dashboard-row > div:nth-child(1),
+  .patient-dashboard-row > div:nth-child(3),
+  .patient-dashboard-row > div:nth-child(4),
+  .patient-dashboard-row > div:nth-child(5) {
+    display: none;
+  }
 }
 
 /* ── Schedule 2-col layout ── */
@@ -74,7 +199,7 @@
   gap: 16px;
 }
 
-/* ── Hero header inside dashboard ── */
+/* ── Dashboard hero ── */
 .dashboard-hero {
   padding: 40px;
   border-radius: 24px;
@@ -97,8 +222,34 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* ── Form grids ── */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+/* ── Card grids ── */
+.card-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.card-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
 /* ============================================================
-   BREAKPOINT: 1280px — sidebar still visible, content adjusts
+   1280px — sidebar visible, content adjusts
    ============================================================ */
 @media (max-width: 1280px) {
   .portal-main {
@@ -118,16 +269,20 @@
   .stats-grid-4 {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .form-grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* ============================================================
-   BREAKPOINT: 1024px — sidebar collapses, full width content
+   1024px — sidebar collapses, full-width content
    ============================================================ */
 @media (max-width: 1024px) {
   .portal-main {
     margin-left: 0 !important;
     padding: 24px 20px;
-    padding-top: 68px; /* space for hamburger toggle */
+    padding-top: 68px;
   }
 
   .dashboard-grid {
@@ -159,10 +314,18 @@
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .form-grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .card-grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* ============================================================
-   BREAKPOINT: 768px — tablet
+   768px — tablet
    ============================================================ */
 @media (max-width: 768px) {
   .portal-main {
@@ -170,23 +333,34 @@
     padding-top: 68px;
   }
 
+  /* Stats */
   .stats-grid-4,
   .stats-grid-3 {
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 24px;
+    gap: 12px;
+    margin-bottom: 20px;
   }
 
   .stats-grid-2 {
     grid-template-columns: 1fr;
   }
 
+  /* Page header */
   .page-header {
     flex-direction: column;
     align-items: flex-start;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
+    gap: 12px;
   }
 
+  .page-header button,
+  .page-header a {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Dashboard hero */
   .dashboard-hero {
     padding: 20px;
     border-radius: 16px;
@@ -197,55 +371,240 @@
     font-size: 22px !important;
   }
 
-  /* Tables scroll horizontally */
+  /* Tables — force horizontal scroll */
   .table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    border-radius: 0 0 12px 12px;
   }
 
   table {
-    min-width: 560px;
+    min-width: 520px;
   }
 
-  /* Modal full width */
-  .modal-box {
+  /* Modals */
+  .modal-box,
+  div[style*="maxWidth: 500"],
+  div[style*="maxWidth: 440"],
+  div[style*="maxWidth: 520"] {
     width: 95vw !important;
     max-width: 95vw !important;
-    padding: 24px !important;
+    padding: 20px !important;
+    margin: 0 auto;
   }
 
-  /* Messages: stack columns */
+  /* Messages */
   .messages-grid {
     grid-template-columns: 1fr;
   }
 
-  /* Schedule: stack */
+  /* Schedule */
   .schedule-grid {
     grid-template-columns: 1fr;
   }
+
+  /* Forms */
+  .form-grid-2,
+  .form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Cards */
+  .card-grid-2,
+  .card-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Nurse dashboard recent patients grid */
+  div[style*="gridTemplateColumns: '40px 1.5fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Filter toolbar */
+  .filter-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Inline flex rows that should stack */
+  .flex-row-mobile-stack {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
 }
 
-/* 
-   BREAKPOINT: 480px — small mobile*/
+/* ============================================================
+   480px — small mobile
+   ============================================================ */
 @media (max-width: 480px) {
   .portal-main {
     padding: 12px;
     padding-top: 64px;
   }
 
+  /* All stat grids → single column */
   .stats-grid-4,
   .stats-grid-3,
   .stats-grid-2 {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 10px;
+  }
+
+  /* Dashboard hero */
+  .dashboard-hero {
+    padding: 16px;
+    border-radius: 12px;
   }
 
   .dashboard-hero h1 {
     font-size: 18px !important;
   }
 
-  .page-header button {
+  /* Page header buttons full width */
+  .page-header button,
+  .page-header a {
     width: 100%;
-    justify-content: center;
+  }
+
+  /* Pagination */
+  .pagination-btn {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  /* Tables still scroll */
+  table {
+    min-width: 480px;
+  }
+
+  /* Reduce card padding */
+  .portal-main > div[style*="padding: 24px"],
+  .portal-main > div[style*="padding: 28px"],
+  .portal-main > div[style*="padding: 32px"] {
+    padding: 16px !important;
+  }
+
+  /* Assessment review sections */
+  div[style*="gridTemplateColumns: \"1fr 1fr\""] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ============================================================
+   Nurse dashboard recent patients table row
+   ============================================================ */
+@media (max-width: 900px) {
+  .nurse-patient-row {
+    grid-template-columns: 1fr 1fr auto !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .nurse-patient-row {
+    grid-template-columns: 1fr auto !important;
+  }
+}
+
+/* ============================================================
+   Admin dashboard — stat grid + content grid
+   ============================================================ */
+@media (max-width: 768px) {
+  div[style*="gridTemplateColumns: statGridCols"],
+  div[style*="gridTemplateColumns: contentGridCols"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  div[style*="gridTemplateColumns: statGridCols"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ============================================================
+   Doctor assessment review — question grid
+   ============================================================ */
+@media (max-width: 640px) {
+  div[style*="gridTemplateColumns: \"1fr 1fr\""] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ============================================================
+   Patient profile — info grid
+   ============================================================ */
+@media (max-width: 768px) {
+  div[style*="gridTemplateColumns: '1fr 1fr'"],
+  div[style*='gridTemplateColumns: "1fr 1fr"'] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ============================================================
+   Nurse new assessment — step form
+   ============================================================ */
+@media (max-width: 768px) {
+  div[style*="gridTemplateColumns: \"1fr 1fr\""],
+  div[style*="gridTemplateColumns: '1fr 1fr'"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ============================================================
+   Messages page — 3-col to 1-col
+   ============================================================ */
+@media (max-width: 1024px) {
+  div[style*="gridTemplateColumns: \"320px"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ============================================================
+   Scrollbar styling for table wrappers
+   ============================================================ */
+.table-wrapper::-webkit-scrollbar,
+div[style*="overflowX"]::-webkit-scrollbar {
+  height: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-track,
+div[style*="overflowX"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb,
+div[style*="overflowX"]::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 4px;
+}
+
+/* ============================================================
+   Hide scrollbar class (used in some panels)
+   ============================================================ */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ============================================================
+   Print
+   ============================================================ */
+@media print {
+  .portal-sidebar,
+  .sidebar-toggle,
+  .sidebar-overlay,
+  nav,
+  footer,
+  button:not(.print-btn) {
+    display: none !important;
+  }
+
+  .portal-main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+
+  table {
+    min-width: unset;
+    display: table;
+    white-space: normal;
   }
 }

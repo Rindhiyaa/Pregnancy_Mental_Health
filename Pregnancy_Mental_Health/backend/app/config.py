@@ -34,7 +34,7 @@ IS_PRODUCTION = os.getenv("ENVIRONMENT") == "production"
 # In production, set ALLOWED_ORIGINS env var: "https://domain1.com,https://domain2.com"
 ALLOWED_ORIGINS_STR = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5175,http://127.0.0.1:5175"
+    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5175,http://127.0.0.1:5175,https://postpartum-risk-insight.onrender.com,https://ppd-backend-23ni.onrender.com"
 )
 ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS_STR.split(",")]
 
@@ -42,7 +42,7 @@ ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS_STR.split(",")]
 # In production, set TRUSTED_HOSTS env var: "your-domain.com,api.your-domain.com"
 TRUSTED_HOSTS_STR = os.getenv(
     "TRUSTED_HOSTS",
-    "localhost,127.0.0.1"
+    "localhost,127.0.0.1,postpartum-risk-insight.onrender.com,ppd-backend-23ni.onrender.com,*.onrender.com"
 )
 TRUSTED_HOSTS = [host.strip() for host in TRUSTED_HOSTS_STR.split(",")]
 
