@@ -3,7 +3,7 @@ services:
   - type: web
     name: ppd-api
     env: python
-    buildCommand: "cd Pregnancy_Mental_Health/backend && pip install -r requirements.txt --no-cache-dir"
+    buildCommand: "./build.sh"
     startCommand: "cd Pregnancy_Mental_Health/backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
