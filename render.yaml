@@ -1,0 +1,34 @@
+services:
+  # Backend API
+  - type: web
+    name: ppd-api
+    env: python
+    buildCommand: "cd Pregnancy_Mental_Health/backend && pip install -r requirements.txt --no-cache-dir"
+    startCommand: "cd Pregnancy_Mental_Health/backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ppd-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: "https://ppd-frontend.onrender.com" # Update this after frontend is live
+
+  # Frontend Static Site
+  - type: static
+    name: ppd-frontend
+    env: static
+    buildCommand: "cd Pregnancy_Mental_Health/frontend && npm install && npm run build"
+    staticPublishPath: "Pregnancy_Mental_Health/frontend/dist"
+    envVars:
+      - key: VITE_API_URL
+        value: "https://ppd-api.onrender.com/api"
+
+databases:
+  - name: ppd-db
+    plan: free

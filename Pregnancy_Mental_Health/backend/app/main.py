@@ -101,7 +101,6 @@ async def rate_limit_middleware(request: Request, call_next):
 
 # Removed old CORS Configuration from bottom
 
-models.Base.metadata.create_all(bind=engine)
 app.include_router(predictions.router)
 app.include_router(auth.router)
 app.include_router(assessments.router)

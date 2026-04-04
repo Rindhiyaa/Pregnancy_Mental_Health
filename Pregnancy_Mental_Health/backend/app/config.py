@@ -14,11 +14,18 @@ dotenv_path = os.path.join(backend_dir, ".env")
 load_dotenv(dotenv_path)
 
 # Database Configuration
-DB_USER = os.getenv("DB_USER")
-DB_PASS = os.getenv("DB_PASS")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_NAME = os.getenv("DB_NAME")
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    # SQLAlchemy 1.4+ and 2.0 require 'postgresql://' instead of 'postgres://'
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+if not DATABASE_URL:
+    DB_USER = os.getenv("DB_USER")
+    DB_PASS = os.getenv("DB_PASS")
+    DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_NAME = os.getenv("DB_NAME")
+    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 
 # Environment
 IS_PRODUCTION = os.getenv("ENVIRONMENT") == "production"
@@ -47,7 +54,8 @@ DEFAULT_USER_PASSWORD = os.getenv("DEFAULT_USER_PASSWORD", "TempPass123!")
 
 # API Configuration
 API_HOST = os.getenv("API_HOST", "0.0.0.0")
-API_PORT = int(os.getenv("API_PORT", "8000"))
+# Render provides the port via the PORT environment variable
+API_PORT = int(os.getenv("PORT", os.getenv("API_PORT", "8000")))
 
 # Email Configuration (IMPORTANT FOR EXPO PRESENTATION)
 MAIL_USERNAME = os.getenv("MAIL_USERNAME")
