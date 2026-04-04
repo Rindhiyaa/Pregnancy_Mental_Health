@@ -20,11 +20,38 @@ logging.basicConfig(
 )
 
 
+def seed_admin():
+    from .database import SessionLocal
+    from .security import hash_password
+    db = SessionLocal()
+    try:
+        existing = db.query(models.User).filter(models.User.email == "admin@ppd.com").first()
+        if not existing:
+            admin = models.User(
+                first_name="Admin",
+                last_name="User",
+                email="admin@ppd.com",
+                hashed_password=hash_password("Admin@1234"),
+                role="admin",
+                first_login=False,
+                is_active=True,
+            )
+            db.add(admin)
+            db.commit()
+            logging.info("Default admin user created: admin@ppd.com")
+        else:
+            logging.info("Admin user already exists, skipping seed.")
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create database tables on startup
     models.Base.metadata.create_all(bind=engine)
-    # Startup: Start background cleanup taskk
+    # Seed default admin user if not exists
+    seed_admin()
+    # Startup: Start background cleanup task
     cleanup_task = asyncio.create_task(rate_limiter.cleanup_old_entries())
     yield
     # Shutdown: Cancel cleanup task
