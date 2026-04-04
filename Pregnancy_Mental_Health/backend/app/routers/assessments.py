@@ -5,7 +5,6 @@ from typing import List, Optional
 import logging
 from datetime import datetime, timedelta
 import io
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -17,12 +16,9 @@ from ..schemas import AssessmentCreate, AssessmentResult, AssessmentSave, Referr
 from ..ml_model import model, feature_columns, build_model_input_from_form
 from .. import models, config
 from ..jwt_handler import get_current_user_email, get_current_user
-from ..utils.email_utils import send_followup_email
 
 router = APIRouter(prefix="/api", tags=["assessments"])
 logger = logging.getLogger(__name__)
-
-# Email configuration (unused global config removed to prevent pydantic validation errors when env vars are missing)
 
 
 @router.post("/assessments/predict", response_model=AssessmentResult)
@@ -632,85 +628,6 @@ def generate_referral_pdf(patient_name, risk_score, risk_level, risk_factors, cl
     return pdf_bytes
 
 
-async def send_referral_email(
-    patient_name: str,
-    risk_level: str,
-    risk_score: float,
-    clinician_name: str,
-    clinician_notes: str,
-    assessment_id: int,
-    top_risk_factors: list,
-    recipients: list,
-    reply_to: str
-):
-    """
-    Sends a professional clinical referral email to the specified recipients with a PDF attachment.
-    """
-    # Check if email is configured
-    if not all([config.MAIL_USERNAME, config.MAIL_PASSWORD, config.MAIL_FROM]):
-        logger.warning("Email configuration is incomplete. Skipping referral email.")
-        return
-
-    # Create dynamic config to show clinician name as sender
-    dynamic_mail_conf = ConnectionConfig(
-        MAIL_USERNAME=config.MAIL_USERNAME,
-        MAIL_PASSWORD=config.MAIL_PASSWORD,
-        MAIL_FROM=config.MAIL_FROM,
-        MAIL_FROM_NAME=clinician_name,
-        MAIL_PORT=config.MAIL_PORT,
-        MAIL_SERVER=config.MAIL_SERVER,
-        MAIL_STARTTLS=config.MAIL_STARTTLS,
-        MAIL_SSL_TLS=config.MAIL_SSL_TLS,
-        USE_CREDENTIALS=True
-    )
-
-    color = get_risk_color(risk_level)
-    
-    html_body = f"""
-    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-      <h2 style="color: {color};">PPD Referral Report - {patient_name}</h2>
-      <p>Please find the professional clinical referral report attached as a PDF document.</p>
-      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-      <p style="font-size: 12px; color: #666;">
-        This is a confidential clinical communication from the PPD Risk Insight platform.<br>
-        Referred by: {clinician_name}
-      </p>
-    </div>
-    """
-
-    # Generate PDF
-    pdf_content = generate_referral_pdf(
-        patient_name=patient_name,
-        risk_score=risk_score,
-        risk_level=risk_level,
-        risk_factors=top_risk_factors,
-        clinician_notes=clinician_notes,
-        assessment_id=assessment_id
-    )
-
-    # Create attachment using UploadFile for FastAPI-Mail v2 compatibility
-    date_str = datetime.now().strftime("%Y-%m-%d")
-    filename = f"PPD_Referral_{patient_name.replace(' ', '_')}_{date_str}.pdf"
-    
-    attachment = UploadFile(
-        filename=filename,
-        file=io.BytesIO(pdf_content),
-        headers={"content-type": "application/pdf"}
-    )
-
-    message = MessageSchema(
-        subject=f"[{'URGENT' if 'High' in risk_level else 'REFERRAL'}] PPD {risk_level} - Patient: {patient_name}",
-        recipients=recipients,
-        body=html_body,
-        subtype=MessageType.html,
-        reply_to=[reply_to],
-        attachments=[attachment]
-    )
-    
-    fm = FastMail(dynamic_mail_conf)
-    await fm.send_message(message)
-
-
 @router.post("/referrals")
 async def create_referral(
     payload: ReferralRequest,
@@ -718,7 +635,7 @@ async def create_referral(
     db: Session = Depends(get_db),
 ):
     """
-    Processes a referral and sends a real email notification.
+    Processes a referral (email sending disabled).
     """
     # 1) Fetch patient email
     assessment = db.query(models.Assessment).filter(models.Assessment.id == payload.assessment_id).first()
@@ -742,36 +659,25 @@ async def create_referral(
             logger.info(f"Fixed assessment #{assessment.id} linkage - linked to patient '{patient.name}' (ID: {patient.id})")
     # --- END FIX ---
 
-    if not patient or not patient.email:
-        raise HTTPException(status_code=400, detail="Patient email not found. Please update patient details.")
+    if not patient:
+        raise HTTPException(status_code=400, detail="Patient not found. Please update patient details.")
 
     clinician_full_name = f"{current_user.first_name} {current_user.last_name or ''}".strip()
 
     logger.info("="*80)
-    logger.info("NEW CLINICAL REFERRAL GENERATED")
+    logger.info("NEW CLINICAL REFERRAL GENERATED (Email Disabled)")
     logger.info(f"From: {current_user.email} (Name: {clinician_full_name})")
-    logger.info(f"To Patient: {patient.email}")
+    logger.info(f"Patient: {patient.name}")
     logger.info(f"Risk Level: {payload.risk_level}, Score: {payload.risk_score}")
     logger.info("="*80)
 
     try:
-        # Trigger real email dynamically
-        await send_referral_email(
-            patient_name=payload.patient_name,
-            risk_level=payload.risk_level,
-            risk_score=payload.risk_score,
-            clinician_name=clinician_full_name,
-            clinician_notes=payload.clinician_notes,
-            assessment_id=payload.assessment_id,
-            top_risk_factors=payload.top_risk_factors,
-            recipients=[patient.email],  # 👈 TO patient.email
-            reply_to=current_user.email  # 👈 reply_to clinician
-        )
+        # Email notification is disabled. We'll just create a notification in the system.
         
-        # Create persistent notification for referral email
+        # Create persistent notification for referral
         ref_notif = models.Notification(
-            title="📧 Referral Email Sent",
-            message=f"Clinical referral report for {patient.name} has been emailed to {patient.email}.",
+            title="📋 Referral Processed",
+            message=f"Clinical referral report for {patient.name} has been processed. (Note: Email functionality is currently disabled).",
             type="info",
             priority="medium",
             clinician_email=current_user.email,
@@ -780,31 +686,14 @@ async def create_referral(
         db.add(ref_notif)
         db.commit()
         
-        # --- START: Trigger Referral Notification ---
-        try:
-            referral_notif = models.Notification(
-                title="📧 Referral Sent",
-                message=f"A professional referral for {payload.patient_name} has been sent successfully to {payload.referral_department}.",
-                type="success",
-                priority="medium",
-                clinician_email=current_user.email,
-                is_read=False
-            )
-            db.add(referral_notif)
-            db.commit()
-        except Exception as e:
-            logger.error(f"Failed to create referral notification: {e}")
-        # --- END: Trigger Referral Notification ---
-        
         return {
             "status": "success",
-            "message": f"Referral for {payload.patient_name} successfully sent to {payload.referral_department}.",
+            "message": f"Referral for {payload.patient_name} successfully processed.",
             "referral_id": f"REF-{payload.assessment_id}-{datetime.now().strftime('%M')}",
         }
     except Exception as e:
-        logger.error(f"CRITICAL: Failed to send real referral email: {e}", exc_info=True)
-        # 🚨 THROW REAL ERROR so frontend sees it failed
+        logger.error(f"CRITICAL: Failed to process referral: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Real Email Error: {str(e)}. (Hint: Check your MAIL_PASSWORD in config.py)"
+            detail=f"Referral processing error: {str(e)}"
         )

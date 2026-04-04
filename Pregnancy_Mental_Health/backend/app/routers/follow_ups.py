@@ -7,7 +7,6 @@ import logging
 from ..database import get_db
 from .. import models, config
 from ..jwt_handler import get_current_user_email
-from ..utils.email_utils import send_followup_email
 
 router = APIRouter(prefix="/api/follow-ups", tags=["follow-ups"])
 logger = logging.getLogger(__name__)
@@ -103,19 +102,11 @@ async def create_manual_follow_up(
         )
         db.add(new_fup)
         
-        if patient and patient.email:
-            background_tasks.add_task(
-                send_followup_email,
-                patient_email=patient.email,
-                patient_name=patient.name,
-                scheduled_date=scheduled_date,
-                ftype=new_fup.type
-            )
-            
+        if patient:
             # Create a persistent notification for the clinician
             email_notif = models.Notification(
-                title="📧 Email Sent",
-                message=f"A follow-up confirmation email for {patient.name} has been sent to {patient.email}.",
+                title="📋 Follow-up Scheduled",
+                message=f"A follow-up check-in for {patient.name} has been scheduled. (Note: Email notification is disabled).",
                 type="info",
                 priority="low",
                 clinician_email=current_user_email,
