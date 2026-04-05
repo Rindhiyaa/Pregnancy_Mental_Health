@@ -1,4 +1,3 @@
-# backend/app/config.py
 """
 Centralized configuration for the application
 Single source of truth for environment variables and settings
@@ -6,12 +5,14 @@ Single source of truth for environment variables and settings
 import os
 from dotenv import load_dotenv
 
+
 # Load environment variables from .env file
 # Look for .env in the backend directory (one level up from app)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 backend_dir = os.path.dirname(current_dir)
 dotenv_path = os.path.join(backend_dir, ".env")
 load_dotenv(dotenv_path)
+
 
 # Database Configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -27,6 +28,7 @@ if not DATABASE_URL:
     DB_NAME = os.getenv("DB_NAME")
     DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 
+
 # Environment
 IS_PRODUCTION = os.getenv("ENVIRONMENT") == "production"
 
@@ -34,7 +36,12 @@ IS_PRODUCTION = os.getenv("ENVIRONMENT") == "production"
 # In production, set ALLOWED_ORIGINS env var: "https://domain1.com,https://domain2.com"
 ALLOWED_ORIGINS_STR = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5175,http://127.0.0.1:5175,https://postpartum-risk-insight.onrender.com,https://ppd-backend-23ni.onrender.com"
+    "http://localhost:5173,http://127.0.0.1:5173,"
+    "http://localhost:5174,http://127.0.0.1:5174,"
+    "http://localhost:3000,http://127.0.0.1:3000,"
+    "http://localhost:5175,http://127.0.0.1:5175,"
+    "https://postpartum-risk-insight.onrender.com,"
+    "https://ppd-backend-23ni.onrender.com"
 )
 ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS_STR.split(",")]
 
@@ -49,6 +56,7 @@ API_HOST = os.getenv("API_HOST", "0.0.0.0")
 # Render provides the port via the PORT environment variable
 API_PORT = int(os.getenv("PORT", os.getenv("API_PORT", "8000")))
 
+
 # Email Configuration (IMPORTANT FOR EXPO PRESENTATION)
 MAIL_USERNAME = os.getenv("MAIL_USERNAME")
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
@@ -61,6 +69,7 @@ if not MAIL_PASSWORD:
     print(" WARNING: MAIL_PASSWORD is NOT set!", file=sys.stderr)
 else:
     print(f" MAIL_PASSWORD is set (length: {len(MAIL_PASSWORD)})", file=sys.stderr)
+
 MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME", "PPD Risk Insight System")
 MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
 MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")

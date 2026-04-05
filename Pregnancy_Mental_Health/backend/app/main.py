@@ -181,17 +181,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-
-# CORS - Centralized in config.py
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 # Security Headers Middleware
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
@@ -226,6 +215,16 @@ async def rate_limit_middleware(request: Request, call_next):
 
     response = await call_next(request)
     return response
+
+
+# CORS - MUST BE ADDED LAST so it wraps all other middleware responses
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # Include routers
