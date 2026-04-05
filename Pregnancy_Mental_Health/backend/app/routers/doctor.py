@@ -569,7 +569,7 @@ def review_assessment(
                     assessment_id=a.id,
                     scheduled_date=scheduled,
                     status="pending",
-                    type=urgency_str,           # "Routine" / "Moderate" / "Urgent"
+                    type=f"Auto follow-up ({urgency_str})", # ✅ Added prefix for nurse portal filtering
                     notes=followup_notes,
                     clinician_email=nurse_for_followup.email,
                 )

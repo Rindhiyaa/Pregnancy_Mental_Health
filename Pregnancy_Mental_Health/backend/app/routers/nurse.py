@@ -547,15 +547,14 @@ def get_scheduling_tasks(
     if not nurse or nurse.role != "nurse":
         raise HTTPException(status_code=403, detail="Nurse role required")
 
-    # latest approved assessment for each patient created by this nurse
+    # latest approved assessment for each patient where this nurse is the one who submitted it
     subq = (
         db.query(
             models.Assessment.patient_id,
             func.max(models.Assessment.created_at).label("latest"),
         )
-        .join(models.Patient, models.Patient.id == models.Assessment.patient_id)
         .filter(
-            models.Patient.created_by_nurse_id == nurse.id,
+            models.Assessment.nurse_id == nurse.id,        # Filter by the nurse who submitted the assessment
             models.Assessment.status == "approved",        # doctor finalized
             models.Assessment.assigned_doctor_id.isnot(None),
         )
