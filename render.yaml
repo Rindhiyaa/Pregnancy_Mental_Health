@@ -1,7 +1,7 @@
 services:
   # Backend API
   - type: web
-    name: ppd-api
+    name: ppd-backend-23ni
     env: python
     buildCommand: "./build.sh"
     startCommand: "cd Pregnancy_Mental_Health/backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
@@ -19,17 +19,21 @@ services:
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: ALLOWED_ORIGINS
-        value: "https://ppd-frontend.onrender.com" # Update this after frontend is live
+        value: "https://postpartum-risk-insight.onrender.com"
 
   # Frontend Static Site
   - type: static
-    name: ppd-frontend
+    name: postpartum-risk-insight
     env: static
     buildCommand: "cd Pregnancy_Mental_Health/frontend && npm install && npm run build"
     staticPublishPath: "Pregnancy_Mental_Health/frontend/dist"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_API_URL
-        value: "https://ppd-api.onrender.com/api"
+        value: "https://ppd-backend-23ni.onrender.com"
 
 databases:
   - name: ppd-db
