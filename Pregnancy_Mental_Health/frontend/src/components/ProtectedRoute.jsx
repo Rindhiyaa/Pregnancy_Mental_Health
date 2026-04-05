@@ -1,35 +1,9 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { jwtDecode } from 'jwt-decode';
-
-import { useEffect } from 'react';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
-
-  // Handle logout as a side effect to avoid "update during render" warning
-  useEffect(() => {
-    if (loading || !user) return;
-
-    const token = localStorage.getItem('ppd_access_token');
-    if (!token) return;
-
-
-
-    try {
-      const decoded = jwtDecode(token);
-      const currentTime = Date.now() / 1000;
-
-      if (decoded.exp < currentTime) {
-        console.log('🔑 Access token expired, logging out...');
-        logout();
-      }
-    } catch (error) {
-      console.error('🔑 Invalid token format, logging out...', error);
-      logout();
-    }
-  }, [user, loading, logout]);
 
   // Show loading while checking authentication
   if (loading) {
