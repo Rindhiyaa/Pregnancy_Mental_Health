@@ -32,7 +32,7 @@ export default function RecoveryRequestsPage() {
   const loadRequests = async () => {
     setLoading(true);
     try {
-      // The backend route is GET /api/recovery/admin/pending
+      // The backend route is GET /recovery/admin/pending
       const { data } = await api.get("/recovery/admin/pending");
       const requestsData = Array.isArray(data) ? data : [];
       
