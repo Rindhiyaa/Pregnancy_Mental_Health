@@ -5,8 +5,8 @@ from ..database import get_db
 from .. import models, schemas
 from ..jwt_handler import get_current_user_email
 
-router = APIRouter(prefix="/notifications", tags=["notifications"])
-
+# FIXED: Remove prefix → main.py adds /notifications
+router = APIRouter(tags=["notifications"])
 
 @router.get("", response_model=List[schemas.NotificationOut])
 def get_notifications(
@@ -17,7 +17,6 @@ def get_notifications(
     return db.query(models.Notification).filter(
         models.Notification.clinician_email == current_user_email
     ).order_by(models.Notification.created_at.desc()).limit(limit).all()
-
 
 @router.get("/unread-count")
 def get_unread_count(
@@ -30,8 +29,6 @@ def get_unread_count(
     ).count()
     return {"count": count}
 
-
-# ⚠️ MUST be before /{notification_id}/read — otherwise FastAPI tries to parse "read-all" as int
 @router.post("/read-all")
 def mark_all_as_read(
     current_user_email: str = Depends(get_current_user_email),
@@ -43,7 +40,6 @@ def mark_all_as_read(
     ).update({models.Notification.is_read: True})
     db.commit()
     return {"message": "All notifications marked as read"}
-
 
 @router.post("/{notification_id}/read")
 def mark_as_read(
