@@ -25,6 +25,8 @@ body {
   background: #F9FAFB;
   color: #1F2937;
   -webkit-font-smoothing: antialiased;
+  height: 100vh;
+  overflow: hidden;
 }
 
 h1,

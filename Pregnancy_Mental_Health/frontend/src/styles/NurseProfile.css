@@ -2,16 +2,19 @@
 
 .np-page {
     background: #F8FAFC;
-    min-height: 100vh;
+    height: 100vh;
     font-family: Segoe UI, -apple-system, BlinkMacSystemFont, sans-serif !important;
     display: flex;
+    overflow: hidden;
 }
 
 .np-main {
     flex: 1;
-    margin-left: 260px;
+    margin-left: 0;
     padding: 40px 48px;
     box-sizing: border-box;
+    height: 100vh;
+    overflow-y: auto;
 }
 
 .np-container {

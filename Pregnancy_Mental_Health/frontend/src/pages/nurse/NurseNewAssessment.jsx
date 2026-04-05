@@ -10,7 +10,7 @@ import { api } from "../../utils/api";
 import toast from 'react-hot-toast';
 import { ASSESSMENT_SECTIONS, STEP_TITLES, INITIAL_FORM_DATA } from "../../constants/assessmentData";
 import "../../styles/NewAssessment.css";
-import { Loader2, Save, Send, ChevronLeft, ChevronRight, User, Heart, Activity, Brain, ClipboardList, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, Save, Send, ChevronLeft, ChevronRight, User, Heart, Activity, Brain, ClipboardList, CheckCircle2, AlertTriangle, X } from "lucide-react";
 
 export default function NurseNewAssessment() {
   const { theme } = useTheme();
@@ -456,8 +456,19 @@ export default function NurseNewAssessment() {
         <div className="modal-overlay-modern">
           <div className="modal-content-modern">
             <div className="modal-header-modern">
-              <h2>Select Patient</h2>
-              <p>Choose a patient to start the clinical assessment.</p>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <h2>Select Patient</h2>
+                  <p>Choose a patient to start the clinical assessment.</p>
+                </div>
+                <button
+                  onClick={() => setShowPatientModal(false)}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#6B7280", padding: 4, borderRadius: 6, display: "flex", alignItems: "center", flexShrink: 0 }}
+                  aria-label="Close"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="modal-body-modern">

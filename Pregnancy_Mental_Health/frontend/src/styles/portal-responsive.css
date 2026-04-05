@@ -3,19 +3,33 @@
    Breakpoints: 1280 | 1024 | 768 | 480
    ============================================================ */
 
-/* ── Base: sidebar is fixed 240px wide ── */
+/* ── Base layout: full viewport height, no page-level scroll ── */
 .portal-layout {
   display: flex;
   min-height: 100vh;
 }
 
+/* ── Sidebar: fixed height, no scroll ── */
+.portal-sidebar {
+  flex-shrink: 0;
+  width: 240px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow: hidden !important;
+  overflow-y: hidden !important;
+  overflow-x: hidden !important;
+}
+
+/* ── Main content: takes remaining width, scrolls independently ── */
 .portal-main {
   flex: 1;
   margin-left: 0;
   padding: 40px;
   box-sizing: border-box;
-  transition: margin-left 0.25s ease;
   min-width: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 /* ── ALL tables: always scrollable ── */
