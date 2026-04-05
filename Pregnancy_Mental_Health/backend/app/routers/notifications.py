@@ -6,7 +6,7 @@ from .. import models, schemas
 from ..jwt_handler import get_current_user_email
 
 # FIXED: Remove prefix → main.py adds /notifications
-router = APIRouter(tags=["notifications"])
+router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 @router.get("", response_model=List[schemas.NotificationOut])
 def get_notifications(
