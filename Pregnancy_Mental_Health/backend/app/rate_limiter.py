@@ -33,7 +33,12 @@ class RateLimiter:
         Check if request exceeds rate limit
         Raises HTTPException if limit exceeded
         """
-        client_ip = request.client.host
+        # request.client can be None when running behind a reverse proxy (e.g. Render)
+        if request.client is not None:
+            client_ip = request.client.host
+        else:
+            forwarded_for = request.headers.get("X-Forwarded-For", "")
+            client_ip = forwarded_for.split(",")[0].strip() or "unknown"
         endpoint = request.url.path
         
         # Get rate limit for this endpoint

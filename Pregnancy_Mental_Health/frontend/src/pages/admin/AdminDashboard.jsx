@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/AdminSidebar";
-import { api, addAuditLog, API_BASE_URL } from "../../utils/api";
+import { api, addAuditLog } from "../../utils/api";
 import {
   Users, UserCheck, ClipboardList, Activity,
   ArrowUpRight, ArrowDownRight, Search, Filter,
@@ -57,8 +57,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchAdminData();
 
-    const wsUrl = API_BASE_URL.replace('https://', 'wss://').replace('http://', 'ws://') + '/ws';
-    const ws = new WebSocket(wsUrl);
+    const ws = new WebSocket("ws://localhost:8000/ws");
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
