@@ -490,120 +490,154 @@ def review_assessment(
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user_email),
 ):
-    doctor = (
-        db.query(models.User)
-        .filter(models.User.email == current_user_email)
-        .first()
-    )
-    if not doctor or doctor.role != "doctor":
-        raise HTTPException(status_code=403, detail="Doctor role required")
+    try:
+        doctor = (
+            db.query(models.User)
+            .filter(models.User.email == current_user_email)
+            .first()
+        )
+        if not doctor or doctor.role != "doctor":
+            raise HTTPException(status_code=403, detail="Doctor role required")
 
-    a = (
-        db.query(models.Assessment)
-        .filter(models.Assessment.id == assessment_id)
-        .first()
-    )
-    if not a:
-        raise HTTPException(status_code=404, detail="Assessment not found")
+        a = (
+            db.query(models.Assessment)
+            .filter(models.Assessment.id == assessment_id)
+            .first()
+        )
+        if not a:
+            raise HTTPException(status_code=404, detail="Assessment not found")
 
-    # ✅ ADDED: Calculate and save EPDS score when doctor validates
-    if a.raw_data and isinstance(a.raw_data, dict):
-        epds_items = []
-        for i in range(1, 11):
-            val = a.raw_data.get(f'epds_{i}', '0')
+        # ✅ Prevent re-submitting if already approved (unless saving as draft/reviewed)
+        if a.status == "approved" and payload.get("status") == "approved":
+            # If already approved, we only update the decision fields. 
+            # We don't want to re-trigger the entire finalize flow (like creating new follow-up tasks)
+            # unless specifically requested. For now, we allow updates.
+            pass
+
+
+        # ✅ ADDED: Calculate and save EPDS score when doctor validates
+        if a.raw_data and isinstance(a.raw_data, dict):
+            epds_items = []
+            for i in range(1, 11):
+                val = a.raw_data.get(f'epds_{i}', '0')
+                try:
+                    epds_items.append(int(val))
+                except:
+                    epds_items.append(0)
+            a.epds_score = sum(epds_items)  # Save EPDS to database
+
+        # Apply updates from ClinicalValidation.jsx payload
+        # Keys use snake_case to match the frontend payload
+        a.clinician_risk   = payload.get("clinician_risk")
+        a.risk_level_final = payload.get("risk_level_final")
+        a.override_reason  = payload.get("override_reason")
+        a.plan             = payload.get("plan")
+        a.notes            = payload.get("notes")
+        a.reviewed_at      = datetime.now()  # ✅ ADDED: Mark when reviewed
+
+        new_status = payload.get("status")
+        a.status = "approved" if new_status == "approved" else "reviewed"
+
+        # Create a single FollowUp record for the nurse when the doctor finalises.
+        # This surfaces as an actionable task in the nurse's scheduling queue.
+        if a.status == "approved" and a.patient_id:
             try:
-                epds_items.append(int(val))
-            except:
-                epds_items.append(0)
-        a.epds_score = sum(epds_items)  # Save EPDS to database
+                # ✅ CHECK: Does a pending FollowUp already exist for this assessment?
+                existing_fup = db.query(models.FollowUp).filter(
+                    models.FollowUp.assessment_id == a.id,
+                    models.FollowUp.status == "pending"
+                ).first()
 
-    # Apply updates from ClinicalValidation.jsx payload
-    # Keys use snake_case to match the frontend payload
-    a.clinician_risk   = payload.get("clinician_risk")
-    a.risk_level_final = payload.get("risk_level_final")
-    a.override_reason  = payload.get("override_reason")
-    a.plan             = payload.get("plan")
-    a.notes            = payload.get("notes")
-    a.reviewed_at      = datetime.now()  # ✅ ADDED: Mark when reviewed
+                if not existing_fup:
+                    # 📅 Try to find the nurse: assessment.nurse_id -> patient.created_by_nurse_id -> fallback
+                    nurse_id = a.nurse_id
+                    if not nurse_id:
+                        patient = db.query(models.Patient).filter(models.Patient.id == a.patient_id).first()
+                        if patient:
+                            nurse_id = patient.created_by_nurse_id
+                    
+                    nurse_for_followup = None
+                    if nurse_id:
+                        nurse_for_followup = db.query(models.User).filter(
+                            models.User.id == nurse_id,
+                            models.User.role == "nurse"
+                        ).first()
+                    
+                    if not nurse_for_followup:
+                        nurse_for_followup = db.query(models.User).filter(
+                            models.User.role == "nurse",
+                            models.User.is_active == True
+                        ).first()
 
-    new_status = payload.get("status")
+                    if nurse_for_followup:
+                        window_str  = payload.get("followup_window", "within 14 days")
+                        urgency_str = payload.get("followup_urgency", "Routine")
+                        instruction = payload.get("nurse_instruction", "").strip()
 
-    if new_status == "approved":
-        a.status = "approved"
-    else:
-        a.status = "reviewed"
+                        # ✅ Fix: 14-day default to satisfy NOT NULL constraint in database
+                        # The nurse can still manually change this later.
+                        scheduled = datetime.now() + timedelta(days=14)
 
-    db.commit()
-    db.refresh(a)
+                        followup_notes = (
+                            instruction
+                            or f"Doctor review - follow up in 14 days ({urgency_str})"
+                        )
 
-    # Create a FollowUp record for the nurse when the doctor finalises.
-    # This surfaces as an actionable task in the nurse's scheduling queue.
-    if new_status == "approved" and a.patient_id and a.nurse_id:
-        try:
-            nurse_for_followup = db.query(models.User).filter(
-                models.User.id == a.nurse_id
-            ).first()
+                        new_followup = models.FollowUp(
+                            patient_id=a.patient_id,
+                            patient_email=a.patient_email,
+                            assessment_id=a.id,
+                            scheduled_date=scheduled, # Satisfy NOT NULL with default
+                            status="pending",
+                            type=f"To be scheduled ({urgency_str})",
+                            notes=followup_notes,
+                            clinician_email=doctor.email, # Assigned to validating doctor by default
+                        )
+                        db.add(new_followup)
+            except Exception as fu_err:
+                logger.error(f"FollowUp creation failed: {fu_err}")
 
-            if nurse_for_followup:
-                window_str  = payload.get("followup_window", "within 14 days")
-                urgency_str = payload.get("followup_urgency", "Routine")
-                instruction = payload.get("nurse_instruction", "").strip()
-
-                # Map the dropdown label to a concrete number of days
-                window_days_map = {
-                    "within 3 days":  3,
-                    "within 7 days":  7,
-                    "within 14 days": 14,
-                }
-                days = window_days_map.get(window_str, 14)
-                scheduled = datetime.now() + timedelta(days=days)
-
-                followup_notes = (
-                    instruction
-                    or f"Doctor-prescribed follow-up — {urgency_str}, {window_str}"
+        # Notification logic
+        final_band = a.risk_level_final or a.clinician_risk or a.risk_level
+        if a.nurse_id and final_band and a.status in {"reviewed", "approved"}:
+            nurse_user = db.query(models.User).filter(models.User.id == a.nurse_id).first()
+            if nurse_user and nurse_user.email:
+                patient_name = a.patient_name or f"Patient #{a.patient_id}"
+                title = "Risk Score Validated"
+                message = (
+                    f"Dr. {(doctor.first_name or '').strip()} {(doctor.last_name or '').strip()} "
+                    f"has reviewed the assessment for {patient_name} and confirmed the "
+                    f"risk as {final_band}."
                 )
 
-                new_followup = models.FollowUp(
-                    patient_id=a.patient_id,
-                    patient_email=a.patient_email,
-                    assessment_id=a.id,
-                    scheduled_date=scheduled,
-                    status="pending",
-                    type=f"Auto follow-up ({urgency_str})", # ✅ Added prefix for nurse portal filtering
-                    notes=followup_notes,
-                    clinician_email=nurse_for_followup.email,
+                priority = "high" if str(final_band).lower().startswith("high") else "medium"
+
+                notification = models.Notification(
+                    title=title,
+                    message=message,
+                    type="info",
+                    priority=priority,
+                    clinician_email=nurse_user.email,
                 )
-                db.add(new_followup)
-                db.commit()
-        except Exception as fu_err:
-            logger.warning(f"FollowUp creation skipped: {fu_err}")
+                db.add(notification)
 
-    # Notification logic (existing code)
-    final_band = a.risk_level_final or a.clinician_risk or a.risk_level
-    if a.nurse_id and final_band and new_status in {"reviewed", "approved"}:
-        nurse = db.query(models.User).filter(models.User.id == a.nurse_id).first()
-        if nurse and nurse.email:
-            patient_name = a.patient_name or f"Patient #{a.patient_id}"
-            title = "Risk Score Validated"
-            message = (
-                f"Dr. {(doctor.first_name or '').strip()} {(doctor.last_name or '').strip()} "
-                f"has reviewed the assessment for {patient_name} and confirmed the "
-                f"risk as {final_band}."
-            )
-
-            priority = "high" if str(final_band).lower().startswith("high") else "medium"
-
-            notification = models.Notification(
-                title=title,
-                message=message,
-                type="info",
-                priority=priority,
-                clinician_email=nurse.email,
-            )
-            db.add(notification)
-            db.commit()
-
-    return a
+        db.commit()
+        db.refresh(a)
+        
+        return {
+            "id": a.id,
+            "status": a.status,
+            "clinician_risk": a.clinician_risk,
+            "risk_level_final": a.risk_level_final,
+            "message": "Clinical decision saved successfully"
+        }
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error in review_assessment: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/profile")
@@ -910,98 +944,6 @@ async def get_doctor_stats(
         "high_risk_cases": high_risk_cases,
         "patients_assigned": patients_assigned
     }
-
-def compute_band_and_days(score: float) -> tuple[str, int]:
-    if score >= 0.75:
-        return "High", 3
-    if score >= 0.4:
-        return "Medium", 7
-    return "Low", 14
-
-@router.post("/assessments/{assessment_id}/review")
-def review_assessment(
-    assessment_id: int,
-    payload: dict,
-    db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
-):
-    doctor = db.query(models.User).filter(
-        models.User.email == current_user_email
-    ).first()
-
-    if not doctor or doctor.role != "doctor":
-        raise HTTPException(status_code=403, detail="Doctor role required")
-
-    a = db.query(models.Assessment).filter(
-        models.Assessment.id == assessment_id
-    ).first()
-
-    if not a:
-        raise HTTPException(status_code=404, detail="Assessment not found")
-
-    #  EPDS calculation
-    if a.raw_data and isinstance(a.raw_data, dict):
-        try:
-            a.epds_score = sum(int(a.raw_data.get(f"epds_{i}", 0)) for i in range(1, 11))
-        except:
-            a.epds_score = 0
-
-    #  Apply doctor inputs
-    a.clinician_risk   = payload.get("clinicianrisk")
-    a.risk_level_final = payload.get("risklevelfinal")
-    a.override_reason  = payload.get("overridereason")
-    a.plan             = payload.get("plan")
-    a.notes            = payload.get("notes")
-    a.reviewed_at      = datetime.now()
-
-    new_status = payload.get("status")
-    a.status = "approved" if new_status == "approved" else "reviewed"
-
-    #  FINAL BAND LOGIC (use final override first)
-    final_band = a.risk_level_final or a.clinician_risk or a.risk_level
-
-    #  AUTO FOLLOW-UP GENERATION
-    if a.risk_score is not None and a.patient_id:
-        band, first_days = compute_band_and_days(a.risk_score)
-        a.risk_level = band
-
-        base_date = datetime.now().date()
-        offsets = [first_days, first_days + 30, first_days + 60]
-
-        for i, offset in enumerate(offsets):
-            fup = models.FollowUp(
-                patient_id=a.patient_id,
-                assessment_id=a.id, # ✅ Link to assessment for nurse portal
-                scheduled_date=base_date + timedelta(days=offset),
-                type=f"Auto follow-up #{i+1}",
-                notes=f"{band} risk follow-up #{i+1}",
-                status="pending",
-                clinician_email=current_user_email,
-            )
-            db.add(fup)
-
-    db.commit()
-    db.refresh(a)
-
-    #  NOTIFICATION
-    if a.nurse_id and final_band:
-        nurse = db.query(models.User).filter(
-            models.User.id == a.nurse_id
-        ).first()
-
-        if nurse and nurse.email:
-            notification = models.Notification(
-                title="Risk Score Validated",
-                message=f"Doctor reviewed {a.patient_name} → {final_band}",
-                type="info",
-                priority="high" if "high" in final_band.lower() else "medium",
-                clinician_email=nurse.email,
-            )
-            db.add(notification)
-            db.commit()
-
-    return a
-
 
 @router.get("/appointments/today")
 def get_today_appointments(

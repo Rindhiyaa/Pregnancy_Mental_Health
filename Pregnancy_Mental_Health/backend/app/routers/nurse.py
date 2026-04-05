@@ -285,10 +285,11 @@ def get_nurse_assessments(
                 "id": a.id,
                 "patient_id": a.patient_id,
                 "patient_name": a.patient_name,
+                "risk_level": a.risk_level,
                 "status": a.status,
                 "created_at": a.created_at,
                 "assigned_doctor_id": a.assigned_doctor_id,
-                "assigned_doctor": doctor_name,
+                "assigned_doctor": doctor_name,  # <- new
             }
         )
 
@@ -335,6 +336,9 @@ def get_nurse_patients(
             patient_status = "Active"
 
         last_assessment_date = latest.created_at if latest else None
+        last_assessment_label = None
+        if latest:
+            last_assessment_label = f"Risk: {latest.risk_level or 'Pending'}"
 
         doctor_name = None
         if p.assigned_doctor_id:
@@ -359,6 +363,7 @@ def get_nurse_patients(
                 "status": patient_status,
                 "assigned_doctor": doctor_name,
                 "doctor_id": p.assigned_doctor_id,
+                "last_assessment": last_assessment_label,
                 "last_assessment_date": last_assessment_date,
             }
         )
@@ -478,12 +483,7 @@ def create_nurse_assessment(
             db.add(notification)
             db.commit()
 
-    return {
-        "id": new_assessment.id,
-        "patient_id": new_assessment.patient_id,
-        "status": new_assessment.status,
-        "message": "Assessment submitted successfully"
-    }
+    return new_assessment
 
 @router.delete("/assessments/{assessment_id}", status_code=204)
 def delete_nurse_assessment(
@@ -547,67 +547,55 @@ def get_scheduling_tasks(
     if not nurse or nurse.role != "nurse":
         raise HTTPException(status_code=403, detail="Nurse role required")
 
-    # latest approved assessment for each patient where this nurse is the one who submitted it
-    subq = (
-        db.query(
-            models.Assessment.patient_id,
-            func.max(models.Assessment.created_at).label("latest"),
-        )
+    # Fetch all pending follow-ups that need scheduling. 
+    # We show tasks that are 'pending' and are doctor-prescribed (linked to an assessment).
+    pending_followups = (
+        db.query(models.FollowUp, models.Assessment, models.Patient)
+        .outerjoin(models.Assessment, models.Assessment.id == models.FollowUp.assessment_id)
+        .outerjoin(models.Patient, models.Patient.id == models.FollowUp.patient_id)
         .filter(
-            models.Assessment.nurse_id == nurse.id,        # Filter by the nurse who submitted the assessment
-            models.Assessment.status == "approved",        # doctor finalized
-            models.Assessment.assigned_doctor_id.isnot(None),
+            models.FollowUp.status == "pending",
+            models.FollowUp.assessment_id.isnot(None)
         )
-        .group_by(models.Assessment.patient_id)
-        .subquery()
-    )
-
-    q = (
-        db.query(models.Assessment, models.Patient, models.User)
-        .join(subq,
-              (models.Assessment.patient_id == subq.c.patient_id)
-              & (models.Assessment.created_at == subq.c.latest))
-        .join(models.Patient, models.Patient.id == models.Assessment.patient_id)
-        .join(models.User, models.User.id == models.Assessment.assigned_doctor_id)
+        .all()
     )
 
     items = []
-    for a, p, d in q.all():
-        followup = (
-            db.query(models.FollowUp)
-            .filter(
-                models.FollowUp.assessment_id == a.id,
-                models.FollowUp.status == "pending",
-                models.FollowUp.type.like("Auto follow-up%"), # ✅ Only show doctor-requested tasks
-            )
-            .order_by(models.FollowUp.created_at.desc())
-            .first()
-        )
-
-        if not followup:
-            continue
-
-        urgency = (followup.type if followup else None) or "Routine"
-        instruction = (
-            followup.notes if followup
-            else "Schedule follow-up based on assessment results"
-        )
-        window = (
-            followup.scheduled_date.strftime("by %d %b %Y")
-            if followup else "within 14 days"
-        )
-
+    for fup, a, p in pending_followups:
+        # Get the doctor who was assigned to the assessment
+        doctor = db.query(models.User).filter(models.User.id == a.assigned_doctor_id).first()
+        
         items.append({
             "instruction_id": a.id,
+            "follow_up_id": fup.id,
             "patient_id": p.id,
             "patient_name": p.name,
-            "doctor_id": d.id,
-            "doctor_name": "{} {}".format(d.first_name or "", d.last_name or "").strip() or d.email,
-            "urgency": urgency,
-            "instruction": instruction,
-            "window": window,
+            "doctor_id": doctor.id if doctor else None,
+            "doctor_name": f"Dr. {doctor.first_name} {doctor.last_name}" if doctor else "Assigned Doctor",
+            "urgency": fup.type,
+            "instruction": fup.notes,
+            "window": "To be scheduled",
         })
     return items
+
+
+@router.delete("/scheduling-tasks/{follow_up_id}")
+def dismiss_scheduling_task(
+    follow_up_id: int,
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user_email),
+):
+    nurse = db.query(models.User).filter(models.User.email == current_user_email).first()
+    if not nurse or nurse.role != "nurse":
+        raise HTTPException(status_code=403, detail="Nurse role required")
+
+    fup = db.query(models.FollowUp).filter(models.FollowUp.id == follow_up_id).first()
+    if not fup:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    fup.status = "dismissed"
+    db.commit()
+    return {"message": "Task dismissed"}
 
 
 @router.get("/appointments")
@@ -680,63 +668,62 @@ def create_nurse_appointment(
         if not doctor or doctor.role != "doctor":
             raise HTTPException(status_code=404, detail="Doctor not found")
 
-        # Create the appointment record
-        new_appointment = models.Appointment(
+        # Create appointment with assigned_doctor_id
+        appt = models.Appointment(
             patient_id=patient.id,
-            patient_name=patient.name,
             doctor_id=doctor.id,
-            assigned_doctor_id=doctor.id,  # ✅ Set this so it shows in Doctor portal
+            assigned_doctor_id=doctor.id,  # ✅ ensures doctor sees this
+            patient_name=patient.name,
             date=appt_date,
             time=appt_time,
             type=payload.get("type", "Follow-up"),
             notes=payload.get("notes", ""),
             urgency=payload.get("urgency", "Routine"),
-            department=payload.get("department", "OBGYN"),
-            status="pending",
+            department=payload.get("department", "General"),
         )
-        db.add(new_appointment)
+        db.add(appt)
         db.commit()
-        db.refresh(new_appointment)
+        db.refresh(appt)
 
-        # Create follow-up entry
+        # Mark all pending instructions (FollowUp) for this assessment as scheduled
+        instruction_id = payload.get("instruction_id")
+        if instruction_id:
+            # Mark ALL pending follow-ups for this assessment as scheduled to clear the queue
+            db.query(models.FollowUp).filter(
+                models.FollowUp.assessment_id == instruction_id,
+                models.FollowUp.status == "pending"
+            ).update({"status": "scheduled", "scheduled_date": datetime.fromisoformat(f"{payload['date']}T{time_str}")}, synchronize_session=False)
+            
+            # Also try by follow_up_id if that was passed
+            db.query(models.FollowUp).filter(
+                models.FollowUp.id == instruction_id,
+                models.FollowUp.status == "pending"
+            ).update({"status": "scheduled", "scheduled_date": datetime.fromisoformat(f"{payload['date']}T{time_str}")}, synchronize_session=False)
+
+        # Create a new follow-up entry for the actual scheduled appointment
+        # This one will be the one the doctor/nurse marks as 'completed' later
         scheduled_dt = datetime.fromisoformat(f"{payload['date']}T{time_str}")
         followup = models.FollowUp(
             patient_id=patient.id,
             patient_email=patient.email,
-            assessment_id=payload.get("instruction_id"), # Link if coming from instruction
+            assessment_id=None,
             scheduled_date=scheduled_dt,
-            status="pending", # ✅ Keep as pending so it shows in Patient portal
-            type=payload.get("type", "check-in"), # ✅ Type is NOT "Auto follow-up"
+            status="pending",
+            type=payload.get("type", "check-in"),
             notes=payload.get("notes", ""),
             clinician_email=doctor.email,
         )
         db.add(followup)
-
-        # ✅ If we are acting on an instruction, mark the ORIGINAL followup as scheduled
-        if payload.get("instruction_id"):
-            orig_followup = (
-                db.query(models.FollowUp)
-                .filter(
-                    models.FollowUp.assessment_id == payload["instruction_id"],
-                    models.FollowUp.status == "pending",
-                )
-                .order_by(models.FollowUp.created_at.desc())
-                .first()
-            )
-            if orig_followup:
-                orig_followup.status = "scheduled"
-                db.add(orig_followup)
-
         db.commit()
         db.refresh(followup)
 
         return {
-            "appointment_id": new_appointment.id,
+            "appointment_id": appt.id,
             "patient_name": patient.name,
             "doctor_name": f"{doctor.first_name} {doctor.last_name or ''}".strip(),
-            "date": new_appointment.date,
-            "time": new_appointment.time,
-            "status": new_appointment.status,
+            "date": appt.date,
+            "time": appt.time,
+            "status": appt.status,
         }
 
     except KeyError as e:

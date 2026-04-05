@@ -39,12 +39,29 @@ export default function PatientCarePlan() {
           return;
         }
 
+        // Map risk level to wellness status/labels
+        const level = (dash.risk_status.level || "").toLowerCase();
+        const wellness_status =
+          level === "high"
+            ? "extra-care"
+            : level === "moderate"
+            ? "consistent"
+            : "feeling-well";
+
+        const wellness_label =
+          level === "high"
+            ? "Needs Extra Care"
+            : level === "moderate"
+            ? "Stay Consistent"
+            : "Feeling Well";
+
         const doctorName = dash.doctor_info?.name || "Assigned Clinician";
 
         // Base plan from dashboard
         const basePlan = {
           last_updated: dash.care_plan.date || "N/A",
-          wellness_label: "Active Support Plan",
+          wellness_status,
+          wellness_label,
           wellness_sub: `Dr. ${doctorName} has a plan for you`,
           doctor_recommendation:
             dash.care_plan.plan ||
@@ -207,7 +224,12 @@ export default function PatientCarePlan() {
         {/* WELLNESS STATUS BANNER */}
         <Card
           style={{
-            background: theme.successBg,
+            background:
+              plan.wellness_status === "extra-care"
+                ? theme.dangerBg
+                : plan.wellness_status === "consistent"
+                ? theme.warningBg
+                : theme.successBg,
             border: "none",
             padding: "32px 40px",
             display: "flex",
@@ -229,7 +251,13 @@ export default function PatientCarePlan() {
               border: `1px solid ${theme.border}`
             }}
           >
-            <Smile size={32} color={theme.successText} />
+            {plan.wellness_status === "extra-care" ? (
+              <Heart size={32} color={theme.dangerText} />
+            ) : plan.wellness_status === "consistent" ? (
+              <Sparkles size={32} color={theme.warningText} />
+            ) : (
+              <Smile size={32} color={theme.successText} />
+            )}
           </div>
           <div>
             <div
@@ -242,7 +270,7 @@ export default function PatientCarePlan() {
                 marginBottom: 4
               }}
             >
-              Current Care Plan
+              Current Wellness Status
             </div>
             <div
               style={{

@@ -645,7 +645,7 @@ const handleSubmit = async (status) => {
                 marginBottom: 10
               }}
             >
-              <CheckCircle size={17} /> Finalize Clinical Decision
+              <CheckCircle size={17} /> {assessment.status === "approved" ? "Update Clinical Decision" : "Finalize Clinical Decision"}
             </button>
 
             <button

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
+from sqlalchemy import nullslast
 from sqlalchemy.orm import Session, joinedload
 from typing import List
 from datetime import datetime, timedelta
@@ -28,7 +29,7 @@ def get_follow_ups(
             ).join(models.Patient).filter(
                 models.Patient.created_by_nurse_id == current_user.id,
                 models.FollowUp.status == "pending"
-            ).order_by(models.FollowUp.scheduled_date.asc()).all()
+            ).order_by(nullslast(models.FollowUp.scheduled_date.asc())).all()
         else:
             # Doctors see their own follow-ups
             return db.query(models.FollowUp).options(
@@ -36,7 +37,7 @@ def get_follow_ups(
             ).filter(
                 models.FollowUp.clinician_email == current_user_email,
                 models.FollowUp.status == "pending"
-            ).order_by(models.FollowUp.scheduled_date.asc()).all()
+            ).order_by(nullslast(models.FollowUp.scheduled_date.asc())).all()
     except Exception as e:
         logger.error(f"Error fetching follow-ups: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -57,7 +58,7 @@ def get_today_follow_ups(
         models.FollowUp.clinician_email == current_user_email,
         models.FollowUp.status == "pending",
         models.FollowUp.scheduled_date <= end_of_today
-    ).order_by(models.FollowUp.scheduled_date.asc()).all()
+    ).order_by(nullslast(models.FollowUp.scheduled_date.asc())).all()
 
 @router.post("/{follow_up_id}/status")
 def update_follow_up_status(
@@ -131,4 +132,4 @@ def get_patient_follow_ups(
     return db.query(models.FollowUp).filter(
         models.FollowUp.patient_id == patient_id,
         models.FollowUp.clinician_email == current_user_email
-    ).order_by(models.FollowUp.scheduled_date.asc()).all()
+    ).order_by(nullslast(models.FollowUp.scheduled_date.asc())).all()

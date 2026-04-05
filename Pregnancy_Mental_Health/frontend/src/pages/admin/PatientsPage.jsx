@@ -272,7 +272,7 @@ export default function PatientsPage() {
 
       <Divider style={{ marginBottom: 24 }} />
 
-      <Card style={{ padding: 0, overflow: "visible" }}>
+      <Card style={{ padding: 0, overflow: "hidden" }}>
         {/* Filter / Export toolbar (theme version) */}
         <FilterToolbar
           searchValue={search}

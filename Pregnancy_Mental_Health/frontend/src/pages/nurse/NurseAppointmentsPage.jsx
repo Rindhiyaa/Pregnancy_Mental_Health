@@ -80,10 +80,26 @@ export default function NurseAppointmentsPage() {
         setAppointments(Array.isArray(appRes) ? appRes : appRes?.data || []);
 
         const patientsList = Array.isArray(patRes) ? patRes : patRes?.data || [];
-        setPatients(patientsList);
+        const uniquePatients = [];
+        const patIds = new Set();
+        patientsList.forEach((p) => {
+          if (!patIds.has(p.id)) {
+            patIds.add(p.id);
+            uniquePatients.push(p);
+          }
+        });
+        setPatients(uniquePatients);
 
         const docsList = Array.isArray(docRes) ? docRes : docRes?.data || [];
-        const normalized = docsList.map((d) => {
+        const uniqueDocs = [];
+        const docIds = new Set();
+        docsList.forEach((d) => {
+          if (!docIds.has(d.id)) {
+            docIds.add(d.id);
+            uniqueDocs.push(d);
+          }
+        });
+        const normalized = uniqueDocs.map((d) => {
           const first = d.first_name ?? "";
           const last = d.last_name ?? "";
           const fullName = d.fullName || `${first} ${last}`.trim() || d.email || "Doctor";
@@ -92,7 +108,9 @@ export default function NurseAppointmentsPage() {
         setDoctors(normalized);
 
         // Doctor-prescribed scheduling tasks — shown as action cards above the table
-        setInstructions(Array.isArray(taskRes) ? taskRes : taskRes?.data || []);
+        const tasks = Array.isArray(taskRes) ? taskRes : taskRes?.data || [];
+        console.log("SCHEDULING TASKS FETCHED:", tasks);
+        setInstructions(tasks);
     
       } catch (err) {
         console.error("Failed to fetch appointment data", err);
@@ -104,8 +122,17 @@ export default function NurseAppointmentsPage() {
   
     fetchData();
   }, []);
- 
-  
+
+  const dismissInstruction = async (fupId) => {
+    if (!window.confirm("Are you sure you want to dismiss this doctor instruction?")) return;
+    try {
+      await api.delete(`/nurse/scheduling-tasks/${fupId}`);
+      setInstructions((prev) => prev.filter((inst) => inst.follow_up_id !== fupId));
+      toast.success("Instruction dismissed");
+    } catch (err) {
+      toast.error("Failed to dismiss instruction");
+    }
+  };
 
   const handleStatusUpdate = async (id, status) => {
     try {
@@ -185,7 +212,7 @@ export default function NurseAppointmentsPage() {
         // 1. Immediately filter out the instruction card from local state
         if (formData.instructionId) {
           setInstructions((prev) =>
-            prev.filter((inst) => (inst.instruction_id || inst.id) !== formData.instructionId)
+            prev.filter((inst) => String(inst.instruction_id || inst.id) !== String(formData.instructionId))
           );
         }
 
@@ -280,6 +307,14 @@ export default function NurseAppointmentsPage() {
     display: "flex",
     alignItems: "center",
     gap: 8
+  };
+
+  const getUrgencyColor = (urgency) => {
+    if (!urgency) return theme.textSecondary;
+    const u = String(urgency).toLowerCase();
+    if (u.includes('high') || u.includes('urgent')) return theme.error;
+    if (u.includes('moderate') || u.includes('medium')) return theme.warning;
+    return theme.success;
   };
 
   return (
@@ -403,7 +438,7 @@ export default function NurseAppointmentsPage() {
             >
               {instructions.map((inst) => (
                 <Card
-                  key={inst.instruction_id || inst.id}
+                  key={`task-${inst.follow_up_id || inst.id}`}
                   padding="24px"
                   style={{
                     border: `1px solid ${theme.border}`,
@@ -445,12 +480,34 @@ export default function NurseAppointmentsPage() {
                         <Stethoscope size={14} /> Ref: {inst.doctor_name}
                       </div>
                     </div>
-                    <Badge
-                      variant={inst.urgency === "High" || inst.urgency === "Urgent" ? "danger" : "warning"}
-                      size="sm"
-                    >
-                      {inst.urgency}
-                    </Badge>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <Badge
+                        variant={String(inst.urgency).includes("High") || String(inst.urgency).includes("Urgent") ? "danger" : "warning"}
+                        size="sm"
+                      >
+                        {inst.urgency}
+                      </Badge>
+                      <button
+                        onClick={() => dismissInstruction(inst.follow_up_id)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: 4,
+                          cursor: "pointer",
+                          color: theme.textMuted,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderRadius: "50%",
+                          transition: "background 0.2s"
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = theme.error + "15")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+                        title="Dismiss instruction"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
                   </div>
                   <div
                     style={{
@@ -499,7 +556,7 @@ export default function NurseAppointmentsPage() {
                         type: "Follow-up",
                         notes: inst.instruction || "",
                         urgency:
-                          inst.urgency === "High" || inst.urgency === "Urgent" ? "Urgent" : "Routine",
+                          String(inst.urgency).includes("High") || String(inst.urgency).includes("Urgent") ? "Urgent" : "Routine",
                         department: "OBGYN",
                         instructionId: inst.instruction_id || inst.id
                       });
@@ -589,7 +646,7 @@ export default function NurseAppointmentsPage() {
             emptyMessage="No appointments scheduled for this period."
           >
             {paginatedAppointments.map((app, idx) => (
-              <TableRow key={app.id}>
+              <TableRow key={`appt-${app.id}`}>
                 <TableCell style={{ fontWeight: 700, color: theme.textMuted }}>
                   {(currentPage - 1) * itemsPerPage + idx + 1}
                 </TableCell>
@@ -789,10 +846,11 @@ export default function NurseAppointmentsPage() {
                         </label>
                         <select
                           style={inputStyle}
-                          value={formData.patientId}
+                          value={formData.patientId || ""}
                           onChange={(e) =>
-                            setFormData({ ...formData, patientId: e.target.value })
+                            !formData.instructionId && setFormData({ ...formData, patientId: e.target.value })
                           }
+                          disabled={!!formData.instructionId}
                           required
                         >
                           <option value="">Choose patient...</option>
@@ -807,10 +865,11 @@ export default function NurseAppointmentsPage() {
                         <label style={labelStyle}>Urgency</label>
                         <select
                           style={inputStyle}
-                          value={formData.urgency}
+                          value={formData.urgency || "Routine"}
                           onChange={(e) =>
-                            setFormData({ ...formData, urgency: e.target.value })
+                            !formData.instructionId && setFormData({ ...formData, urgency: e.target.value })
                           }
+                          disabled={!!formData.instructionId}
                         >
                           <option value="Routine">Routine</option>
                           <option value="Early">Early</option>
@@ -845,10 +904,11 @@ export default function NurseAppointmentsPage() {
                         <label style={labelStyle}>Department</label>
                         <select
                           style={inputStyle}
-                          value={formData.department}
+                          value={formData.department || "OBGYN"}
                           onChange={(e) =>
-                            setFormData({ ...formData, department: e.target.value })
+                            !formData.instructionId && setFormData({ ...formData, department: e.target.value })
                           }
+                          disabled={!!formData.instructionId}
                         >
                           <option value="OBGYN">OBGYN</option>
                           <option value="Psychiatry">Psychiatry</option>
@@ -881,10 +941,11 @@ export default function NurseAppointmentsPage() {
                         <label style={labelStyle}>Doctor</label>
                         <select
                           style={inputStyle}
-                          value={formData.doctorId}
+                          value={formData.doctorId || ""}
                           onChange={(e) =>
-                            setFormData({ ...formData, doctorId: e.target.value })
+                            !formData.instructionId && setFormData({ ...formData, doctorId: e.target.value })
                           }
+                          disabled={!!formData.instructionId}
                           required
                         >
                           <option value="">Choose doctor...</option>
@@ -905,8 +966,9 @@ export default function NurseAppointmentsPage() {
                         style={{ ...inputStyle, minHeight: 80, resize: "vertical" }}
                         value={formData.notes}
                         onChange={(e) =>
-                          setFormData({ ...formData, notes: e.target.value })
+                          !formData.instructionId && setFormData({ ...formData, notes: e.target.value })
                         }
+                        disabled={!!formData.instructionId}
                         placeholder="Any specific instructions for this appointment..."
                       />
                     </div>

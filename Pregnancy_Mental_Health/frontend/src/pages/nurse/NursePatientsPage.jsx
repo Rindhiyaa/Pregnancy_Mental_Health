@@ -442,6 +442,16 @@ export default function NursePatientsPage() {
                             "No assessment yet"
                           )}
                         </div>
+                        {p.last_assessment && (
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: theme.textMuted,
+                            }}
+                          >
+                            {p.last_assessment}
+                          </div>
+                        )}
                       </td>
                       <td style={tableCellStyle}>
                       <Badge

@@ -207,7 +207,7 @@ export default function DoctorAssessmentReview() {
                                     boxShadow: `0 4px 14px ${theme.primary}40`
                                 }}
                             >
-                                <CheckCircle size={15} /> Proceed to Validation
+                                <CheckCircle size={15} /> {assessment.status === "approved" ? "Edit Clinical Decision" : "Proceed to Validation"}
                             </button>
                         ) : (
                             <button

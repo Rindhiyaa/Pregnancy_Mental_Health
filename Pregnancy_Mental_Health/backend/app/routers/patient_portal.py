@@ -119,8 +119,8 @@ def get_patient_dashboard(
         "doctor_info": doctor_info,
         "unread_messages": unread_messages,
         "next_appointment": {
-            "date": next_app.scheduled_date.strftime("%d %b %Y") if next_app else None,
-            "time": next_app.scheduled_date.strftime("%I:%M %p") if next_app else None,
+            "date": next_app.scheduled_date.strftime("%d %b %Y") if next_app and next_app.scheduled_date else None,
+            "time": next_app.scheduled_date.strftime("%I:%M %p") if next_app and next_app.scheduled_date else None,
             "type": next_app.type if next_app else None,
         },
         "risk_status": {
@@ -298,7 +298,7 @@ def get_patient_appointments(
         results.append(
             {
                 "id": app.id,
-                "scheduled_date": app.scheduled_date,
+                "scheduled_date": app.scheduled_date.isoformat() if app.scheduled_date else None,
                 "status": app.status,
                 "type": app.type,
                 "notes": app.notes,

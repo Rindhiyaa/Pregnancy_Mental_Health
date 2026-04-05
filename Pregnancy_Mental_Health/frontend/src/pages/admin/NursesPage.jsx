@@ -204,7 +204,7 @@ export default function NursesPage() {
 
             <Divider style={{ marginBottom: 16 }} />
 
-            <Card style={{ padding: 0, overflow: "visible" }}>
+            <Card style={{ padding: 0, overflow: "hidden" }}>
 
                 <FilterToolbar
                     searchValue={search}

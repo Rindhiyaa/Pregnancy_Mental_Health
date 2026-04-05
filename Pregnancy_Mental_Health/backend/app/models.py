@@ -189,7 +189,7 @@ class FollowUp(Base):
     patient_email = Column(String, nullable=True) # For patient portal filtering
     assessment_id = Column(Integer, ForeignKey('assessments.id', ondelete='CASCADE'), nullable=True)
     
-    scheduled_date = Column(DateTime(timezone=True), nullable=False)
+    scheduled_date = Column(DateTime(timezone=True), nullable=True)
     status = Column(String, default="pending") # pending, completed, missed
     type = Column(String, default="check-in") # first, second, discharge
     notes = Column(String, nullable=True)
