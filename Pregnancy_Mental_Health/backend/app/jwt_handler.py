@@ -29,10 +29,9 @@ if not JWT_REFRESH_SECRET:
         print("⚠️  Please set the JWT_REFRESH_SECRET environment variable in Render.")
     else:
         print("⚠️  WARNING: Using auto-generated JWT_REFRESH_SECRET for development")
-
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 90  # 60 minutes for better user experience
-REFRESH_TOKEN_EXPIRE_DAYS = 30  # 30 days
+ACCESS_TOKEN_EXPIRE_MINUTES = 10080  # 7 days - NO MORE EXPIRY!
+REFRESH_TOKEN_EXPIRE_DAYS = 30
 
 security = HTTPBearer()
 
