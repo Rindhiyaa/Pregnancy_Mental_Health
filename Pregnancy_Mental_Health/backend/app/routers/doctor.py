@@ -536,6 +536,48 @@ def review_assessment(
     db.commit()
     db.refresh(a)
 
+    # Create a FollowUp record for the nurse when the doctor finalises.
+    # This surfaces as an actionable task in the nurse's scheduling queue.
+    if new_status == "approved" and a.patient_id and a.nurse_id:
+        try:
+            nurse_for_followup = db.query(models.User).filter(
+                models.User.id == a.nurse_id
+            ).first()
+
+            if nurse_for_followup:
+                window_str  = payload.get("followup_window", "within 14 days")
+                urgency_str = payload.get("followup_urgency", "Routine")
+                instruction = payload.get("nurse_instruction", "").strip()
+
+                # Map the dropdown label to a concrete number of days
+                window_days_map = {
+                    "within 3 days":  3,
+                    "within 7 days":  7,
+                    "within 14 days": 14,
+                }
+                days = window_days_map.get(window_str, 14)
+                scheduled = datetime.now() + timedelta(days=days)
+
+                followup_notes = (
+                    instruction
+                    or f"Doctor-prescribed follow-up — {urgency_str}, {window_str}"
+                )
+
+                new_followup = models.FollowUp(
+                    patient_id=a.patient_id,
+                    patient_email=a.patient_email,
+                    assessment_id=a.id,
+                    scheduled_date=scheduled,
+                    status="pending",
+                    type=urgency_str,           # "Routine" / "Moderate" / "Urgent"
+                    notes=followup_notes,
+                    clinician_email=nurse_for_followup.email,
+                )
+                db.add(new_followup)
+                db.commit()
+        except Exception as fu_err:
+            logger.warning(f"FollowUp creation skipped: {fu_err}")
+
     # Notification logic (existing code)
     final_band = a.risk_level_final or a.clinician_risk or a.risk_level
     if a.nurse_id and final_band and new_status in {"reviewed", "approved"}:
@@ -929,6 +971,7 @@ def review_assessment(
         for i, offset in enumerate(offsets):
             fup = models.FollowUp(
                 patient_id=a.patient_id,
+                assessment_id=a.id, # ✅ Link to assessment for nurse portal
                 scheduled_date=base_date + timedelta(days=offset),
                 type=f"Auto follow-up #{i+1}",
                 notes=f"{band} risk follow-up #{i+1}",

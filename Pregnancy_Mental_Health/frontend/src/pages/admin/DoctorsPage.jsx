@@ -251,7 +251,7 @@ const loadDoctors = async () => {
 
       <Divider style={{ marginBottom: 24 }} />
 
-      <Card style={{ padding: 0, overflow: "hidden" }}>
+      <Card style={{ padding: 0, overflow: "visible" }}>
         <FilterToolbar
           searchValue={search}
           onSearchChange={setSearch}

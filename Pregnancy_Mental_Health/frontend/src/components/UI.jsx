@@ -230,7 +230,7 @@ export const Table = ({ headers, children, loading, loadingMessage = "Loading da
   };
 
   return (
-    <Card padding="0" style={{ overflow: 'hidden' }}>
+    <Card padding="0" style={{ overflow: 'visible' }}>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>

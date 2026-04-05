@@ -57,27 +57,36 @@ export default function ChangePasswordPage() {
 
     setLoading(true);
     try {
-      // Use the generic change-password endpoint
       const { data } = await api.post('/change-password', {
         new_password: form.newPassword
       });
 
-      toast.success("Password updated successfully!");
-      
-      // Update local user state to reflect first_login is now false
-      if (user) {
-        const updatedUser = { ...user, first_login: false };
-        login(updatedUser);
-        
-        // Redirect to appropriate dashboard
-        const role = user.role?.toLowerCase();
-        setTimeout(() => {
-          if (role === 'admin') navigate("/admin/dashboard", { replace: true });
-          else if (role === 'nurse') navigate("/nurse/dashboard", { replace: true });
-          else if (role === 'doctor') navigate("/doctor/dashboard", { replace: true });
-          else navigate("/patient/dashboard", { replace: true });
-        }, 1500);
+      // The backend returns a fresh access token whose iat is AFTER
+      // password_changed_at, so API calls will no longer get 401.
+      // Save it before navigating — if missing (old backend), the user
+      // will need to log in again, but we handle that gracefully below.
+      if (data?.access_token) {
+        localStorage.setItem('ppd_access_token', data.access_token);
       }
+
+      // Rebuild user profile with the new token and first_login cleared
+      const updatedUser = {
+        ...user,
+        first_login: false,
+        access_token: data?.access_token || user?.access_token,
+        isAuthenticated: true,
+      };
+      login(updatedUser);
+
+      toast.success("Password updated successfully!");
+
+      // Navigate immediately — no setTimeout, tokens are already in place
+      const role = user?.role?.toLowerCase();
+      if (role === 'admin') navigate("/admin/dashboard", { replace: true });
+      else if (role === 'nurse') navigate("/nurse/dashboard", { replace: true });
+      else if (role === 'doctor') navigate("/doctor/dashboard", { replace: true });
+      else navigate("/patient/dashboard", { replace: true });
+
     } catch (err) {
       setError(getErrorMessage(err, "Failed to update password."));
     } finally {

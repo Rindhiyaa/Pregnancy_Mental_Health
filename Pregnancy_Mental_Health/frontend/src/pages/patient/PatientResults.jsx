@@ -26,21 +26,13 @@ export default function PatientResults() {
   const [activeFilter, setActiveFilter] = useState("All");
   const itemsPerPage = 5;
 
-  const WELLNESS_CONFIG = {
-    "extra-care": { label: "Needs Extra Care", color: theme.dangerText, bg: theme.dangerBg, icon: HeartPulse },
-    "consistent": { label: "Stay Consistent", color: theme.warningText, bg: theme.warningBg, icon: Activity },
-    "feeling-well": { label: "Feeling Well", color: theme.successText, bg: theme.successBg, icon: Smile },
-  };
-
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
-    const wellnessKey = payload[0]?.payload?.wellness_status;
-    const cfg = WELLNESS_CONFIG[wellnessKey] || {};
     return (
       <Card style={{ padding: "10px 14px", border: `1px solid ${theme.divider}`, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
         <div style={{ fontSize: 11, color: theme.textMuted, marginBottom: 4 }}>{label}</div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: cfg?.color }}>
-          {cfg?.label}
+        <div style={{ fontSize: 13, fontWeight: 700, color: theme.primary }}>
+          Assessment Completed
         </div>
       </Card>
     );
@@ -57,17 +49,7 @@ export default function PatientResults() {
           ? data.data
           : [];
   
-        const riskToWellness = {
-          high: "extra-care",
-          moderate: "consistent",
-          low: "feeling-well",
-        };
-  
         const normalized = assessmentsData.map((a) => {
-          const riskLevel = a.risk_level?.toLowerCase().split(" ")[0];
-          const wellnessStatus =
-            a.wellness_status || riskToWellness[riskLevel] || "feeling-well";
-  
           const rawData = typeof a.raw_data === "object" && a.raw_data !== null ? a.raw_data : {};
           const createdAt = a.created_at ? new Date(a.created_at) : new Date();
   
@@ -86,13 +68,6 @@ export default function PatientResults() {
                 day: "numeric",
                 month: "short",
               }),
-            wellness_status: wellnessStatus,
-            score: a.score ?? a.risk_score ?? 0,
-            epds_total:
-              a.epds_total ??
-              (Object.keys(rawData)
-                .filter((k) => k.startsWith("epds_"))
-                .reduce((acc, k) => acc + (rawData[k] || 0), 0)),
             doctor_name: a.doctor_name || a.clinician_name || "Care Team",
             epds_questions:
               a.epds_questions ||
@@ -144,18 +119,11 @@ export default function PatientResults() {
       a.date?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.doctor_name?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    if (activeFilter === "All") return matchesSearch;
-    if (activeFilter === "High Risk") return matchesSearch && a.wellness_status === "extra-care";
-    if (activeFilter === "Moderate Risk") return matchesSearch && a.wellness_status === "consistent";
-    if (activeFilter === "Low Risk") return matchesSearch && a.wellness_status === "feeling-well";
     return matchesSearch;
   });
 
   const filterOptions = [
-    { value: "All", label: "All Results", icon: FileText },
-    { value: "High Risk", label: "High Risk", icon: HeartPulse },
-    { value: "Moderate Risk", label: "Moderate Risk", icon: Activity },
-    { value: "Low Risk", label: "Low Risk", icon: Smile }
+    { value: "All", label: "All Results", icon: FileText }
   ];
 
   const handlePDFExport = () => {

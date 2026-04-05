@@ -69,18 +69,19 @@ export default function NurseAppointmentsPage() {
       try {
         setLoading(true);
     
-        const [appRes, patRes, docRes] = await Promise.all([
+        const [appRes, patRes, docRes, taskRes] = await Promise.all([
           api.get("/nurse/appointments"),
           api.get("/nurse/patients"),
           api.get("/nurse/doctors"),
+          api.get("/nurse/scheduling-tasks"),
         ]);
-    
+
         // api returns data directly, not a Response object
         setAppointments(Array.isArray(appRes) ? appRes : appRes?.data || []);
-    
+
         const patientsList = Array.isArray(patRes) ? patRes : patRes?.data || [];
         setPatients(patientsList);
-    
+
         const docsList = Array.isArray(docRes) ? docRes : docRes?.data || [];
         const normalized = docsList.map((d) => {
           const first = d.first_name ?? "";
@@ -89,6 +90,9 @@ export default function NurseAppointmentsPage() {
           return { ...d, fullName };
         });
         setDoctors(normalized);
+
+        // Doctor-prescribed scheduling tasks — shown as action cards above the table
+        setInstructions(Array.isArray(taskRes) ? taskRes : taskRes?.data || []);
     
       } catch (err) {
         console.error("Failed to fetch appointment data", err);
@@ -161,6 +165,7 @@ export default function NurseAppointmentsPage() {
         notes: formData.notes,
         urgency: formData.urgency,
         department: formData.department,
+        instruction_id: formData.instructionId ? Number(formData.instructionId) : null
       };
       console.log("Step 2 - payload built", payload);
   
@@ -174,14 +179,48 @@ export default function NurseAppointmentsPage() {
 
       const success = res !== undefined && res !== null && !res?.error && !res?.detail;
 
-      if (res?.response?.ok || res?.data?.id) {
+      if (res?.response?.ok || res?.data?.id || res?.data?.appointment_id) {
         toast.success(formData.id ? "Appointment updated!" : "Appointment scheduled successfully!");
+
+        // 1. Immediately filter out the instruction card from local state
+        if (formData.instructionId) {
+          setInstructions((prev) =>
+            prev.filter((inst) => (inst.instruction_id || inst.id) !== formData.instructionId)
+          );
+        }
+
+        // 2. If it's a new appointment, we can also optimistically update the appointments table
+        // but since we're fetching anyway, we'll just close the modal and refresh
         setShowModal(false);
         setConfirmationStep(false);
-        setFormData((prev) => ({ ...prev, id: null, instructionId: null }));
-        const appRes = await api.get("/nurse/appointments");
-        const appointments = Array.isArray(appRes) ? appRes : Array.isArray(appRes?.data) ? appRes.data : [];
-        setAppointments(appointments);
+        setFormData({
+          id: null,
+          patientId: "",
+          doctorId: "",
+          date: "",
+          time: "",
+          type: "Follow-up",
+          notes: "",
+          urgency: "Routine",
+          department: "OBGYN",
+          instructionId: null
+        });
+
+        // Refresh the lists to sync with server
+        try {
+          const [appRes, taskRes] = await Promise.all([
+            api.get("/nurse/appointments"),
+            api.get("/nurse/scheduling-tasks"),
+          ]);
+          
+          if (appRes?.data) setAppointments(appRes.data);
+          else if (Array.isArray(appRes)) setAppointments(appRes);
+
+          if (taskRes?.data) setInstructions(taskRes.data);
+          else if (Array.isArray(taskRes)) setInstructions(taskRes);
+        } catch (refreshErr) {
+          console.error("Error refreshing data:", refreshErr);
+        }
       } else {
         const errMsg = res?.data?.detail || "Failed to schedule appointment";
         toast.error(errMsg);
@@ -433,7 +472,7 @@ export default function NurseAppointmentsPage() {
                       }}
                     >
                       <span style={{ color: theme.textMuted, fontWeight: 500 }}>Task:</span>{" "}
-                      {inst.instruction || "Schedule follow-up based on risk band"}
+                      {inst.instruction || "Schedule follow-up based on assessment results"}
                     </div>
                     <div
                       style={{

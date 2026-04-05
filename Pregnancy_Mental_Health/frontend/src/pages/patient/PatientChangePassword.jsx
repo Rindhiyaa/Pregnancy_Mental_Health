@@ -18,7 +18,7 @@ const EyeIcon = ({ open }) => open ? (
 
 export default function PatientChangePassword() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const [form, setForm] = useState({
     newPassword: "",
     confirmPassword: ""
@@ -57,14 +57,20 @@ export default function PatientChangePassword() {
 
     setLoading(true);
     try {
-      await api.post('/change-password', {
-        newPassword: form.newPassword
+      const { data } = await api.post('/change-password', {
+        new_password: form.newPassword
       });
 
+      if (data?.access_token) {
+        localStorage.setItem('ppd_access_token', data.access_token);
+      }
+
+      login({ ...user, first_login: false, access_token: data?.access_token || user?.access_token, isAuthenticated: true });
+
       toast.success("Password updated successfully!");
-      setTimeout(() => navigate("/patient/dashboard", { replace: true }), 2000);
-    } catch {
-      setError("Network error. Please try again.");
+      navigate("/patient/dashboard", { replace: true });
+    } catch (err) {
+      setError(err?.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
     }

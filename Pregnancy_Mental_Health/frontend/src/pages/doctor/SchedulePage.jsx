@@ -54,7 +54,7 @@ const CalendarDropdown = ({ selectedDate, onSelect, onClose, theme }) => {
 
     return (
         <div style={{
-            position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 999,
+            position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 1001,
             background: theme.cardBg || "#fff", borderRadius: 16, padding: 16,
             boxShadow: "0 20px 60px rgba(0,0,0,0.18)", border: `1px solid ${theme.glassBorder}`,
             width: 260,
@@ -175,19 +175,28 @@ const SchedulePage = () => {
 
     // ── Status update ──────────────────────────────────────────────────────────
     const updateStatus = async (appt, newStatus) => {
+        if (!window.confirm(`Mark this appointment as ${newStatus}?`)) return;
+        
         setUpdatingId(appt.id);
         try {
             const res = await api.patch(`/doctor/appointments/${appt.id}/status`, { status: newStatus });
-            if (!res.response.ok) throw new Error();
-            if (!window.confirm("Mark this appointment as completed?")) return;
-            toast.success(`Marked as ${newStatus}`);
-        } catch (_) {
-            toast.success(`Marked as ${newStatus} (mock)`);
+            
+            // Check if res exists and has data/response
+            if (res && (res.data || res.response?.ok)) {
+                toast.success(`Appointment ${newStatus} successfully`);
+                
+                const updated = { ...appt, status: newStatus };
+                setAppointments(prev => prev.map(a => a.id === appt.id ? updated : a));
+                if (selected?.id === appt.id) setSelected(updated);
+            } else {
+                throw new Error("Failed to update status");
+            }
+        } catch (err) {
+            console.error("Status update error:", err);
+            toast.error("Failed to update status");
+        } finally {
+            setUpdatingId(null);
         }
-        const updated = { ...appt, status: newStatus };
-        setAppointments(prev => prev.map(a => a.id === appt.id ? updated : a));
-        if (selected?.id === appt.id) setSelected(updated);
-        setUpdatingId(null);
     };
 
     const [modalOpen, setModalOpen] = useState(false);
@@ -517,8 +526,29 @@ const SchedulePage = () => {
                                         ))}
                                     </div>
 
-                                    {/* ── View Full Details button ── */}
-                                    <div style={{ padding: "16px 20px 20px" }}>
+                                    {/* ── Action buttons ── */}
+                                    <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+                                        {selected.status !== "completed" && (
+                                            <button
+                                                onClick={() => updateStatus(selected, "completed")}
+                                                disabled={updatingId === selected.id}
+                                                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 28px rgba(22,163,74,0.45)"; }}
+                                                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 6px 18px rgba(22,163,74,0.3)"; }}
+                                                style={{
+                                                    width: "100%", padding: "13px 0", borderRadius: 14, border: "none",
+                                                    background: "linear-gradient(135deg, #16a34a, #22c55e)",
+                                                    color: "white", fontWeight: 800, fontSize: 14,
+                                                    cursor: "pointer", letterSpacing: "0.01em",
+                                                    boxShadow: "0 6px 18px rgba(22,163,74,0.3)",
+                                                    transition: "all 0.2s ease",
+                                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                                                    opacity: updatingId === selected.id ? 0.7 : 1
+                                                }}>
+                                                <CheckCircle size={16} />
+                                                {updatingId === selected.id ? "Updating..." : "Mark as Completed"}
+                                            </button>
+                                        )}
+
                                         <button
                                             onClick={() => setModalOpen(true)}
                                             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 28px rgba(13,148,136,0.45)"; }}

@@ -161,7 +161,7 @@ export default function NurseAssessmentHistory() {
           </div>
         </div>
 
-        <Card style={{ padding: 0, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+        <Card style={{ padding: 0, overflow: 'visible', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#F3F4F6' }}>

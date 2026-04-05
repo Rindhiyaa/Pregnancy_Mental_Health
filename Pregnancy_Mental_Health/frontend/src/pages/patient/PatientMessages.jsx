@@ -54,7 +54,7 @@ export default function PatientMessages() {
           id: m.id,
           from: m.from_name || "Care Team",
           role: m.from_role || "Clinician",
-          subject: "Message from Care Team",   // backend has no subject yet
+          subject: m.subject || "Message from Care Team",
           body: m.content || "",
           date: m.created_at
             ? new Date(m.created_at).toLocaleDateString("en-GB", {
@@ -70,7 +70,7 @@ export default function PatientMessages() {
               })
             : "",
           read: Boolean(m.is_read),
-          type: "system",                      // backend has no type yet
+          type: (m.subject || "").toLowerCase().includes("appointment") ? "appointment" : "system",
         }));
         setMessages(normalized);
       } else {

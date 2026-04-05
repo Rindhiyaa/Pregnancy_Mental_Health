@@ -28,6 +28,8 @@ export default function ClinicianMessages() {
     const [selectedPatientId, setSelectedPatientId] = useState("");
     const [messageSubject, setMessageSubject] = useState("");
     const [messageBody, setMessageBody] = useState("");
+    const [msgDate, setMsgDate] = useState("");
+    const [msgTime, setMsgTime] = useState("");
     const [searchParams] = useSearchParams();
     const prefilledTo = searchParams.get('to');
     const prefilledRole = searchParams.get('role');
@@ -35,7 +37,7 @@ export default function ClinicianMessages() {
 
     const SAMPLE_DRAFTS = [
         { id: 1, title: "Screening Review", subject: "Review of your EPDS Assessment", content: "Dear Patient, we have completed the professional review of your recent mental health screening. Please check your portal for the clinician's comments and updated care plan." },
-        { id: 2, title: "Urgent Follow-up", subject: "Immediate Consultation Required", content: "Based on our latest clinical indicators, we would like to schedule an urgent follow-up consultation with you. Please contact our office or confirm your availability via the portal." },
+        { id: 2, title: "Appointment Scheduling", subject: "New Appointment Scheduled", content: "Hello, we have scheduled a follow-up session for you to discuss your recent assessment and wellness journey. Please see the appointment details below." },
         { id: 3, title: "Care Plan Update", subject: "Your Mental Health Care Plan", content: "Your clinical care plan has been updated to include additional support resources. Specifically, we recommend engaging with the new mindfulness protocols listed in your profile." },
         { id: 4, title: "Routine Check-in", subject: "Weekly Progress Check", content: "Checking in to see how you are doing this week. Consistent monitoring is key to your wellbeing. Please feel free to reach out with any concerns." }
     ];
@@ -98,16 +100,28 @@ export default function ClinicianMessages() {
             toast.error("Validation failed: Recipient and content required");
             return;
         }
+
+        // Format the final message content with date/time if provided
+        let finalContent = messageBody;
+        if (msgDate || msgTime) {
+            const dateStr = msgDate ? new Date(msgDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : "";
+            const timeStr = msgTime || "";
+            const dateTimeInfo = `\n\nScheduled for: ${dateStr}${timeStr ? ' at ' + timeStr : ""}`;
+            finalContent += dateTimeInfo;
+        }
     
         try {
             await api.post("/messages", {
-            patient_id: Number(selectedPatientId),
-            content: messageBody,
+                patient_id: Number(selectedPatientId),
+                subject: messageSubject || "Clinical Note",
+                content: finalContent,
             });
     
             toast.success("Message delivered successfully");
             setMessageBody("");
             setMessageSubject("");
+            setMsgDate("");
+            setMsgTime("");
             fetchData();
             
         } catch (err) {
@@ -174,6 +188,9 @@ export default function ClinicianMessages() {
                                     onClick={() => {
                                         setMessageSubject(draft.subject);
                                         setMessageBody(draft.content);
+                                        // Clear date/time when switching templates
+                                        setMsgDate("");
+                                        setMsgTime("");
                                         toast.success("Template applied");
                                     }}
                                     style={{
@@ -242,6 +259,40 @@ export default function ClinicianMessages() {
                                 />
                             </div>
 
+                            {/* ── NEW: Date & Time Inputs ── */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 500, color: theme.textSecondary }}>Appointment Date</label>
+                                    <input
+                                        type="date"
+                                        value={msgDate}
+                                        onChange={(e) => setMsgDate(e.target.value)}
+                                        style={{ 
+                                            width: '100%', padding: '16px', borderRadius: '16px', border: `1px solid ${theme.glassBorder}`, 
+                                            background: 'rgba(255,255,255,0.05)', color: theme.textPrimary, outline: 'none', 
+                                            fontFamily: "'Poppins', sans-serif", fontSize: 14 
+                                        }}
+                                        onFocus={e => e.target.style.borderColor = theme.primary}
+                                        onBlur={e => e.target.style.borderColor = theme.glassBorder}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 500, color: theme.textSecondary }}>Appointment Time</label>
+                                    <input
+                                        type="time"
+                                        value={msgTime}
+                                        onChange={(e) => setMsgTime(e.target.value)}
+                                        style={{ 
+                                            width: '100%', padding: '16px', borderRadius: '16px', border: `1px solid ${theme.glassBorder}`, 
+                                            background: 'rgba(255,255,255,0.05)', color: theme.textPrimary, outline: 'none', 
+                                            fontFamily: "'Poppins', sans-serif", fontSize: 14 
+                                        }}
+                                        onFocus={e => e.target.style.borderColor = theme.primary}
+                                        onBlur={e => e.target.style.borderColor = theme.glassBorder}
+                                    />
+                                </div>
+                            </div>
+
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 500, color: theme.textSecondary }}>Message Body</label>
                                 <textarea
@@ -296,7 +347,6 @@ export default function ClinicianMessages() {
                                 </div>
                             ) : (
                                 messages.map((msg) => {
-                                    const subject = messageSubject || "Clinical follow-up";
                                     const patient = patients.find(p => p.id === msg.patient_id || p.id?.toString() === msg.patient_id?.toString());
                                     return (
                                         <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
@@ -323,7 +373,7 @@ export default function ClinicianMessages() {
                                                 padding: '16px 20px', borderRadius: '4px 20px 20px 20px', 
                                                 boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
                                             }}>
-                                                <div style={{ fontSize: 14, fontWeight: 600, color: theme.primary, marginBottom: 6 }}>{msg.subject}</div>
+                                                <div style={{ fontSize: 14, fontWeight: 600, color: theme.primary, marginBottom: 6 }}>{msg.subject || "Clinical Note"}</div>
                                                 <div style={{ fontSize: 14, color: theme.textPrimary, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{msg.content}</div>
                                                 
                                                 {msg.is_read && (

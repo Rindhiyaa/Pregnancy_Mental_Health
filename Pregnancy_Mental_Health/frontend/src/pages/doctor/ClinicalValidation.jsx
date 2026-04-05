@@ -133,7 +133,12 @@ const handleSubmit = async (status) => {
             override_reason: form.override_reason,
             plan: form.plan,
             notes: form.notes,
-            status: status === "complete" ? "approved" : "reviewed"
+            status: status === "complete" ? "approved" : "reviewed",
+            // Nurse follow-up instruction fields — sent to backend so it can
+            // create a FollowUp record and surface it in the nurse's task queue
+            followup_urgency: form.followup_urgency,
+            followup_window: form.followup_window,
+            nurse_instruction: form.nurse_instruction,
         };
 
         console.log("Submitting payload:", payload);

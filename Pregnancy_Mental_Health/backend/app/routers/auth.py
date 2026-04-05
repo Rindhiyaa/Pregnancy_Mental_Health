@@ -330,13 +330,14 @@ def set_logout_inactive(
 @router.post("/change-password")
 def change_password_auth(
     data: dict,
+    response: Response,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user_email)
 ):
     """
     Change password for currently authenticated user.
-    Supports both camelCase and snake_case request bodies and allows
-    first-time login users to set a new password without providing the old one.
+    Returns fresh access + refresh tokens so the caller's session remains
+    valid immediately — the old token is invalidated by password_changed_at.
     """
     user = db.query(models.User).filter(models.User.email == current_user_email).first()
     if not user:
@@ -358,6 +359,7 @@ def change_password_auth(
         raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
 
     user.hashed_password = hash_password(new_password)
+    # Set password_changed_at BEFORE issuing tokens so iat > password_changed_at
     user.password_changed_at = datetime.utcnow()
     if user.first_login:
         user.first_login = False
@@ -365,7 +367,28 @@ def change_password_auth(
     db.add(user)
     db.commit()
 
-    return {"message": "Password updated successfully"}
+    # Issue fresh tokens — the old access token is now invalidated by the
+    # password_changed_at check in get_current_user (iat < password_changed_at).
+    # Without fresh tokens the client would be immediately logged out.
+    access_token = create_access_token(data={"sub": user.email})
+    refresh_token = create_refresh_token(data={"sub": user.email})
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=IS_PRODUCTION,
+        samesite="lax",
+        max_age=7 * 24 * 3600,
+        path="/",
+    )
+
+    return {
+        "message": "Password updated successfully",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "first_login": False,
+    }
 
 
 
