@@ -33,17 +33,26 @@ if not DATABASE_URL:
 IS_PRODUCTION = os.getenv("ENVIRONMENT") == "production"
 
 
-# In production, set ALLOWED_ORIGINS env var: "https://domain1.com,https://domain2.com"
-ALLOWED_ORIGINS_STR = os.getenv(
-    "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,"
-    "http://localhost:5174,http://127.0.0.1:5174,"
-    "http://localhost:3000,http://127.0.0.1:3000,"
-    "http://localhost:5175,http://127.0.0.1:5175,"
-    "https://postpartum-risk-insight.onrender.com,"
-    "https://ppd-backend-23ni.onrender.com"
-)
-ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS_STR.split(",")]
+# These origins are always allowed, regardless of the ALLOWED_ORIGINS env var.
+# This prevents a misconfigured Render env var from breaking CORS.
+_ALWAYS_ALLOWED = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
+    "https://postpartum-risk-insight.onrender.com",
+    "https://ppd-backend-23ni.onrender.com",
+]
+
+# Additional origins can be added via ALLOWED_ORIGINS env var (comma-separated)
+_extra = os.getenv("ALLOWED_ORIGINS", "")
+_extra_origins = [o.strip() for o in _extra.split(",") if o.strip()]
+
+ALLOWED_ORIGINS = list(dict.fromkeys(_ALWAYS_ALLOWED + _extra_origins))  # dedup, preserve order
 
 # JWT Configuration
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")

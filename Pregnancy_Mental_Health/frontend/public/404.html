@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting...</title>
+    <script>
+      // Redirect /some/path → /#/some/path so HashRouter can handle it.
+      // This file is served by Render when a static path is not found.
+      var path = window.location.pathname;
+      var search = window.location.search;
+      window.location.replace('/' + '#' + path + search);
+    </script>
+  </head>
+  <body></body>
+</html>
