@@ -148,9 +148,10 @@ def register_patient(
             detail=f"Missing required fields: {', '.join(missing)}"
         )
 
+    normalised_email = payload["email"].strip().lower()
     existing_user = (
         db.query(models.User)
-        .filter(models.User.email == payload["email"])
+        .filter(func.lower(models.User.email) == normalised_email)
         .first()
     )
     if existing_user:
@@ -170,7 +171,7 @@ def register_patient(
         new_user = models.User(
             first_name=first_name,
             last_name=last_name,
-            email=payload["email"],
+            email=normalised_email,
             phone_number=payload["phone"],
             hashed_password=hash_password(TEMP_PASSWORD),
             role="patient",
@@ -184,12 +185,13 @@ def register_patient(
         # --- Build patient_data (this MUST exist before creating Patient) ---
         patient_data = {
             "name": payload["fullName"],
-            "email": payload["email"],
+            "email": normalised_email,
             "phone": payload["phone"],
             "clinician_email": current_user_email,
             "created_by_nurse_id": nurse.id,
             "assigned_doctor_id": payload.get("assignedDoctor"),
             "status": "active",
+            "user_id": new_user.id,  # link Patient record to the portal User
         }
 
         if payload.get("dob"):

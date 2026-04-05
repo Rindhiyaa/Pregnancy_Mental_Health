@@ -154,10 +154,10 @@ export default function PatientDashboard() {
               </div>
               <h3 style={{ fontSize: 13, fontWeight: 700, color: theme.textMuted, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>Wellness Status</h3>
             </div>
-            {dashboardData?.risk_status?.level && dashboardData?.risk_status?.level !== 'N/A' ? (
+            {dashboardData?.risk_status?.level && dashboardData?.risk_status?.level !== 'N/A' && dashboardData?.risk_status?.level !== 'Pending' ? (
               <div>
-                <Badge type={dashboardData.risk_status?.level === 'High' ? 'danger' : dashboardData.risk_status?.level === 'Moderate' ? 'warning' : 'success'}>
-                  {dashboardData.risk_status?.level === 'High' ? 'Needs Extra Care' : dashboardData.risk_status?.level === 'Moderate' ? 'Stay Consistent' : 'Feeling Well'}
+                <Badge type={dashboardData.risk_status?.level?.toLowerCase().includes('high') ? 'danger' : dashboardData.risk_status?.level?.toLowerCase().includes('moderate') ? 'warning' : 'success'}>
+                  {dashboardData.risk_status?.level?.toLowerCase().includes('high') ? 'Needs Extra Care' : dashboardData.risk_status?.level?.toLowerCase().includes('moderate') ? 'Stay Consistent' : 'Feeling Well'}
                 </Badge>
                 <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 12 }}>Last checked: {dashboardData.risk_status?.date || 'Unknown'}</div>
                 <NavLink to="/patient/results" style={{ textDecoration: "none", display: "block", marginTop: 8 }}>

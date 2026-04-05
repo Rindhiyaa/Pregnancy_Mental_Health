@@ -518,9 +518,10 @@ def review_assessment(
         a.epds_score = sum(epds_items)  # Save EPDS to database
 
     # Apply updates from ClinicalValidation.jsx payload
-    a.clinician_risk   = payload.get("clinicianrisk")
-    a.risk_level_final = payload.get("risklevelfinal")
-    a.override_reason  = payload.get("overridereason")
+    # Keys use snake_case to match the frontend payload
+    a.clinician_risk   = payload.get("clinician_risk")
+    a.risk_level_final = payload.get("risk_level_final")
+    a.override_reason  = payload.get("override_reason")
     a.plan             = payload.get("plan")
     a.notes            = payload.get("notes")
     a.reviewed_at      = datetime.now()  # ✅ ADDED: Mark when reviewed

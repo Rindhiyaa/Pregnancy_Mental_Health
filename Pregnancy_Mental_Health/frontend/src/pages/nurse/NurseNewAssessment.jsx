@@ -42,15 +42,27 @@ export default function NurseNewAssessment() {
           api.get("/nurse/doctors"),
           api.get("/nurse/patients")
         ]);
-  
+
+        const loadedPatients = patRes.data || [];
         setDoctors(docRes.data || []);
-        setPatients(patRes.data || []);
+        setPatients(loadedPatients);
+
+        // Auto-select patient when coming from register page
+        const preselectedId = searchParams.get("patientId");
+        if (preselectedId) {
+          const match = loadedPatients.find(p => String(p.id) === String(preselectedId));
+          if (match) {
+            setSelectedPatient(match);
+            setShowPatientModal(false);
+            setStep(1);
+          }
+        }
       } catch (err) {
         console.error("Failed to fetch data:", err);
         toast.error("Failed to load doctors or patients");
       }
     };
-  
+
     fetchData();
   }, []);
 
@@ -62,9 +74,9 @@ export default function NurseNewAssessment() {
 
   // Auto-save logic
   useEffect(() => {
-    if (!formData.patient_name || step === 1) return;
+    if (!selectedPatient?.email || step === 1) return;
     const timeoutId = setTimeout(() => {
-      const draftKey = `ppd_draft_${formData.patient_name.replace(/\s+/g, '_').toLowerCase()}`;
+      const draftKey = `ppd_draft_${selectedPatient.email.toLowerCase()}`;
       localStorage.setItem(draftKey, JSON.stringify({
         draft_data: formData,
         step: step,
@@ -76,12 +88,12 @@ export default function NurseNewAssessment() {
       setTimeout(() => setAutoSaveStatus(""), 3000);
     }, 1500);
     return () => clearTimeout(timeoutId);
-  }, [formData, step, selectedDoctorId]);
+  }, [formData, step, selectedDoctorId, selectedPatient]);
 
   // Load draft when patient is selected
   useEffect(() => {
-    if (selectedPatient) {
-      const draftKey = `ppd_draft_${selectedPatient.name.replace(/\s+/g, '_').toLowerCase()}`;
+    if (selectedPatient?.email) {
+      const draftKey = `ppd_draft_${selectedPatient.email.toLowerCase()}`;
       const savedDraft = localStorage.getItem(draftKey);
       if (savedDraft) {
         try {

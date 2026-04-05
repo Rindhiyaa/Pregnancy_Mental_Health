@@ -65,11 +65,12 @@ export default function NurseRegisterPatient() {
         role: "patient",
       };
   
-      await api.post("/nurse/register", payload);
-  
+      const { data } = await api.post("/nurse/register", payload);
+
       toast.success("Patient registered successfully!");
       toast("Temporary password: TempPass123!", { icon: "🔑" });
-      navigate("/nurse/patients");
+      // Go directly to new assessment with this patient pre-selected
+      navigate(`/nurse/assessment/new?patientId=${data.patient_id}`);
     } catch (err) {
       console.error("Registration error:", err);
       toast.error(getErrorMessage(err, "Registration failed"));
