@@ -384,6 +384,29 @@ def get_doctor_assessments(
         logger.error(f"Error in get_doctor_assessments: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     
+@router.get("/assessments/test")
+def test_assessments(
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user_email)
+):
+    """Quick test to see raw Assessment data"""
+    assessments = db.query(models.Assessment).filter(
+        models.Assessment.status == "submitted"
+    ).limit(1).all()
+    
+    if not assessments:
+        return {"error": "No assessments found"}
+    
+    assessment = assessments[0]
+    return {
+        "id": assessment.id,
+        "patient_name": assessment.patient_name,
+        "risk_level": assessment.risk_level,
+        "status": assessment.status,
+        "created_at": assessment.created_at,
+        "raw_assessment": str(assessment.__dict__)
+    }
+
 @router.get("/assessments/{assessment_id}")
 def get_doctor_assessment_by_id(
     assessment_id: int,
@@ -459,28 +482,6 @@ def get_doctor_assessment_by_id(
         logger.error(f"Error getting assessment {assessment_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.get("/assessments/test")
-def test_assessments(
-    db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email)
-):
-    """Quick test to see raw Assessment data"""
-    assessments = db.query(models.Assessment).filter(
-        models.Assessment.status == "submitted"
-    ).limit(1).all()
-    
-    if not assessments:
-        return {"error": "No assessments found"}
-    
-    assessment = assessments[0]
-    return {
-        "id": assessment.id,
-        "patient_name": assessment.patient_name,
-        "risk_level": assessment.risk_level,
-        "status": assessment.status,
-        "created_at": assessment.created_at,
-        "raw_assessment": str(assessment.__dict__)
-    }
 
 @router.patch("/assessments/{assessment_id}/review")
 def review_assessment(

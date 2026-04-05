@@ -54,10 +54,70 @@ def seed_admin():
         db.close()
 
 
+def run_migrations():
+    """Add any missing columns to the DB — safe to run on every startup."""
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    
+    try:
+        with engine.begin() as conn:
+            # users table migrations
+            user_columns = [c['name'] for c in inspector.get_columns('users')]
+            if 'password_changed_at' not in user_columns:
+                conn.execute(text("ALTER TABLE users ADD COLUMN password_changed_at TIMESTAMP WITH TIME ZONE"))
+                logging.info("Migration: Added 'password_changed_at' to users")
+
+            # assessments table migrations
+            if inspector.has_table('assessments'):
+                assess_cols = [c['name'] for c in inspector.get_columns('assessments')]
+                if 'epds_score' not in assess_cols:
+                    conn.execute(text("ALTER TABLE assessments ADD COLUMN epds_score INTEGER"))
+                    logging.info("Migration: Added 'epds_score' to assessments")
+                if 'top_risk_factors' not in assess_cols:
+                    conn.execute(text("ALTER TABLE assessments ADD COLUMN top_risk_factors JSON"))
+                    logging.info("Migration: Added 'top_risk_factors' to assessments")
+                if 'risk_level_final' not in assess_cols:
+                    conn.execute(text("ALTER TABLE assessments ADD COLUMN risk_level_final VARCHAR"))
+                    logging.info("Migration: Added 'risk_level_final' to assessments")
+                if 'override_reason' not in assess_cols:
+                    conn.execute(text("ALTER TABLE assessments ADD COLUMN override_reason VARCHAR"))
+                    logging.info("Migration: Added 'override_reason' to assessments")
+                if 'overridden_by' not in assess_cols:
+                    conn.execute(text("ALTER TABLE assessments ADD COLUMN overridden_by INTEGER"))
+                    logging.info("Migration: Added 'overridden_by' to assessments")
+                if 'reviewed_at' not in assess_cols:
+                    conn.execute(text("ALTER TABLE assessments ADD COLUMN reviewed_at TIMESTAMP WITH TIME ZONE"))
+                    logging.info("Migration: Added 'reviewed_at' to assessments")
+
+            # appointments table migrations
+            if inspector.has_table('appointments'):
+                appt_cols = [c['name'] for c in inspector.get_columns('appointments')]
+                if 'assigned_doctor_id' not in appt_cols:
+                    conn.execute(text("ALTER TABLE appointments ADD COLUMN assigned_doctor_id INTEGER REFERENCES users(id)"))
+                    logging.info("Migration: Added 'assigned_doctor_id' to appointments")
+                if 'urgency' not in appt_cols:
+                    conn.execute(text("ALTER TABLE appointments ADD COLUMN urgency VARCHAR DEFAULT 'Routine'"))
+                    logging.info("Migration: Added 'urgency' to appointments")
+                if 'department' not in appt_cols:
+                    conn.execute(text("ALTER TABLE appointments ADD COLUMN department VARCHAR DEFAULT 'OBGYN'"))
+                    logging.info("Migration: Added 'department' to appointments")
+                if 'status' not in appt_cols:
+                    conn.execute(text("ALTER TABLE appointments ADD COLUMN status VARCHAR DEFAULT 'pending'"))
+                    logging.info("Migration: Added 'status' to appointments")
+                if 'patient_name' not in appt_cols:
+                    conn.execute(text("ALTER TABLE appointments ADD COLUMN patient_name VARCHAR"))
+                    logging.info("Migration: Added 'patient_name' to appointments")
+
+    except Exception as e:
+        logging.warning(f"Migration warning (non-fatal): {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create database tables on startup
     models.Base.metadata.create_all(bind=engine)
+    # Run column migrations (non-destructive — only adds missing columns)
+    run_migrations()
     # Seed default admin user if not exists
     seed_admin()
     # Startup: Start background cleanup task

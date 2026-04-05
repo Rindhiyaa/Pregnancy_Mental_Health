@@ -186,6 +186,7 @@ def register_patient(
             "name": payload["fullName"],
             "email": payload["email"],
             "phone": payload["phone"],
+            "user_id": new_user.id,          # Required: links Patient record to portal User
             "clinician_email": current_user_email,
             "created_by_nurse_id": nurse.id,
             "assigned_doctor_id": payload.get("assignedDoctor"),

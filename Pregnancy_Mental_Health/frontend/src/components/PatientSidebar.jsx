@@ -69,6 +69,9 @@ export default function PatientSidebar() {
         ...S.sidebar,
         background: theme.sidebarBg,
         borderRight: `1px solid ${theme.sidebarBorder}`,
+        position: 'relative',   /* match Nurse/Doctor/Admin — sits in flex flow */
+        height: '100%',
+        minHeight: '100vh',
       }}>
 
       <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", gap: 12 }}>
