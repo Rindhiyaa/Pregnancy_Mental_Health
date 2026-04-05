@@ -93,9 +93,10 @@ const refreshAccessToken = async () => {
     }
 
     // Redirect to signin page
-    if (!window.location.pathname.includes('/signin')) {
-      window.location.href = '/signin';
-    }
+   // ✅ FIXED — checks hash, uses hash-based URL
+if (!window.location.hash.includes('/signin')) {
+  window.location.href = '/#/signin';
+}
 
     throw error;
   }
