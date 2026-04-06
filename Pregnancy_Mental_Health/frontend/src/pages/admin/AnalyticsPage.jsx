@@ -142,6 +142,8 @@ export default function AnalyticsPage() {
             justifyContent: "center",
             background: theme.pageBg,
             fontFamily: theme.fontBody,
+            height: "100vh",
+            overflowY: "auto",
           }}
         >
           <div style={{ color: theme.textMuted, fontWeight: 600 }}>
@@ -206,6 +208,8 @@ export default function AnalyticsPage() {
           minWidth: 0,
           background: theme.pageBg,
           fontFamily: theme.fontBody,
+          height: "100vh",
+          overflowY: "auto",
         }}
       >
         {/* ── Mobile top bar ── */}

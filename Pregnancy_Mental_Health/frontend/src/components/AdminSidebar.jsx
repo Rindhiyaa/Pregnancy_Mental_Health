@@ -42,7 +42,7 @@ export default function AdminSidebar({ onClose }) {
     <aside
       className="portal-sidebar"
       style={{
-        width: 240, height: "100%", position: "relative",
+        width: 240, height: "100vh", position: "sticky", top: 0,
         background: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`,
         display: "flex", flexDirection: "column", zIndex: 100, color: "white",
         transition: "transform 0.25s ease"

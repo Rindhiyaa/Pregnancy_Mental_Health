@@ -249,7 +249,9 @@ const handleDelete = async (user) => {
         padding: mainPadding,
         width: mainWidth,
         boxSizing: "border-box",
-        minWidth: 0, // Prevents grid blowout
+        minWidth: 0,
+        height: "100vh",
+        overflowY: "auto",
       }}>
 
         {/* Mobile top bar with hamburger */}

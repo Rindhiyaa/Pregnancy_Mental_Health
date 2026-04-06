@@ -59,6 +59,8 @@ export default function PortalLayout({ children, pageTitle, sidebar: Sidebar }) 
         minWidth: 0,
         background: theme.pageBg,
         fontFamily: theme.fontBody,
+        height: "100vh",
+        overflowY: "auto",
       }}>
         {/* Mobile top bar */}
         {!isDesktop && (

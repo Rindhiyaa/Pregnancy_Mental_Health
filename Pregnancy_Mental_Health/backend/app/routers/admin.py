@@ -23,6 +23,7 @@ def require_admin(
     admin=Depends(get_current_user),
 ):
     if admin.role != "admin":
+        print(f"AUTH ERROR: User {admin.email} attempted admin access but has role {admin.role}")
         raise HTTPException(status_code=403, detail="Admin access required")
     return admin
 
@@ -125,12 +126,8 @@ def get_admin_dashboard(
 @router.get("/clinicians", response_model=List[schemas.UserOut])
 def get_clinicians(
     db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email)
+    admin=Depends(require_admin)
 ):
-    user = db.query(models.User).filter(models.User.email == current_user_email).first()
-    if not user or user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
     return db.query(models.User).filter(models.User.role.in_(["doctor", "nurse"])).all()
 
 @router.patch("/users/{user_id}/status", response_model=schemas.UserOut)

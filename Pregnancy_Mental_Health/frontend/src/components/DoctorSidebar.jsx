@@ -43,9 +43,10 @@ export default function DoctorSidebar({ onClose }) {
         ...S.sidebar, 
         background: theme.sidebarBg, 
         borderRight: `1px solid ${theme.sidebarBorder}`,
-        position: 'relative',
-        height: '100%',
-        minHeight: '100vh'
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        minHeight: 'unset',
       }}
     >
       <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>

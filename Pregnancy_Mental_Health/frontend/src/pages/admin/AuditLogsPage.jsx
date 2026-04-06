@@ -194,6 +194,8 @@ export default function AuditLogsPage() {
                 minWidth: 0,
                 background: theme.pageBg,
                 fontFamily: theme.fontBody,
+                height: "100vh",
+                overflowY: "auto",
             }}>
 
                 {/* ── Mobile top bar ── */}
