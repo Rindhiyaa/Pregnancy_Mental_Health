@@ -54,12 +54,31 @@ def seed_admin():
         db.close()
 
 
+def cleanup_invalid_emails():
+    """✅ Auto-cleanup common data entry errors on startup"""
+    from .database import SessionLocal
+    from sqlalchemy import text
+    db = SessionLocal()
+    try:
+        # Fix specific 'test@gmailcom' typo
+        db.execute(text("UPDATE users SET email = 'test@gmail.com' WHERE email = 'test@gmailcom'"))
+        db.commit()
+        logging.info("Startup cleanup: Fixed invalid email data (test@gmailcom -> test@gmail.com)")
+    except Exception as e:
+        logging.error(f"cleanup_invalid_emails failed: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create database tables on startup
     models.Base.metadata.create_all(bind=engine)
     # Seed default admin user if not exists
     seed_admin()
+    # Cleanup invalid data
+    cleanup_invalid_emails()
     # Startup: Start background cleanup task
     cleanup_task = asyncio.create_task(rate_limiter.cleanup_old_entries())
     yield
