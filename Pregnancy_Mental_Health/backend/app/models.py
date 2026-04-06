@@ -24,6 +24,21 @@ class User(Base):
         back_populates="user",
         uselist=False,
         foreign_keys="Patient.user_id",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    appointments_as_doctor = relationship(
+        "Appointment",
+        back_populates="doctor",
+        foreign_keys="Appointment.doctor_id",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    appointments_as_assigned_doctor = relationship(
+        "Appointment",
+        back_populates="assigned_doctor",
+        foreign_keys="Appointment.assigned_doctor_id",
     )
 
 
@@ -167,6 +182,12 @@ class Patient(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+    appointments = relationship(
+        "Appointment",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
 
 class Notification(Base):
@@ -216,10 +237,10 @@ class Appointment(Base):
     __tablename__ = "appointments"
 
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(BigInteger, ForeignKey("patients.id", ondelete="CASCADE"), nullable=False)
     patient_name = Column(String, nullable=True)
-    doctor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    assigned_doctor_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # new column
+    doctor_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    assigned_doctor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # new column
 
     date = Column(Date, nullable=False)
     time = Column(Time, nullable=False)
@@ -230,11 +251,11 @@ class Appointment(Base):
     department = Column(String, default="OBGYN")
     status = Column(String, default="pending")       
 
-    patient = relationship("Patient", backref="appointments")
+    patient = relationship("Patient", back_populates="appointments")
     
     # Explicitly specify foreign keys to avoid ambiguity
-    doctor = relationship("User", foreign_keys=[doctor_id], backref="appointments_as_doctor")
-    assigned_doctor = relationship("User", foreign_keys=[assigned_doctor_id], backref="appointments_as_assigned_doctor")
+    doctor = relationship("User", foreign_keys=[doctor_id], back_populates="appointments_as_doctor")
+    assigned_doctor = relationship("User", foreign_keys=[assigned_doctor_id], back_populates="appointments_as_assigned_doctor")
 
 class RecoveryRequest(Base):
     __tablename__ = "recovery_requests"
