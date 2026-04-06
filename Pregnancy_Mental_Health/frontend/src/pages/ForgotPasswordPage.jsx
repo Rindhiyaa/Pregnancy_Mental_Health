@@ -113,9 +113,21 @@ export default function ForgotPasswordPage() {
   useEffect(() => {
     if (!email || success === "") return;
 
-    const wsUrl = import.meta.env.VITE_API_URL 
-      ? import.meta.env.VITE_API_URL.replace("http", "ws").replace("/api", "/ws")
-      : `ws://${window.location.hostname}:8000/ws`;
+    let wsUrl;
+    if (import.meta.env.VITE_API_URL) {
+      // Production or custom VITE_API_URL
+      wsUrl = import.meta.env.VITE_API_URL.replace(/^http/, "ws");
+      // If the URL doesn't already have /ws at the end, add it
+      if (!wsUrl.endsWith("/ws")) {
+        // Handle cases where VITE_API_URL might have a trailing slash
+        wsUrl = wsUrl.replace(/\/$/, "") + "/ws";
+      }
+    } else {
+      // Fallback for local development
+      wsUrl = `ws://${window.location.hostname}:8000/ws`;
+    }
+
+    console.log("Connecting to WebSocket:", wsUrl);
     const socket = new WebSocket(wsUrl);
     let isMounted = true;
 
