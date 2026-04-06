@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
+// src/components/AdminSidebar.jsx — ADD THIS LINE
+import { api } from "../utils/api";  // ← MISSING IMPORT
 import {
   LayoutDashboard,
   Users,
