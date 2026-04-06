@@ -57,12 +57,27 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchAdminData();
 
-    const ws = new WebSocket("ws://localhost:8000/ws");
+    const wsUrl = import.meta.env.VITE_API_URL 
+      ? import.meta.env.VITE_API_URL.replace(/^http/, "ws").replace(/\/$/, "") + "/ws"
+      : `ws://${window.location.hostname}:8000/ws`;
+      
+    const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "user_deleted") {
-        fetchAdminData();
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "user_deleted") {
+          fetchAdminData();
+        } else if (data.type === "NEW_RECOVERY_REQUEST") {
+          console.log("🔔 New recovery request received via WS:", data);
+          toast.success(`New password recovery request from ${data.email}`, {
+            icon: '🔔',
+            duration: 6000,
+            onClick: () => navigate("/admin/recovery")
+          });
+        }
+      } catch (err) {
+        console.error("WS message error:", err);
       }
     };
 

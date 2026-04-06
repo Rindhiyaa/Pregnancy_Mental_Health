@@ -27,6 +27,42 @@ export default function RecoveryRequestsPage() {
 
   useEffect(() => {
     loadRequests();
+
+    // Setup WebSocket for real-time updates
+    const wsUrl = import.meta.env.VITE_API_URL 
+      ? import.meta.env.VITE_API_URL.replace(/^http/, "ws").replace(/\/$/, "") + "/ws"
+      : `ws://${window.location.hostname}:8000/ws`;
+      
+    const socket = new WebSocket(wsUrl);
+    
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "NEW_RECOVERY_REQUEST") {
+          console.log("🔔 New recovery request received via WS:", data);
+          loadRequests(); // Refresh the list
+          toast.success(`New recovery request from ${data.email}`, {
+            icon: '🔔',
+            duration: 5000
+          });
+        } else if (data.type === "RECOVERY_COMPLETED") {
+          console.log("✅ Recovery request completed via WS:", data);
+          loadRequests(); // Refresh the list to update status
+          toast.success(`User ${data.email} has successfully reset their password`, {
+            icon: '✅',
+            duration: 5000
+          });
+        }
+      } catch (err) {
+        console.error("WS message error:", err);
+      }
+    };
+
+    return () => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
+    };
   }, []);
 
   const loadRequests = async () => {

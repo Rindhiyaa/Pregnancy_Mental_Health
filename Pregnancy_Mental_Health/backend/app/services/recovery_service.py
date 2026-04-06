@@ -106,6 +106,17 @@ async def create_recovery_request(db: Session, email: str, ip: str | None, user_
     db.refresh(request)
 
     if is_staff:
+        # Broadcast to Admins that a new request is pending for real-time update
+        try:
+            await manager.broadcast(json.dumps({
+                "type": "NEW_RECOVERY_REQUEST",
+                "email": user.email,
+                "role": user.role,
+                "request_id": request.id
+            }))
+        except Exception as e:
+            print(f"WS Broadcast error: {e}")
+
         log_event(
             db,
             action="RECOVERY_REQUEST_PENDING_ADMIN",
@@ -298,5 +309,15 @@ def verify_recovery_code(db: Session, email: str, code: str, new_password: str, 
         user_id=user.id,
         metadata={"challenge_id": challenge.id, "ip": ip}
     )
+
+    # Broadcast that the recovery is complete for real-time update
+    try:
+        await manager.broadcast(json.dumps({
+            "type": "RECOVERY_COMPLETED",
+            "email": user.email,
+            "request_id": recovery_request.id if recovery_request else None
+        }))
+    except Exception as e:
+        print(f"WS Broadcast error: {e}")
 
     return True, "Password updated successfully"

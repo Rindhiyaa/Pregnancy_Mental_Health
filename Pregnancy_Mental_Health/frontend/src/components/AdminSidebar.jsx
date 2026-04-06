@@ -31,6 +31,44 @@ export default function AdminSidebar({ onClose }) {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    fetchPendingCount();
+
+    // Setup WebSocket for real-time updates
+    const wsUrl = import.meta.env.VITE_API_URL 
+      ? import.meta.env.VITE_API_URL.replace(/^http/, "ws").replace(/\/$/, "") + "/ws"
+      : `ws://${window.location.hostname}:8000/ws`;
+      
+    const socket = new WebSocket(wsUrl);
+    
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "NEW_RECOVERY_REQUEST" || data.type === "RECOVERY_COMPLETED") {
+          fetchPendingCount();
+        }
+      } catch (err) {
+        console.error("WS message error:", err);
+      }
+    };
+
+    return () => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
+    };
+  }, []);
+
+  const fetchPendingCount = async () => {
+    try {
+      const { data } = await api.get("/recovery/admin/pending");
+      setPendingCount(Array.isArray(data) ? data.length : 0);
+    } catch (err) {
+      console.error("Error fetching pending recovery count:", err);
+    }
+  };
 
   const handleLogout = () => { logout(); navigate("/signin"); };
 
@@ -84,11 +122,29 @@ export default function AdminSidebar({ onClose }) {
               textDecoration: "none", color: isActive ? theme.sidebarActiveText : theme.sidebarText,
               background: isActive ? theme.sidebarActiveBg : "transparent",
               transition: "all 0.2s", fontWeight: 600, fontSize: 13,
-              borderLeft: isActive ? `3px solid ${theme.sidebarActiveBorder}` : "3px solid transparent"
+              borderLeft: isActive ? `3px solid ${theme.sidebarActiveBorder}` : "3px solid transparent",
+              position: "relative"
             })}
           >
             <span style={{ display: "flex", opacity: 0.9 }}>{item.icon}</span>
-            <span style={{ fontSize: 13 }}>{item.label}</span>
+            <span style={{ fontSize: 13, flex: 1 }}>{item.label}</span>
+            
+            {/* Pending badge for Recovery */}
+            {item.label === "Recoveries" && pendingCount > 0 && (
+              <span style={{ 
+                background: theme.warningText || "#F59E0B", 
+                color: "white", 
+                fontSize: 10, 
+                fontWeight: 900, 
+                padding: "2px 6px", 
+                borderRadius: 10,
+                minWidth: 16,
+                textAlign: "center",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+              }}>
+                {pendingCount}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
