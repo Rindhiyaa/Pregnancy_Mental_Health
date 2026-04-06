@@ -45,6 +45,9 @@ def create_user(
             detail="Password must be at least 8 characters",
         )
 
+    # Normalize email before processing
+    user_in.email = user_in.email.strip().lower()
+
     existing = db.query(models.User).filter(models.User.email == user_in.email).first()
     if existing:
         raise HTTPException(

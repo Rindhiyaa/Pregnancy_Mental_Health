@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
@@ -22,10 +22,19 @@ class AuditLog(BaseModel):
 class UserCreate(BaseModel):
     first_name: str
     last_name: str | None = None
-    email: EmailStr
+    email: str
     phone_number: str | None = None
     password: str
     role: str # "doctor", "nurse", or "patient"
+
+    @field_validator('email')
+    def validate_and_normalize_email(cls, v):
+        if not isinstance(v, str):
+            return v
+        cleaned = v.strip().lower()
+        if '@' not in cleaned or '.' not in cleaned.split('@')[-1]:
+            raise ValueError('Invalid email format: part after @-sign must contain a period.')
+        return cleaned
 
 
 class UserProfileOut(BaseModel):
@@ -33,7 +42,7 @@ class UserProfileOut(BaseModel):
     
     id: int
     full_name: str
-    email: EmailStr
+    email: str
     phone_number: str | None = None
     role: str | None = None
     member_since: str | None = None
@@ -50,7 +59,7 @@ class UserOut(BaseModel):
     id: int
     first_name: str
     last_name: str | None = None
-    email: EmailStr
+    email: str
     phone_number: str | None = None
     role: str | None = None
     first_login: bool = True
@@ -60,9 +69,18 @@ class UserOut(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr | None = None
+    email: str | None = None
     phone_number: str | None = None
     password: str
+
+    @field_validator('email')
+    def validate_and_normalize_email(cls, v):
+        if v is None:
+            return v
+        cleaned = v.strip().lower()
+        if '@' not in cleaned or '.' not in cleaned.split('@')[-1]:
+            raise ValueError('Invalid email format: part after @-sign must contain a period.')
+        return cleaned
 
 
 class MoodEntryCreate(BaseModel):
@@ -88,11 +106,25 @@ class MessageOut(BaseModel):
     created_at: datetime
 
 class ForgotPasswordRequest(BaseModel):
-    email: EmailStr
+    email: str
+
+    @field_validator('email')
+    def validate_and_normalize_email(cls, v):
+        cleaned = v.strip().lower()
+        if '@' not in cleaned or '.' not in cleaned.split('@')[-1]:
+            raise ValueError('Invalid email format: part after @-sign must contain a period.')
+        return cleaned
 
 class ResetPasswordRequest(BaseModel):
-    email: EmailStr
+    email: str
     new_password: str
+
+    @field_validator('email')
+    def validate_and_normalize_email(cls, v):
+        cleaned = v.strip().lower()
+        if '@' not in cleaned or '.' not in cleaned.split('@')[-1]:
+            raise ValueError('Invalid email format: part after @-sign must contain a period.')
+        return cleaned
 
 class ChangePasswordRequest(BaseModel):
     new_password: str
