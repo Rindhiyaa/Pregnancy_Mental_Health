@@ -65,13 +65,13 @@ async def approve_request(
     }
 
 @router.post("/verify", response_model=GenericMessage)
-def verify_recovery(
+async def verify_recovery(
     payload: RecoveryVerifyIn,
     request: Request,
     db: Session = Depends(get_db),
 ):
     ip = request.client.host if request.client else None
-    success, message = verify_recovery_code(
+    success, message = await verify_recovery_code(
         db,
         email=payload.email,
         code=payload.code,

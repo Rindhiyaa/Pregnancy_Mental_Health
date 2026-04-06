@@ -11,7 +11,8 @@ import {
   X,
   Clock,
   KeyRound,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -167,6 +168,35 @@ export default function RecoveryRequestsPage() {
             Review and approve pending staff and patient password resets
           </p>
         </div>
+        <button
+          onClick={loadRequests}
+          disabled={loading}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "8px 16px",
+            borderRadius: 8,
+            border: `1px solid ${theme.border}`,
+            background: theme.cardBg,
+            color: theme.textPrimary,
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: 13,
+            transition: "all 0.2s"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = theme.innerBg;
+            e.currentTarget.style.borderColor = theme.primary;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = theme.cardBg;
+            e.currentTarget.style.borderColor = theme.border;
+          }}
+        >
+          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+          {loading ? "Refreshing..." : "Refresh"}
+        </button>
       </div>
 
       <Divider style={{ marginBottom: 24 }} />

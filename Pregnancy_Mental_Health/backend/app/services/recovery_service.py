@@ -217,7 +217,7 @@ async def approve_recovery_request(db: Session, request_id: int, admin_user: Use
     return challenge, expires_at
 
 
-def verify_recovery_code(db: Session, email: str, code: str, new_password: str, device_id: str | None, ip: str | None):
+async def verify_recovery_code(db: Session, email: str, code: str, new_password: str, device_id: str | None, ip: str | None):
     user = db.query(User).filter(User.email == email).first()
     if not user:
         return False, "Invalid or expired recovery attempt"
@@ -319,5 +319,6 @@ def verify_recovery_code(db: Session, email: str, code: str, new_password: str, 
         }))
     except Exception as e:
         print(f"WS Broadcast error: {e}")
+        
 
     return True, "Password updated successfully"
