@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, getErrorMessage } from "../utils/api";
+import { setResetCode, clearResetCode, getRoleFromUrl } from "../auth/tokenStorage";
 import toast from "react-hot-toast";
 import { 
   BellRing, 
@@ -39,6 +40,12 @@ export default function ForgotPasswordPage() {
     if (!code) return;
     console.log("Showing Recovery Notification:", code);
     
+    // Namespacing: Store reset code by role if role is detectable
+    const role = getRoleFromUrl();
+    if (role) {
+      setResetCode(role, code);
+    }
+
     // Automatically transition to the reset step so the user can enter the code
     if (step === 1) {
       setStep(2);
@@ -212,6 +219,12 @@ export default function ForgotPasswordPage() {
       });
 
       setSuccess(data.message);
+
+      // Namespacing: Clear reset code for this role
+      const role = getRoleFromUrl();
+      if (role) {
+        clearResetCode(role);
+      }
 
       // Redirect to signin after 2 seconds
       setTimeout(() => {

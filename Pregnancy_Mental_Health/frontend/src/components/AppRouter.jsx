@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
+import { AuthProvider } from "../contexts/AuthContext";
 
 // Common Pages
 import HomePage from "../pages/HomePage";
@@ -65,46 +66,70 @@ export default function AppRouter() {
       <Route path="/change-password" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
 
       {/* Admin Routes */}
-      <Route path="/admin/dashboard" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
-      <Route path="/admin/doctors" element={<ProtectedRoute requiredRole="admin"><AdminDoctorsPage /></ProtectedRoute>} />
-      <Route path="/admin/nurses" element={<ProtectedRoute requiredRole="admin"><AdminNursesPage /></ProtectedRoute>} />
-      <Route path="/admin/patients" element={<ProtectedRoute requiredRole="admin"><AdminPatientsPage /></ProtectedRoute>} />
-      <Route path="/admin/recovery" element={<ProtectedRoute requiredRole="admin"><RecoveryRequestsPage /></ProtectedRoute>} />
-      <Route path="/admin/analytics" element={<ProtectedRoute requiredRole="admin"><AnalyticsPage /></ProtectedRoute>} />
-      <Route path="/admin/audit" element={<ProtectedRoute requiredRole="admin"><AuditLogsPage /></ProtectedRoute>} />
+      <Route path="/admin/*" element={
+        <AuthProvider portalRole="admin">
+          <Routes>
+            <Route path="dashboard" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+            <Route path="doctors" element={<ProtectedRoute requiredRole="admin"><AdminDoctorsPage /></ProtectedRoute>} />
+            <Route path="nurses" element={<ProtectedRoute requiredRole="admin"><AdminNursesPage /></ProtectedRoute>} />
+            <Route path="patients" element={<ProtectedRoute requiredRole="admin"><AdminPatientsPage /></ProtectedRoute>} />
+            <Route path="recovery" element={<ProtectedRoute requiredRole="admin"><RecoveryRequestsPage /></ProtectedRoute>} />
+            <Route path="analytics" element={<ProtectedRoute requiredRole="admin"><AnalyticsPage /></ProtectedRoute>} />
+            <Route path="audit" element={<ProtectedRoute requiredRole="admin"><AuditLogsPage /></ProtectedRoute>} />
+          </Routes>
+        </AuthProvider>
+      } />
 
       {/* Nurse Routes */}
-      <Route path="/nurse/dashboard" element={<ProtectedRoute requiredRole="nurse"><NurseDashboard /></ProtectedRoute>} />
-      <Route path="/nurse/patients" element={<ProtectedRoute requiredRole="nurse"><NursePatientsPage /></ProtectedRoute>} />
-      <Route path="/nurse/patients/:id" element={<ProtectedRoute requiredRole="nurse"><NursePatientProfile /></ProtectedRoute>} />
-      <Route path="/nurse/patients/new" element={<ProtectedRoute requiredRole={["nurse", "doctor"]}><NurseRegisterPatient /></ProtectedRoute>} />
-      <Route path="/nurse/assessment/new" element={<ProtectedRoute requiredRole={["nurse", "doctor"]}><NurseNewAssessment /></ProtectedRoute>} />
-      <Route path="/nurse/assessments" element={<ProtectedRoute requiredRole="nurse"><NurseAssessmentHistory /></ProtectedRoute>} />
-      <Route path="/nurse/appointments" element={<ProtectedRoute requiredRole={["nurse", "doctor"]}><NurseAppointmentsPage /></ProtectedRoute>} />
-      <Route path="/nurse/doctors" element={<ProtectedRoute requiredRole="nurse"><NurseDoctorsPage /></ProtectedRoute>} />
-      <Route path="/nurse/messages" element={<ProtectedRoute requiredRole="nurse"><ClinicianMessages /></ProtectedRoute>} />
-      <Route path="/nurse/profile" element={<ProtectedRoute requiredRole="nurse"><NurseProfilePage /></ProtectedRoute>} />
+      <Route path="/nurse/*" element={
+        <AuthProvider portalRole="nurse">
+          <Routes>
+            <Route path="dashboard" element={<ProtectedRoute requiredRole="nurse"><NurseDashboard /></ProtectedRoute>} />
+            <Route path="patients" element={<ProtectedRoute requiredRole="nurse"><NursePatientsPage /></ProtectedRoute>} />
+            <Route path="patients/:id" element={<ProtectedRoute requiredRole="nurse"><NursePatientProfile /></ProtectedRoute>} />
+            <Route path="patients/new" element={<ProtectedRoute requiredRole={["nurse", "doctor"]}><NurseRegisterPatient /></ProtectedRoute>} />
+            <Route path="assessment/new" element={<ProtectedRoute requiredRole={["nurse", "doctor"]}><NurseNewAssessment /></ProtectedRoute>} />
+            <Route path="assessments" element={<ProtectedRoute requiredRole="nurse"><NurseAssessmentHistory /></ProtectedRoute>} />
+            <Route path="appointments" element={<ProtectedRoute requiredRole={["nurse", "doctor"]}><NurseAppointmentsPage /></ProtectedRoute>} />
+            <Route path="doctors" element={<ProtectedRoute requiredRole="nurse"><NurseDoctorsPage /></ProtectedRoute>} />
+            <Route path="messages" element={<ProtectedRoute requiredRole="nurse"><ClinicianMessages /></ProtectedRoute>} />
+            <Route path="profile" element={<ProtectedRoute requiredRole="nurse"><NurseProfilePage /></ProtectedRoute>} />
+          </Routes>
+        </AuthProvider>
+      } />
 
       {/* Doctor Routes */}
-      <Route path="/doctor/dashboard" element={<ProtectedRoute requiredRole="doctor"><DashboardPage /></ProtectedRoute>} />
-      <Route path="/doctor/appointments" element={<ProtectedRoute requiredRole="doctor"><SchedulePage /></ProtectedRoute>} />
-      <Route path="/doctor/patients" element={<ProtectedRoute requiredRole="doctor"><PatientsPage /></ProtectedRoute>} />
-      <Route path="/doctor/patients/:id" element={<ProtectedRoute requiredRole="doctor"><DoctorPatientProfile /></ProtectedRoute>} />
-      <Route path="/doctor/assessments" element={<ProtectedRoute requiredRole="doctor"><AssessmentsPage /></ProtectedRoute>} />
-      <Route path="/doctor/review/:id" element={<ProtectedRoute requiredRole="doctor"><DoctorAssessmentReview /></ProtectedRoute>} />
-      <Route path="/doctor/validate/:id" element={<ProtectedRoute requiredRole="doctor"><ClinicalValidation /></ProtectedRoute>} />
-      <Route path="/doctor/history" element={<ProtectedRoute requiredRole="doctor"><HistoryPage /></ProtectedRoute>} />
-      <Route path="/doctor/profile" element={<ProtectedRoute requiredRole="doctor"><DoctorProfilePage /></ProtectedRoute>} />
+      <Route path="/doctor/*" element={
+        <AuthProvider portalRole="doctor">
+          <Routes>
+            <Route path="dashboard" element={<ProtectedRoute requiredRole="doctor"><DashboardPage /></ProtectedRoute>} />
+            <Route path="appointments" element={<ProtectedRoute requiredRole="doctor"><SchedulePage /></ProtectedRoute>} />
+            <Route path="patients" element={<ProtectedRoute requiredRole="doctor"><PatientsPage /></ProtectedRoute>} />
+            <Route path="patients/:id" element={<ProtectedRoute requiredRole="doctor"><DoctorPatientProfile /></ProtectedRoute>} />
+            <Route path="assessments" element={<ProtectedRoute requiredRole="doctor"><AssessmentsPage /></ProtectedRoute>} />
+            <Route path="review/:id" element={<ProtectedRoute requiredRole="doctor"><DoctorAssessmentReview /></ProtectedRoute>} />
+            <Route path="validate/:id" element={<ProtectedRoute requiredRole="doctor"><ClinicalValidation /></ProtectedRoute>} />
+            <Route path="history" element={<ProtectedRoute requiredRole="doctor"><HistoryPage /></ProtectedRoute>} />
+            <Route path="profile" element={<ProtectedRoute requiredRole="doctor"><DoctorProfilePage /></ProtectedRoute>} />
+          </Routes>
+        </AuthProvider>
+      } />
 
       {/* Patient Routes */}
-      <Route path="/patient/dashboard" element={<ProtectedRoute requiredRole="patient"><PatientDashboard /></ProtectedRoute>} />
-      <Route path="/patient/results" element={<ProtectedRoute requiredRole="patient"><PatientResults /></ProtectedRoute>} />
-      <Route path="/patient/mood" element={<ProtectedRoute requiredRole="patient"><PatientMoodTracker /></ProtectedRoute>} />
-      <Route path="/patient/careplan" element={<ProtectedRoute requiredRole="patient"><PatientCarePlan /></ProtectedRoute>} />
-      <Route path="/patient/resources" element={<ProtectedRoute requiredRole="patient"><PatientResources /></ProtectedRoute>} />
-      <Route path="/patient/messages" element={<ProtectedRoute requiredRole="patient"><PatientMessages /></ProtectedRoute>} />
-      <Route path="/patient/profile" element={<ProtectedRoute requiredRole="patient"><PatientProfile /></ProtectedRoute>} />
-      <Route path="/patient/change-password" element={<Navigate to="/change-password" replace />} />
+      <Route path="/patient/*" element={
+        <AuthProvider portalRole="patient">
+          <Routes>
+            <Route path="dashboard" element={<ProtectedRoute requiredRole="patient"><PatientDashboard /></ProtectedRoute>} />
+            <Route path="results" element={<ProtectedRoute requiredRole="patient"><PatientResults /></ProtectedRoute>} />
+            <Route path="mood" element={<ProtectedRoute requiredRole="patient"><PatientMoodTracker /></ProtectedRoute>} />
+            <Route path="careplan" element={<ProtectedRoute requiredRole="patient"><PatientCarePlan /></ProtectedRoute>} />
+            <Route path="resources" element={<ProtectedRoute requiredRole="patient"><PatientResources /></ProtectedRoute>} />
+            <Route path="messages" element={<ProtectedRoute requiredRole="patient"><PatientMessages /></ProtectedRoute>} />
+            <Route path="profile" element={<ProtectedRoute requiredRole="patient"><PatientProfile /></ProtectedRoute>} />
+            <Route path="change-password" element={<Navigate to="/change-password" replace />} />
+          </Routes>
+        </AuthProvider>
+      } />
 
       {/* Catch-all */}
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />

@@ -55,7 +55,7 @@ def seed_admin():
 
 
 def cleanup_invalid_emails():
-    """ Auto-cleanup common data entry errors on startup"""
+    """✅ Auto-cleanup common data entry errors on startup"""
     from .database import SessionLocal
     from sqlalchemy import text
     db = SessionLocal()

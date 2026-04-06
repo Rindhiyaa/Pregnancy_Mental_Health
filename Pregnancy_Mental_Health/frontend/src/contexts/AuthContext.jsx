@@ -1,6 +1,12 @@
+
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { setGlobalLogoutCallback, setGlobalActivityCallback } from '../utils/api';
 import InactivityWarning from '../components/InactivityWarning';
+import { 
+  setAuth, clearAuth, 
+  getToken, getEmail, getFullName, getRole, 
+  getProfileKey, clearLegacyKeys, getRoleFromUrl 
+} from '../auth/tokenStorage';
 
 const AuthContext = createContext();
 
@@ -12,13 +18,16 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children, portalRole = null }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const inactivityTimerRef = useRef(null);
   const warningTimerRef = useRef(null);
   const [showInactivityWarning, setShowInactivityWarning] = useState(false);
   
+  // Use the explicitly provided portalRole or detect from URL as fallback
+  const currentPortalRole = portalRole || getRoleFromUrl();
+
   // 30-minute inactivity timeout
   const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
   const WARNING_TIME = 2 * 60 * 1000; // Show warning 2 minutes before logout
@@ -37,26 +46,23 @@ export const AuthProvider = ({ children }) => {
     // Hide warning
     setShowInactivityWarning(false);
 
+    const role = user?.role || currentPortalRole;
+
     // Store current user's assessment history before logout
-    if (user?.email) {
-      const currentHistory = localStorage.getItem('assessmentHistory');
+    if (user?.email && role) {
+      const currentHistory = localStorage.getItem(`assessmentHistory_${role}`);
       if (currentHistory) {
-        localStorage.setItem(`assessmentHistory_${user.email}`, currentHistory);
+        localStorage.setItem(`assessmentHistory_${role}_${user.email}`, currentHistory);
       }
     }
     
-    // Clear JWT access token (refresh token in httpOnly cookie cleared by backend)
-    localStorage.removeItem('ppd_access_token');
-    
-    // Clear user profile data
-    //localStorage.removeItem('ppd_user_profile');
-    localStorage.removeItem('ppd_user_full_name');
-    localStorage.removeItem('ppd_user_email');
-    localStorage.removeItem('ppd_user_role');
-    localStorage.removeItem('assessmentHistory');
+    // ✅ Clear ONLY this role's namespaced keys
+    if (role) {
+      clearAuth(role);
+    }
     
     setUser(null);
-  }, [user?.email]);
+  }, [user?.email, user?.role, currentPortalRole]);
 
   // Inactivity timer management
   const resetInactivityTimer = useCallback(() => {
@@ -80,11 +86,11 @@ export const AuthProvider = ({ children }) => {
       
       // Set logout timer (30 minutes)
       inactivityTimerRef.current = setTimeout(() => {
-        console.log('🕐 User inactive for 30 minutes, logging out...');
+        console.log(`🕐 User (${user.role}) inactive for 30 minutes, logging out...`);
         logout();
       }, INACTIVITY_TIMEOUT);
     }
-  }, [user?.isAuthenticated, INACTIVITY_TIMEOUT, WARNING_TIME, logout]);
+  }, [user?.isAuthenticated, user?.role, INACTIVITY_TIMEOUT, WARNING_TIME, logout]);
 
   const extendSession = useCallback(() => {
     resetInactivityTimer();
@@ -92,19 +98,19 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is logged in on app start
   useEffect(() => {
+    clearLegacyKeys(); // Cleanup old flat keys once
     checkAuthStatus();
-  }, []);
+  }, [currentPortalRole]);
 
   // Register callbacks with api.js
   useEffect(() => {
     setGlobalLogoutCallback(logout);
-    setGlobalActivityCallback(resetInactivityTimer); // Re-enabled
-  }, [logout, resetInactivityTimer]); // Re-register when callbacks change
+    setGlobalActivityCallback(resetInactivityTimer);
+  }, [logout, resetInactivityTimer]);
 
   // Set up activity listeners when user is authenticated
   useEffect(() => {
     if (!user?.isAuthenticated) {
-      // Clear timer if user is not authenticated
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current);
         inactivityTimerRef.current = null;
@@ -116,18 +122,13 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // Activity events to track
     const events = ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
-    
-    // Add event listeners
     events.forEach(event => {
       document.addEventListener(event, resetInactivityTimer, { passive: true });
     });
 
-    // Start the timer
     resetInactivityTimer();
 
-    // Cleanup function
     return () => {
       events.forEach(event => {
         document.removeEventListener(event, resetInactivityTimer);
@@ -141,27 +142,30 @@ export const AuthProvider = ({ children }) => {
         warningTimerRef.current = null;
       }
     };
-  }, [user?.isAuthenticated, resetInactivityTimer]); // Only depend on authentication status and stable callback
+  }, [user?.isAuthenticated, resetInactivityTimer]);
 
   const checkAuthStatus = () => {
     try {
-      const token = localStorage.getItem('ppd_access_token');
-      const email = localStorage.getItem('ppd_user_email');
-      const fullName = localStorage.getItem('ppd_user_full_name');
-      const role = localStorage.getItem('ppd_user_role');
+      const role = currentPortalRole;
+      if (!role) {
+        setLoading(false);
+        return;
+      }
+
+      const token = getToken(role);
+      const email = getEmail(role);
+      const fullName = getFullName(role);
   
       let storedProfile = null;
       if (email) {
-        storedProfile = localStorage.getItem(`ppd_user_profile_${email}`);
-      } else {
-        storedProfile = localStorage.getItem('ppd_user_profile');
+        storedProfile = localStorage.getItem(getProfileKey(role, email));
       }
   
       if ((token && email) || storedProfile || fullName || email) {
         let userProfile = {
           fullName: fullName || 'Clinician',
           email: email || '',
-          role: role || '',
+          role: role,
           isAuthenticated: true,
         };
   
@@ -180,10 +184,10 @@ export const AuthProvider = ({ children }) => {
   
         if (userProfile.email) {
           const userHistory = localStorage.getItem(
-            `assessmentHistory_${userProfile.email}`,
+            `assessmentHistory_${role}_${userProfile.email}`,
           );
           if (userHistory) {
-            localStorage.setItem('assessmentHistory', userHistory);
+            localStorage.setItem(`assessmentHistory_${role}`, userHistory);
           }
         }
       } else {
@@ -196,125 +200,81 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-  
 
   const login = (userData) => {
-    // Store core identity in session storage to ensure availability across refresh
-    if (userData.access_token) {
-      localStorage.setItem('ppd_access_token', userData.access_token);
-    }
+    const role = userData.role?.toLowerCase();
+    if (!role) return;
+
+    // ✅ Write to ppd_<role>_access_token, ppd_<role>_user_email, etc.
+    setAuth(role, {
+      token: userData.access_token,
+      email: userData.email,
+      fullName: userData.fullName,
+    });
+
+    let userProfile = { ...userData, isAuthenticated: true };
+
     if (userData.email) {
-      localStorage.setItem('ppd_user_email', userData.email);
-    }
-    if (userData.role) {
-      localStorage.setItem('ppd_user_role', userData.role);
-    }
-    if (userData.fullName) {
-      localStorage.setItem('ppd_user_full_name', userData.fullName);
-    }
-  
-    let userProfile = {
-      ...userData,
-      isAuthenticated: true,
-    };
-  
-    if (userData.email) {
-      const key = `ppd_user_profile_${userData.email}`;
-      const stored = localStorage.getItem(key);
+      const profileKey = getProfileKey(role, userData.email);
+      const stored = localStorage.getItem(profileKey);
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-      
-          // Prefer non-empty stored values; only take backend values when they exist
           userProfile = {
             ...userData,
             ...parsed,
-            // ensure core identity from backend
             email: userData.email || parsed.email,
             fullName: parsed.fullName || userData.fullName || "Clinician",
-            role: parsed.role || userData.role || "",
-            firstName: parsed.firstName || userData.firstName || "",
-            lastName: parsed.lastName || userData.lastName || "",
-            phone: parsed.phone || userData.phone || "",
-            department: parsed.department || userData.department || "",
-            memberSince:
-              parsed.memberSince ||
-              parsed.timestamp
-                ? new Date(parsed.timestamp).toLocaleDateString()
-                : userData.memberSince || new Date().toLocaleDateString(), 
+            role: role,
             isAuthenticated: true,
           };
-        } catch (e) {
-          console.error("Error parsing stored profile", e);
-        }
+        } catch (e) { console.error("Error parsing stored profile", e); }
       }
       
+      // Save profile under role-namespaced key
+      localStorage.setItem(profileKey, JSON.stringify(userProfile));
     }
-  
+
     setUser(userProfile);
-  
-    const baseKey = userProfile.email
-      ? `ppd_user_profile_${userProfile.email}`
-      : 'ppd_user_profile';
-    localStorage.setItem(baseKey, JSON.stringify(userProfile));
-    localStorage.setItem('ppd_user_full_name', userProfile.fullName);
-    localStorage.setItem('ppd_user_email', userProfile.email);
-    localStorage.setItem('ppd_user_role', userProfile.role);
-  
+
+    // Restore assessment history for this role+email
     if (userProfile.email) {
-      const userHistory = localStorage.getItem(
-        `assessmentHistory_${userProfile.email}`
-      );
+      const userHistory = localStorage.getItem(`assessmentHistory_${role}_${userProfile.email}`);
       if (userHistory) {
-        localStorage.setItem('assessmentHistory', userHistory);
+        localStorage.setItem(`assessmentHistory_${role}`, userHistory);
       } else {
-        localStorage.removeItem('assessmentHistory');
+        localStorage.removeItem(`assessmentHistory_${role}`);
       }
     }
 
-    // Reset inactivity timer after successful login
     resetInactivityTimer();
-  };  
-  
+  };
 
   const updateUser = (updatedData) => {
-    const updatedUser = {
-      ...user,
-      ...updatedData,
-      isAuthenticated: true,
-    };
+    const updatedUser = { ...user, ...updatedData, isAuthenticated: true };
     setUser(updatedUser);
-  
-    const key = updatedUser.email
-      ? `ppd_user_profile_${updatedUser.email}`
-      : 'ppd_user_profile';
-  
-    localStorage.setItem(key, JSON.stringify(updatedUser));
-    localStorage.setItem('ppd_user_full_name', updatedUser.fullName);
-    localStorage.setItem('ppd_user_email', updatedUser.email);
-    localStorage.setItem('ppd_user_role', updatedUser.role);
-  };  
 
+    const role = updatedUser.role;
+    if (role) {
+      const key = getProfileKey(role, updatedUser.email);
+      localStorage.setItem(key, JSON.stringify(updatedUser));
+    }
+  };
 
   const value = {
-    user,
-    login,
-    logout,
-    updateUser,
-    loading,
+    user, login, logout, updateUser, loading,
     isAuthenticated: !!user?.isAuthenticated,
-    showInactivityWarning,
-    extendSession
+    showInactivityWarning, extendSession,
   };
 
   return (
     <AuthContext.Provider value={value}>
       {children}
-      <InactivityWarning
-        show={showInactivityWarning}
-        onExtendSession={extendSession}
-        onLogout={logout}
-        timeRemaining={120} // 2 minutes in seconds
+      <InactivityWarning 
+        show={showInactivityWarning} 
+        onExtendSession={extendSession} 
+        onLogout={logout} 
+        timeRemaining={120} 
       />
     </AuthContext.Provider>
   );

@@ -23,7 +23,6 @@ def require_admin(
     admin=Depends(get_current_user),
 ):
     if admin.role != "admin":
-        print(f"AUTH ERROR: User {admin.email} attempted admin access but has role {admin.role}")
         raise HTTPException(status_code=403, detail="Admin access required")
     return admin
 

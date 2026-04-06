@@ -4,6 +4,8 @@
  * Handles multi-tab race conditions with request queuing
  */
 
+import { getToken, setToken, clearAuth, getRoleFromUrl } from '../auth/tokenStorage';
+
 // Vite bakes env vars at BUILD TIME, not runtime
 // Use .env.production for production URL (committed to Git)
 // Use .env.development for local developmentt
@@ -75,17 +77,23 @@ const refreshAccessToken = async () => {
 
     const data = await response.json();
     console.log('Token refresh successful');
-    localStorage.setItem('ppd_access_token', data.access_token);
+    
+    // ✅ Use namespaced token storage
+    const role = getRoleFromUrl();
+    if (role) {
+      setToken(role, data.access_token);
+    }
+    
     return data.access_token;
   } catch (error) {
     // Refresh failed - perform complete logout
     console.log(' Token refresh failed, performing complete logout...', error.message);
 
-    // Clear localStorage
-    localStorage.removeItem('ppd_access_token');
-    localStorage.removeItem('ppd_user_email');
-    localStorage.removeItem('ppd_user_full_name');
-    localStorage.removeItem('ppd_user_role');
+    // Clear namespaced localStorage
+    const failedRole = getRoleFromUrl();
+    if (failedRole) {
+      clearAuth(failedRole);
+    }
 
     // Call global logout callback if available (updates AuthContext)
     if (globalLogoutCallback) {
@@ -103,10 +111,12 @@ if (!window.location.hash.includes('/signin')) {
 };
 
 /**
- * Get authorization headers with JWT token
+ * Get authorization headers with JWT token from namespaced storage
  */
 export const getAuthHeaders = () => {
-  const token = localStorage.getItem('ppd_access_token');
+  const role = getRoleFromUrl();
+  const token = role ? getToken(role) : null;
+  
   const headers = {
     'Content-Type': 'application/json',
   };

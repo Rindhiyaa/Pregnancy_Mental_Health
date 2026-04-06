@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { api, getErrorMessage } from "../utils/api";
+import { setToken, getRoleFromUrl } from "../auth/tokenStorage";
 import toast from 'react-hot-toast';
 
 const EyeIcon = ({ open }) => open ? (
@@ -66,7 +67,10 @@ export default function ChangePasswordPage() {
       // Save it before navigating — if missing (old backend), the user
       // will need to log in again, but we handle that gracefully below.
       if (data?.access_token) {
-        localStorage.setItem('ppd_access_token', data.access_token);
+        const role = user?.role?.toLowerCase() || getRoleFromUrl();
+        if (role) {
+          setToken(role, data.access_token);
+        }
       }
 
       // Rebuild user profile with the new token and first_login cleared

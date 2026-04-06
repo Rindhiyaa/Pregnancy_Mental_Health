@@ -49,11 +49,6 @@ export default function SignInPage() {
       // Try login using api utility (handles mocking)
       const { data } = await api.post("/login", payload);
 
-      // Clear any old, stale profile data before logging in
-      localStorage.removeItem('ppd_user_email');
-      localStorage.removeItem('ppd_user_role');
-      localStorage.removeItem('ppd_user_full_name');
-
       const userProfile = {
         fullName: data.full_name || "User",
         firstName: data.first_name || "",
@@ -65,16 +60,10 @@ export default function SignInPage() {
         memberSince: data.member_since || new Date().toLocaleDateString(),
         timestamp: new Date().toISOString(),
         access_token: data.access_token, // Store JWT token
+        first_login: data.first_login,
       };
 
-      // Store JWT token and role explicitly for context
-      if (data.access_token) {
-        localStorage.setItem('ppd_access_token', data.access_token);
-      }
-      if (data.role) {
-        localStorage.setItem('ppd_user_role', data.role);
-      }
-
+      // Call login from context - it now handles namespaced storage automatically
       login(userProfile);
 
       // success → redirect based on role and first_login status
