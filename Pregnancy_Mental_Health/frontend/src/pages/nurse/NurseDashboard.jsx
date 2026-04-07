@@ -22,7 +22,9 @@ import {
   AlertCircle,
   Users,
   Bell,
-  X
+  X,
+  TrendingUp,
+  TrendingDown
 } from "lucide-react";
 
 export default function NurseDashboard() {
@@ -429,7 +431,7 @@ export default function NurseDashboard() {
                     background: s.trend.startsWith('-') ? `${theme.dangerText}15` : `${theme.successText}15`,
                     padding: '4px 8px', borderRadius: 20
                   }}>
-                    {s.trend.startsWith('-') ? <ArrowDownRight size={14} /> : <ArrowUpRight size={14} />}
+                    {s.trend.startsWith('-') ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
                     {s.trend}
                   </div>
                 )}

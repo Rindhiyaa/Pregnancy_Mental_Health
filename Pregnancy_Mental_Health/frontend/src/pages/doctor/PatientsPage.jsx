@@ -10,7 +10,7 @@ import {
 } from "../../components/UI";
 import { getAvatarColor } from "../../utils/helpers";
 import { exportPatientsToPDF, exportPatientsToExcel, exportPatientsToCSV } from "../../utils/exportUtils";
-import { Users, AlertCircle, AlertTriangle, UserCheck, TrendingUp, ExternalLink, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Users, AlertCircle, AlertTriangle, UserCheck, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function PatientsPage() {
@@ -208,7 +208,7 @@ export default function PatientsPage() {
                                 </TableCell>
                                 <TableCell>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                        {p.trend === 'up' ? <ArrowUpRight size={18} color={theme.dangerText} /> : <ArrowDownRight size={18} color={theme.successText} />}
+                                        {p.trend === 'up' ? <TrendingUp size={18} color={theme.dangerText} /> : <TrendingDown size={18} color={theme.successText} />}
                                         <span style={{ fontSize: 12, fontWeight: 700, color: p.trend === 'up' ? theme.dangerText : theme.successText, textTransform: 'uppercase' }}>
                                             {p.trend === 'up' ? 'Worsening' : 'Improving'}
                                         </span>

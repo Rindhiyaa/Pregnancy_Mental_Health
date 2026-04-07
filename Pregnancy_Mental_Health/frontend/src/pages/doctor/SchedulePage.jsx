@@ -8,9 +8,10 @@ import { PageTitle, Loader2 } from "../../components/UI";
 import {
     Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight,
     User, CheckCircle, XCircle, AlertTriangle, FileText,
-    Search, CheckSquare, Ban, Stethoscope, AlertCircle, X
+    Search, CheckSquare, Ban, Stethoscope, AlertCircle, X, Menu
 } from "lucide-react";
 import { getAvatarColor } from "../../utils/helpers";
+import { useBreakpoint } from "../../hooks/useBreakpoint";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -130,6 +131,7 @@ const SchedulePage = () => {
     const { theme } = useTheme();
     const navigate  = useNavigate();
     const calRef    = useRef(null);
+    const { isMobile, isTablet, isDesktop } = useBreakpoint();
 
     const today = new Date().toISOString().split("T")[0];
 
@@ -259,14 +261,28 @@ const SchedulePage = () => {
     };
 
     return (
-        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
+        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, flexDirection: isDesktop ? "row" : "column" }}>
             <DoctorSidebar />
-            <main className="portal-main" style={{ background: theme.pageBg }}>
+            <main className="portal-main" style={{ 
+                background: theme.pageBg,
+                flex: 1,
+                padding: isMobile ? "16px" : isTablet ? "24px" : "32px",
+                paddingTop: !isDesktop ? "60px" : "32px", // Space for mobile nav if needed
+                maxWidth: "100%",
+                overflowX: "hidden"
+            }}>
 
                 {/* ── Header: Title + Calendar button ── */}
-                <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                <header style={{ 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    alignItems: isMobile ? "flex-start" : "center", 
+                    marginBottom: 24,
+                    flexDirection: isMobile ? "column" : "row",
+                    gap: 16
+                }}>
                     <PageTitle title="Appointments Overview" subtitle="Clinical schedule — confirm, review, and action patient appointments" />
-                    <div ref={calRef} style={{ position: "relative" }}>
+                    <div ref={calRef} style={{ position: "relative", alignSelf: isMobile ? "flex-end" : "auto" }}>
                         <button onClick={() => setCalOpen(o => !o)} style={{
                             display: "flex", alignItems: "center", gap: 8,
                             padding: "10px 18px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13,
@@ -287,41 +303,52 @@ const SchedulePage = () => {
                 </header>
 
                 {/* ── KPI Cards ── */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 20 }}>
+                <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : isTablet ? "repeat(2, 1fr)" : "repeat(4, 1fr)", 
+                    gap: isMobile ? 12 : 16, 
+                    marginBottom: 24 
+                }}>
                     {[
                         { icon: <CalendarIcon size={18} />, label: "Today's Appointments", value: todayCount,     accent: theme.primary },
                         { icon: <AlertCircle  size={18} />, label: "Pending Confirmation",  value: pendingCount,   accent: "#F59E0B" },
                         { icon: <AlertTriangle size={18} />,label: "High-Risk Today",        value: highRiskToday,  accent: "#EF4444" },
                         { icon: <CheckCircle  size={18} />, label: "Completed",              value: completedCount, accent: "#10B981" },
                     ].map(({ icon, label, value, accent }) => (
-                        <div key={label} style={{ ...card, padding: "16px 18px", display: "flex", alignItems: "center", gap: 12 }}>
+                        <div key={label} style={{ ...card, padding: isMobile ? "14px" : "16px 18px", display: "flex", alignItems: "center", gap: isMobile ? 10 : 12 }}>
                             <div style={{ width: 40, height: 40, borderRadius: 10, background: accent + "20", display: "flex", alignItems: "center", justifyContent: "center", color: accent, flexShrink: 0 }}>
                                 {icon}
                             </div>
-                            <div>
-                                <div style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary, lineHeight: 1 }}>{value}</div>
-                                <div style={{ fontSize: 11, color: theme.textMuted, marginTop: 2 }}>{label}</div>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 800, color: theme.textPrimary, lineHeight: 1 }}>{value}</div>
+                                <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</div>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {/* ── Main: Table (left) + Patient Details (right, sticky top) ── */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 20, alignItems: "start" }}>
+                <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: isDesktop ? "1fr 420px" : "1fr", 
+                    gap: 24, 
+                    alignItems: "start" 
+                }}>
 
                     {/* ── Left: Table + Filter bar ── */}
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                         {/* Filter bar */}
-                        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, background: theme.cardBg, border: `1px solid ${theme.glassBorder}`, borderRadius: 10, padding: "8px 14px", flex: 1, minWidth: 160 }}>
+                        <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, background: theme.cardBg, border: `1px solid ${theme.glassBorder}`, borderRadius: 10, padding: "8px 14px", flex: 1, minWidth: isMobile ? "100%" : 200 }}>
                                 <Search size={14} color={theme.textMuted} />
                                 <input value={searchQ} onChange={e => setSearchQ(e.target.value)}
                                     placeholder="Search patient name..."
                                     style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: theme.textPrimary, fontSize: 13 }} />
                                 {searchQ && <button onClick={() => setSearchQ("")} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textMuted, display: "flex" }}><X size={13} /></button>}
                             </div>
-                            <div style={{ position: "relative" }}>
+                            <div style={{ position: "relative", flex: isMobile ? 1 : "initial" }}>
                                 <select value={filter} onChange={e => setFilter(e.target.value)} style={{
+                                    width: "100%",
                                     padding: "9px 32px 9px 12px", borderRadius: 10, fontFamily: "inherit",
                                     border: `1px solid ${filter !== "upcoming" ? theme.primary + "60" : theme.glassBorder}`,
                                     background: filter !== "upcoming" ? theme.primary + "10" : theme.cardBg,
@@ -340,14 +367,14 @@ const SchedulePage = () => {
                             </div>
                         </div>
 
-                        {/* Table */}
+                        {/* Table container with horizontal scroll */}
                         <div style={{ ...card, overflow: "hidden" }}>
-                            <div className="portal-table-wrap">
-                                <table className="portal-table" style={{ borderColor: theme.glassBorder }}>
+                            <div className="portal-table-wrap" style={{ overflowX: "auto" }}>
+                                <table className="portal-table" style={{ borderColor: theme.glassBorder, width: "100%", minWidth: isMobile ? 600 : "auto" }}>
                                     <thead>
                                         <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#f8fafc"), borderColor: theme.glassBorder }}>
                                             {["Patient", "Date", "Time", "Type", "Risk", "Status"].map(h => (
-                                                <th key={h} style={{ color: theme.textMuted }}>{h}</th>
+                                                <th key={h} style={{ color: theme.textMuted, textAlign: "left", padding: "12px 16px", fontSize: 12, fontWeight: 700 }}>{h}</th>
                                             ))}
                                         </tr>
                                     </thead>
@@ -374,7 +401,7 @@ const SchedulePage = () => {
                                                 onMouseEnter={e => { if (!active) e.currentTarget.style.background = theme.isDark ? "rgba(255,255,255,0.03)" : "#f8fafc"; }}
                                                 onMouseLeave={e => { e.currentTarget.style.background = active ? theme.primary + "08" : "transparent"; }}
                                                 >
-                                                    <td style={{ padding: "11px 14px" }}>
+                                                    <td style={{ padding: "12px 16px" }}>
                                                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                                             <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
                                                                 background: getAvatarColor(appt.patient_name) + "25",
@@ -383,28 +410,28 @@ const SchedulePage = () => {
                                                                 fontWeight: 800, fontSize: 13 }}>
                                                                 {appt.patient_name?.charAt(0)}
                                                             </div>
-                                                            <div>
-                                                                <div style={{ fontSize: 13, fontWeight: 700, color: theme.textPrimary, whiteSpace: "nowrap" }}>{appt.patient_name}</div>
+                                                            <div style={{ minWidth: 0 }}>
+                                                                <div style={{ fontSize: 13, fontWeight: 700, color: theme.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{appt.patient_name}</div>
                                                                 <div style={{ fontSize: 11, color: theme.textMuted }}>
                                                                     {[appt.patient_age && `Age ${appt.patient_age}`, appt.pregnancy_week && `Wk ${appt.pregnancy_week}`].filter(Boolean).join(" · ")}
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td style={{ padding: "11px 14px", fontSize: 12, color: theme.textPrimary, whiteSpace: "nowrap" }}>{fmtDate(appt.date)}</td>
-                                                    <td style={{ padding: "11px 14px", fontSize: 12, color: theme.textMuted, whiteSpace: "nowrap" }}>{fmtTime(appt.time)}</td>
-                                                    <td style={{ padding: "11px 14px" }}>
+                                                    <td style={{ padding: "12px 16px", fontSize: 12, color: theme.textPrimary, whiteSpace: "nowrap" }}>{fmtDate(appt.date)}</td>
+                                                    <td style={{ padding: "12px 16px", fontSize: 12, color: theme.textMuted, whiteSpace: "nowrap" }}>{fmtTime(appt.time)}</td>
+                                                    <td style={{ padding: "12px 16px" }}>
                                                         <div style={{ fontSize: 12, color: theme.textPrimary, whiteSpace: "nowrap" }}>{appt.type}</div>
                                                         {appt.urgency && appt.urgency !== "Routine" && (
                                                             <span style={{ fontSize: 10, fontWeight: 700, color: "#EF4444", background: "#FEE2E2", padding: "1px 6px", borderRadius: 20, display: "inline-block", marginTop: 2 }}>{appt.urgency}</span>
                                                         )}
                                                     </td>
-                                                    <td style={{ padding: "11px 14px" }}>
+                                                    <td style={{ padding: "12px 16px" }}>
                                                         {appt.risk_level
                                                             ? <span style={{ fontSize: 11, fontWeight: 700, color: risk.color, background: risk.bg, padding: "3px 9px", borderRadius: 20, whiteSpace: "nowrap" }}>{risk.label} Risk</span>
                                                             : <span style={{ color: theme.textMuted, fontSize: 12 }}>—</span>}
                                                     </td>
-                                                    <td style={{ padding: "11px 14px" }}>
+                                                    <td style={{ padding: "12px 16px" }}>
                                                         <span style={{ fontSize: 11, fontWeight: 700, color: status.color, background: status.bg, padding: "3px 9px", borderRadius: 20, whiteSpace: "nowrap" }}>{status.label}</span>
                                                     </td>
                                                 </tr>
@@ -416,14 +443,17 @@ const SchedulePage = () => {
                         </div>
                     </div>
 
-                    {/* ── Right: Patient Details Card (sticky) ── */}
+                    {/* ── Right: Patient Details Card (sticky on desktop) ── */}
                     <div style={{
-                        position: "sticky", top: 16,
+                        position: isDesktop ? "sticky" : "relative", 
+                        top: isDesktop ? 16 : 0,
                         borderRadius: 20,
                         overflow: "hidden",
                         boxShadow: "0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)",
                         border: theme.isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)",
                         background: theme.isDark ? "#111827" : "#ffffff",
+                        width: "100%",
+                        marginBottom: isDesktop ? 0 : 40
                     }}>
                         {!selected ? (
                             <div style={{ padding: "48px 32px", textAlign: "center" }}>

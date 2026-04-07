@@ -4,7 +4,7 @@ import AdminSidebar from "../../components/AdminSidebar";
 import { api, addAuditLog } from "../../utils/api";
 import {
   Users, UserCheck, ClipboardList, Activity,
-  ArrowUpRight, ArrowDownRight, Search, Filter,
+  TrendingUp, TrendingDown, Search, Filter,
   MoreVertical, Shield, Trash2, Edit, UserPlus, X, Menu,
 } from "lucide-react";
 import {
@@ -264,12 +264,14 @@ export default function AdminDashboard() {
                   {stat.icon}
                 </div>
                 <div style={{
-                  display: "flex", alignItems: "center", gap: 2,
+                  display: "flex", alignItems: "center", gap: 4,
                   fontSize: 11, fontWeight: 700,
                   color: stat.up ? "#10B981" : "#EF4444",
+                  background: stat.up ? "#10B98115" : "#EF444415",
+                  padding: '4px 8px', borderRadius: 20
                 }}>
+                  {stat.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                   {stat.trend}
-                  {stat.up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                 </div>
               </div>
               <div style={{
