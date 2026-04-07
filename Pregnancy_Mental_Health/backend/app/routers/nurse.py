@@ -17,6 +17,36 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/nurse", tags=["nurse"])
 
+@router.get("/profile")
+def get_nurse_profile(
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user_email)
+):
+    nurse = db.query(models.User).filter(
+        models.User.email == current_user_email,
+        models.User.role == "nurse"
+    ).first()
+
+    if not nurse:
+        raise HTTPException(status_code=403, detail="Nurse not found")
+
+    return {
+        "id": nurse.id,
+        "email": nurse.email,
+        "first_name": nurse.first_name,
+        "last_name": nurse.last_name,
+        "full_name": f"{nurse.first_name} {nurse.last_name or ''}".strip(),
+        "role": nurse.role,
+        "phone_number": nurse.phone_number,
+        "hospital_name": nurse.hospital_name,
+        "department": nurse.department,
+        "designation": nurse.designation,
+        "specialization": nurse.specialization,
+        "ward": nurse.ward,
+        "years_of_experience": nurse.years_of_experience,
+        "member_since": nurse.member_since,
+    }
+
 @router.get("/dashboard")
 def get_nurse_dashboard(
     db: Session = Depends(get_db),
@@ -609,13 +639,13 @@ def list_nurse_appointments(
 
     appts = (
         db.query(models.Appointment)
+        .filter(models.Appointment.created_by_nurse_id == nurse.id)  # ← FILTER BY NURSE
         .order_by(models.Appointment.date.asc(), models.Appointment.time.asc())
         .all()
     )
 
     results = []
     for a in appts:
-        # Get doctor: nurse-assigned first, fallback to doctor_id
         doctor = db.query(models.User).filter(
             models.User.id == (a.assigned_doctor_id or a.doctor_id)
         ).first()
@@ -649,7 +679,6 @@ def create_nurse_appointment(
         raise HTTPException(status_code=403, detail="Nurse role required")
 
     try:
-        # Parse date and time
         appt_date = datetime.strptime(str(payload["date"]), "%Y-%m-%d").date()
         time_str = str(payload["time"])
         if len(time_str) == 5:
@@ -658,21 +687,18 @@ def create_nurse_appointment(
         else:
             appt_time = datetime.strptime(time_str, "%H:%M:%S").time()
 
-        # Fetch patient
         patient = db.query(models.Patient).filter(models.Patient.id == payload["patientid"]).first()
         if not patient:
             raise HTTPException(status_code=404, detail="Patient not found")
 
-        # Fetch doctor
         doctor = db.query(models.User).filter(models.User.id == payload["doctorid"]).first()
         if not doctor or doctor.role != "doctor":
             raise HTTPException(status_code=404, detail="Doctor not found")
 
-        # Create appointment with assigned_doctor_id
         appt = models.Appointment(
             patient_id=patient.id,
             doctor_id=doctor.id,
-            assigned_doctor_id=doctor.id,  # ✅ ensures doctor sees this
+            assigned_doctor_id=doctor.id,
             patient_name=patient.name,
             date=appt_date,
             time=appt_time,
@@ -680,6 +706,7 @@ def create_nurse_appointment(
             notes=payload.get("notes", ""),
             urgency=payload.get("urgency", "Routine"),
             department=payload.get("department", "General"),
+            created_by_nurse_id=nurse.id,  # ← ADD THIS
         )
         db.add(appt)
         db.commit()
@@ -748,7 +775,10 @@ def update_nurse_appointment(
     if not nurse or nurse.role != "nurse":
         raise HTTPException(status_code=403, detail="Nurse role required")
 
-    appt = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
+    appt = db.query(models.Appointment).filter(
+        models.Appointment.id == appointment_id,
+        models.Appointment.created_by_nurse_id == nurse.id,  # ← VERIFY NURSE OWNS IT
+    ).first()
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
@@ -830,10 +860,12 @@ def delete_nurse_appointment(
     if not nurse or nurse.role != "nurse":
         raise HTTPException(status_code=403, detail="Nurse role required")
 
-    appt = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
+    appt = db.query(models.Appointment).filter(
+        models.Appointment.id == appointment_id,
+        models.Appointment.created_by_nurse_id == nurse.id,  # ← VERIFY NURSE OWNS IT
+    ).first()
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
     db.delete(appt)
     db.commit()
-

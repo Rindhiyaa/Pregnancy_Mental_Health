@@ -18,6 +18,13 @@ class User(Base):
     member_since = Column(DateTime(timezone=True), server_default=func.now())
     is_active = Column(Boolean, default=True, nullable=False)
 
+    hospital_name = Column(String, nullable=True)
+    department = Column(String, nullable=True)
+    designation = Column(String, nullable=True)
+    specialization = Column(String, nullable=True)
+    ward = Column(String, nullable=True)
+    years_of_experience = Column(Integer, nullable=True)
+
     # explicitly use Patient.user_id as the FK for this relationship
     patient_profile = relationship(
         "Patient",
@@ -256,6 +263,7 @@ class Appointment(Base):
     # Explicitly specify foreign keys to avoid ambiguity
     doctor = relationship("User", foreign_keys=[doctor_id], back_populates="appointments_as_doctor")
     assigned_doctor = relationship("User", foreign_keys=[assigned_doctor_id], back_populates="appointments_as_assigned_doctor")
+    created_by_nurse_id = Column(Integer, ForeignKey("users.id"))  # ← ADD THIS
 
 class RecoveryRequest(Base):
     __tablename__ = "recovery_requests"
@@ -294,5 +302,3 @@ class RecoveryChallenge(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     request = relationship("RecoveryRequest", back_populates="challenges")
-
-

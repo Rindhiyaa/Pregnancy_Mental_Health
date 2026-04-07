@@ -26,6 +26,12 @@ class UserCreate(BaseModel):
     phone_number: str | None = None
     password: str
     role: str # "doctor", "nurse", or "patient"
+    hospital_name: str | None = None
+    department: str | None = None
+    designation: str | None = None
+    specialization: str | None = None
+    ward: Optional[str] = None
+    years_of_experience: Optional[int] = None
 
     @field_validator('email')
     def validate_and_normalize_email(cls, v):
@@ -45,7 +51,13 @@ class UserProfileOut(BaseModel):
     email: str
     phone_number: str | None = None
     role: str | None = None
+    hospital_name: str | None = None
+    department: str | None = None
+    designation: str | None = None
+    specialization: str | None = None
     member_since: str | None = None
+    ward: Optional[str] = None
+    years_of_experience: Optional[int] = None
 
 
 class UserProfileUpdate(BaseModel):
@@ -65,6 +77,12 @@ class UserOut(BaseModel):
     first_login: bool = True
     is_active: bool 
     specialization: Optional[str] = None
+    hospital_name: str | None = None
+    department: str | None = None
+    designation: str | None = None
+    specialization: str | None = None
+    ward: Optional[str] = None
+    years_of_experience: Optional[int] = None
     member_since: Optional[datetime] = None  # <-- add this line
 
 
@@ -350,6 +368,12 @@ class UserUpdate(BaseModel):
     last_name: str | None = None
     email: EmailStr | None = None
     phone_number: str | None = None
+    hospital_name: str | None = None
+    department: str | None = None
+    designation: str | None = None
+    specialization: str | None = None
+    ward: Optional[str] = None
+    years_of_experience: Optional[int] = None
 
 class RecoveryRequestCreate(BaseModel):
     email: EmailStr

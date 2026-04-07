@@ -645,21 +645,25 @@ def get_doctor_profile(
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user_email)
 ):
-    """Get current logged-in doctor's profile with ID"""
     doctor = db.query(models.User).filter(
         models.User.email == current_user_email,
         models.User.role == "doctor"
     ).first()
-    
+
     if not doctor:
         raise HTTPException(status_code=403, detail="Doctor not found")
-    
+
     return {
         "id": doctor.id,
         "email": doctor.email,
         "first_name": doctor.first_name,
         "last_name": doctor.last_name,
-        "role": doctor.role
+        "role": doctor.role,
+        "phone_number": doctor.phone_number,
+        "hospital_name": doctor.hospital_name,
+        "department": doctor.department,
+        "designation": doctor.designation,
+        "specialization": doctor.specialization,
     }
 
 

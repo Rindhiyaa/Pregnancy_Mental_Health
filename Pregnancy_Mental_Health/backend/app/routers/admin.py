@@ -68,14 +68,20 @@ def create_user(
             )
 
     user = models.User(
-        first_name=user_in.first_name,
-        last_name=user_in.last_name,
-        email=user_in.email,
-        phone_number=user_in.phone_number,
-        hashed_password=hash_password(user_in.password),
-        role=user_in.role,      # "doctor", "nurse", or "patient"
-        first_login=True,       # force password change at first login
-    )
+    first_name=user_in.first_name,
+    last_name=user_in.last_name,
+    email=user_in.email,
+    phone_number=user_in.phone_number,
+    hashed_password=hash_password(user_in.password),
+    role=user_in.role,
+    hospital_name=user_in.hospital_name,
+    department=user_in.department,
+    designation=user_in.designation,
+    specialization=user_in.specialization,
+    first_login=True,
+    ward=user_in.ward,
+    years_of_experience=user_in.years_of_experience,
+)
     db.add(user)
     db.commit()
     db.refresh(user)
