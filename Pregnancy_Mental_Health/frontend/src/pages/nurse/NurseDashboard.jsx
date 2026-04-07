@@ -33,7 +33,13 @@ export default function NurseDashboard() {
     new_patients_today: 0,
     pending_assessments: 0,
     waiting_review: 0,
-    total_patients: 0
+    total_patients: 0,
+    trends: {
+      total_patients: "0",
+      pending_assessments: "0",
+      waiting_review: "0",
+      new_patients_today: "0"
+    }
   });
   const [recentPatients, setRecentPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,11 +62,17 @@ export default function NurseDashboard() {
         ]);
 
         const dashboardInfo = dashData || {};
-        setStats(dashboardInfo.stats || {
-          new_patients_today: 0,
-          pending_assessments: 0,
-          waiting_review: 0,
-          total_patients: 0,
+        setStats({
+          new_patients_today: dashboardInfo.stats?.new_patients_today ?? 0,
+          pending_assessments: dashboardInfo.stats?.pending_assessments ?? 0,
+          waiting_review: dashboardInfo.stats?.waiting_review ?? 0,
+          total_patients: dashboardInfo.stats?.total_patients ?? 0,
+          trends: dashboardInfo.stats?.trends || {
+            total_patients: "0",
+            pending_assessments: "0",
+            waiting_review: "0",
+            new_patients_today: "0"
+          }
         });
         setRecentPatients(Array.isArray(dashboardInfo.recentPatients) ? dashboardInfo.recentPatients : []);
 
@@ -401,14 +413,26 @@ export default function NurseDashboard() {
         {/* Stats Row */}
         <div className="stats-grid-4" style={{ marginBottom: 40 }}>
           {[
-            { label: "Total Patients", value: stats.total_patients, color: theme.primary, icon: <Users size={20} /> },
-            { label: "Pending Drafts", value: stats.pending_assessments, color: theme.secondary, icon: <Clock size={20} /> },
-            { label: "Waiting Review", value: stats.waiting_review, color: "#f59e0b", icon: <AlertCircle size={20} /> },
-            { label: "Registered Today", value: stats.new_patients_today, color: "#10b981", icon: <UserPlus size={20} /> },
+            { label: "Total Patients", value: stats.total_patients, color: theme.primary, icon: <Users size={20} />, trend: stats.trends.total_patients },
+            { label: "Pending Drafts", value: stats.pending_assessments, color: theme.secondary, icon: <Clock size={20} />, trend: stats.trends.pending_assessments },
+            { label: "Waiting Review", value: stats.waiting_review, color: "#f59e0b", icon: <AlertCircle size={20} />, trend: stats.trends.waiting_review },
+            { label: "Registered Today", value: stats.new_patients_today, color: "#10b981", icon: <UserPlus size={20} />, trend: stats.trends.new_patients_today },
           ].map((s, idx) => (
             <Card key={idx} padding="24px">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div style={{ background: `${s.color}15`, color: s.color, padding: 8, borderRadius: 10 }}>{s.icon}</div>
+                {s.trend && s.trend !== "0" && (
+                  <div style={{ 
+                    display: 'flex', alignItems: 'center', gap: 4, 
+                    fontSize: 12, fontWeight: 700, 
+                    color: s.trend.startsWith('-') ? theme.dangerText : theme.successText,
+                    background: s.trend.startsWith('-') ? `${theme.dangerText}15` : `${theme.successText}15`,
+                    padding: '4px 8px', borderRadius: 20
+                  }}>
+                    {s.trend.startsWith('-') ? <ArrowDownRight size={14} /> : <ArrowUpRight size={14} />}
+                    {s.trend}
+                  </div>
+                )}
               </div>
               <div style={{ fontSize: 14, color: theme.textMuted, fontWeight: 600, marginBottom: 4 }}>{s.label}</div>
               <div style={{ fontSize: 32, fontWeight: 800, color: theme.text }}>{s.value}</div>
@@ -495,8 +519,8 @@ export default function NurseDashboard() {
                   <div style={{ color: theme.textMuted, fontSize: 14 }}>Dr. {p.assigned_doctor || 'Unassigned'}</div>
                   <div>
                     {/* Status Badge - Patient workflow status ONLY */}
-                    <Badge variant={p.status === 'Draft' ? 'warning' : 'success'}>
-                      {['Draft', 'Pending', 'Active'].includes(p.status) ? p.status : 'Active'}
+                    <Badge variant={p.status === 'Draft' ? 'warning' : p.status === 'Pending' ? 'secondary' : p.status === 'Registered' ? 'info' : 'success'}>
+                      {p.status || 'Registered'}
                     </Badge>
                   </div>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>

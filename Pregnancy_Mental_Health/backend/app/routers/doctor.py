@@ -117,13 +117,41 @@ async def get_doctor_dashboard(
             Assessment.created_at <= today_end
         ).count()
         
+        # Calculate trends (last 7 days vs previous 7 days)
+        last_7d = datetime.now() - timedelta(days=7)
+        prev_7d = datetime.now() - timedelta(days=14)
+        
+        pending_last_7d = db.query(Assessment).filter(
+            Assessment.assigned_doctor_id == current_user.id,
+            Assessment.status.in_(['submitted', 'pending']),
+            Assessment.created_at >= last_7d
+        ).count()
+        
+        high_risk_last_7d = db.query(Assessment).filter(
+            Assessment.assigned_doctor_id == current_user.id,
+            func.lower(func.trim(Assessment.risk_level)).in_(['high', 'high risk']),
+            Assessment.created_at >= last_7d
+        ).count()
+        
+        total_patients_last_7d = db.query(Assessment.patient_id).filter(
+            Assessment.assigned_doctor_id == current_user.id,
+            Assessment.created_at >= last_7d
+        ).distinct().count()
+
         return {
             "stats": {
                 "pending": pending,
                 "high": high_risk,
                 "reviewed_week": reviewed_week,
                 "today_apps": today_apps,
-                "total": total_patients
+                "total": total_patients,
+                "trends": {
+                    "pending": f"+{pending_last_7d}" if pending_last_7d > 0 else "0",
+                    "high": f"+{high_risk_last_7d}" if high_risk_last_7d > 0 else "0",
+                    "reviewed_week": f"+{reviewed_week}", # Already weekly
+                    "total": f"+{total_patients_last_7d}" if total_patients_last_7d > 0 else "0",
+                    "today_apps": f"+{today_apps}" if today_apps > 0 else "0"
+                }
             },
             "urgent_cases": urgent_list,
             "trend": trend,

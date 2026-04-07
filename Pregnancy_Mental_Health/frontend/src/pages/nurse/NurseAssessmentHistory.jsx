@@ -162,15 +162,16 @@ export default function NurseAssessmentHistory() {
         </div>
 
         <Card style={{ padding: 0, overflow: 'visible', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="portal-table-wrap">
+          <table className="portal-table" style={{ borderColor: theme.border }}>
             <thead>
-              <tr style={{ background: '#F3F4F6' }}>
-                <th style={tableHeaderStyle}>S.No</th>
-                <th style={tableHeaderStyle}>Patient</th>
-                <th style={tableHeaderStyle}>Date</th>
-                <th style={tableHeaderStyle}>Doctor Assigned</th>
-                <th style={tableHeaderStyle}>Status</th>
-                <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>Actions</th>
+              <tr style={{ background: theme.cardBgSecondary || '#F3F4F6', borderColor: theme.border }}>
+                <th style={{ ...tableHeaderStyle, color: theme.textMuted }}>S.No</th>
+                <th style={{ ...tableHeaderStyle, color: theme.textMuted }}>Patient</th>
+                <th style={{ ...tableHeaderStyle, color: theme.textMuted }}>Date</th>
+                <th style={{ ...tableHeaderStyle, color: theme.textMuted }}>Doctor Assigned</th>
+                <th style={{ ...tableHeaderStyle, color: theme.textMuted }}>Status</th>
+                <th style={{ ...tableHeaderStyle, textAlign: 'right', color: theme.textMuted }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -303,6 +304,7 @@ export default function NurseAssessmentHistory() {
               )}
             </tbody>
           </table>
+          </div>
         </Card>
       </main>
     </div>

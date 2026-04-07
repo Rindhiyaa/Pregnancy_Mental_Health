@@ -181,7 +181,7 @@ export default function ChangePasswordPage() {
               className="btn-primary full-width"
               disabled={loading}
             >
-              {loading ? "SETTING PASSWORD..." : "SET PASSWORD & CONTINUE"}
+              {loading ? "Setting password..." : "Set password & continue"}
             </button>
 
           </form>

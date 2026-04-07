@@ -45,15 +45,21 @@ export default function PatientSidebar() {
 
   return (
     <>
-      {/* Hamburger toggle — visible only on mobile/tablet */}
-      <button
-        onClick={() => setIsOpen(o => !o)}
-        className="sidebar-toggle"
-        aria-label="Toggle navigation"
-        aria-expanded={isOpen}
-      >
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
+      {/* Fixed top bar — mobile/tablet only, always visible */}
+      <div className="patient-mobile-topbar portal-mobile-topbar">
+        <button
+          onClick={() => setIsOpen(o => !o)}
+          className="sidebar-toggle"
+          aria-label="Toggle navigation"
+          aria-expanded={isOpen}
+        >
+          {isOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+        <span style={{ fontWeight: 700, fontSize: 16, color: theme.textPrimary }}>
+          Patient Portal
+        </span>
+        <ThemeToggle />
+      </div>
 
       {/* Overlay */}
       {isOpen && (
@@ -69,10 +75,6 @@ export default function PatientSidebar() {
         ...S.sidebar,
         background: theme.sidebarBg,
         borderRight: `1px solid ${theme.sidebarBorder}`,
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        minHeight: 'unset',
       }}>
 
       <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", gap: 12 }}>
@@ -142,19 +144,19 @@ export default function PatientSidebar() {
   );
 }
 
-// ── STYLES ── 
 const S = {
   sidebar: {
     width: 240,
-    minHeight: "100vh",
-    position: "fixed",
-    top: 0, left: 0,
-    background: THEME.sidebarBg,           // Blush white 
+    height: "100vh",
+    position: "sticky",
+    top: 0,
+    flexShrink: 0,
+    background: THEME.sidebarBg,
     borderRight: `1px solid ${THEME.sidebarBorder}`,
     display: "flex",
     flexDirection: "column",
     zIndex: 100,
-    overflowX: "hidden",                   // ✅ No horizontal scroll 
+    overflowX: "hidden",
     overflowY: "auto",
     boxSizing: "border-box",
     fontFamily: THEME.fontBody,

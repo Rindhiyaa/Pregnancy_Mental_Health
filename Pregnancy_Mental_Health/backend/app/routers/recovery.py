@@ -64,6 +64,26 @@ async def approve_request(
         "expires_at": expires_at,
     }
 
+@router.post("/admin/decline/{request_id}", response_model=GenericMessage)
+def decline_request(
+    request_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    require_admin(current_user)
+    from ..models import RecoveryRequest
+    req = db.query(RecoveryRequest).filter(
+        RecoveryRequest.id == request_id,
+        RecoveryRequest.status == "pending"
+    ).first()
+    
+    if not req:
+        raise HTTPException(status_code=404, detail="Pending recovery request not found")
+    
+    req.status = "declined"
+    db.commit()
+    return {"message": "Recovery request declined successfully"}
+
 @router.post("/verify", response_model=GenericMessage)
 async def verify_recovery(
     payload: RecoveryVerifyIn,

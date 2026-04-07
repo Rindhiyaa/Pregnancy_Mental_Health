@@ -14,10 +14,10 @@ import {
   Search,
   Plus,
   ShieldOff,
-  KeyRound,
   CheckCircle,
   Trash2,
   X,
+  Edit,
   Users as UsersIcon,
   UserCheck,
   UserX,
@@ -33,6 +33,7 @@ export default function PatientsPage() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
+    id: null,
     name: "",
     email: "",
     phone: "",
@@ -132,43 +133,53 @@ export default function PatientsPage() {
     toast.success("CSV exported successfully!");
   };
 
-  // CREATE
+  // CREATE / EDIT
   const handleCreatePatient = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
       const rawName = (formData.name || "").trim();
-  
-      const { data: created } = await api.post("/admin/users", {
-        first_name: rawName,
-        last_name: "",
-        email: formData.email,
-        phone_number: formData.phone,
-        password: "TempPass123!",
-        role: "patient",
-      });
-  
-      try {
-        await addAuditLog(
-          "User Created",
-          `Created patient ${created.first_name} ${
-            created.last_name || ""
-          } (ID ${created.id})`
-        );
-      } catch (logErr) {
-        console.warn("Audit log failed", logErr);
+      const [firstName, ...rest] = rawName.split(/\s+/);
+      const lastName = rest.join(" ");
+
+      if (formData.id) {
+        // ── EDIT MODE ──
+        await api.patch(`/admin/users/${formData.id}`, {
+          first_name: firstName,
+          last_name: lastName,
+          email: formData.email,
+          phone_number: formData.phone,
+        });
+        await addAuditLog("User Updated", `Updated patient ${rawName} (ID ${formData.id})`).catch(() => {});
+        toast.success(`Patient ${rawName} updated successfully!`);
+      } else {
+        // ── CREATE MODE ──
+        const { data: created } = await api.post("/admin/users", {
+          first_name: firstName,
+          last_name: lastName,
+          email: formData.email,
+          phone_number: formData.phone,
+          password: "TempPass123!",
+          role: "patient",
+        });
+        await addAuditLog("User Created", `Created patient ${created.first_name} ${created.last_name || ""} (ID ${created.id})`).catch(() => {});
+        toast.success(`Patient ${rawName} added successfully!`);
       }
-  
-      toast.success(`Patient ${rawName} added successfully!`);
-      setFormData({ name: "", email: "", phone: "", role: "patient" });
+
+      setFormData({ id: null, name: "", email: "", phone: "", role: "patient" });
       setShowModal(false);
       loadPatients();
     } catch (err) {
       console.error(err);
-      toast.error(getErrorMessage(err, "Failed to add patient"));
+      toast.error(getErrorMessage(err, formData.id ? "Failed to update patient" : "Failed to add patient"));
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleEditPatient = (patient) => {
+    setFormData({ id: patient.id, name: patient.name, email: patient.email, phone: patient.phone || "", role: "patient" });
+    setShowModal(true);
   };
   
   // SUSPEND / ACTIVATE
@@ -202,32 +213,6 @@ export default function PatientsPage() {
     }
   };
   
-  // RESET PASSWORD
-  const handleResetPassword = async (patient) => {
-    if (!window.confirm(`Reset password for ${patient.name}?`)) return;
-  
-    try {
-      const { data } = await api.post(
-        `/admin/users/${patient.id}/reset-password`
-      );
-      console.log("Reset response:", data);
-  
-      try {
-        await addAuditLog(
-          "Password Reset",
-          `Reset password for ${patient.name} (ID ${patient.id})`
-        );
-      } catch (logErr) {
-        console.warn("Audit log failed", logErr);
-      }
-  
-      toast.success("Password reset successfully");
-    } catch (err) {
-      console.error(err);
-      toast.error(getErrorMessage(err, "Failed to reset password"));
-    }
-  };
-
   return (
     <AdminLayout pageTitle="Patients">
       {/* Page Header */}
@@ -288,20 +273,13 @@ export default function PatientsPage() {
 
         {/* Table */}
         <div style={{ overflowX: "auto" }}>
-          <table style={tableStyle}>
+          <table className="portal-table" style={{ borderColor: theme.border }}>
             <thead>
-              <tr style={tableHeaderRowStyle(theme)}>
-                <th style={thStyle(theme)}>Patient Details</th>
-                <th style={thStyle(theme)}>Contact</th>
-                <th style={thStyle(theme)}>Status</th>
-                <th
-                  style={{
-                    ...thStyle(theme),
-                    textAlign: "right",
-                  }}
-                >
-                  Actions
-                </th>
+              <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : "#f8fafc"), borderColor: theme.border }}>
+                <th style={{ color: theme.textSecondary }}>Patient Details</th>
+                <th style={{ color: theme.textSecondary }}>Contact</th>
+                <th style={{ color: theme.textSecondary }}>Status</th>
+                <th style={{ color: theme.textSecondary, textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -396,7 +374,7 @@ export default function PatientsPage() {
                       }}
                     >
                       <ActionButtons
-                        onReset={() => handleResetPassword(patient)}
+                        onEdit={() => handleEditPatient(patient)}
                         onSuspend={() =>
                           handleSuspend(patient.id, patient.status)
                         }
@@ -424,8 +402,8 @@ export default function PatientsPage() {
       {/* Modal */}
       {showModal && (
         <Modal
-          onClose={() => setShowModal(false)}
-          title="Register New Patient"
+          onClose={() => { setShowModal(false); setFormData({ id: null, name: "", email: "", phone: "", role: "patient" }); }}
+          title={formData.id ? "Edit Patient" : "Register New Patient"}
           theme={theme}
         >
           <form onSubmit={handleCreatePatient}>
@@ -510,7 +488,7 @@ export default function PatientsPage() {
                 disabled={submitting}
                 style={primaryBtnStyle(theme)}
               >
-                {submitting ? "Registering..." : "Register Patient"}
+                {submitting ? "Saving..." : formData.id ? "Save Changes" : "Register Patient"}
               </button>
             </div>
           </form>
@@ -547,35 +525,15 @@ const StatusBadge = ({ status, theme }) => (
   </div>
 );
 
-const ActionButtons = ({ onReset, onSuspend, onDelete, status, theme }) => (
+const ActionButtons = ({ onEdit, onSuspend, onDelete, status, theme }) => (
   <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-    <button
-      onClick={onReset}
-      title="Reset Password"
-      style={actionBtnStyle(theme)}
-    >
-      <KeyRound size={16} />
+    <button onClick={onEdit} title="Edit" style={actionBtnStyle(theme)}>
+      <Edit size={16} />
     </button>
-    <button
-      onClick={onSuspend}
-      title={status === "active" ? "Suspend" : "Activate"}
-      style={actionBtnStyle(theme)}
-    >
-      {status === "active" ? (
-        <ShieldOff size={16} color={theme.warningText} />
-      ) : (
-        <CheckCircle size={16} color={theme.successText} />
-      )}
+    <button onClick={onSuspend} title={status === "active" ? "Suspend" : "Activate"} style={actionBtnStyle(theme)}>
+      {status === "active" ? <ShieldOff size={16} color={theme.warningText} /> : <CheckCircle size={16} color={theme.successText} />}
     </button>
-    <button
-      onClick={onDelete}
-      title="Delete"
-      style={{
-        ...actionBtnStyle(theme),
-        color: theme.dangerText,
-        borderColor: `${theme.dangerText}40`,
-      }}
-    >
+    <button onClick={onDelete} title="Delete" style={{ ...actionBtnStyle(theme), color: theme.dangerText, borderColor: `${theme.dangerText}40` }}>
       <Trash2 size={16} />
     </button>
   </div>

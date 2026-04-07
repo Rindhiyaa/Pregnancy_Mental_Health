@@ -9,9 +9,9 @@ import {
   Plus,
   Trash2,
   ShieldOff,
-  KeyRound,
   CheckCircle,
   X,
+  Edit,
   Stethoscope,
   UserCheck,
   UserX,
@@ -25,6 +25,7 @@ import {
 } from "../../utils/exportUtils";
 
 const initialFormData = {
+  id: null,
   name: "",
   email: "",
   phone: "",
@@ -213,13 +214,8 @@ export default function DoctorsPage() {
     const validationErrors = validateDoctorForm(formData);
     setErrors(validationErrors);
     setTouched({
-      name: true,
-      hospital_name: true,
-      department: true,
-      designation: true,
-      specialization: true,
-      email: true,
-      phone: true,
+      name: true, hospital_name: true, department: true,
+      designation: true, specialization: true, email: true, phone: true,
     });
 
     if (Object.keys(validationErrors).length > 0) {
@@ -233,40 +229,66 @@ export default function DoctorsPage() {
       const [firstName, ...rest] = rawName.split(/\s+/);
       const lastName = rest.join(" ");
 
-      const { data: created } = await api.post("/admin/users", {
-        first_name: firstName,
-        last_name: lastName,
-        email: formData.email.trim(),
-        phone_number: formData.phone.trim(),
-        password: "TempPass123!",
-        role: "doctor",
-        specialization: formData.specialization.trim(),
-        hospital_name: formData.hospital_name.trim(),
-        department: formData.department.trim(),
-        designation: formData.designation.trim(),
-      });
-
-      try {
-        await addAuditLog(
-          "User Created",
-          `Created doctor ${created.first_name} ${created.last_name || ""} (ID ${created.id})`
-        );
-      } catch (logErr) {
-        console.warn("Audit log failed", logErr);
+      if (formData.id) {
+        // ── EDIT MODE ──
+        await api.patch(`/admin/users/${formData.id}`, {
+          first_name: firstName,
+          last_name: lastName,
+          email: formData.email.trim(),
+          phone_number: formData.phone.trim(),
+          specialization: formData.specialization.trim(),
+          hospital_name: formData.hospital_name.trim(),
+          department: formData.department.trim(),
+          designation: formData.designation.trim(),
+        });
+        await addAuditLog("User Updated", `Updated doctor ${rawName} (ID ${formData.id})`).catch(() => {});
+        toast.success(`Doctor ${rawName} updated successfully!`);
+      } else {
+        // ── CREATE MODE ──
+        const { data: created } = await api.post("/admin/users", {
+          first_name: firstName,
+          last_name: lastName,
+          email: formData.email.trim(),
+          phone_number: formData.phone.trim(),
+          password: "TempPass123!",
+          role: "doctor",
+          specialization: formData.specialization.trim(),
+          hospital_name: formData.hospital_name.trim(),
+          department: formData.department.trim(),
+          designation: formData.designation.trim(),
+        });
+        await addAuditLog("User Created", `Created doctor ${created.first_name} ${created.last_name || ""} (ID ${created.id})`).catch(() => {});
+        toast.success(`Doctor ${rawName} added successfully!`);
       }
 
       setFormData(initialFormData);
       setErrors({});
       setTouched({});
-      toast.success(`Doctor ${rawName} added successfully!`);
       setShowModal(false);
       loadDoctors();
     } catch (err) {
       console.error(err);
-      toast.error(getErrorMessage(err, "Failed to add doctor"));
+      toast.error(getErrorMessage(err, formData.id ? "Failed to update doctor" : "Failed to add doctor"));
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleEditDoctor = (doctor) => {
+    setFormData({
+      id: doctor.id,
+      name: doctor.name,
+      email: doctor.email,
+      phone: doctor.phone || "",
+      role: "doctor",
+      specialization: doctor.specialization || "",
+      hospital_name: doctor.hospital_name || "",
+      department: doctor.department || "",
+      designation: doctor.designation || "",
+    });
+    setErrors({});
+    setTouched({});
+    setShowModal(true);
   };
 
   const handleSuspend = async (id, currentStatus) => {
@@ -291,29 +313,6 @@ export default function DoctorsPage() {
     } catch (err) {
       console.error(err);
       toast.error(getErrorMessage(err, "Failed to delete user"));
-    }
-  };
-
-  const handleResetPassword = async (doctor) => {
-    if (!window.confirm(`Reset password for ${doctor.name}?`)) return;
-
-    try {
-      const { data } = await api.post(`/admin/users/${doctor.id}/reset-password`);
-      console.log("Reset response:", data);
-
-      try {
-        await addAuditLog(
-          "Password Reset",
-          `Reset password for ${doctor.name} (ID ${doctor.id})`
-        );
-      } catch (logErr) {
-        console.warn("Audit log failed", logErr);
-      }
-
-      toast.success("Password reset successfully");
-    } catch (err) {
-      console.error(err);
-      toast.error(getErrorMessage(err, "Failed to reset password"));
     }
   };
 
@@ -468,9 +467,9 @@ export default function DoctorsPage() {
                     }}
                   >
                     <ActionButtons
-                      onReset={() => handleResetPassword(doctor)}
-                      onSuspend={() => handleSuspend(doctor.id, doctor.status)}
-                      onDelete={() => handleDelete(doctor.id, doctor.name)}
+                      onEdit={() => handleEditDoctor(doctor)}
+                          onSuspend={() => handleSuspend(doctor.id, doctor.status)}
+                          onDelete={() => handleDelete(doctor.id, doctor.name)}
                       status={doctor.status}
                       theme={theme}
                     />
@@ -482,27 +481,19 @@ export default function DoctorsPage() {
         ) : (
           <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             <table
+              className="portal-table"
               style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                textAlign: "left",
+                borderColor: theme.border,
                 minWidth: isTablet ? 600 : 750,
               }}
             >
               <thead>
-                <tr style={tableHeaderRowStyle(theme)}>
-                  <th style={thStyle(theme, isTablet)}>Doctor Details</th>
-                  <th style={thStyle(theme, isTablet)}>Specialization</th>
-                  {!isTablet && <th style={thStyle(theme, isTablet)}>Contact</th>}
-                  <th style={thStyle(theme, isTablet)}>Status</th>
-                  <th
-                    style={{
-                      ...thStyle(theme, isTablet),
-                      textAlign: "right",
-                    }}
-                  >
-                    Actions
-                  </th>
+                <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : "#f8fafc"), borderColor: theme.border }}>
+                  <th style={{ color: theme.textSecondary }}>Doctor Details</th>
+                  <th style={{ color: theme.textSecondary }}>Specialization</th>
+                  {!isTablet && <th style={{ color: theme.textSecondary }}>Contact</th>}
+                  <th style={{ color: theme.textSecondary }}>Status</th>
+                  <th style={{ color: theme.textSecondary, textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -618,7 +609,7 @@ export default function DoctorsPage() {
                         }}
                       >
                         <ActionButtons
-                          onReset={() => handleResetPassword(doctor)}
+                          onEdit={() => handleEditDoctor(doctor)}
                           onSuspend={() => handleSuspend(doctor.id, doctor.status)}
                           onDelete={() => handleDelete(doctor.id, doctor.name)}
                           status={doctor.status}
@@ -643,7 +634,7 @@ export default function DoctorsPage() {
       {showModal && (
         <Modal
           onClose={closeModal}
-          title="Add New Doctor"
+          title={formData.id ? "Edit Doctor" : "Add New Doctor"}
           theme={theme}
           isMobile={isMobile}
         >
@@ -810,7 +801,7 @@ export default function DoctorsPage() {
                   opacity: submitting ? 0.7 : 1,
                 }}
               >
-                {submitting ? "Adding..." : "Add Doctor"}
+                {submitting ? "Saving..." : formData.id ? "Save Changes" : "Add Doctor"}
               </button>
             </div>
           </form>
@@ -865,35 +856,17 @@ const StatusBadge = ({ status, isOnline, theme }) => {
   );
 };
 
-const ActionButtons = ({ onReset, onSuspend, onDelete, status, theme }) => {
+const ActionButtons = ({ onEdit, onSuspend, onDelete, status, theme }) => {
   const isActive = status === "active";
   return (
     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-      <button onClick={onReset} title="Reset Password" style={actionBtnStyle(theme)}>
-        <KeyRound size={15} />
+      <button onClick={onEdit} title="Edit" style={actionBtnStyle(theme)}>
+        <Edit size={15} />
       </button>
-
-      <button
-        onClick={onSuspend}
-        title={isActive ? "Suspend" : "Activate"}
-        style={actionBtnStyle(theme)}
-      >
-        {isActive ? (
-          <ShieldOff size={15} color={theme.warningText} />
-        ) : (
-          <CheckCircle size={15} color={theme.successText} />
-        )}
+      <button onClick={onSuspend} title={isActive ? "Suspend" : "Activate"} style={actionBtnStyle(theme)}>
+        {isActive ? <ShieldOff size={15} color={theme.warningText} /> : <CheckCircle size={15} color={theme.successText} />}
       </button>
-
-      <button
-        onClick={onDelete}
-        title="Delete"
-        style={{
-          ...actionBtnStyle(theme),
-          color: theme.dangerText,
-          borderColor: `${theme.dangerText}40`,
-        }}
-      >
+      <button onClick={onDelete} title="Delete" style={{ ...actionBtnStyle(theme), color: theme.dangerText, borderColor: `${theme.dangerText}40` }}>
         <Trash2 size={15} />
       </button>
     </div>

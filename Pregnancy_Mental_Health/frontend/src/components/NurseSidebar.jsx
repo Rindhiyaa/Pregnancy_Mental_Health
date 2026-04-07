@@ -18,6 +18,7 @@ import { THEME } from "../theme";
 import { useTheme } from "../ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import logo from "../Images/Postpartum_Risk_Insight_Logo.png";
+import ThemeToggle from "./ThemeToggle";
 
 const NAV_ITEMS = [
   { to: "/nurse/dashboard", icon: <Home size={18} />, label: "Dashboard" },
@@ -26,7 +27,7 @@ const NAV_ITEMS = [
   { to: "/nurse/assessment/new", icon: <ClipboardList size={18} />, label: "New Assessment" },
   { to: "/nurse/assessments", icon: <History size={18} />, label: "Assessment History" },
   { to: "/nurse/appointments", icon: <Calendar size={18} />, label: "Appointments" },
-  { to: "/nurse/doctors", icon: <Shield size={18} />, label: "Our Doctors" }, 
+  { to: "/nurse/doctors", icon: <Shield size={18} />, label: "Our Doctors" },
   { to: "/nurse/messages", icon: <MessageSquare size={18} />, label: "Messages" },
 ];
 
@@ -35,105 +36,116 @@ export default function NurseSidebar({ onClose }) {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
 
-  const handleLogout = async () => { 
-    logout(); 
-    navigate("/signin"); 
+  // Close on route change
+  useEffect(() => { setIsOpen(false); }, [location.pathname]);
+
+  const handleLogout = async () => {
+    logout();
+    navigate("/signin");
   };
 
   const handleNavClick = () => {
+    setIsOpen(false);
     if (onClose) onClose();
   };
 
+  const close = () => { setIsOpen(false); if (onClose) onClose(); };
+
   return (
-    <aside
-      className="portal-sidebar"
-      style={{ 
-        ...S.sidebar, 
-        background: theme.sidebarBg, 
-        borderRight: `1px solid ${theme.sidebarBorder}`,
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        minHeight: 'unset',
-      }}
-    >
-      <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "-8px" }}>
-            <img src={logo} alt="Logo" style={{ width: "54px", height: "54px", objectFit: "contain" }} />
-          </div>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>PPD Risk Insight</div>
-            <div style={{ fontSize: 10, color: theme.sidebarMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Nurse Workspace</div>
-          </div>
-        </div>
-        
-        {/* Mobile close button */}
-        <button 
-          onClick={onClose}
-          style={{ 
-            background: 'none', border: 'none', color: 'white', 
-            cursor: 'pointer', display: window.innerWidth < 1024 ? 'block' : 'none' 
-          }}
+    <>
+      {/* Fixed mobile top bar */}
+      <div className="nurse-mobile-topbar portal-mobile-topbar">
+        <button
+          onClick={() => setIsOpen(o => !o)}
+          className="sidebar-toggle"
+          aria-label="Toggle navigation"
+          aria-expanded={isOpen}
         >
-          <X size={24} />
+          {isOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
+        <span style={{ fontWeight: 700, fontSize: 16, color: theme.textPrimary, flex: 1, textAlign: "center" }}>
+          Nurse Workspace
+        </span>
+        <ThemeToggle />
       </div>
 
-      <div style={{ ...S.topDivider, background: theme.sidebarBorder, marginBottom: 8 }} />
+      {/* Overlay */}
+      {isOpen && (
+        <div className="sidebar-overlay open" onClick={close} />
+      )}
 
-      {/* ── NAV ── */}
-      <nav style={{ flex: 1, padding: "10px 16px" }}>
-        {NAV_ITEMS.map(({ to, icon, label }) => (
+      <aside
+        className={`portal-sidebar${isOpen ? " open" : ""}`}
+        style={{
+          ...S.sidebar,
+          background: theme.sidebarBg,
+          borderRight: `1px solid ${theme.sidebarBorder}`,
+        }}
+      >
+        <div style={{ padding: "32px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "-8px" }}>
+              <img src={logo} alt="Logo" style={{ width: "54px", height: "54px", objectFit: "contain" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>PPD Risk Insight</div>
+              <div style={{ fontSize: 10, color: theme.sidebarMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Nurse Workspace</div>
+            </div>
+          </div>
+          <button onClick={close} className="sidebar-close-btn" style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>
+            <X size={24} />
+          </button>
+        </div>
+
+        <div style={{ ...S.topDivider, background: theme.sidebarBorder, marginBottom: 8 }} />
+
+        <nav style={{ flex: 1, padding: "10px 16px" }}>
+          {NAV_ITEMS.map(({ to, icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end
+              onClick={handleNavClick}
+              style={({ isActive }) => ({
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 14px", margin: "2px 0", borderRadius: 8,
+                textDecoration: "none", color: isActive ? theme.sidebarActiveText : theme.sidebarText,
+                background: isActive ? theme.sidebarActiveBg : "transparent",
+                transition: "all 0.2s", fontWeight: 600, fontSize: 13,
+                borderLeft: isActive ? `3px solid ${theme.sidebarActiveBorder}` : "3px solid transparent",
+              })}
+            >
+              <span style={{ display: "flex", opacity: 0.9 }}>{icon}</span>
+              <span style={{ fontSize: 13 }}>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        <div style={S.bottomArea}>
+          <div style={{ ...S.topDivider, background: theme.sidebarBorder }} />
           <NavLink
-            key={to}
-            to={to}
-            end
+            to="/nurse/profile"
             onClick={handleNavClick}
             style={({ isActive }) => ({
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "10px 14px", margin: "2px 0", borderRadius: 8,
-              textDecoration: "none", color: isActive ? theme.sidebarActiveText : theme.sidebarText,
+              ...S.navItem,
               background: isActive ? theme.sidebarActiveBg : "transparent",
-              transition: "all 0.2s", fontWeight: 600, fontSize: 13,
-              borderLeft: isActive ? `3px solid ${theme.sidebarActiveBorder}` : "3px solid transparent",
-              boxShadow: isActive ? "inset 0 0 10px rgba(255,255,255,0.05)" : "none"
+              color: isActive ? theme.sidebarActiveText : theme.sidebarText,
+              boxShadow: isActive ? `inset 3px 0 0 ${theme.sidebarActiveBorder}` : "none",
+              fontWeight: 700,
             })}
           >
-            <span style={{ display: "flex", opacity: 0.9 }}>{icon}</span>
-            <span style={{ fontSize: 13 }}>{label}</span>
+            <span style={S.navIcon}><User size={18} /></span>
+            <span style={S.navLabel}>My Profile</span>
           </NavLink>
-        ))}
-      </nav>
-
-      {/* ── BOTTOM ── */}
-      <div style={S.bottomArea}>
-        <div style={{ ...S.topDivider, background: theme.sidebarBorder }} />
-        
-        <NavLink
-          to="/nurse/profile"
-          onClick={handleNavClick}
-          style={({ isActive }) => ({
-            ...S.navItem,
-            background: isActive ? theme.sidebarActiveBg : "transparent",
-            color: isActive ? theme.sidebarActiveText : theme.sidebarText,
-            boxShadow: isActive ? `inset 3px 0 0 ${theme.sidebarActiveBorder}` : "none",
-            fontWeight: 700
-          })}
-        >
-          <span style={S.navIcon}><User size={18} /></span>
-          <span style={S.navLabel}>My Profile</span>
-        </NavLink>
-
-        <button
-          style={{ ...S.logoutBtn, color: theme.sidebarText }}
-          onClick={handleLogout}>
-          <span style={S.navIcon}><LogOut size={18} /></span>
-          <span style={S.navLabel}>Logout</span>
-        </button>
-      </div>
-    </aside>
+          <button style={{ ...S.logoutBtn, color: theme.sidebarText }} onClick={handleLogout}>
+            <span style={S.navIcon}><LogOut size={18} /></span>
+            <span style={S.navLabel}>Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
 

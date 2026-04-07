@@ -41,10 +41,58 @@
   border: 1px solid rgba(0,0,0,0.05);
 }
 
-table {
+/* ── Shared portal table wrapper ── */
+.portal-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Shared portal table base ── */
+.portal-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 600px; /* Force scroll on small screens */
+  text-align: left;
+  min-width: 600px; /* prevents column squish — forces horizontal scroll */
+}
+
+.portal-table thead tr {
+  border-bottom: 2px solid;
+}
+
+.portal-table th {
+  padding: 13px 16px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.portal-table td {
+  padding: 14px 16px;
+  font-size: 13px;
+  vertical-align: middle;
+  border-bottom: 1px solid;
+}
+
+/* Tighter on tablet */
+@media (max-width: 1024px) {
+  .portal-table th,
+  .portal-table td {
+    padding: 11px 12px;
+    font-size: 12px;
+  }
+}
+
+/* Even tighter on mobile */
+@media (max-width: 640px) {
+  .portal-table th,
+  .portal-table td {
+    padding: 10px 10px;
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -650,5 +698,154 @@ div[style*="overflowX"]::-webkit-scrollbar-thumb {
     min-width: unset;
     display: table;
     white-space: normal;
+  }
+}
+
+/* ============================================================
+   MOBILE SIDEBAR — Patient/Doctor/Nurse/Admin Fixed Drawer
+   ============================================================ */
+
+/* Toggle button — hidden on desktop */
+.sidebar-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  color: inherit;
+  transition: all 0.2s;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Patient portal fixed top bar — mobile only */
+.patient-mobile-topbar,
+.portal-mobile-topbar {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 500;
+  background: var(--ppd-bg, #F9FAFB);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* Overlay backdrop */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 450;
+  backdrop-filter: blur(4px);
+}
+
+.sidebar-overlay.open {
+  display: block;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Mobile: sidebar slides in as fixed drawer ── */
+@media (max-width: 1024px) {
+  .sidebar-toggle {
+    display: flex !important;
+  }
+
+  .patient-mobile-topbar,
+  .portal-mobile-topbar {
+    display: flex !important;
+  }
+
+  /* Patient pages: push content below fixed top bar */
+  .portal-main {
+    padding-top: 72px !important;
+    padding-left: 20px !important;
+  }
+
+  .portal-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 500 !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    height: 100vh !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    overflow-y: auto;
+  }
+
+  .portal-sidebar.open {
+    transform: translateX(0) !important;
+  }
+}
+
+/* ── Desktop: sidebar is in normal flow, no transform ── */
+@media (min-width: 1025px) {
+  .sidebar-toggle,
+  .patient-mobile-topbar,
+  .portal-mobile-topbar {
+    display: none !important;
+  }
+
+  .portal-sidebar {
+    position: sticky !important;
+    top: 0 !important;
+    height: 100vh !important;
+    transform: none !important;
+    width: 240px !important;
+    max-width: 240px !important;
+  }
+}
+
+/* ── Patient portal outer wrapper: lock to viewport height ── */
+.portal-sidebar-wrapper .portal-sidebar {
+  position: relative !important;
+  transform: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100vh !important;
+  top: auto !important;
+  left: auto !important;
+}
+
+/* Any flex container that directly holds both sidebar + portal-main */
+@media (min-width: 1025px) {
+  .portal-sidebar + .portal-main {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+
+/* Target the flex wrapper that contains portal-sidebar on desktop */
+@media (min-width: 1025px) {
+  /* Force any flex parent of portal-sidebar to be viewport-locked */
+  .portal-sidebar:not(.portal-sidebar-wrapper .portal-sidebar) {
+    /* sticky sidebar — parent must be height: 100vh */
+    align-self: flex-start;
+  }
+}
+
+/* ── Close button inside sidebar — mobile only ── */
+.sidebar-close-btn {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .sidebar-close-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
   }
 }

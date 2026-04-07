@@ -110,6 +110,20 @@ def get_admin_dashboard(
     total_patients = db.query(models.User).filter(models.User.role == "patient").count()
     total_assessments = db.query(models.Assessment).count()
     
+    # Calculate trends (last 30 days vs total)
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    
+    new_users_30d = db.query(models.User).filter(models.User.member_since >= thirty_days_ago).count()
+    new_clinicians_30d = db.query(models.User).filter(
+        models.User.role.in_(["doctor", "nurse"]),
+        models.User.member_since >= thirty_days_ago
+    ).count()
+    new_patients_30d = db.query(models.User).filter(
+        models.User.role == "patient",
+        models.User.member_since >= thirty_days_ago
+    ).count()
+    new_assessments_30d = db.query(models.Assessment).filter(models.Assessment.created_at >= thirty_days_ago).count()
+
     # Get recent users
     recent_users_list = db.query(models.User).order_by(models.User.member_since.desc()).limit(5).all()
     
@@ -143,6 +157,12 @@ def get_admin_dashboard(
         "totalClinicians": total_clinicians,
         "totalPatients": total_patients,
         "totalAssessments": total_assessments,
+        "trends": {
+            "users": f"+{new_users_30d}" if new_users_30d > 0 else "0",
+            "clinicians": f"+{new_clinicians_30d}" if new_clinicians_30d > 0 else "0",
+            "patients": f"+{new_patients_30d}" if new_patients_30d > 0 else "0",
+            "assessments": f"+{new_assessments_30d}" if new_assessments_30d > 0 else "0"
+        },
         "recentUsers": formatted_users
     }
 
@@ -264,6 +284,18 @@ def update_user(
         user.email = user_in.email
     if user_in.phone_number is not None:
         user.phone_number = user_in.phone_number
+    if user_in.hospital_name is not None:
+        user.hospital_name = user_in.hospital_name
+    if user_in.department is not None:
+        user.department = user_in.department
+    if user_in.designation is not None:
+        user.designation = user_in.designation
+    if user_in.specialization is not None:
+        user.specialization = user_in.specialization
+    if user_in.ward is not None:
+        user.ward = user_in.ward
+    if user_in.years_of_experience is not None:
+        user.years_of_experience = user_in.years_of_experience
 
     db.commit()
     db.refresh(user)

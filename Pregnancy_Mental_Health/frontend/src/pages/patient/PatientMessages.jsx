@@ -125,7 +125,9 @@ export default function PatientMessages() {
       <div
         style={{
           display: "flex",
-          minHeight: "100vh",
+          height: "100vh",
+          overflow: "hidden",
+          width: "100%",
           background: theme.pageBg,
           fontFamily: theme.fontBody,
         }}
@@ -160,7 +162,9 @@ export default function PatientMessages() {
     <div
       style={{
         display: "flex",
-        minHeight: "100vh",
+        height: "100vh",
+        overflow: "hidden",
+        width: "100%",
         background: theme.pageBg,
         fontFamily: theme.fontBody,
       }}

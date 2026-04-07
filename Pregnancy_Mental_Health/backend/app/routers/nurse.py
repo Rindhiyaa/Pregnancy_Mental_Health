@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 from ..database import get_db
 from .. import models, schemas
@@ -102,12 +102,31 @@ def get_nurse_dashboard(
                     "phone": p.phone,
                     "pregnancy_week": p.pregnancy_week,
                     "assigned_doctor": doctor_name,
-                    # Simple status for now; adjust later as needed
-                    "status": "Active",
+                    "status": "Registered",
                     "created_at": p.created_at.strftime("%Y-%m-%d"),
                     "is_online": (datetime.now(timezone.utc) - p.user.last_active.replace(tzinfo=timezone.utc)).total_seconds() < 300 if p.user and p.user.last_active else False,
                 }
             )
+
+        # Calculate trends (last 7 days)
+        last_7d = datetime.now() - timedelta(days=7)
+        
+        new_patients_last_7d = db.query(models.Patient).filter(
+            models.Patient.created_by_nurse_id == nurse.id,
+            models.Patient.created_at >= last_7d
+        ).count()
+        
+        pending_assessments_last_7d = db.query(models.Assessment).filter(
+            models.Assessment.nurse_id == nurse.id,
+            models.Assessment.status == "draft",
+            models.Assessment.created_at >= last_7d
+        ).count()
+        
+        waiting_review_last_7d = db.query(models.Assessment).filter(
+            models.Assessment.nurse_id == nurse.id,
+            models.Assessment.status == "submitted",
+            models.Assessment.created_at >= last_7d
+        ).count()
 
         return {
             "stats": {
@@ -115,6 +134,12 @@ def get_nurse_dashboard(
                 "pending_assessments": pending_assessments,
                 "waiting_review": waiting_review,
                 "total_patients": total_patients,
+                "trends": {
+                    "total_patients": f"+{new_patients_last_7d}" if new_patients_last_7d > 0 else "0",
+                    "pending_assessments": f"+{pending_assessments_last_7d}" if pending_assessments_last_7d > 0 else "0",
+                    "waiting_review": f"+{waiting_review_last_7d}" if waiting_review_last_7d > 0 else "0",
+                    "new_patients_today": f"+{new_patients_today}" if new_patients_today > 0 else "0"
+                }
             },
             "recentPatients": recentPatients,
         }
@@ -324,7 +349,6 @@ def get_nurse_assessments(
                 "id": a.id,
                 "patient_id": a.patient_id,
                 "patient_name": a.patient_name,
-                "risk_level": a.risk_level,
                 "status": a.status,
                 "created_at": a.created_at,
                 "assigned_doctor_id": a.assigned_doctor_id,
@@ -372,12 +396,12 @@ def get_nurse_patients(
             else:
                 patient_status = "Active"
         else:
-            patient_status = "Active"
+            patient_status = "Registered"
 
         last_assessment_date = latest.created_at if latest else None
         last_assessment_label = None
         if latest:
-            last_assessment_label = f"Risk: {latest.risk_level or 'Pending'}"
+            last_assessment_label = "Assessment Logged"
 
         doctor_name = None
         if p.assigned_doctor_id:

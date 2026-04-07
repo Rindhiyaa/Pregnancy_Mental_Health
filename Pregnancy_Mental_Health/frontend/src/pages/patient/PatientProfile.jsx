@@ -734,7 +734,9 @@ export default function PatientProfile() {
 const S = {
   portal: (theme) => ({
     display: "flex",
-    minHeight: "100vh",
+    height: "100vh",
+    overflow: "hidden",
+    width: "100%",
     background: theme.pageBg,
     fontFamily: theme.fontBody,
   }),

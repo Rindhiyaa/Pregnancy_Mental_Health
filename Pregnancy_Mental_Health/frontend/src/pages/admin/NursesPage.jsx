@@ -12,9 +12,9 @@ import {
   Plus,
   Trash2,
   ShieldOff,
-  KeyRound,
   CheckCircle,
   X,
+  Edit,
   UserCheck,
   Heart,
   UserX,
@@ -24,6 +24,7 @@ import { useBreakpoint } from "../../hooks/useBreakpoint";
 import { api, addAuditLog, getErrorMessage } from "../../utils/api";
 
 const initialFormData = {
+  id: null,
   name: "",
   email: "",
   phone: "",
@@ -214,15 +215,7 @@ export default function NursesPage() {
 
     const validationErrors = validateNurseForm(formData);
     setErrors(validationErrors);
-    setTouched({
-      name: true,
-      email: true,
-      phone: true,
-      hospital_name: true,
-      department: true,
-      ward: true,
-      years_of_experience: true,
-    });
+    setTouched({ name: true, email: true, phone: true, hospital_name: true, department: true, ward: true, years_of_experience: true });
 
     if (Object.keys(validationErrors).length > 0) {
       toast.error("Please fix the highlighted fields");
@@ -232,34 +225,38 @@ export default function NursesPage() {
     setSubmitting(true);
     try {
       const rawName = formData.name.trim();
-      const nameParts = rawName.split(/\s+/);
-      const first_name = nameParts[0];
-      const last_name = nameParts.slice(1).join(" ");
+      const [first_name, ...rest] = rawName.split(/\s+/);
+      const last_name = rest.join(" ");
       const email = formData.email.trim().toLowerCase();
 
-      const { data: created } = await api.post("/admin/users", {
-        first_name,
-        last_name,
-        email,
-        phone_number: formData.phone.trim(),
-        password: "TempPass123!",
-        role: "nurse",
-        hospital_name: formData.hospital_name.trim(),
-        department: formData.department.trim(),
-        ward: formData.ward.trim(),
-        years_of_experience: Number(formData.years_of_experience),
-      });
-
-      try {
-        await addAuditLog(
-          "User Created",
-          `Created nurse ${created.first_name} ${created.last_name || ""} (ID ${created.id})`
-        );
-      } catch (logErr) {
-        console.warn("Audit log failed", logErr);
+      if (formData.id) {
+        // ── EDIT MODE ──
+        await api.patch(`/admin/users/${formData.id}`, {
+          first_name, last_name, email,
+          phone_number: formData.phone.trim(),
+          hospital_name: formData.hospital_name.trim(),
+          department: formData.department.trim(),
+          ward: formData.ward.trim(),
+          years_of_experience: Number(formData.years_of_experience),
+        });
+        await addAuditLog("User Updated", `Updated nurse ${rawName} (ID ${formData.id})`).catch(() => {});
+        toast.success(`Nurse ${rawName} updated successfully!`);
+      } else {
+        // ── CREATE MODE ──
+        const { data: created } = await api.post("/admin/users", {
+          first_name, last_name, email,
+          phone_number: formData.phone.trim(),
+          password: "TempPass123!",
+          role: "nurse",
+          hospital_name: formData.hospital_name.trim(),
+          department: formData.department.trim(),
+          ward: formData.ward.trim(),
+          years_of_experience: Number(formData.years_of_experience),
+        });
+        await addAuditLog("User Created", `Created nurse ${created.first_name} ${created.last_name || ""} (ID ${created.id})`).catch(() => {});
+        toast.success(`Nurse ${rawName} added successfully!`);
       }
 
-      toast.success(`Nurse ${rawName} added successfully!`);
       setFormData(initialFormData);
       setErrors({});
       setTouched({});
@@ -267,10 +264,27 @@ export default function NursesPage() {
       loadNurses();
     } catch (err) {
       console.error(err);
-      toast.error(getErrorMessage(err, "Failed to add nurse"));
+      toast.error(getErrorMessage(err, formData.id ? "Failed to update nurse" : "Failed to add nurse"));
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleEditNurse = (nurse) => {
+    setFormData({
+      id: nurse.id,
+      name: nurse.name,
+      email: nurse.email,
+      phone: nurse.phone || "",
+      role: "nurse",
+      ward: nurse.ward || "",
+      hospital_name: nurse.hospital_name || "",
+      department: nurse.department || "",
+      years_of_experience: nurse.years_of_experience ?? "",
+    });
+    setErrors({});
+    setTouched({});
+    setShowModal(true);
   };
 
   const handleSuspend = async (id, currentStatus) => {
@@ -294,29 +308,6 @@ export default function NursesPage() {
     } catch (err) {
       console.error(err);
       toast.error(getErrorMessage(err, "Failed to delete user"));
-    }
-  };
-
-  const handleResetPassword = async (nurse) => {
-    if (!window.confirm(`Reset password for ${nurse.name}?`)) return;
-
-    try {
-      const { data } = await api.post(`/admin/users/${nurse.id}/reset-password`);
-      console.log("Reset response:", data);
-
-      try {
-        await addAuditLog(
-          "Password Reset",
-          `Reset password for ${nurse.name} (ID ${nurse.id})`
-        );
-      } catch (logErr) {
-        console.warn("Audit log failed", logErr);
-      }
-
-      toast.success("Password reset successfully");
-    } catch (err) {
-      console.error(err);
-      toast.error(getErrorMessage(err, "Failed to reset password"));
     }
   };
 
@@ -448,7 +439,7 @@ export default function NursesPage() {
                     }}
                   >
                     <ActionButtons
-                      onReset={() => handleResetPassword(nurse)}
+                      onEdit={() => handleEditNurse(nurse)}
                       onSuspend={() => handleSuspend(nurse.id, nurse.status)}
                       onDelete={() => handleDelete(nurse.id, nurse.name)}
                       status={nurse.status}
@@ -462,22 +453,19 @@ export default function NursesPage() {
         ) : (
           <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             <table
+              className="portal-table"
               style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                textAlign: "left",
+                borderColor: theme.border,
                 minWidth: isTablet ? 580 : 720,
               }}
             >
               <thead>
-                <tr style={tableHeaderRowStyle(theme)}>
-                  <th style={thStyle(theme, isTablet)}>Nurse Details</th>
-                  <th style={thStyle(theme, isTablet)}>Ward / Unit</th>
-                  {!isTablet && <th style={thStyle(theme, isTablet)}>Contact</th>}
-                  <th style={thStyle(theme, isTablet)}>Status</th>
-                  <th style={{ ...thStyle(theme, isTablet), textAlign: "right" }}>
-                    Actions
-                  </th>
+                <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : "#f8fafc"), borderColor: theme.border }}>
+                  <th style={{ color: theme.textSecondary }}>Nurse Details</th>
+                  <th style={{ color: theme.textSecondary }}>Ward / Unit</th>
+                  {!isTablet && <th style={{ color: theme.textSecondary }}>Contact</th>}
+                  <th style={{ color: theme.textSecondary }}>Status</th>
+                  <th style={{ color: theme.textSecondary, textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -578,7 +566,7 @@ export default function NursesPage() {
 
                       <td style={{ ...tdStyle(isTablet), textAlign: "right" }}>
                         <ActionButtons
-                          onReset={() => handleResetPassword(nurse)}
+                          onEdit={() => handleEditNurse(nurse)}
                           onSuspend={() => handleSuspend(nurse.id, nurse.status)}
                           onDelete={() => handleDelete(nurse.id, nurse.name)}
                           status={nurse.status}
@@ -603,7 +591,7 @@ export default function NursesPage() {
       {showModal && (
         <Modal
           onClose={closeModal}
-          title="Add New Nurse"
+          title={formData.id ? "Edit Nurse" : "Add New Nurse"}
           theme={theme}
           isMobile={isMobile}
         >
@@ -778,7 +766,7 @@ export default function NursesPage() {
                   opacity: submitting ? 0.7 : 1,
                 }}
               >
-                {submitting ? "Adding..." : "Add Nurse"}
+                {submitting ? "Saving..." : formData.id ? "Save Changes" : "Add Nurse"}
               </button>
             </div>
           </form>
@@ -831,31 +819,15 @@ const StatusBadge = ({ status, isOnline, theme }) => {
   );
 };
 
-const ActionButtons = ({ onReset, onSuspend, onDelete, status, theme }) => (
+const ActionButtons = ({ onEdit, onSuspend, onDelete, status, theme }) => (
   <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-    <button onClick={onReset} title="Reset Password" style={actionBtnStyle(theme)}>
-      <KeyRound size={15} />
+    <button onClick={onEdit} title="Edit" style={actionBtnStyle(theme)}>
+      <Edit size={15} />
     </button>
-    <button
-      onClick={onSuspend}
-      title={status === "active" ? "Suspend" : "Activate"}
-      style={actionBtnStyle(theme)}
-    >
-      {status === "active" ? (
-        <ShieldOff size={15} color={theme.warningText} />
-      ) : (
-        <CheckCircle size={15} color={theme.successText} />
-      )}
+    <button onClick={onSuspend} title={status === "active" ? "Suspend" : "Activate"} style={actionBtnStyle(theme)}>
+      {status === "active" ? <ShieldOff size={15} color={theme.warningText} /> : <CheckCircle size={15} color={theme.successText} />}
     </button>
-    <button
-      onClick={onDelete}
-      title="Delete"
-      style={{
-        ...actionBtnStyle(theme),
-        color: theme.dangerText,
-        borderColor: theme.dangerText + "40",
-      }}
-    >
+    <button onClick={onDelete} title="Delete" style={{ ...actionBtnStyle(theme), color: theme.dangerText, borderColor: theme.dangerText + "40" }}>
       <Trash2 size={15} />
     </button>
   </div>

@@ -342,12 +342,12 @@ const SchedulePage = () => {
 
                         {/* Table */}
                         <div style={{ ...card, overflow: "hidden" }}>
-                            <div style={{ overflowX: "auto" }}>
-                                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+                            <div className="portal-table-wrap">
+                                <table className="portal-table" style={{ borderColor: theme.glassBorder }}>
                                     <thead>
-                                        <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#f8fafc"), borderBottom: `2px solid ${theme.glassBorder}` }}>
+                                        <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#f8fafc"), borderColor: theme.glassBorder }}>
                                             {["Patient", "Date", "Time", "Type", "Risk", "Status"].map(h => (
-                                                <th key={h} style={{ padding: "11px 14px", fontSize: 11, fontWeight: 800, color: theme.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
+                                                <th key={h} style={{ color: theme.textMuted }}>{h}</th>
                                             ))}
                                         </tr>
                                     </thead>
