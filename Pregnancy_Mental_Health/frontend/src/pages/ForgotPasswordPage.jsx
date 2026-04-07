@@ -240,7 +240,8 @@ export default function ForgotPasswordPage() {
 
       // Redirect to signin after 2 seconds
       setTimeout(() => {
-        navigate("/signin");
+        toast.success("Password reset! Please sign in with your new password.");
+        navigate("/signin", { replace: true });
       }, 2000);
     } catch (err) {
       setError(getErrorMessage(err, "An error occurred. Please try again."));

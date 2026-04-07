@@ -5,8 +5,8 @@ import InactivityWarning from '../components/InactivityWarning';
 import { 
   setAuth, clearAuth, 
   getToken, getEmail, getFullName, getRole, 
-  getProfileKey, clearLegacyKeys, getRoleFromUrl 
-} from '../auth/tokenStorage';
+  getProfileKey, clearLegacyKeys, getRoleFromUrl, setTabRole 
+} from '../auth/tokenStorage'; 
 
 const AuthContext = createContext();
 
@@ -204,6 +204,7 @@ export const AuthProvider = ({ children, portalRole = null }) => {
   const login = (userData) => {
     const role = userData.role?.toLowerCase();
     if (!role) return;
+    setTabRole(role); 
 
     // ✅ Write to ppd_<role>_access_token, ppd_<role>_user_email, etc.
     setAuth(role, {
@@ -221,10 +222,10 @@ export const AuthProvider = ({ children, portalRole = null }) => {
         try {
           const parsed = JSON.parse(stored);
           userProfile = {
-            ...userData,
-            ...parsed,
+            ...parsed,   // Stale data first
+            ...userData, // Fresh data overwrites (CRITICAL for first_login flag)
             email: userData.email || parsed.email,
-            fullName: parsed.fullName || userData.fullName || "Clinician",
+            fullName: userData.fullName || parsed.fullName || "Clinician",
             role: role,
             isAuthenticated: true,
           };

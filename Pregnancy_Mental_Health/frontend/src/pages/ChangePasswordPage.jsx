@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { api, getErrorMessage } from "../utils/api";
-import { setToken, getRoleFromUrl } from "../auth/tokenStorage";
+import { setToken, setTabRole, getRoleFromUrl } from "../auth/tokenStorage";
 import toast from 'react-hot-toast';
 
 const EyeIcon = ({ open }) => open ? (
@@ -28,6 +28,18 @@ export default function ChangePasswordPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Redirect if the user already completed first login
+  useEffect(() => {
+    if (user && user.isAuthenticated && user.first_login === false) {
+      console.log("User already set password, redirecting to dashboard...");
+      const role = (user.role || getRoleFromUrl() || "").toLowerCase();
+      if (role === "admin") navigate("/admin/dashboard", { replace: true });
+      else if (role === "nurse") navigate("/nurse/dashboard", { replace: true });
+      else if (role === "doctor") navigate("/doctor/dashboard", { replace: true });
+      else if (role === "patient") navigate("/patient/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,7 +70,7 @@ export default function ChangePasswordPage() {
 
     setLoading(true);
     try {
-      const { data } = await api.post('/change-password', {
+      const { data } = await api.post('/set-password', {
         new_password: form.newPassword
       });
 
@@ -66,11 +78,10 @@ export default function ChangePasswordPage() {
       // password_changed_at, so API calls will no longer get 401.
       // Save it before navigating — if missing (old backend), the user
       // will need to log in again, but we handle that gracefully below.
-      if (data?.access_token) {
-        const role = user?.role?.toLowerCase() || getRoleFromUrl();
-        if (role) {
-          setToken(role, data.access_token);
-        }
+      const role = user?.role?.toLowerCase() || getRoleFromUrl();
+      if (role && data?.access_token) {
+        setToken(role, data.access_token);
+        setTabRole(role);
       }
 
       // Rebuild user profile with the new token and first_login cleared
@@ -82,17 +93,22 @@ export default function ChangePasswordPage() {
       };
       login(updatedUser);
 
-      toast.success("Password updated successfully!");
+      toast.success("Password set successfully! Welcome 🎉");
 
       // Navigate immediately — no setTimeout, tokens are already in place
-      const role = user?.role?.toLowerCase();
+      console.log("Navigating to dashboard for role:", role);
       if (role === 'admin') navigate("/admin/dashboard", { replace: true });
       else if (role === 'nurse') navigate("/nurse/dashboard", { replace: true });
       else if (role === 'doctor') navigate("/doctor/dashboard", { replace: true });
-      else navigate("/patient/dashboard", { replace: true });
+      else if (role === 'patient') navigate("/patient/dashboard", { replace: true });
+      else {
+        console.warn("Unknown role, falling back to signin:", role);
+        navigate("/signin", { replace: true });
+      }
 
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to update password."));
+      console.error("Failed to set password:", err);
+      setError(getErrorMessage(err, "Failed to set password. Please try again."));
     } finally {
       setLoading(false);
     }

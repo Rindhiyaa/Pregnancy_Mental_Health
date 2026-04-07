@@ -131,7 +131,7 @@ def get_current_user(
 ) -> models.User:
     """
     Dependency to get current user object from DB
-    Enforces password reset for first-time users except on the change-password endpoint
+    Enforces password reset for first-time users except on the change-password and set-password endpoints
     """
     user = db.query(models.User).filter(models.User.email == email).first()
     if user is None:
@@ -154,8 +154,9 @@ def get_current_user(
                 headers={"WWW-Authenticate": "Bearer"},
             )
     
-    # Enforce password reset for first-time users (not admin, not on change-password endpoint)
-    if user.first_login and user.role != "admin" and not request.url.path.endswith("/change-password"):
+    # Enforce password reset for first-time users (not admin, not on change-password/set-password endpoint)
+    is_password_endpoint = request.url.path.endswith("/change-password") or request.url.path.endswith("/set-password")
+    if user.first_login and user.role != "admin" and not is_password_endpoint:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="First-time login: Password reset required",

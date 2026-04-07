@@ -42,14 +42,20 @@ const KEYS = {
  */
 export function getRoleFromUrl() {
   const hash = window.location.hash; // e.g. "#/admin/dashboard"
-  if (hash.includes("/admin"))   return "admin";
-  if (hash.includes("/doctor"))  return "doctor";
-  if (hash.includes("/nurse"))   return "nurse";
-  if (hash.includes("/patient")) return "patient";
+  if (hash.includes("/admin"))   { setTabRole("admin"); return "admin"; }
+  if (hash.includes("/doctor"))  { setTabRole("doctor"); return "doctor"; }
+  if (hash.includes("/nurse"))   { setTabRole("nurse"); return "nurse"; }
+  if (hash.includes("/patient")) { setTabRole("patient"); return "patient"; }
   
   // Fallback to role stored in global session if on common pages
-  return localStorage.getItem('ppd_user_role')?.toLowerCase() || null;
+  return getTabRole() || localStorage.getItem('ppd_user_role')?.toLowerCase() || null;
 }
+
+export const setTabRole = (role) => {
+  if (role) sessionStorage.setItem('ppd_tab_active_role', role);
+};
+
+export const getTabRole = () => sessionStorage.getItem('ppd_tab_active_role');
 
 // ─── Token ────────────────────────────────────────────────────
 export const setToken   = (role, val) => {

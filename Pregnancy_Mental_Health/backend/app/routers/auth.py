@@ -391,6 +391,59 @@ def change_password_auth(
     }
 
 
+@router.post("/set-password")
+def set_password_first_login(
+    data: dict,
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user_email)
+):
+    """
+    First-time login password set. Similar to change-password but specific for first_login flow.
+    """
+    user = db.query(models.User).filter(models.User.email == current_user_email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not user.first_login:
+        raise HTTPException(status_code=400, detail="Password already set. Please use regular change password.")
+
+    new_password = data.get("new_password") or data.get("newPassword")
+    if not new_password:
+        raise HTTPException(status_code=400, detail="Missing new password")
+
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
+
+    user.hashed_password = hash_password(new_password)
+    user.password_changed_at = datetime.utcnow()
+    user.first_login = False
+
+    db.add(user)
+    db.commit()
+
+    access_token = create_access_token(data={"sub": user.email})
+    refresh_token = create_refresh_token(data={"sub": user.email})
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=IS_PRODUCTION,
+        samesite="lax",
+        max_age=7 * 24 * 3600,
+        path="/",
+    )
+
+    return {
+        "message": "Password set successfully",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "role": user.role,
+        "first_login": False,
+    }
+
+
 
 
 
