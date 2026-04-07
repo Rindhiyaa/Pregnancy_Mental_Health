@@ -114,7 +114,7 @@ export default function ChangePasswordPage() {
 
   return (
     <main className="auth-page">
-      <div className="auth-layout">
+      <div className="auth-layout narrow">
         <div className="auth-main">
           <div className="auth-brand">
             <div className="logo-mark"></div>
@@ -174,16 +174,7 @@ export default function ChangePasswordPage() {
               </div>
             </label>{/* ✅ FIXED: was missing closing > */}
 
-            <div className="password-rules" style={{ marginBottom: '1rem' }}>
-              <p style={{ fontWeight: '600', fontSize: '0.9rem', color: '#4b5563', marginBottom: '0.5rem' }}>
-                Password must be:
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
-                <li>• At least 8 characters</li>
-                <li>• One number</li>
-                <li>• One special character</li>
-              </ul>
-            </div>
+           
 
             <button
               type="submit"

@@ -252,7 +252,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <main className="auth-page">
-      <div className="auth-layout">
+      <div className="auth-layout narrow">
         <div className="auth-main">
           <div className="auth-brand">
             <div className="logo-mark"></div>
@@ -315,7 +315,7 @@ export default function ForgotPasswordPage() {
                   <input
                     type="text"
                     name="code"
-                    placeholder="6-digit code (from Admin or Push)"
+                    placeholder="6-digit code"
                     className="auth-input"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
@@ -371,14 +371,7 @@ export default function ForgotPasswordPage() {
                   </div>
                 </label>
 
-                <div className="password-rules" style={{ marginBottom: '1rem' }}>
-                  <p style={{ fontWeight: '600', fontSize: '0.9rem', color: '#4b5563', marginBottom: '0.5rem' }}>Password must be:</p>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
-                    <li>• At least 8 characters</li>
-                    <li>• One number</li>
-                    <li>• One special character</li>
-                  </ul>
-                </div>
+               
 
                 {error && <div className="error" role="alert">{error}</div>}
                 {success && <div className="success" role="alert">{success}</div>}
