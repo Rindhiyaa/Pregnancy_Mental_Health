@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
-// import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
 import { getAvatarColor } from "../../utils/helpers";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
@@ -82,7 +81,7 @@ export default function NurseDashboard() {
   const handleMarkOneRead = async (id) => {
     try {
       await api.post(`/notifications/${id}/read`, {});
-      setNotifications(prev => prev.filter(n => n.id !== id)); // remove
+      setNotifications(prev => prev.filter(n => n.id !== id));
       setUnreadCount(c => Math.max(0, c - 1));
     } catch (e) {
       console.error("Failed to mark notification read", e);
@@ -92,7 +91,7 @@ export default function NurseDashboard() {
   const handleMarkAllRead = async () => {
     try {
       await api.post("/notifications/read-all", {});
-      setNotifications([]);  // clear list
+      setNotifications([]);
       setUnreadCount(0);
     } catch (e) {
       console.error("Failed to mark all notifications read", e);
@@ -207,7 +206,8 @@ export default function NurseDashboard() {
               }}
             >
               {/* Notification bell */}
-              <div style={{ position: "relative" }}>                <button
+              <div style={{ position: "relative" }}>
+                <button
                   onClick={() => setShowNotifications(v => !v)}
                   style={{
                     width: 40,
@@ -416,9 +416,8 @@ export default function NurseDashboard() {
           ))}
         </div>
 
-        {/* Recent Patients - REFACTORED */}
-
-         <div style={{ marginBottom: 40 }}>
+        {/* Quick Actions */}
+        <div style={{ marginBottom: 40 }}>
           <h3 style={{ fontFamily: theme.fontHeading, fontSize: 20, fontWeight: 600, marginBottom: 20 }}>Quick Actions</h3>
           <div style={{ display: 'flex', gap: 20 }}>
             <QuickAction icon={<UserPlus size={22} />} label="Register New Patient" to="/nurse/patients/new" color="#4f46e5" />
@@ -427,6 +426,8 @@ export default function NurseDashboard() {
             <QuickAction icon={<FileText size={22} />} label="View Pending Drafts" to="/nurse/patients?filter=Draft" color="#f59e0b" />
           </div>
         </div>
+
+        {/* Recent Patients Table - FIXED VERSION */}
         <div style={{ marginBottom: 40 }}>
           <Card padding="32px">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -471,7 +472,7 @@ export default function NurseDashboard() {
                       }}>
                         {p.name?.charAt(0) || '?'}
                       </div>
-                      {/* Online Status Dot */}
+                      {/* Online Status Dot - ONLY on avatar */}
                       <div 
                         style={{
                           position: "absolute",
@@ -493,13 +494,10 @@ export default function NurseDashboard() {
                   <div style={{ color: theme.textMuted, fontSize: 14 }}>Week {p.pregnancy_week || '-'}</div>
                   <div style={{ color: theme.textMuted, fontSize: 14 }}>Dr. {p.assigned_doctor || 'Unassigned'}</div>
                   <div>
+                    {/* Status Badge - Patient workflow status ONLY */}
                     <Badge variant={p.status === 'Draft' ? 'warning' : 'success'}>
                       {['Draft', 'Pending', 'Active'].includes(p.status) ? p.status : 'Active'}
                     </Badge>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: p.is_online ? "#10b981" : theme.textMuted, marginTop: 4 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: p.is_online ? "#10b981" : "#94a3b8" }} />
-                      {p.is_online ? "ACTIVE" : "OFFLINE"}
-                    </div>
                   </div>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     <Link to={`/nurse/patients/${p.id}`} style={{ color: theme.textMuted }} onClick={(e) => e.stopPropagation()}>
@@ -531,7 +529,7 @@ export default function NurseDashboard() {
                   Previous
                 </button>
                 <div style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>
-                   Page {currentPage} of {Math.ceil(recentPatients.length / itemsPerPage)}
+                  Page {currentPage} of {Math.ceil(recentPatients.length / itemsPerPage)}
                 </div>
                 <button 
                   onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.min(prev + 1, Math.ceil(recentPatients.length / itemsPerPage))); }}
@@ -554,4 +552,3 @@ export default function NurseDashboard() {
     </div>
   );
 }
-

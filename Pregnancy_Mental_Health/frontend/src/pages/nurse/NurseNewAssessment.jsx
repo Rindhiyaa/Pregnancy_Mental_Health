@@ -204,25 +204,7 @@ export default function NurseNewAssessment() {
           </h1>
           {selectedPatient && (
             <div className="active-patient-badge" onClick={() => setShowPatientModal(true)}>
-              <div className="avatar-xs-teal">
-                {selectedPatient.name[0]}
-                {/* Online Status Dot */}
-                <div 
-                  style={{
-                    position: "absolute",
-                    bottom: -1,
-                    right: -1,
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    border: "2px solid white",
-                    background: selectedPatient.is_online ? "#10b981" : "#94a3b8",
-                    boxShadow: selectedPatient.is_online ? "0 0 6px #10b981" : "none",
-                    zIndex: 1,
-                  }}
-                  title={selectedPatient.is_online ? "Active Now" : "Offline"}
-                />
-              </div>
+              <div className="avatar-xs-teal">{selectedPatient.name[0]}</div>
               <div className="badge-patient-info">
                 <span className="patient-name">{selectedPatient.name}</span>
                 <span className="patient-id">ID: #{selectedPatient.id}</span>
@@ -283,25 +265,7 @@ export default function NurseNewAssessment() {
                     <div className="nurse-submit-card">
                       {/* Patient Summary */}
                       <div className="submit-patient-row">
-                        <div className="submit-patient-avatar">
-                          {(formData.patient_name || "P")[0]}
-                          {/* Online Status Dot */}
-                          <div 
-                            style={{
-                              position: "absolute",
-                              bottom: -2,
-                              right: -2,
-                              width: 16,
-                              height: 16,
-                              borderRadius: "50%",
-                              border: "3px solid white",
-                              background: selectedPatient?.is_online ? "#10b981" : "#94a3b8",
-                              boxShadow: selectedPatient?.is_online ? "0 0 8px #10b981" : "none",
-                              zIndex: 1,
-                            }}
-                            title={selectedPatient?.is_online ? "Active Now" : "Offline"}
-                          />
-                        </div>
+                        <div className="submit-patient-avatar">{(formData.patient_name || "P")[0]}</div>
                         <div>
                           <div className="submit-patient-name">{formData.patient_name || selectedPatient?.name}</div>
                           <div className="submit-patient-meta">
@@ -469,22 +433,6 @@ export default function NurseNewAssessment() {
                 <div className="patient-mini-card">
                   <div className="patient-avatar-teal">
                     {selectedPatient.name[0]}
-                    {/* Online Status Dot */}
-                    <div 
-                      style={{
-                        position: "absolute",
-                        bottom: -2,
-                        right: -2,
-                        width: 14,
-                        height: 14,
-                        borderRadius: "50%",
-                        border: "3px solid white",
-                        background: selectedPatient.is_online ? "#10b981" : "#94a3b8",
-                        boxShadow: selectedPatient.is_online ? "0 0 8px #10b981" : "none",
-                        zIndex: 1,
-                      }}
-                      title={selectedPatient.is_online ? "Active Now" : "Offline"}
-                    />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="patient-name-text">{selectedPatient.name}</div>
@@ -574,25 +522,7 @@ export default function NurseNewAssessment() {
                       setShowPatientModal(false);
                     }}
                   >
-                    <div className="avatar-sm-teal">
-                      {p.name.charAt(0)}
-                      {/* Online Status Dot */}
-                      <div 
-                        style={{
-                          position: "absolute",
-                          bottom: -2,
-                          right: -2,
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          border: "2px solid white",
-                          background: p.is_online ? "#10b981" : "#94a3b8",
-                          boxShadow: p.is_online ? "0 0 6px #10b981" : "none",
-                          zIndex: 1,
-                        }}
-                        title={p.is_online ? "Active Now" : "Offline"}
-                      />
-                    </div>
+                    <div className="avatar-sm-teal">{p.name.charAt(0)}</div>
                     <div className="patient-item-info">
                       <div className="name">{p.name}</div>
                       <div className="id">Patient ID: #{p.id}</div>
