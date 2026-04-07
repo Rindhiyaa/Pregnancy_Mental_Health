@@ -9,6 +9,7 @@ from .routers import predictions, auth, assessments, notifications, follow_ups, 
 from .routers.patients import router as patients_router
 from .rate_limiter import rate_limiter
 from .config import ALLOWED_ORIGINS, IS_PRODUCTION
+from sqlalchemy import text
 import asyncio
 import logging
 import sys
@@ -18,6 +19,56 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
+
+
+def migrate_db():
+    """✅ Run manual migrations for existing tables on Render using engine directly"""
+    from .database import engine
+    from sqlalchemy import text
+    
+    logging.info("Starting database migration check...")
+    
+    try:
+        # Define tables and their missing columns
+        migrations = {
+            "users": [
+                ("hospital_name", "VARCHAR"),
+                ("department", "VARCHAR"),
+                ("designation", "VARCHAR"),
+                ("specialization", "VARCHAR"),
+                ("ward", "VARCHAR"),
+                ("years_of_experience", "INTEGER"),
+                ("last_active", "TIMESTAMP WITH TIME ZONE")
+            ],
+            "patients": [
+                ("created_by_nurse_id", "INTEGER"),
+                ("assigned_doctor_id", "INTEGER"),
+                ("doctor_id", "INTEGER"),
+                ("hospital_name", "VARCHAR"),
+                ("ward_bed", "VARCHAR"),
+                ("previous_pregnancies", "INTEGER")
+            ],
+            "appointments": [
+                ("assigned_doctor_id", "INTEGER"),
+                ("created_by_nurse_id", "INTEGER")
+            ]
+        }
+
+        # Use engine.begin() for automatic commit/rollback of DDL
+        with engine.begin() as conn:
+            for table_name, columns in migrations.items():
+                for col_name, col_type in columns:
+                    try:
+                        # PostgreSQL specific: ADD COLUMN IF NOT EXISTS
+                        conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS {col_name} {col_type}"))
+                        logging.info(f"Migration: Checked/Added {table_name}.{col_name}")
+                    except Exception as e:
+                        logging.error(f"Migration failed for {table_name}.{col_name}: {e}")
+                        
+        logging.info("Database migration check completed successfully.")
+                
+    except Exception as e:
+        logging.error(f"migrate_db fatal error: {e}")
 
 
 def seed_admin():
@@ -75,6 +126,8 @@ def cleanup_invalid_emails():
 async def lifespan(app: FastAPI):
     # Create database tables on startup
     models.Base.metadata.create_all(bind=engine)
+    # Manual migration for existing tables on Render
+    migrate_db()
     # Seed default admin user if not exists
     seed_admin()
     # Cleanup invalid data
