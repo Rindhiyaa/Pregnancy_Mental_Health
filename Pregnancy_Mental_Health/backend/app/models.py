@@ -24,6 +24,7 @@ class User(Base):
     specialization = Column(String, nullable=True)
     ward = Column(String, nullable=True)
     years_of_experience = Column(Integer, nullable=True)
+    last_active = Column(DateTime(timezone=True), nullable=True)
 
     # explicitly use Patient.user_id as the FK for this relationship
     patient_profile = relationship(

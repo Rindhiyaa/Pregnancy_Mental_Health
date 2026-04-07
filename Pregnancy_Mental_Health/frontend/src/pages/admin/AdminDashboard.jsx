@@ -117,6 +117,7 @@ export default function AdminDashboard() {
             email: u.email,
             role: u.role.charAt(0).toUpperCase() + u.role.slice(1),
             status: u.is_active ? "Active" : "Suspended",
+            isOnline: u.is_online,
             joined,
           };
         })
@@ -571,15 +572,36 @@ const handleDelete = async (user) => {
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <td style={tableCellStyle(isMobile)}>
-                          <div style={{ fontWeight: 700, color: theme.textPrimary, fontSize: isMobile ? 13 : 14 }}>
-                            {user.role.toLowerCase() === "doctor" ? `Dr. ${user.name}` : user.name}
-                          </div>
-                          <div style={{
-                            fontSize: 11, color: theme.textMuted,
-                            maxWidth: isMobile ? 120 : "unset",
-                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                          }}>
-                            {user.email}
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={{ position: "relative" }}>
+                              <div style={{ 
+                                width: 32, height: 32, borderRadius: 8, 
+                                background: theme.primary + "15", color: theme.primary,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                fontWeight: 800, fontSize: 12
+                              }}>
+                                {user.name.charAt(0)}
+                              </div>
+                              <div style={{
+                                position: "absolute", bottom: -2, right: -2,
+                                width: 10, height: 10, borderRadius: "50%",
+                                border: `2px solid ${theme.cardBg}`,
+                                background: user.isOnline ? "#10B981" : "#94A3B8",
+                                boxShadow: user.isOnline ? "0 0 4px #10B981" : "none"
+                              }} title={user.isOnline ? "Online" : "Offline"} />
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 700, color: theme.textPrimary, fontSize: isMobile ? 13 : 14 }}>
+                                {user.role.toLowerCase() === "doctor" ? `Dr. ${user.name}` : user.name}
+                              </div>
+                              <div style={{
+                                fontSize: 11, color: theme.textMuted,
+                                maxWidth: isMobile ? 120 : "unset",
+                                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                              }}>
+                                {user.email}
+                              </div>
+                            </div>
                           </div>
                         </td>
                         
@@ -599,9 +621,16 @@ const handleDelete = async (user) => {
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <div style={{
                               width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-                              background: user.status === "Active" ? "#10B981" : "#F59E0B",
+                              background: user.status === "Suspended" ? "#EF4444" : (user.isOnline ? "#10B981" : "#94A3B8"),
+                              boxShadow: user.status !== "Suspended" && user.isOnline ? "0 0 6px #10B981" : "none"
                             }} />
-                            <span style={{ fontSize: 12, color: theme.textSecondary }}>{user.status}</span>
+                            <span style={{ 
+                              fontSize: 12, 
+                              fontWeight: 700, 
+                              color: user.status === "Suspended" ? "#EF4444" : (user.isOnline ? "#10B981" : theme.textMuted) 
+                            }}>
+                              {user.status === "Suspended" ? "Suspended" : (user.isOnline ? "Active" : "Offline")}
+                            </span>
                           </div>
                         </td>
                         {/* Hide "Joined" column on mobile to save space */}

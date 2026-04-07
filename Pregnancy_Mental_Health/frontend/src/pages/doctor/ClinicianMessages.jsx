@@ -58,8 +58,8 @@ export default function ClinicianMessages() {
             console.log("Messages response:", msgRes);
             console.log("Patients response:", patRes);
     
-            // Extract data from the new API format
-            const messagesData = msgRes.data || [];
+            // Extract and sort messages (oldest first, newest at bottom)
+            const messagesData = (msgRes.data || []).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             const patientsData = patRes.data?.patients || patRes.data || [];
     
             setMessages(Array.isArray(messagesData) ? messagesData : []);

@@ -37,7 +37,6 @@ const initialFormData = {
 export default function NursesPage() {
   const { theme } = useTheme();
   const { isMobile, isTablet } = useBreakpoint();
-
   const [nurses, setNurses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -76,6 +75,8 @@ export default function NursesPage() {
         department: u.department || "",
         years_of_experience: u.years_of_experience ?? "",
         joinDate: u.member_since || u.created_at || null,
+        lastActive: u.last_active,
+        isOnline: u.is_online,
       }));
 
       setNurses(mapped);
@@ -417,7 +418,7 @@ export default function NursesPage() {
                         ID: {nurse.id}
                       </div>
                     </div>
-                    <StatusBadge status={nurse.status} theme={theme} />
+                    <StatusBadge status={nurse.status} isOnline={nurse.isOnline} theme={theme} />
                   </div>
 
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -572,7 +573,7 @@ export default function NursesPage() {
                       )}
 
                       <td style={tdStyle(isTablet)}>
-                        <StatusBadge status={nurse.status} theme={theme} />
+                        <StatusBadge status={nurse.status} isOnline={nurse.isOnline} theme={theme} />
                       </td>
 
                       <td style={{ ...tdStyle(isTablet), textAlign: "right" }}>
@@ -787,29 +788,48 @@ export default function NursesPage() {
   );
 }
 
-const StatusBadge = ({ status, theme }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-    <div
-      style={{
-        width: 8,
-        height: 8,
-        borderRadius: "50%",
-        flexShrink: 0,
-        background: status === "active" ? theme.successText : theme.dangerText,
-      }}
-    />
-    <span
-      style={{
-        fontSize: 13,
-        fontWeight: 600,
-        whiteSpace: "nowrap",
-        color: status === "active" ? theme.successText : theme.dangerText,
-      }}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  </div>
-);
+const StatusBadge = ({ status, isOnline, theme }) => {
+  const isSuspended = status === "suspended";
+  
+  let label = "Offline";
+  let color = theme.textMuted;
+  let dotColor = "#94A3B8";
+
+  if (isSuspended) {
+    label = "Suspended";
+    color = theme.dangerText;
+    dotColor = theme.dangerText;
+  } else if (isOnline) {
+    label = "Active";
+    color = "#10B981";
+    dotColor = "#10B981";
+  }
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <div
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          flexShrink: 0,
+          background: dotColor,
+          boxShadow: isOnline && !isSuspended ? "0 0 8px #10B981" : "none"
+        }}
+      />
+      <span
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          whiteSpace: "nowrap",
+          color: color,
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+};
 
 const ActionButtons = ({ onReset, onSuspend, onDelete, status, theme }) => (
   <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>

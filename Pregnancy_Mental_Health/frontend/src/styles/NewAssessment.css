@@ -59,6 +59,7 @@
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
+  position: relative;
 }
 
 .badge-patient-info {
@@ -107,16 +108,17 @@
   align-items: flex-start;
   width: 100%;
   justify-content: space-between;
+  flex-wrap: nowrap; /* Prevent wrapping which causes collapse-like behavior */
 }
 
 .stepper-node-group {
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1 1 0; /* Changed to more stable flex shorthand */
+  flex: 1 1 0; /* Stable flex shorthand */
   position: relative;
-  gap: 12px; /* Slightly more gap */
-  min-width: 80px; /* Added min-width to prevent group from collapsing to 0 */
+  gap: 12px;
+  min-width: 100px; /* Prevent group from collapsing and provide space for labels */
 }
 
 .stepper-node {
@@ -140,14 +142,15 @@
 }
 
 .stepper-node-label {
-  font-size: 11px;
+  font-size: 12px; /* Slightly larger for readability */
   font-weight: 500;
   color: var(--text-muted);
   text-align: center;
   white-space: normal;
   line-height: 1.3;
-  max-width: 90px;
-  word-break: break-word;
+  width: 100%;
+  max-width: 120px; /* Increased max-width for long titles */
+  word-break: keep-all; /* Prevent breaking mid-word */
 }
 
 .stepper-node-group.active .stepper-node {
@@ -455,6 +458,7 @@
   justify-content: center;
   font-size: 18px;
   font-weight: 800;
+  position: relative;
 }
 
 .patient-name-text {
@@ -590,6 +594,7 @@
   justify-content: center;
   font-weight: 800;
   font-size: 14px;
+  position: relative;
 }
 
 .patient-item-info .name {
@@ -716,6 +721,7 @@
   font-size: 22px;
   font-weight: 800;
   flex-shrink: 0;
+  position: relative;
 }
 
 .submit-patient-name {

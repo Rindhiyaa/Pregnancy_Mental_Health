@@ -50,7 +50,7 @@ def list_clinician_messages(
 
 
 # 2) Clinician → send message to a patient (used by ClinicianMessages.jsx POST /messages)
-@router.post("/")
+@router.post("")
 def send_message(
     payload: dict,
     db: Session = Depends(get_db),

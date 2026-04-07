@@ -162,6 +162,10 @@ def get_current_user(
             detail="First-time login: Password reset required",
             headers={"X-Action-Required": "PasswordReset"}
         )
+    
+    # ✅ Update last_active timestamp
+    user.last_active = datetime.now(timezone.utc)
+    db.commit()
         
     return user
 

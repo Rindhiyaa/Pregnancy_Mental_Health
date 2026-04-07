@@ -656,22 +656,40 @@ export default function NurseAppointmentsPage() {
                 </TableCell>
                 <TableCell>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 10,
-                        background: getAvatarColor(app.patient_name) + "15",
-                        color: getAvatarColor(app.patient_name),
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: 800,
-                        fontSize: 16,
-                        flexShrink: 0
-                      }}
-                    >
-                      {(app.patient_name || app.patientname)?.charAt(0) || "?"}
+                    <div style={{ position: "relative" }}>
+                      <div
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 10,
+                          background: getAvatarColor(app.patient_name) + "15",
+                          color: getAvatarColor(app.patient_name),
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: 800,
+                          fontSize: 16,
+                          flexShrink: 0
+                        }}
+                      >
+                        {(app.patient_name || app.patientname)?.charAt(0) || "?"}
+                      </div>
+                      {/* Online Status Dot */}
+                      <div 
+                        style={{
+                          position: "absolute",
+                          bottom: -2,
+                          right: -2,
+                          width: 14,
+                          height: 14,
+                          borderRadius: "50%",
+                          border: "3px solid white",
+                          background: app.patient_is_online ? "#10b981" : "#94a3b8",
+                          boxShadow: app.patient_is_online ? "0 0 8px #10b981" : "none",
+                          zIndex: 1,
+                        }}
+                        title={app.patient_is_online ? "Active Now" : "Offline"}
+                      />
                     </div>
                     <div style={{ fontWeight: 800, color: theme.text }}>{app.patient_name || app.patientname}</div>
                   </div>

@@ -85,21 +85,50 @@ export default function NursePatientProfile() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
                     <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-                        <div style={{ 
-                            width: 80, height: 80, borderRadius: 20, 
-                            background: getAvatarColor(patient.name) + '15', color: getAvatarColor(patient.name), 
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                            fontSize: 32, fontWeight: 800,
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                        }}>
-                            {patient.name.charAt(0)}
+                        <div style={{ position: 'relative' }}>
+                            <div style={{ 
+                                width: 80, height: 80, borderRadius: 20, 
+                                background: getAvatarColor(patient.name) + '15', color: getAvatarColor(patient.name), 
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                fontSize: 32, fontWeight: 800,
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                            }}>
+                                {patient.name.charAt(0)}
+                            </div>
+                            {/* Online Status Dot */}
+                            <div 
+                                style={{
+                                    position: "absolute",
+                                    bottom: -4,
+                                    right: -4,
+                                    width: 20,
+                                    height: 20,
+                                    borderRadius: "50%",
+                                    border: "4px solid white",
+                                    background: patient.is_online ? "#10b981" : "#94a3b8",
+                                    boxShadow: patient.is_online ? "0 0 10px #10b981" : "none",
+                                    zIndex: 1,
+                                }}
+                                title={patient.is_online ? "Active Now" : "Offline"}
+                            />
                         </div>
                         <div>
                             <h1 style={{ fontSize: 28, fontWeight: 800, color: theme.text, margin: '0 0 8px 0' }}>{patient.name}</h1>
-                            <div style={{ display: 'flex', gap: 12 }}>
+                            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                                 <Badge variant={patient.status === 'Draft' ? 'warning' : 'success'}>
                                     Status: {['Draft', 'Pending', 'Active'].includes(patient.status) ? patient.status : 'Active'}
                                 </Badge>
+                                <div style={{ 
+                                    display: "flex", 
+                                    alignItems: "center", 
+                                    gap: 6, 
+                                    fontSize: 13, 
+                                    fontWeight: 800, 
+                                    color: patient.is_online ? "#10b981" : theme.textMuted 
+                                }}>
+                                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: patient.is_online ? "#10b981" : "#94a3b8" }} />
+                                    {patient.is_online ? "ACTIVE" : "OFFLINE"}
+                                </div>
                                 <Badge variant="info">ID: {patient.id}</Badge>
                             </div>
                         </div>

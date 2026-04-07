@@ -23,6 +23,7 @@ def migrate():
             ("password_changed_at", "TIMESTAMP WITH TIME ZONE"),
             ("is_active", "BOOLEAN DEFAULT TRUE"),
             ("first_login", "BOOLEAN DEFAULT TRUE"),
+            ("last_active", "TIMESTAMP WITH TIME ZONE"),
         ]
         
         for col_name, col_type in columns_to_add_users:

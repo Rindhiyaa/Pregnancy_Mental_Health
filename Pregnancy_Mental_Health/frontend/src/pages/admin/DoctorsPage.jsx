@@ -144,6 +144,8 @@ export default function DoctorsPage() {
         department: u.department || "",
         designation: u.designation || "",
         joinDate: u.member_since || u.created_at || null,
+        lastActive: u.last_active,
+        isOnline: u.is_online,
       }));
 
       setDoctors(mapped);
@@ -422,7 +424,7 @@ export default function DoctorsPage() {
                         ID: {doctor.id}
                       </div>
                     </div>
-                    <StatusBadge status={doctor.status} theme={theme} />
+                    <StatusBadge status={doctor.status} isOnline={doctor.isOnline} theme={theme} />
                   </div>
 
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -606,7 +608,7 @@ export default function DoctorsPage() {
                       )}
 
                       <td style={tdStyle(isTablet)}>
-                        <StatusBadge status={doctor.status} theme={theme} />
+                        <StatusBadge status={doctor.status} isOnline={doctor.isOnline} theme={theme} />
                       </td>
 
                       <td
@@ -820,28 +822,44 @@ export default function DoctorsPage() {
 
 /* Sub-components */
 
-const StatusBadge = ({ status, theme }) => {
-  const isActive = status === "active";
+const StatusBadge = ({ status, isOnline, theme }) => {
+  const isSuspended = status === "suspended";
+  
+  let label = "Offline";
+  let color = theme.textMuted;
+  let dotColor = "#94A3B8";
+
+  if (isSuspended) {
+    label = "Suspended";
+    color = theme.dangerText;
+    dotColor = theme.dangerText;
+  } else if (isOnline) {
+    label = "Active";
+    color = "#10B981";
+    dotColor = "#10B981";
+  }
+
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <div
         style={{
           width: 8,
           height: 8,
-          borderRadius: 50,
+          borderRadius: "50%",
           flexShrink: 0,
-          background: isActive ? theme.successText : theme.dangerText,
+          background: dotColor,
+          boxShadow: isOnline && !isSuspended ? "0 0 8px #10B981" : "none"
         }}
       />
       <span
         style={{
           fontSize: 13,
-          fontWeight: 600,
-          color: isActive ? theme.successText : theme.dangerText,
+          fontWeight: 700,
           whiteSpace: "nowrap",
+          color: color,
         }}
       >
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {label}
       </span>
     </div>
   );

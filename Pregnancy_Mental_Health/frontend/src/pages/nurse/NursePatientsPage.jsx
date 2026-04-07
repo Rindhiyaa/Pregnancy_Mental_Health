@@ -352,8 +352,10 @@ export default function NursePatientsPage() {
                       <td
                         style={{
                           ...tableCellStyle,
+                          textAlign: "center",
                           fontWeight: 700,
                           color: theme.textMuted,
+                          fontSize: 13,
                         }}
                       >
                         {(currentPage - 1) * itemsPerPage + idx + 1}
@@ -363,34 +365,65 @@ export default function NursePatientsPage() {
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 12,
+                            gap: 14,
                           }}
                         >
                           <div
                             style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 10,
-                              background:
-                                getAvatarColor(p.name) + "15",
+                              width: 44,
+                              height: 44,
+                              borderRadius: 14,
+                              background: getAvatarColor(p.name) + "15",
                               color: getAvatarColor(p.name),
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
+                              fontSize: 18,
                               fontWeight: 800,
-                              fontSize: 16,
-                              flexShrink: 0,
+                              boxShadow: "inset 0 0 0 1px " + getAvatarColor(p.name) + "25",
+                              position: "relative",
                             }}
                           >
-                            {p.name?.charAt(0) || "?"}
+                            {p.name?.charAt(0) || <User size={20} />}
+                            {/* Online Status Dot */}
+                            <div 
+                              style={{
+                                position: "absolute",
+                                bottom: -2,
+                                right: -2,
+                                width: 14,
+                                height: 14,
+                                borderRadius: "50%",
+                                border: "3px solid white",
+                                background: p.is_online ? "#10b981" : "#94a3b8",
+                                boxShadow: p.is_online ? "0 0 8px #10b981" : "none",
+                                zIndex: 1,
+                              }}
+                              title={p.is_online ? "Active Now" : "Offline"}
+                            />
                           </div>
-                          <div
-                            style={{
-                              fontWeight: 700,
-                              color: theme.text,
-                            }}
-                          >
-                            {p.name}
+                          <div>
+                            <div
+                              style={{
+                                fontSize: 16,
+                                fontWeight: 800,
+                                color: theme.text,
+                                marginBottom: 2,
+                              }}
+                            >
+                              {p.name}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: theme.textMuted,
+                                textTransform: "uppercase",
+                                letterSpacing: 0.5,
+                              }}
+                            >
+                              Patient ID: #{p.id}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -454,19 +487,25 @@ export default function NursePatientsPage() {
                         )}
                       </td>
                       <td style={tableCellStyle}>
-                      <Badge
-                        variant={
-                          p.status === "Draft"
-                            ? "warning"
-                            : p.status === "Pending"
-                            ? "secondary"
-                            : "success"
-                        }
-                      >
-                        {["Draft", "Pending", "Active"].includes(p.status)
-                          ? p.status
-                          : "Active"}
-                      </Badge>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                          <Badge
+                            variant={
+                              p.status === "Draft"
+                                ? "warning"
+                                : p.status === "Pending"
+                                ? "secondary"
+                                : "success"
+                            }
+                          >
+                            {["Draft", "Pending", "Active"].includes(p.status)
+                              ? p.status
+                              : "Active"}
+                          </Badge>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: p.is_online ? "#10b981" : theme.textMuted }}>
+                             <div style={{ width: 6, height: 6, borderRadius: "50%", background: p.is_online ? "#10b981" : "#94a3b8" }} />
+                             {p.is_online ? "ACTIVE" : "OFFLINE"}
+                           </div>
+                        </div>
                       </td>
                       <td style={tableCellStyle}>
                         <div

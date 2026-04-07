@@ -26,12 +26,25 @@ def require_admin(
         raise HTTPException(status_code=403, detail="Admin access required")
     return admin
 
+def get_online_status(last_active: datetime | None) -> bool:
+    if not last_active:
+        return False
+    # Ensure both are timezone aware for comparison
+    now = datetime.now(timezone.utc)
+    # Ensure last_active is timezone-aware
+    if last_active.tzinfo is None:
+        last_active = last_active.replace(tzinfo=timezone.utc)
+    return (now - last_active).total_seconds() < 300 # 5 minutes
+
 @router.get("/users", response_model=List[schemas.UserOut])
 def get_all_users(
     db: Session = Depends(get_db),
     admin=Depends(require_admin),
 ):
-    return db.query(models.User).all()
+    users = db.query(models.User).all()
+    for u in users:
+        u.is_online = get_online_status(u.last_active)
+    return users
 
 @router.post("/users", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
 def create_user(
@@ -105,7 +118,11 @@ def get_admin_dashboard(
         joined_ago = "Recently" # Simple placeholder logic
         if u.member_since:
             now = datetime.now(timezone.utc)
-            diff = now - u.member_since
+            # Ensure u.member_since is timezone-aware
+            member_since = u.member_since
+            if member_since.tzinfo is None:
+                member_since = member_since.replace(tzinfo=timezone.utc)
+            diff = now - member_since
             if diff.days == 0:
                 joined_ago = "Today"
             else:
@@ -116,7 +133,8 @@ def get_admin_dashboard(
             "name": f"{u.first_name} {u.last_name or ''}".strip(),
             "email": u.email,
             "role": u.role.capitalize(),
-            "status": "Active", # Simplified
+            "status": "Active" if u.is_active else "Suspended",
+            "is_online": get_online_status(u.last_active),
             "joined": joined_ago
         })
 
@@ -133,7 +151,10 @@ def get_clinicians(
     db: Session = Depends(get_db),
     admin=Depends(require_admin)
 ):
-    return db.query(models.User).filter(models.User.role.in_(["doctor", "nurse"])).all()
+    clinicians = db.query(models.User).filter(models.User.role.in_(["doctor", "nurse"])).all()
+    for c in clinicians:
+        c.is_online = get_online_status(c.last_active)
+    return clinicians
 
 @router.patch("/users/{user_id}/status", response_model=schemas.UserOut)
 def update_user_status(

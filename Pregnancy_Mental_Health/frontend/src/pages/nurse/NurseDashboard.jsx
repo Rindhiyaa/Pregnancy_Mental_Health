@@ -462,13 +462,31 @@ export default function NurseDashboard() {
                 >
                   <div style={{ fontWeight: 600, color: theme.textMuted }}>{(currentPage - 1) * itemsPerPage + idx + 1}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ 
-                      width: 40, height: 40, borderRadius: 10, 
-                      background: getAvatarColor(p.name) + '15', color: getAvatarColor(p.name), 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 800, fontSize: 16, flexShrink: 0
-                    }}>
-                      {p.name?.charAt(0) || '?'}
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ 
+                        width: 40, height: 40, borderRadius: 10, 
+                        background: getAvatarColor(p.name) + '15', color: getAvatarColor(p.name), 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 800, fontSize: 16, flexShrink: 0
+                      }}>
+                        {p.name?.charAt(0) || '?'}
+                      </div>
+                      {/* Online Status Dot */}
+                      <div 
+                        style={{
+                          position: "absolute",
+                          bottom: -2,
+                          right: -2,
+                          width: 14,
+                          height: 14,
+                          borderRadius: "50%",
+                          border: "3px solid white",
+                          background: p.is_online ? "#10b981" : "#94a3b8",
+                          boxShadow: p.is_online ? "0 0 8px #10b981" : "none",
+                          zIndex: 1,
+                        }}
+                        title={p.is_online ? "Active Now" : "Offline"}
+                      />
                     </div>
                     <div style={{ fontWeight: 700, color: theme.text }}>{p.name}</div>
                   </div>
@@ -478,6 +496,10 @@ export default function NurseDashboard() {
                     <Badge variant={p.status === 'Draft' ? 'warning' : 'success'}>
                       {['Draft', 'Pending', 'Active'].includes(p.status) ? p.status : 'Active'}
                     </Badge>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: p.is_online ? "#10b981" : theme.textMuted, marginTop: 4 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: p.is_online ? "#10b981" : "#94a3b8" }} />
+                      {p.is_online ? "ACTIVE" : "OFFLINE"}
+                    </div>
                   </div>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     <Link to={`/nurse/patients/${p.id}`} style={{ color: theme.textMuted }} onClick={(e) => e.stopPropagation()}>

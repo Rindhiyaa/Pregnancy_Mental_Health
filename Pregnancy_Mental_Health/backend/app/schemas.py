@@ -58,6 +58,7 @@ class UserProfileOut(BaseModel):
     member_since: str | None = None
     ward: Optional[str] = None
     years_of_experience: Optional[int] = None
+    last_active: Optional[datetime] = None
 
 
 class UserProfileUpdate(BaseModel):
@@ -84,6 +85,8 @@ class UserOut(BaseModel):
     ward: Optional[str] = None
     years_of_experience: Optional[int] = None
     member_since: Optional[datetime] = None  # <-- add this line
+    last_active: Optional[datetime] = None
+    is_online: Optional[bool] = False
 
 
 class LoginRequest(BaseModel):

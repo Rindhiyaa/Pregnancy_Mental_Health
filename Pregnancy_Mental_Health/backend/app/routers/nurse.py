@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from ..database import get_db
 from .. import models, schemas
@@ -105,6 +105,7 @@ def get_nurse_dashboard(
                     # Simple status for now; adjust later as needed
                     "status": "Active",
                     "created_at": p.created_at.strftime("%Y-%m-%d"),
+                    "is_online": (datetime.now(timezone.utc) - p.user.last_active.replace(tzinfo=timezone.utc)).total_seconds() < 300 if p.user and p.user.last_active else False,
                 }
             )
 
@@ -136,8 +137,21 @@ def get_nurse_doctors(db: Session = Depends(get_db)):  # ← PUBLIC!
     )
 
     result = []
+    now = datetime.now(datetime.now().astimezone().tzinfo)
     for d in doctors:
         full_name = f"{d.first_name or ''} {d.last_name or ''}".strip() or d.email
+        
+        # ✅ Calculate is_online (active in last 5 minutes)
+        is_online = False
+        if d.last_active:
+            # Handle timezone-aware comparison
+            last_active = d.last_active
+            if last_active.tzinfo is None:
+                last_active = last_active.replace(tzinfo=timezone.utc)
+            
+            diff = datetime.now(timezone.utc) - last_active
+            is_online = diff.total_seconds() < 300 # 5 minutes
+            
         result.append(
             {
                 "id": d.id,
@@ -147,6 +161,8 @@ def get_nurse_doctors(db: Session = Depends(get_db)):  # ← PUBLIC!
                 "email": d.email,
                 "specialization": getattr(d, "specialization", None),
                 "active_patients": counts.get(d.id, 0),
+                "is_online": is_online,
+                "last_active": d.last_active
             }
         )
     return result
@@ -389,6 +405,7 @@ def get_nurse_patients(
                 "doctor_id": p.assigned_doctor_id,
                 "last_assessment": last_assessment_label,
                 "last_assessment_date": last_assessment_date,
+                "is_online": (datetime.now(timezone.utc) - p.user.last_active.replace(tzinfo=timezone.utc)).total_seconds() < 300 if p.user and p.user.last_active else False,
             }
         )
 
@@ -443,6 +460,7 @@ def get_nurse_patient_detail(
         "status": patient.status,
         "assigned_doctor_id": patient.assigned_doctor_id,
         "assigned_doctor": doctor_name,
+        "is_online": (datetime.now(timezone.utc) - patient.user.last_active.replace(tzinfo=timezone.utc)).total_seconds() < 300 if patient.user and patient.user.last_active else False,
     }
 
 

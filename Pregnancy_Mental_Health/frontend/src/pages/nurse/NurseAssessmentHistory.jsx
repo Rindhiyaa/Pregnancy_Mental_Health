@@ -188,14 +188,32 @@ export default function NurseAssessmentHistory() {
                   </td>
                   <td style={tableCellStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ 
-                        width: 36, height: 36, borderRadius: '50%', 
-                        background: getAvatarColor(a.patient_name) + '15', color: getAvatarColor(a.patient_name), 
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: 700, fontSize: 14, flexShrink: 0,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}>
-                        {a.patient_name?.charAt(0)}
+                      <div style={{ position: 'relative' }}>
+                        <div style={{ 
+                          width: 36, height: 36, borderRadius: '50%', 
+                          background: getAvatarColor(a.patient_name) + '15', color: getAvatarColor(a.patient_name), 
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 700, fontSize: 14, flexShrink: 0,
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        }}>
+                          {a.patient_name?.charAt(0)}
+                        </div>
+                        {/* Online Status Dot */}
+                        <div 
+                          style={{
+                            position: "absolute",
+                            bottom: -1,
+                            right: -1,
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            border: "2px solid white",
+                            background: a.patient_is_online ? "#10b981" : "#94a3b8",
+                            boxShadow: a.patient_is_online ? "0 0 6px #10b981" : "none",
+                            zIndex: 1,
+                          }}
+                          title={a.patient_is_online ? "Active Now" : "Offline"}
+                        />
                       </div>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: 15, color: theme.textPrimary }}>{a.patient_name}</div>

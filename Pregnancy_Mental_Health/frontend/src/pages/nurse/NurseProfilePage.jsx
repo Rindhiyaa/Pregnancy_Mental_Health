@@ -113,8 +113,24 @@ export default function NurseProfilePage() {
           <div className="np-grid">
             <div className="np-card">
               <div className="np-avatar-section">
-                <div className="np-avatar">
+                <div className="np-avatar" style={{ position: 'relative' }}>
                   {fullName?.charAt(0) || "N"}
+                  {/* Online Status Dot */}
+                  <div 
+                    style={{
+                      position: "absolute",
+                      bottom: 2,
+                      right: 2,
+                      width: 20,
+                      height: 20,
+                      borderRadius: "50%",
+                      border: "4px solid white",
+                      background: "#10b981",
+                      boxShadow: "0 0 10px #10b981",
+                      zIndex: 1,
+                    }}
+                    title="Active Now"
+                  />
                 </div>
                 <div>
                   <div className="np-name">{fullName}</div>
