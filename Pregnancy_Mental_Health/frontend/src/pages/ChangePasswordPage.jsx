@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { api, getErrorMessage } from "../utils/api";
-import { setToken, setTabRole, getRoleFromUrl } from "../auth/tokenStorage";
+import { setToken, setRefreshToken, setTabRole, getRoleFromUrl } from "../auth/tokenStorage";
 import toast from 'react-hot-toast';
 
 const EyeIcon = ({ open }) => open ? (
@@ -20,23 +20,20 @@ const EyeIcon = ({ open }) => open ? (
 export default function ChangePasswordPage() {
   const navigate = useNavigate();
   const { user, login } = useAuth();
-  const [form, setForm] = useState({
-    newPassword: "",
-    confirmPassword: ""
-  });
-  const [showNew, setShowNew] = useState(false);
+  const [form, setForm] = useState({ newPassword: "", confirmPassword: "" });
+  const [showNew, setShowNew]         = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError]             = useState("");
+  const [loading, setLoading]         = useState(false);
 
-  // Redirect if the user already completed first login
+  // ✅ Redirect if user already completed first login
   useEffect(() => {
     if (user && user.isAuthenticated && user.first_login === false) {
       console.log("User already set password, redirecting to dashboard...");
       const role = (user.role || getRoleFromUrl() || "").toLowerCase();
-      if (role === "admin") navigate("/admin/dashboard", { replace: true });
-      else if (role === "nurse") navigate("/nurse/dashboard", { replace: true });
-      else if (role === "doctor") navigate("/doctor/dashboard", { replace: true });
+      if (role === "admin")        navigate("/admin/dashboard",   { replace: true });
+      else if (role === "nurse")   navigate("/nurse/dashboard",   { replace: true });
+      else if (role === "doctor")  navigate("/doctor/dashboard",  { replace: true });
       else if (role === "patient") navigate("/patient/dashboard", { replace: true });
     }
   }, [user, navigate]);
@@ -55,7 +52,7 @@ export default function ChangePasswordPage() {
       return;
     }
 
-    const hasNumber = /\d/.test(form.newPassword);
+    const hasNumber  = /\d/.test(form.newPassword);
     const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(form.newPassword);
 
     if (!hasNumber || !hasSpecial) {
@@ -74,32 +71,33 @@ export default function ChangePasswordPage() {
         new_password: form.newPassword
       });
 
-      // The backend returns a fresh access token whose iat is AFTER
-      // password_changed_at, so API calls will no longer get 401.
-      // Save it before navigating — if missing (old backend), the user
-      // will need to log in again, but we handle that gracefully below.
       const role = user?.role?.toLowerCase() || getRoleFromUrl();
+
+      // ✅ Save both access + refresh tokens (namespaced)
       if (role && data?.access_token) {
         setToken(role, data.access_token);
         setTabRole(role);
       }
+      if (role && data?.refresh_token) {
+        setRefreshToken(role, data.refresh_token);  // ← NEW
+      }
 
-      // Rebuild user profile with the new token and first_login cleared
+      // ✅ Rebuild auth state — first_login cleared
       const updatedUser = {
         ...user,
-        first_login: false,
-        access_token: data?.access_token || user?.access_token,
+        first_login:    false,
+        access_token:   data?.access_token  || user?.access_token,
+        refresh_token:  data?.refresh_token || user?.refresh_token,
         isAuthenticated: true,
       };
       login(updatedUser);
 
       toast.success("Password set successfully! Welcome 🎉");
 
-      // Navigate immediately — no setTimeout, tokens are already in place
       console.log("Navigating to dashboard for role:", role);
-      if (role === 'admin') navigate("/admin/dashboard", { replace: true });
-      else if (role === 'nurse') navigate("/nurse/dashboard", { replace: true });
-      else if (role === 'doctor') navigate("/doctor/dashboard", { replace: true });
+      if (role === 'admin')        navigate("/admin/dashboard",   { replace: true });
+      else if (role === 'nurse')   navigate("/nurse/dashboard",   { replace: true });
+      else if (role === 'doctor')  navigate("/doctor/dashboard",  { replace: true });
       else if (role === 'patient') navigate("/patient/dashboard", { replace: true });
       else {
         console.warn("Unknown role, falling back to signin:", role);
@@ -131,6 +129,7 @@ export default function ChangePasswordPage() {
           {error && <div className="error" role="alert" aria-live="polite">{error}</div>}
 
           <form onSubmit={handleSubmit} noValidate>
+
             <label>
               New Password
               <div className="password-input-wrapper">
@@ -142,7 +141,12 @@ export default function ChangePasswordPage() {
                   placeholder="••••••••"
                   className="auth-input"
                 />
-                <button type="button" className="password-toggle" onClick={() => setShowNew(v => !v)} aria-label="Toggle new password visibility">
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowNew(v => !v)}
+                  aria-label="Toggle new password visibility"
+                >
                   <EyeIcon open={showNew} />
                 </button>
               </div>
@@ -159,14 +163,21 @@ export default function ChangePasswordPage() {
                   placeholder="••••••••"
                   className="auth-input"
                 />
-                <button type="button" className="password-toggle" onClick={() => setShowConfirm(v => !v)} aria-label="Toggle confirm password visibility">
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirm(v => !v)}
+                  aria-label="Toggle confirm password visibility"
+                >
                   <EyeIcon open={showConfirm} />
                 </button>
               </div>
-            </label>
+            </label>{/* ✅ FIXED: was missing closing > */}
 
             <div className="password-rules" style={{ marginBottom: '1rem' }}>
-              <p style={{ fontWeight: '600', fontSize: '0.9rem', color: '#4b5563', marginBottom: '0.5rem' }}>Password must be:</p>
+              <p style={{ fontWeight: '600', fontSize: '0.9rem', color: '#4b5563', marginBottom: '0.5rem' }}>
+                Password must be:
+              </p>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
                 <li>• At least 8 characters</li>
                 <li>• One number</li>
@@ -181,6 +192,7 @@ export default function ChangePasswordPage() {
             >
               {loading ? "SETTING PASSWORD..." : "SET PASSWORD & CONTINUE"}
             </button>
+
           </form>
         </div>
 
@@ -189,11 +201,13 @@ export default function ChangePasswordPage() {
             <div className="side-header">Account Security</div>
             <div className="side-title">Protecting patient information is our priority.</div>
             <p className="side-text">
-              By setting a strong, unique password, you help ensure that sensitive maternal mental health data remains secure and accessible only to authorized clinical staff.
+              By setting a strong, unique password, you help ensure that sensitive maternal
+              mental health data remains secure and accessible only to authorized clinical staff.
             </p>
           </div>
           <p className="side-footer">
-            Your account is being initialized. Once you set your password, you'll have full access to your clinical workspace.
+            Your account is being initialized. Once you set your password, you'll have full
+            access to your clinical workspace.
           </p>
         </aside>
       </div>

@@ -4,15 +4,14 @@ import { useAuth } from "../contexts/AuthContext";
 import { api, getErrorMessage } from "../utils/api";
 
 export default function SignInPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate  = useNavigate();
+  const location  = useLocation();
   const { login } = useAuth();
-  const [form, setForm] = useState({ identifier: "", password: "" }); // identifier can be email or phone
-  const [error, setError] = useState("");
+  const [form, setForm]               = useState({ identifier: "", password: "" });
+  const [error, setError]             = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading]     = useState(false);
 
-  // Check for error messages in the URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get("error") === "first_login") {
@@ -20,12 +19,11 @@ export default function SignInPage() {
     }
   }, [location.search]);
 
-  // Get the page user was trying to access before being redirected to signin
   const from = location.state?.from?.pathname || "/dashboard";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -40,63 +38,51 @@ export default function SignInPage() {
     }
 
     try {
-      // Determine if identifier is email or phone
       const isEmail = form.identifier.includes("@");
       const payload = isEmail
         ? { email: form.identifier, password: form.password }
         : { phone_number: form.identifier, password: form.password };
 
-      // Try login using api utility (handles mocking)
       const { data } = await api.post("/login", payload);
 
       const userProfile = {
-        fullName: data.full_name || "User",
-        firstName: data.first_name || "",
-        lastName: data.last_name || "",
-        email: data.email || form.identifier,
-        phone: data.phone_number || "",
-        role: data.role || "patient", // Default to patient if not provided
-        department: data.department || "",
-        memberSince: data.member_since || new Date().toLocaleDateString(),
-        timestamp: new Date().toISOString(),
-        access_token: data.access_token, // Store JWT token
-        first_login: data.first_login,
+        fullName:      data.full_name    || "User",
+        firstName:     data.first_name   || "",
+        lastName:      data.last_name    || "",
+        email:         data.email        || form.identifier,
+        phone:         data.phone_number || "",
+        role:          data.role         || "patient",
+        department:    data.department   || "",
+        memberSince:   data.member_since || new Date().toLocaleDateString(),
+        timestamp:     new Date().toISOString(),
+        access_token:  data.access_token,
+        refresh_token: data.refresh_token,  // ✅ Pass refresh token to login()
+        first_login:   data.first_login,
       };
 
-      // Call login from context - it now handles namespaced storage automatically
-      login(userProfile);
+      login(userProfile);  // AuthContext saves both tokens namespaced
 
-      // success → redirect based on role and first_login status
       const role = data.role ? data.role.toLowerCase() : 'patient';
 
-      // FORCE password change for non-admin roles if first_login is true
+      // ✅ FORCE set-password for first-time users (not admin)
       if (data.first_login && role !== 'admin') {
         navigate("/change-password", { replace: true });
         return;
       }
 
-      if (role === 'admin') {
-        navigate("/admin/dashboard", { replace: true });
-      } else if (role === 'nurse') {
-        navigate("/nurse/dashboard", { replace: true });
-      } else if (role === 'doctor') {
-        navigate("/doctor/dashboard", { replace: true });
-      } else if (role === 'patient') {
-        navigate("/patient/dashboard", { replace: true });
-      } else {
-        // Fallback for any other roles
-        navigate(from, { replace: true });
-      }
+      if (role === 'admin')        navigate("/admin/dashboard",   { replace: true });
+      else if (role === 'nurse')   navigate("/nurse/dashboard",   { replace: true });
+      else if (role === 'doctor')  navigate("/doctor/dashboard",  { replace: true });
+      else if (role === 'patient') navigate("/patient/dashboard", { replace: true });
+      else                         navigate(from,                 { replace: true });
 
     } catch (err) {
       console.warn("Backend login failed:", err.message);
       setError(getErrorMessage(err, "Login failed. Please check your credentials."));
-      return;
     } finally {
       setIsLoading(false);
     }
   };
-
 
   return (
     <main className="auth-page">
@@ -109,28 +95,8 @@ export default function SignInPage() {
 
           <h1>Sign in to your account</h1>
           <p className="lead">
-            Access your workspace to screen pregnancy and postpartum depression risk for your
-            patients.
+            Access your workspace to screen pregnancy and postpartum depression risk for your patients.
           </p>
-
-          {/* <p className="switch-auth">
-            Don't have an account?{" "}
-            <button type="button" className="link-button" onClick={() => navigate("/signup")}>
-              Sign up
-            </button>
-            {" | "}
-            <button
-              type="button"
-              className="link-button"
-              onClick={() => {
-                localStorage.clear();
-                window.location.reload();
-              }}
-              style={{ color: '#ef4444' }}
-            >
-              Clear Data
-            </button>
-          </p> */}
 
           <form onSubmit={handleSubmit} noValidate>
             <label>
@@ -204,8 +170,7 @@ export default function SignInPage() {
             </p>
           </div>
           <p className="side-footer">
-            Not for emergency use. If a mother is at immediate risk, follow your local urgent‑care
-            protocols.
+            Not for emergency use. If a mother is at immediate risk, follow your local urgent‑care protocols.
           </p>
         </aside>
       </div>
