@@ -119,9 +119,24 @@ export default function ClinicalValidation() {
 const handleSubmit = async (status) => {
     const isOverridden = form.risk_level_final === "Override";
 
-    if (status === "complete" && isOverridden && !form.override_reason) {
-        toast.error("Override justification required");
-        return;
+    if (status === "complete") {
+        let missing = [];
+        if (!form.risk_level_final) missing.push("Validated Risk Level");
+        if (isOverridden && (!form.override_reason || form.override_reason.trim() === "")) {
+            missing.push("Override Justification");
+        }
+        if (!form.plan || form.plan.trim() === "") missing.push("Patient Care Instructions");
+        if (!form.followup_urgency) missing.push("Nurse Protocol Allocation (Urgency)");
+        if (!form.followup_window) missing.push("Nurse Protocol Allocation (Window)");
+        if (!form.nurse_instruction || form.nurse_instruction.trim() === "") missing.push("Nurse Tasks / Check-in Instructions");
+
+        if (missing.length > 0) {
+            toast.error(
+                `Clinical validation incomplete. Missing fields: ${missing.join(", ")}`,
+                { duration: 6000 }
+            );
+            return;
+        }
     }
 
     try {

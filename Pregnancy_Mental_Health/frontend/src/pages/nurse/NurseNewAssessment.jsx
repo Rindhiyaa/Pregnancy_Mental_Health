@@ -135,6 +135,30 @@ export default function NurseNewAssessment() {
       setShowPatientModal(true);
       return;
     }
+
+    // VALIDATION: Check every field across all sections for completion
+    let missingFields = [];
+    ASSESSMENT_SECTIONS.forEach(section => {
+      if (section.id === 7) return; // Skip submit step
+      section.questions.forEach(q => {
+        const val = formData[q.name];
+        if (val === undefined || val === null || String(val).trim() === "") {
+          let label = q.label || q.name;
+          if (label.includes(".")) label = label.split(".")[1].trim(); // Clean up EPDS numbering
+          missingFields.push(label);
+        }
+      });
+    });
+
+    if (missingFields.length > 0) {
+      const topMissing = missingFields.slice(0, 3);
+      const moreMsg = missingFields.length > 3 ? ` (+${missingFields.length - 3} more)` : "";
+      toast.error(
+        `Validation Failed: All fields are mandatory. Missing: ${topMissing.join(", ")}${moreMsg}`,
+        { duration: 5000 }
+      );
+      return;
+    }
   
     setLoading(true);
     try {

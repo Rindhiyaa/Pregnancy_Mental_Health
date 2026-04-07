@@ -498,6 +498,24 @@ def create_nurse_assessment(
     if not nurse or nurse.role != "nurse":
         raise HTTPException(status_code=403, detail="Nurse role required")
 
+    if payload.status == "submitted":
+        required = [
+            "age", "residence", "education_level", "marital_status", 
+            "partner_education", "partner_income", "household_members",
+            "relationship_inlaws", "relationship_husband", "support_during_pregnancy",
+            "need_more_support", "trust_share_feelings", "family_type",
+            "total_children_now", "pregnancy_number", "pregnancy_planned", 
+            "regular_checkups", "medical_conditions_pregnancy", "occupation_before_surgery",
+            "depression_before_pregnancy", "depression_during_pregnancy",
+            "fear_pregnancy_childbirth", "major_life_changes_pregnancy", "abuse_during_pregnancy"
+        ]
+        required.extend([f"epds_{i}" for i in range(1, 11)])
+
+        raw = payload.raw_data or {}
+        missing = [f for f in required if raw.get(f) is None or str(raw.get(f)).strip() == ""]
+        if missing:
+            raise HTTPException(status_code=400, detail=f"Incomplete assessment submission. Missing required fields: {', '.join(missing[:5])}" + ("..." if len(missing) > 5 else ""))
+
     new_assessment = models.Assessment(
         patient_id=payload.patient_id,
         patient_name=payload.patient_name,

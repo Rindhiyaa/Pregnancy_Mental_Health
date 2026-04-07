@@ -564,6 +564,21 @@ def review_assessment(
         a.reviewed_at      = datetime.now()  # ✅ ADDED: Mark when reviewed
 
         new_status = payload.get("status")
+        
+        if new_status == "approved":
+            missing = []
+            if not payload.get("risk_level_final"):
+                missing.append("risk_level_final")
+            if not payload.get("plan") or str(payload.get("plan")).strip() == "":
+                missing.append("plan")
+            if not payload.get("nurse_instruction") or str(payload.get("nurse_instruction")).strip() == "":
+                missing.append("nurse_instruction")
+            if payload.get("risk_level_final") == "Override" and (not payload.get("override_reason") or str(payload.get("override_reason")).strip() == ""):
+                missing.append("override_reason")
+            
+            if missing:
+                raise HTTPException(status_code=400, detail=f"Validation failed. Missing clinical fields: {', '.join(missing)}")
+
         a.status = "approved" if new_status == "approved" else "reviewed"
 
         # Create a single FollowUp record for the nurse when the doctor finalises.
