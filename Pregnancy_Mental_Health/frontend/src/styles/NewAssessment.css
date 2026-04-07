@@ -97,23 +97,26 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   margin-bottom: 32px;
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to avoid clipping shadows */
+  width: 100%;
+  min-height: 120px; /* Ensure a minimum height so it doesn't collapse */
 }
 
 .stepper-track {
   display: flex;
   align-items: flex-start;
   width: 100%;
+  justify-content: space-between;
 }
 
 .stepper-node-group {
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1;
+  flex: 1 1 0; /* Changed to more stable flex shorthand */
   position: relative;
-  gap: 8px;
-  min-width: 0;
+  gap: 12px; /* Slightly more gap */
+  min-width: 80px; /* Added min-width to prevent group from collapsing to 0 */
 }
 
 .stepper-node {

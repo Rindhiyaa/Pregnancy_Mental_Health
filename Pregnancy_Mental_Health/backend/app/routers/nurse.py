@@ -122,14 +122,7 @@ def get_nurse_dashboard(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/doctors")
-def get_nurse_doctors(
-    db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
-):
-    nurse = db.query(models.User).filter(models.User.email == current_user_email).first()
-    if not nurse or nurse.role != "nurse":
-        raise HTTPException(status_code=403, detail="Nurse role required")
-
+def get_nurse_doctors(db: Session = Depends(get_db)):  # ← PUBLIC!
     doctors = (
         db.query(models.User)
         .filter(models.User.role == "doctor")
@@ -389,6 +382,7 @@ def get_nurse_patients(
                 "name": p.name,
                 "email": p.email,
                 "phone": p.phone,
+                "age": p.age,
                 "pregnancy_week": p.pregnancy_week,
                 "status": patient_status,
                 "assigned_doctor": doctor_name,

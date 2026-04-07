@@ -1,69 +1,76 @@
-/* --- AUTH PAGES --- */
+/* ============================================================
+   AUTH PAGES — SignIn, ForgotPassword, ChangePassword
+   ============================================================ */
 
-/* Full-page background only here */
-/* body, #root, .page {
-  background: radial-gradient(circle at top left, #fdf2ff 0%, #ffffff 48%, #eff6ff 100%);
-} */
-
+/* Full-page background */
 .auth-page {
   min-height: 100vh;
   display: flex;
-  align-items: center;       /* centered */
+  align-items: center;
   justify-content: center;
-  padding: 2rem 0;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
   background: radial-gradient(circle at top left, #fdf2ff 0%, #ffffff 48%, #eff6ff 100%);
 }
 
-/* Card with Glassmorphism */
+/* ─── Card with Glassmorphism + Shadow ───────────────────────── */
 .auth-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   max-width: 1100px;
   width: 100%;
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.3);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 32px 64px -12px rgba(139, 92, 246, 0.18),
+    0 16px 32px -8px  rgba(236, 72, 153, 0.10),
+    0  4px 16px -4px  rgba(0, 0, 0, 0.08),
+    0  0   0   1px    rgba(255, 255, 255, 0.4);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 32px;
   overflow: hidden;
 }
 
 .auth-layout:hover {
   transform: translateY(-4px);
-  background: rgba(255, 255, 255, 0.55);
-  box-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 48px 80px -16px rgba(139, 92, 246, 0.22),
+    0 24px 48px -10px rgba(236, 72, 153, 0.14),
+    0  8px 24px -4px  rgba(0, 0, 0, 0.10),
+    0  0   0   1px    rgba(255, 255, 255, 0.5);
 }
 
-/* Left side: form card */
+/* ─── Left: Form ─────────────────────────────────────────────── */
 .auth-main {
   padding: 3rem 2.5rem;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.35);
   border-radius: 32px 0 0 32px;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  box-sizing: border-box;
 }
 
-/* Right side: info card */
+/* ─── Right: Info Panel ──────────────────────────────────────── */
 .auth-side {
-  background: rgba(245, 243, 255, 0.35);
+  background: rgba(245, 243, 255, 0.40);
   color: #1e293b;
   padding: 3rem 2.5rem;
   display: flex;
-  transition: all 0.3s ease;
   flex-direction: column;
   justify-content: space-between;
-  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 0 32px 32px 0;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
-/* ---- existing typography etc. can stay below ---- */
-
+/* ─── Brand ──────────────────────────────────────────────────── */
 .auth-brand {
   display: flex;
   align-items: center;
@@ -83,6 +90,7 @@
   font-weight: 700;
   font-size: 1.2rem;
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+  flex-shrink: 0;
 }
 
 .auth-brand .logo-mark::before {
@@ -96,6 +104,7 @@
   color: #1f2937;
 }
 
+/* ─── Typography ─────────────────────────────────────────────── */
 .auth-main h1 {
   font-size: 1.95rem;
   font-weight: 700;
@@ -131,6 +140,7 @@
   transform: translateY(-1px);
 }
 
+/* ─── Form ───────────────────────────────────────────────────── */
 .auth-main form {
   display: flex;
   flex-direction: column;
@@ -160,9 +170,17 @@ input[type="password"] {
   border-radius: 8px;
   font-size: 1rem;
   transition: all 0.2s ease;
+  box-sizing: border-box;
+  width: 100%;
 }
 
-/* Password Input Wrapper with Eye Toggle */
+input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+/* ─── Password Toggle ────────────────────────────────────────── */
 .password-input-wrapper {
   position: relative;
   display: flex;
@@ -204,12 +222,7 @@ input[type="password"] {
   height: 20px;
 }
 
-input:focus {
-  outline: none;
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
-}
-
+/* ─── Misc Form Elements ─────────────────────────────────────── */
 .hint {
   font-size: 0.9rem;
   color: #9ca3af;
@@ -255,7 +268,18 @@ input:focus {
   border: 1px solid #6ee7b7;
 }
 
-/* OTP Page Styles */
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #dc2626;
+  margin-bottom: 1.2rem;
+  font-weight: 500;
+}
+
+/* ─── OTP ────────────────────────────────────────────────────── */
 .otp-test-display {
   background: linear-gradient(135deg, #fef3c7, #fde68a);
   border: 2px solid #fbbf24;
@@ -278,6 +302,7 @@ input:focus {
   font-size: 1.1rem;
 }
 
+/* ─── Buttons ────────────────────────────────────────────────── */
 .btn-primary.full-width {
   width: 100%;
   padding: 0.9rem 1.6rem;
@@ -288,21 +313,22 @@ input:focus {
   border: 1px solid rgba(255, 255, 255, 0.1);
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 
+  box-shadow:
     0 10px 20px -5px rgba(139, 92, 246, 0.35),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    0  4px  6px -2px rgba(0, 0, 0, 0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 12px;
   letter-spacing: 0.01em;
   text-transform: uppercase;
+  box-sizing: border-box;
 }
 
 .btn-primary.full-width:hover {
   background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 20px 25px -5px rgba(139, 92, 246, 0.45),
-    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    0  8px 10px -6px rgba(0, 0, 0, 0.1);
   filter: brightness(1.05);
 }
 
@@ -316,10 +342,30 @@ input:focus {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
-/* Password Rules for Change Password Page */
+.btn-outline.full-width {
+  width: 100%;
+  padding: 0.85rem 1.6rem;
+  font-size: 1rem;
+  background: white;
+  color: #8b5cf6;
+  border: 2px solid #e9d5ff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border-radius: 999px;
+  box-sizing: border-box;
+}
+
+.btn-outline.full-width:hover {
+  background: #faf5ff;
+  border-color: #d8b4fe;
+  transform: translateY(-1px);
+}
+
+/* ─── Password Rules ─────────────────────────────────────────── */
 .password-rules {
   background: rgba(248, 250, 252, 0.5);
   border: 1px dashed #e2e8f0;
@@ -338,6 +384,7 @@ input:focus {
 .password-rules ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .password-rules li {
@@ -349,42 +396,7 @@ input:focus {
   gap: 6px;
 }
 
-.error-message {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  padding: 0.8rem 1rem;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  color: #dc2626;
-  margin-bottom: 1.2rem;
-  font-weight: 500;
-}
-
-.btn-primary.full-width:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-outline.full-width {
-  width: 100%;
-  padding: 0.85rem 1.6rem;
-  font-size: 1rem;
-  background: white;
-  color: #8b5cf6;
-  border: 2px solid #e9d5ff;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  border-radius: 999px;
-}
-
-.btn-outline.full-width:hover {
-  background: #faf5ff;
-  border-color: #d8b4fe;
-  transform: translateY(-1px);
-}
-
+/* ─── Side Panel ─────────────────────────────────────────────── */
 .auth-side > div {
   display: flex;
   flex-direction: column;
@@ -455,60 +467,184 @@ input:focus {
   margin-top: 1.2rem;
 }
 
-/* Mobile stacking */
+/* ============================================================
+   RESPONSIVE BREAKPOINTS
+   ============================================================ */
+
+/* ─── Disable hover jank on touch devices ────────────────────── */
+@media (hover: none) {
+  .auth-layout:hover {
+    transform: none;
+    box-shadow:
+      0 32px 64px -12px rgba(139, 92, 246, 0.18),
+      0 16px 32px -8px  rgba(236, 72, 153, 0.10),
+      0  4px 16px -4px  rgba(0, 0, 0, 0.08),
+      0  0   0   1px    rgba(255, 255, 255, 0.4);
+  }
+}
+
+/* ─── Tablet (≤900px) ────────────────────────────────────────── */
 @media (max-width: 900px) {
+  .auth-page {
+    padding: 1.5rem 1rem;
+    align-items: flex-start;
+  }
+
   .auth-layout {
     grid-template-columns: 1fr;
-    max-width: 540px;
+    max-width: 480px;
     margin: 0 auto;
+    border-radius: 24px;
   }
 
   .auth-main {
     border-radius: 24px 24px 0 0;
-    padding: 2rem 1.5rem;
+    padding: 2rem 1.75rem;
   }
 
   .auth-side {
     border-radius: 0 0 24px 24px;
-    padding: 1.5rem;
+    padding: 1.5rem 1.75rem;
   }
 }
 
+/* ─── Mobile (≤600px) ────────────────────────────────────────── */
 @media (max-width: 600px) {
   .auth-page {
-    padding: 0;
-    align-items: stretch;
+    padding: 1rem 0.75rem;
+    align-items: center;
+    min-height: 100dvh;
   }
 
   .auth-layout {
     max-width: 100%;
-    border-radius: 0;
-    min-height: 100vh;
-    box-shadow: none;
+    border-radius: 20px;
+    min-height: auto;
+    /* ✅ Soft card shadow on mobile */
+    box-shadow:
+      0 16px 40px -8px  rgba(139, 92, 246, 0.20),
+      0  8px 16px -4px  rgba(0, 0, 0, 0.08),
+      0  0   0   1px    rgba(255, 255, 255, 0.5);
   }
 
   .auth-main {
-    border-radius: 0;
-    padding: 1.5rem 1.25rem;
+    border-radius: 20px;     /* full round — no side panel */
+    padding: 1.75rem 1.25rem;
+    justify-content: flex-start;
   }
 
   .auth-side {
-    display: none;
+    display: none;           /* hide side panel on mobile */
   }
 
+  /* ── Compact typography ── */
   .auth-main h1 {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .auth-main .lead {
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  .auth-brand {
+    margin-bottom: 1rem;
+  }
+
+  .auth-brand .logo-mark {
+    width: 30px;
+    height: 30px;
+  }
+
+  .auth-brand .logo-mark::before {
+    font-size: 1rem;
+  }
+
+  .auth-brand .logo-text {
+    font-size: 0.95rem;
+  }
+
+  /* ── Compact form ── */
+  .auth-main form {
+    gap: 0.75rem;
+  }
+
+  .auth-main label {
+    font-size: 0.875rem;
+    gap: 0.3rem;
+  }
+
+  /* Prevent iOS zoom on focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    font-size: 16px !important;
+    padding: 0.6rem 0.7rem;
+  }
+
+  .btn-primary.full-width {
+    font-size: 0.875rem;
+    padding: 0.8rem 1rem;
+    margin-top: 0.25rem;
+  }
+
+  .switch-auth {
+    font-size: 0.85rem;
+    margin-bottom: 0.9rem;
   }
 
   .two-col-row {
     grid-template-columns: 1fr;
   }
+
+  .password-rules {
+    padding: 0.75rem;
+  }
+
+  .password-rules li {
+    font-size: 0.8rem;
+  }
+
+  .error,
+  .success {
+    font-size: 0.85rem;
+  }
 }
 
-/* ── DARK MODE OVERRIDES ── */
+/* ─── Small phones (≤380px) ──────────────────────────────────── */
+@media (max-width: 380px) {
+  .auth-page {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .auth-main {
+    padding: 1.25rem 1rem;
+  }
+
+  .auth-main h1 {
+    font-size: 1.2rem;
+  }
+
+  .auth-brand .logo-text {
+    font-size: 0.85rem;
+  }
+
+  .btn-primary.full-width {
+    font-size: 0.82rem;
+    padding: 0.75rem 0.9rem;
+  }
+}
+
+/* ============================================================
+   DARK MODE
+   ============================================================ */
 .dark .auth-layout {
   border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 32px 64px -12px rgba(0, 0, 0, 0.5),
+    0  0   0   1px    rgba(255, 255, 255, 0.05);
 }
 
 .dark .auth-main {
@@ -516,17 +652,9 @@ input:focus {
   color: #f1f5f9;
 }
 
-.dark .auth-main h1 {
-  color: #f1f5f9;
-}
-
-.dark .auth-main .lead {
-  color: #94a3b8;
-}
-
-.dark .auth-main label {
-  color: #cbd5e1;
-}
+.dark .auth-main h1     { color: #f1f5f9; }
+.dark .auth-main .lead  { color: #94a3b8; }
+.dark .auth-main label  { color: #cbd5e1; }
 
 .dark .auth-main input {
   background: #1e2937;
@@ -534,9 +662,7 @@ input:focus {
   color: #f1f5f9;
 }
 
-.dark .auth-main input:focus {
-  border-color: #8b5cf6;
-}
+.dark .auth-main input:focus { border-color: #8b5cf6; }
 
 .dark .auth-side {
   background: #1e293b !important;
@@ -544,13 +670,9 @@ input:focus {
   border-left-color: #334155;
 }
 
-.dark .side-title {
-  color: #f1f5f9;
-}
-
-.dark .side-text {
-  color: #94a3b8;
-}
+.dark .side-title           { color: #f1f5f9; }
+.dark .side-text            { color: #94a3b8; }
+.dark .side-footer          { color: #64748b; }
 
 .dark .side-card {
   background: rgba(255, 255, 255, 0.03) !important;
@@ -558,14 +680,6 @@ input:focus {
   color: #cbd5e1;
 }
 
-.dark .side-card strong {
-  color: #f1f5f9;
-}
-
-.dark .logo-text {
-  color: #f1f5f9;
-}
-
-.dark .auth-brand .logo-text {
-  color: #f1f5f9;
-}
+.dark .side-card strong     { color: #f1f5f9; }
+.dark .logo-text            { color: #f1f5f9; }
+.dark .auth-brand .logo-text{ color: #f1f5f9; }

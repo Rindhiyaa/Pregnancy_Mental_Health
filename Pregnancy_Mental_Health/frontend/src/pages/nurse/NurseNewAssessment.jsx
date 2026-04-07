@@ -53,6 +53,11 @@ export default function NurseNewAssessment() {
           const match = loadedPatients.find(p => String(p.id) === String(preselectedId));
           if (match) {
             setSelectedPatient(match);
+            setFormData(prev => ({
+              ...prev,
+              patient_name: match.name,
+              age: match.age || ""
+            }));
             setShowPatientModal(false);
             setStep(1);
           }
@@ -501,7 +506,11 @@ export default function NurseNewAssessment() {
                     className={`patient-list-item-modern ${selectedPatient?.id === p.id ? 'active' : ''}`}
                     onClick={() => {
                       setSelectedPatient(p);
-                      setFormData(prev => ({ ...prev, patient_name: p.name }));
+                      setFormData(prev => ({
+                        ...prev,
+                        patient_name: p.name,
+                        age: p.age || ""
+                      }));
                       // Auto-assign returning patient to previous doctor
                       if (p.previous_doctor_id) {
                         setSelectedDoctorId(String(p.previous_doctor_id));
