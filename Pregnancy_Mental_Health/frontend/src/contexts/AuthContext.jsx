@@ -153,7 +153,7 @@ export const AuthProvider = ({ children, portalRole = null }) => {
 
     setTabRole(role);
 
-    // ✅ Save access + refresh tokens (namespaced)
+    // ✅ Save access + refresh tokens 
     setAuth(role, {
       token:    userData.access_token,
       refresh:  userData.refresh_token,   // ← NEW
