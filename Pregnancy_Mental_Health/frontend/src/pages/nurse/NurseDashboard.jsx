@@ -79,7 +79,10 @@ export default function NurseDashboard() {
         setRecentPatients(Array.isArray(dashboardInfo.recentPatients) ? dashboardInfo.recentPatients : []);
 
         const notifs = notifRes.data || [];
-        setNotifications(Array.isArray(notifs) ? notifs : []);
+
+        const unreadNotifs = notifs.filter(n => !n.is_read); // ✅ filter
+
+        setNotifications(unreadNotifs);
         setUnreadCount(unreadRes.data?.count ?? 0);
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
@@ -111,6 +114,8 @@ export default function NurseDashboard() {
       console.error("Failed to mark all notifications read", e);
     }
   };
+
+  
 
   const QuickAction = ({ icon, label, to, color }) => (
     <Link to={to} style={{ textDecoration: 'none', flex: 1 }}>
@@ -385,7 +390,7 @@ export default function NurseDashboard() {
                                 timeStyle: "short"
                               })}
                             </span>
-                            {!n.is_read && (
+                            {n.is_read !== true && (
                               <button
                                 onClick={() => handleMarkOneRead(n.id)}
                                 style={{

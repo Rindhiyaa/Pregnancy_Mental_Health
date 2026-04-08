@@ -693,7 +693,10 @@ def list_nurse_appointments(
 
     appts = (
         db.query(models.Appointment)
-        .filter(models.Appointment.created_by_nurse_id == nurse.id)  # ← FILTER BY NURSE
+        .filter(
+            models.Appointment.created_by_nurse_id == nurse.id,
+            models.Appointment.status.notin_(["Completed", "Cancelled"])
+        )
         .order_by(models.Appointment.date.asc(), models.Appointment.time.asc())
         .all()
     )
@@ -717,6 +720,7 @@ def list_nurse_appointments(
             "notes": a.notes,
             "urgency": a.urgency,
             "department": a.department,
+            "status": a.status,
         })
 
     return results
@@ -798,6 +802,28 @@ def create_nurse_appointment(
         db.commit()
         db.refresh(followup)
 
+        # ✅ SEND NOTIFICATION TO DOCTOR AFTER APPOINTMENT IS CREATED
+        try:
+            if doctor and doctor.email:
+                nurse_name = f"{nurse.first_name or ''} {nurse.last_name or ''}".strip() or nurse.email
+
+                notification = models.Notification(
+                    title="New Appointment Scheduled",
+                    message=(
+                        f"An appointment has been scheduled for {patient.name} "
+                        f"by Nurse {nurse_name} on {appt.date.strftime('%Y-%m-%d')} at {appt.time.strftime('%H:%M')}."
+                    ),
+                    type="info",
+                    priority="medium",
+                    clinician_email=doctor.email,
+                )
+
+                db.add(notification)
+                db.commit()
+
+        except Exception as notif_err:
+            logger.error(f"Notification creation failed: {notif_err}")
+
         return {
             "appointment_id": appt.id,
             "patient_name": patient.name,
@@ -866,7 +892,10 @@ def update_appointment_status(
 
     appt = (
         db.query(models.Appointment)
-        .filter(models.Appointment.id == appointment_id)
+        .filter(
+            models.Appointment.id == appointment_id,
+            models.Appointment.created_by_nurse_id == nurse.id,
+        )
         .first()
     )
     if not appt:

@@ -15,7 +15,8 @@ def get_notifications(
     limit: int = 10
 ):
     return db.query(models.Notification).filter(
-        models.Notification.clinician_email == current_user_email
+        models.Notification.clinician_email == current_user_email,
+        models.Notification.is_read == False   # ✅ ADD THIS
     ).order_by(models.Notification.created_at.desc()).limit(limit).all()
 
 @router.get("/unread-count")

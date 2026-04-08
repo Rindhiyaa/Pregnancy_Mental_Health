@@ -206,7 +206,7 @@ class Notification(Base):
     message = Column(String, nullable=False)
     type = Column(String, default="info") # alert, success, info
     priority = Column(String, default="medium") # high, medium, low
-    is_read = Column(Boolean, default=False)
+    is_read = Column(Boolean, default=False, nullable=False)
     clinician_email = Column(String, index=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

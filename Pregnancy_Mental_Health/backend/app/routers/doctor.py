@@ -649,20 +649,27 @@ def review_assessment(
                 title = "Risk Score Validated"
                 message = (
                     f"Dr. {(doctor.first_name or '').strip()} {(doctor.last_name or '').strip()} "
-                    f"has reviewed the assessment for {patient_name} and confirmed the "
-                    f"risk as {final_band}."
+                    f"has reviewed the assessment for {patient_name}."
                 )
 
                 priority = "high" if str(final_band).lower().startswith("high") else "medium"
 
-                notification = models.Notification(
-                    title=title,
-                    message=message,
-                    type="info",
-                    priority=priority,
-                    clinician_email=nurse_user.email,
-                )
-                db.add(notification)
+                # ✅ Check if notification already exists for this assessment
+                existing_notification = db.query(models.Notification).filter(
+                    models.Notification.clinician_email == nurse_user.email,
+                    models.Notification.title == "Risk Score Validated",
+                    models.Notification.message.contains(str(a.id))  # use assessment id
+                ).first()
+
+                if not existing_notification:
+                    notification = models.Notification(
+                        title="Risk Score Validated",
+                        message=f"Assessment for {a.patient_name or 'patient'} has been reviewed by Dr. {doctor.first_name}",
+                        type="info",
+                        priority=priority,
+                        clinician_email=nurse_user.email,
+                    )
+                    db.add(notification)
 
         db.commit()
         db.refresh(a)

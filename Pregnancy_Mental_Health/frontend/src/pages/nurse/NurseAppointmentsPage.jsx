@@ -258,14 +258,23 @@ export default function NurseAppointmentsPage() {
   };
 
   const filteredAppointments = appointments.filter((a) => {
-    if (selectedDoctorFilter !== "All Doctors" && (a.doctor_name || a.doctorname) !== selectedDoctorFilter) {
+    const status = (a.status || "").toLowerCase();
+  
+    if (status === "completed" || status === "cancelled") {
       return false;
     }
-
+  
+    if (
+      selectedDoctorFilter !== "All Doctors" &&
+      (a.doctor_name || a.doctorname) !== selectedDoctorFilter
+    ) {
+      return false;
+    }
+  
     const appDate = new Date(a.date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
+  
     if (filter === "Today") {
       const dateStr = typeof a.date === "string" ? a.date : appDate.toISOString().split("T")[0];
       const todayStr = today.toISOString().split("T")[0];
@@ -279,6 +288,7 @@ export default function NurseAppointmentsPage() {
     if (filter === "Urgent") {
       return a.urgency === "Urgent" || a.type === "Urgent Review" || a.type === "Urgent";
     }
+  
     return true;
   });
 
