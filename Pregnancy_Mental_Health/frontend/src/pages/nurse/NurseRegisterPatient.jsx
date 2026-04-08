@@ -4,7 +4,6 @@ import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
 import { PageTitle, Card, Loader2 } from "../../components/UI";
 import { api, getErrorMessage } from "../../utils/api";
-// import { dummyApi, USE_DUMMY_DATA } from "../../utils/dummyData";
 import toast from "react-hot-toast";
 import { User, Mail, Phone, Calendar, Droplet, Baby, Hospital, Stethoscope, Hash, Lock } from "lucide-react";
 import "../../styles/RegisterPatient.css";
