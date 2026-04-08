@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const InactivityWarning = ({ show, onExtendSession, onLogout, timeRemaining }) => {
   const [countdown, setCountdown] = useState(timeRemaining);

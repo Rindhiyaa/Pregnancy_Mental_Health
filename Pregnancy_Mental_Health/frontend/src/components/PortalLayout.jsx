@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useTheme } from "../ThemeContext";
 import ThemeToggle from "./ThemeToggle";
 import { useBreakpoint } from "../hooks/useBreakpoint";

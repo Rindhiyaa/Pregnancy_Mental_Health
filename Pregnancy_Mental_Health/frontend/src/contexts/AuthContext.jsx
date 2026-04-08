@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { setGlobalLogoutCallback, setGlobalActivityCallback } from '../utils/api';
 import InactivityWarning from '../components/InactivityWarning';
 import {
