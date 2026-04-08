@@ -21,7 +21,6 @@ import { useTheme } from "../ThemeContext";
 
 export default function PatientLayout({ children, style = {} }) {
   const { theme } = useTheme();
-
   return (
     <div style={{
       display: "flex",
@@ -32,8 +31,7 @@ export default function PatientLayout({ children, style = {} }) {
       <PatientSidebar />
       <main
         className="portal-main"
-        style={{ background: theme.pageBg, ...style }}
-      >
+        style={{ background: theme.pageBg, ...style }}>
         {children}
       </main>
     </div>

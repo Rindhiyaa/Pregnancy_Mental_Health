@@ -13,13 +13,70 @@ let refreshSubscribers = [];
 let globalLogoutCallback   = null;
 let globalActivityCallback = null;
 
+// Backend status handling
+let backendStatusCallback = null;
+
 export const setGlobalLogoutCallback   = (cb) => { globalLogoutCallback   = cb; };
 export const setGlobalActivityCallback = (cb) => { globalActivityCallback = cb; };
+export const setBackendStatusCallback = (cb) => {
+  backendStatusCallback = cb;
+};
 
 const subscribeTokenRefresh = (cb) => { refreshSubscribers.push(cb); };
 const onTokenRefreshed = (newToken) => {
   refreshSubscribers.forEach(cb => cb(newToken));
   refreshSubscribers = [];
+};
+
+const notifyBackendStatus = (status) => {
+  if (backendStatusCallback) backendStatusCallback(status);
+};
+
+// Backend wake check functionality
+let backendWakeCheckInterval = null;
+let backendState = "online";
+
+const startBackendWakeCheck = () => {
+  if (backendWakeCheckInterval) return;
+  
+  backendWakeCheckInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/health`, {
+        method: "GET",
+        credentials: "include",
+      });
+      
+      if (res.ok) {
+        backendState = "online";
+        notifyBackendStatus("online");
+        clearInterval(backendWakeCheckInterval);
+        backendWakeCheckInterval = null;
+      }
+    } catch {
+      notifyBackendStatus("sleeping");
+    }
+  }, 10000);
+};
+
+const markBackendSleeping = () => {
+  if (backendState !== "sleeping") {
+    backendState = "sleeping";
+    notifyBackendStatus("sleeping");
+  }
+  startBackendWakeCheck();
+};
+
+const markBackendOnline = () => {
+  if (backendState !== "online") {
+    backendState = "online";
+    notifyBackendStatus("online");
+  }
+  
+  // Clear any existing wake check
+  if (backendWakeCheckInterval) {
+    clearInterval(backendWakeCheckInterval);
+    backendWakeCheckInterval = null;
+  }
 };
 
 const refreshAccessToken = async () => {
@@ -108,7 +165,13 @@ export const apiRequest = async (endpoint, options = {}) => {
   if (!config._retry) config._retry = false;
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
+    config.signal = controller.signal;
+    
     const response = await fetch(url, config);
+    clearTimeout(timeoutId);
 
     const isAuthEndpoint = endpoint.includes('/login') || endpoint.includes('/refresh');
 
@@ -156,14 +219,23 @@ export const apiRequest = async (endpoint, options = {}) => {
     }
 
     if (globalActivityCallback && response.ok) globalActivityCallback();
+    if (response.ok) markBackendOnline();
 
     return response;
   } catch (error) {
-    const networkMessage =
+    const isNetworkIssue =
       error instanceof TypeError ||
-      /Failed to fetch|NetworkError/i.test(error?.message)
-        ? 'Network error. Please check your connection and try again.'
-        : error?.message || 'API request failed.';
+      error?.name === "AbortError" ||
+      /Failed to fetch|NetworkError|Load failed|abort/i.test(error?.message);
+    
+    if (isNetworkIssue) {
+      markBackendSleeping();
+    }
+    
+    const networkMessage = isNetworkIssue
+      ? "Server is waking up or temporarily unavailable. Please wait and try again."
+      : error?.message || "API request failed.";
+    
     console.error('API request failed:', error);
     throw new Error(networkMessage);
   }

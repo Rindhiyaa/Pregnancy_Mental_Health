@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { HashRouter } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import BackendStatus from "./components/BackendStatus";
 import App from "./App";
 
 // Import all CSS files
@@ -19,6 +20,7 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <HashRouter>
     <AuthProvider>
+      <BackendStatus />
       <App />
     </AuthProvider>
   </HashRouter>
