@@ -225,6 +225,13 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
+@app.get("/health")
+async def health():
+    return {"status": "alive"}
+
 @app.get("/")
 def root():
-    return {"message": "PPD Predictor API is running!", "version": "1.0.0"}
+    return {"message": "PPD Predictor API is running!", "version": "1.0.0"}@app.get("/health")
+async def health():
+    return {"status": "alive"}
+

@@ -249,6 +249,7 @@ const S = {
     overflow: "hidden",
     textOverflow: "ellipsis",
   },
+  
   bottomArea: {
     paddingBottom: 16,
     display: "flex",
