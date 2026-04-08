@@ -231,7 +231,9 @@ async def health():
 
 @app.get("/")
 def root():
-    return {"message": "PPD Predictor API is running!", "version": "1.0.0"}@app.get("/health")
+    return {"message": "PPD Predictor API is running!", "version": "1.0.0"}
+
+@app.get("/health")
 async def health():
     return {"status": "alive"}
 
