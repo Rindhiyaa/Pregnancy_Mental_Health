@@ -146,7 +146,7 @@ export default function SignInPage() {
                 type="button"
                 className="link-button"
                 onClick={() => navigate("/forgot-password")}
-                style={{ fontSize: '0.9rem', color: '#8b5cf6' }}
+                style={{ fontSize: '0.9rem', color: '#2A9D8F' }}
               >
                 Forgot password?
               </button>

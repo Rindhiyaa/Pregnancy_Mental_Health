@@ -1,174 +1,180 @@
 /* =========================================
-🔥 POSTPARTUM RISK INSIGHT - NAVBAR FINAL
-(Fixed spacing, alignment, modern UI)
+🌿 POSTPARTUM RISK INSIGHT - NAVBAR
+   Portal Teal Theme (#2A9D8F / #1F6F78)
 ========================================= */
 
 /* ===== NAVBAR ===== */
 .navbar {
-position: sticky;
-top: 0;
-background: rgba(255, 255, 255, 0.95);
-backdrop-filter: blur(16px);
-border-bottom: 1px solid rgba(229, 231, 235, 0.6);
-z-index: 100;
-box-shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.6);
+  z-index: 100;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
 }
 
 /* ===== CONTAINER ===== */
 .nav-container {
-width: 100%;                      /* Full width */
-max-width: 100vw;                 /* Viewport width */
-margin: 0;                        /* Remove centering */
-padding: 0 4rem 0 2rem;           /* Increased right padding, minimal left */
-height: 85px;
-
-display: flex;
-align-items: center;
-justify-content: space-between;    /* Pushes Logo Left and Nav Right */
+  width: 100%;
+  max-width: 100vw;
+  margin: 0;
+  padding: 0 4rem 0 2rem;
+  height: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 /* ===== LEFT: LOGO SECTION ===== */
 .logo-section {
-display: flex;
-align-items: center;
-gap: 12px;
-text-decoration: none;
-flex-shrink: 0;
-margin-left: 0;                   /* Flush to left */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  flex-shrink: 0;
+  margin-left: 0;
 }
 
 /* LOGO IMAGE */
 .logo-img {
-width: 58px !important;
-height: 58px !important;
-object-fit: contain;
+  width: 58px !important;
+  height: 58px !important;
+  object-fit: contain;
 }
 
 /* LOGO TEXT */
 .logo-text {
-font-size: 1.4rem;                 /* Slightly larger */
-font-weight: 800;                 /* Bolder */
-background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
--webkit-background-clip: text;
--webkit-text-fill-color: transparent;
-letter-spacing: -0.025em;
+  font-size: 1.4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1F6F78 0%, #2A9D8F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.025em;
 }
 
 .mobile-menu {
-display: none;
-background: none;
-border: none;
-font-size: 1.8rem;
-cursor: pointer;
-color: #4b5563;
-transition: color 0.2s ease;
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #4b5563;
+  transition: color 0.2s ease;
+  padding: 0.25rem;
+  line-height: 1;
 }
 
 .mobile-menu:hover {
-color: #8b5cf6;
+  color: #2A9D8F;
 }
 
 /* ===== RIGHT: NAV LINKS ===== */
 .nav-right-links {
-display: flex;
-align-items: center;
-gap: 3rem;                        /* Increased gap */
-margin-left: auto;                /* Ensure it's pushed to the right */
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  margin-left: auto;
 }
 
 /* ===== SIGN IN BUTTON (navbar) ===== */
 .btn-signin-nav {
-padding: 0.5rem 1.4rem;
-border-radius: 999px;
-border: 2px solid #8b5cf6;
-background: transparent;
-color: #8b5cf6;
-font-weight: 700;
-font-size: 0.95rem;
-cursor: pointer;
-transition: all 0.25s;
-white-space: nowrap;
+  padding: 0.5rem 1.4rem;
+  border-radius: 999px;
+  border: 2px solid #2A9D8F;
+  background: transparent;
+  color: #2A9D8F;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.25s;
+  white-space: nowrap;
 }
 
 .btn-signin-nav:hover {
-background: linear-gradient(135deg, #8b5cf6, #ec4899);
-border-color: transparent;
-color: #fff;
+  background: linear-gradient(135deg, #1F6F78, #2A9D8F);
+  border-color: transparent;
+  color: #fff;
 }
 
 .nav-right-links.mobile-active {
-display: flex;
-flex-direction: column;
-position: absolute;
-top: 100%;
-left: 0;
-right: 0;
-background: white;
-padding: 2rem;
-border-bottom: 1px solid rgba(229, 231, 235, 0.8);
-gap: 1.5rem;
-box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-z-index: 99;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 5rem 2rem 2rem;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+  gap: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  z-index: 150;
+  align-items: flex-start;
 }
 
 /* ===== NAV LINKS ===== */
 .nav-link {
-position: relative;
-color: #64748b;
-font-weight: 600;
-font-size: 1rem;
-padding: 8px 0;
-text-decoration: none;
-transition: all 0.25s ease;
+  position: relative;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 8px 0;
+  text-decoration: none;
+  transition: all 0.25s ease;
 }
 
 .nav-link:hover {
-color: #8b5cf6;
+  color: #2A9D8F;
 }
 
 /* ACTIVE LINK */
 .nav-link.active {
-color: #8b5cf6;
+  color: #2A9D8F;
 }
 
-/* UNDERLINE EFFECT - removed */
-
-/* ===== MOBILE ===== */
+/* ===== TABLET (≤1024px) ===== */
 @media (max-width: 1024px) {
-.nav-container {
-padding: 0.8rem 1.5rem;
+  .nav-container {
+    padding: 0.8rem 1.5rem;
+    height: auto;
+    min-height: 70px;
+  }
+
+  .nav-right-links {
+    gap: 1.5rem;
+  }
 }
 
-.nav-right-links {
-gap: 1.5rem;
-}
-}
-
+/* ===== MOBILE (≤768px) ===== */
 @media (max-width: 768px) {
-.nav-right-links {
-display: none;   /* Hide standard links */
+  .nav-right-links {
+    display: none;
+  }
+
+  .mobile-menu {
+    display: block;
+  }
+
+  .nav-container {
+    padding: 0.75rem 1.5rem;
+    height: 64px;
+  }
 }
 
-.mobile-menu {
-display: block;  /* Show hamburger */
-}
-
-.nav-container {
-padding: 0.75rem 1.5rem;
-}
-}
-
+/* ===== SMALL PHONE (≤480px) ===== */
 @media (max-width: 480px) {
-.nav-container {
-padding: 0.7rem 1rem;
-}
+  .nav-container {
+    padding: 0.7rem 1rem;
+  }
 
-.logo-img {
-width: 36px !important;
-height: 36px !important;
-}
+  .logo-img {
+    width: 36px !important;
+    height: 36px !important;
+  }
 
-.logo-text {
-font-size: 1.1rem;
-}
+  .logo-text {
+    font-size: 1.1rem;
+  }
 }

@@ -10,7 +10,7 @@
   justify-content: center;
   padding: 0 1rem; /* Removed vertical padding to prevent displacement */
   box-sizing: border-box;
-  background: radial-gradient(circle at top left, #fdf2ff 0%, #ffffff 48%, #eff6ff 100%);
+  background: #ffffff;
 }
 
 /* ─── Card with Glassmorphism + Shadow ───────────────────────── */
@@ -25,8 +25,8 @@
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.6);
   box-shadow:
-    0 32px 64px -12px rgba(139, 92, 246, 0.18),
-    0 16px 32px -8px  rgba(236, 72, 153, 0.10),
+    0 32px 64px -12px rgba(42, 157, 143, 0.15),
+    0 16px 32px -8px  rgba(31, 111, 120, 0.08),
     0  4px 16px -4px  rgba(0, 0, 0, 0.08),
     0  0   0   1px    rgba(255, 255, 255, 0.4);
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
@@ -43,8 +43,8 @@
 .auth-layout:hover {
   transform: translateY(-4px);
   box-shadow:
-    0 48px 80px -16px rgba(139, 92, 246, 0.22),
-    0 24px 48px -10px rgba(236, 72, 153, 0.14),
+    0 48px 80px -16px rgba(42, 157, 143, 0.20),
+    0 24px 48px -10px rgba(31, 111, 120, 0.12),
     0  8px 24px -4px  rgba(0, 0, 0, 0.10),
     0  0   0   1px    rgba(255, 255, 255, 0.5);
 }
@@ -87,7 +87,7 @@
   width: 36px;
   height: 36px;
   border-radius: 999px;
-  background: conic-gradient(from 150deg, #ec4899, #8b5cf6, #38bdf8, #ec4899);
+  background: conic-gradient(from 150deg, #2A9D8F, #1F6F78, #0d9488, #2A9D8F);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -133,7 +133,7 @@
 .link-button {
   background: none;
   border: none;
-  color: #ec4899;
+  color: #2A9D8F;
   font-weight: 600;
   cursor: pointer;
   padding: 0;
@@ -141,7 +141,7 @@
 }
 
 .link-button:hover {
-  color: #db2777;
+  color: #1F6F78;
   transform: translateY(-1px);
 }
 
@@ -181,8 +181,17 @@ input[type="password"] {
 
 input:focus {
   outline: none;
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  border-color: #2A9D8F;
+  box-shadow: 0 0 0 3px rgba(42, 157, 143, 0.15);
+}
+
+/* Override browser autofill yellow background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  -webkit-text-fill-color: #1f2937 !important;
 }
 
 /* ─── Password Toggle ────────────────────────────────────────── */
@@ -219,7 +228,7 @@ input:focus {
 
 .password-toggle:focus {
   outline: none;
-  color: #8b5cf6;
+  color: #2A9D8F;
 }
 
 .password-toggle svg {
@@ -286,13 +295,14 @@ input:focus {
 
 /* ─── OTP ────────────────────────────────────────────────────── */
 .otp-test-display {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  border: 2px solid #fbbf24;
+  background: #f1f5f9;
+  border: 2px solid #e2e8f0;
   padding: 1rem;
   border-radius: 12px;
   margin-bottom: 1.5rem;
   text-align: center;
   font-size: 1.1rem;
+  color: #4b5563;
 }
 
 .otp-timer {
@@ -303,7 +313,7 @@ input:focus {
 }
 
 .otp-timer strong {
-  color: #8b5cf6;
+  color: #2A9D8F;
   font-size: 1.1rem;
 }
 
@@ -313,12 +323,12 @@ input:focus {
   padding: 0.9rem 1.8rem;
   margin-top: 0.5rem;
   font-size: 1rem;
-  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  background: linear-gradient(135deg, #1F6F78 0%, #2A9D8F 100%);
   color: white;
   border: none;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 18px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 18px rgba(42, 157, 143, 0.35);
   transition: all 0.3s ease;
   border-radius: 9999px;
   letter-spacing: 0.01em;
@@ -330,14 +340,14 @@ input:focus {
 }
 
 .btn-primary.full-width:hover {
-  background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
+  background: linear-gradient(135deg, #1a5c64 0%, #23867A 100%);
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(139, 92, 246, 0.45);
+  box-shadow: 0 8px 28px rgba(42, 157, 143, 0.50);
 }
 
 .btn-primary.full-width:active {
   transform: translateY(0);
-  box-shadow: 0 5px 10px -3px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 5px 10px -3px rgba(42, 157, 143, 0.3);
 }
 
 .btn-primary.full-width:disabled {
@@ -353,8 +363,8 @@ input:focus {
   padding: 0.9rem 1.8rem;
   font-size: 1rem;
   background: white;
-  color: #7c3aed;
-  border: 2px solid #c084fc;
+  color: #2A9D8F;
+  border: 2px solid #2A9D8F;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -366,8 +376,8 @@ input:focus {
 }
 
 .btn-outline.full-width:hover {
-  background: #faf5ff;
-  border-color: #d8b4fe;
+  background: #E6F4F2;
+  border-color: #1F6F78;
   transform: translateY(-1px);
 }
 
@@ -414,7 +424,7 @@ input:focus {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #a855f7;
+  color: #2A9D8F;
   margin-bottom: 0.3rem;
 }
 
@@ -458,11 +468,11 @@ input:focus {
 }
 
 .side-chip {
-  background: #f3e8ff;
+  background: #E6F4F2;
   padding: 0.3rem 0.75rem;
   border-radius: 999px;
   font-size: 0.8rem;
-  color: #6b21a8;
+  color: #1F6F78;
   font-weight: 500;
 }
 
@@ -482,8 +492,8 @@ input:focus {
   .auth-layout:hover {
     transform: none;
     box-shadow:
-      0 32px 64px -12px rgba(139, 92, 246, 0.18),
-      0 16px 32px -8px  rgba(236, 72, 153, 0.10),
+      0 32px 64px -12px rgba(42, 157, 143, 0.15),
+      0 16px 32px -8px  rgba(31, 111, 120, 0.08),
       0  4px 16px -4px  rgba(0, 0, 0, 0.08),
       0  0   0   1px    rgba(255, 255, 255, 0.4);
   }
@@ -528,7 +538,7 @@ input:focus {
     min-height: auto;
     /* ✅ Soft card shadow on mobile */
     box-shadow:
-      0 16px 40px -8px  rgba(139, 92, 246, 0.20),
+      0 16px 40px -8px  rgba(42, 157, 143, 0.18),
       0  8px 16px -4px  rgba(0, 0, 0, 0.08),
       0  0   0   1px    rgba(255, 255, 255, 0.5);
   }
@@ -668,7 +678,7 @@ input:focus {
   color: #f1f5f9;
 }
 
-.dark .auth-main input:focus { border-color: #8b5cf6; }
+.dark .auth-main input:focus { border-color: #2A9D8F; }
 
 .dark .auth-side {
   background: #1e293b !important;
