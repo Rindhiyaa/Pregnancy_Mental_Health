@@ -391,17 +391,15 @@ def get_nurse_patients(
         if latest:
             if latest.status == "draft":
                 patient_status = "Draft"
-            elif latest.risk_level == "Pending" or latest.status == "submitted":
+            elif latest.status == "submitted" or latest.risk_level == "Pending":
                 patient_status = "Pending"
             else:
-                patient_status = "Active"
+                patient_status = "Assessed"
         else:
             patient_status = "Registered"
 
         last_assessment_date = latest.created_at if latest else None
-        last_assessment_label = None
-        if latest:
-            last_assessment_label = "Assessment Logged"
+        last_assessment_label = "Assessment Logged" if latest else None
 
         doctor_name = None
         if p.assigned_doctor_id:
@@ -416,6 +414,14 @@ def get_nurse_patients(
                     or doc.email
                 )
 
+        is_online = False
+        if p.user and p.user.last_active:
+            last_active = p.user.last_active
+            if last_active.tzinfo is None:
+                last_active = last_active.replace(tzinfo=timezone.utc)
+
+            is_online = (datetime.now(timezone.utc) - last_active).total_seconds() < 300
+
         results.append(
             {
                 "id": p.id,
@@ -429,7 +435,7 @@ def get_nurse_patients(
                 "doctor_id": p.assigned_doctor_id,
                 "last_assessment": last_assessment_label,
                 "last_assessment_date": last_assessment_date,
-                "is_online": (datetime.now(timezone.utc) - p.user.last_active.replace(tzinfo=timezone.utc)).total_seconds() < 300 if p.user and p.user.last_active else False,
+                "is_online": is_online,
             }
         )
 

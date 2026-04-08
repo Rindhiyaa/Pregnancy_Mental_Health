@@ -74,8 +74,10 @@ export default function NurseAssessmentHistory() {
       case 'pending': return <Badge variant="info">Pending</Badge>;
       case 'submitted': return <Badge variant="info">Submitted</Badge>;
       case 'reviewed': return <Badge variant="success">Reviewed</Badge>;
-      case 'complete': return <Badge variant="success">Complete</Badge>;
-      default: return <Badge variant="primary">Active</Badge>;
+      case 'complete': return <Badge variant="success">Completed</Badge>;
+      case 'assigned': return <Badge variant="primary">Assigned to Doctor</Badge>;
+      // for records that are in nurse side but not yet seen/completed by doctor
+      default: return <Badge variant="primary">Appointment scheduled</Badge>;
     }
   };
 
