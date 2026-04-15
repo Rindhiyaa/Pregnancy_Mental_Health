@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
 import { PageTitle, Card, Loader2 } from "../../components/UI";
 import { api, getErrorMessage } from "../../utils/api";
@@ -9,7 +8,6 @@ import { User, Mail, Phone, Calendar, Droplet, Baby, Hospital, Stethoscope, Hash
 import "../../styles/RegisterPatient.css";
 
 export default function NurseRegisterPatient() {
-  const { theme } = useTheme();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [doctors, setDoctors] = useState([]);
@@ -48,7 +46,9 @@ export default function NurseRegisterPatient() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    // Normalize email input
+    const processedValue = name === "email" ? value.trim().toLowerCase() : value;
+    setFormData(prev => ({ ...prev, [name]: processedValue }));
   };
 
   // Update handleSubmit - remove dummy data check
@@ -57,22 +57,66 @@ export default function NurseRegisterPatient() {
     setLoading(true);
   
     try {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const normalizedEmail = formData.email.trim().toLowerCase();
+      
+      if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
+        toast.error("Please enter a valid email address");
+        setLoading(false);
+        return;
+      }
+
+      // Validate required fields
+      if (!formData.fullName.trim() || !formData.phone.trim()) {
+        toast.error("Full name and phone are required");
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         ...formData,
+        email: normalizedEmail,
         // optional: keep for documentation/debug, but backend forces same temp
         password: "TempPass123!",
         role: "patient",
       };
+      
+      console.log("=== Submitting patient registration ===");
+      console.log("Normalized email:", normalizedEmail);
+      console.log("Full name:", formData.fullName);
+      console.log("Payload:", payload);
   
       const { data } = await api.post("/nurse/register", payload);
+      console.log("Registration response:", data);
 
-      toast.success("Patient registered successfully!");
-      toast("Temporary password: TempPass123!", { icon: "🔑" });
+      if (data.is_existing) {
+        toast.success("Patient already registered - proceeding with existing record");
+      } else {
+        toast.success("Patient registered successfully!");
+        toast("Temporary password: TempPass123!", { icon: "🔑" });
+      }
+      
       // Go directly to new assessment with this patient pre-selected
       navigate(`/nurse/assessment/new?patientId=${data.patient_id}`);
     } catch (err) {
       console.error("Registration error:", err);
-      toast.error(getErrorMessage(err, "Registration failed"));
+      console.error("Error response data:", err?.response?.data);
+      console.error("Error status:", err?.response?.status);
+      
+      // Extract error message defensively
+      let message = err?.response?.data?.detail || getErrorMessage(err, "Registration failed");
+      const errorLower = message.toLowerCase();
+      
+      console.log("Extracted error message:", message);
+      
+      if (errorLower.includes("already exists") || errorLower.includes("already registered")) {
+        toast.error("This email is already registered. Please use a different email address.");
+      } else if (errorLower.includes("already registered as")) {
+        toast.error(`${message} Please use a different email.`);
+      } else {
+        toast.error(message);
+      }
     } finally {
       setLoading(false);
     }

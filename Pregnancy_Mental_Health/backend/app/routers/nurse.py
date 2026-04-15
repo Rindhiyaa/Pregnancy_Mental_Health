@@ -146,19 +146,90 @@ def register_patient(
         )
 
     normalised_email = payload["email"].strip().lower()
+    
+    # Log the email being checked
+    logger.info(f"Checking for existing user with email: {normalised_email}")
+    
+    # Use a more robust case-insensitive query
     existing_user = (
         db.query(models.User)
         .filter(func.lower(models.User.email) == normalised_email)
         .first()
     )
+    
     if existing_user:
+        logger.info(f"Found existing user: {existing_user.email} (role: {existing_user.role})")
+        # Check if this is a patient that already exists
+        existing_patient = db.query(models.Patient).filter(models.Patient.user_id == existing_user.id).first()
+        if existing_patient:
+            # Return existing patient info - idempotent
+            logger.info(f"Patient already exists for email {normalised_email}: patient_id={existing_patient.id}")
+            return {
+                "success": True,
+                "message": "Patient with this email already exists",
+                "user_id": existing_user.id,
+                "patient_id": existing_patient.id,
+                "is_existing": True
+            }
+        # If user exists but is not a patient, check if we can reuse them
+        if existing_user.role == "patient":
+            logger.warning(f"Orphaned patient user found for {normalised_email} — creating Patient record")
+            try:
+                # Create a Patient record for this orphaned patient user — include ALL optional fields
+                patient_data = {
+                    "name": payload["fullName"],
+                    "email": normalised_email,
+                    "phone": payload["phone"],
+                    "clinician_email": current_user_email,
+                    "created_by_nurse_id": nurse.id,
+                    "assigned_doctor_id": payload.get("assignedDoctor"),
+                    "status": "active",
+                    "user_id": existing_user.id,
+                }
+                if payload.get("dob"):
+                    patient_data["dob"] = datetime.strptime(payload["dob"], "%Y-%m-%d")
+                if payload.get("age"):
+                    patient_data["age"] = int(payload["age"])
+                if payload.get("bloodGroup"):
+                    patient_data["blood_group"] = payload["bloodGroup"]
+                if payload.get("pregnancyWeek"):
+                    patient_data["pregnancy_week"] = int(payload["pregnancyWeek"])
+                if payload.get("address"):
+                    patient_data["address"] = payload["address"]
+                if payload.get("city"):
+                    patient_data["city"] = payload["city"]
+                if payload.get("previousPregnancies"):
+                    patient_data["previous_pregnancies"] = int(payload["previousPregnancies"])
+                if payload.get("hospitalName"):
+                    patient_data["hospital_name"] = payload["hospitalName"]
+                if payload.get("wardBed"):
+                    patient_data["ward_bed"] = payload["wardBed"]
+
+                new_patient = models.Patient(**patient_data)
+                db.add(new_patient)
+                db.commit()
+                db.refresh(new_patient)
+                logger.info(f"Created Patient record for existing patient user: patient_id={new_patient.id}")
+                return {
+                    "success": True,
+                    "message": "Linked existing patient account",
+                    "user_id": existing_user.id,
+                    "patient_id": new_patient.id,
+                    "is_existing": True
+                }
+            except IntegrityError as e:
+                db.rollback()
+                logger.error(f"Orphan fix IntegrityError: {e.orig}")
+                raise HTTPException(status_code=400, detail=f"Could not fix orphaned account: {str(e.orig)}")
+        # If user exists but is not a patient (admin/doctor/nurse), reject clearly
+        logger.warning(f"Email {normalised_email} registered as {existing_user.role}, not as patient")
         raise HTTPException(
             status_code=400,
-            detail="User with this email already exists"
+            detail=f"Email already registered as {existing_user.role}. Please use a different email."
         )
 
     try:
-        # --- Create User with fixed temp password ---
+        # --- Create User with fixed temp password (ATOMIC TRANSACTION) ---
         name_parts = payload["fullName"].strip().split(" ", 1)
         first_name = name_parts[0]
         last_name = name_parts[1] if len(name_parts) > 1 else ""
@@ -175,9 +246,9 @@ def register_patient(
             is_active=True,
             first_login=True,
         )
+        logger.info(f"Creating new patient user with email: {normalised_email}")
         db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
+        db.flush()  # ✅ Gets new_user.id WITHOUT committing to DB yet
 
         # --- Build patient_data (this MUST exist before creating Patient) ---
         patient_data = {
@@ -213,7 +284,8 @@ def register_patient(
         # Now patient_data is definitely defined here
         new_patient = models.Patient(**patient_data)
         db.add(new_patient)
-        db.commit()
+        db.commit()  # ✅ ONE commit — both User and Patient saved together
+        db.refresh(new_user)
         db.refresh(new_patient)
 
         logger.info(
@@ -225,13 +297,15 @@ def register_patient(
             "message": "Patient registered successfully",
             "user_id": new_user.id,
             "patient_id": new_patient.id,
+            "is_existing": False
         }
 
-    except IntegrityError:
+    except IntegrityError as e:
         db.rollback()
+        logger.error(f"IntegrityError during patient registration: {e.orig}")
         raise HTTPException(
             status_code=400,
-            detail="User with this email already exists"
+            detail=f"Database constraint violation: {str(e.orig)}"
         )
     except ValueError:
         db.rollback()
