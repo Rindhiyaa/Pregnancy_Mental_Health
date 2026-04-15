@@ -9,11 +9,9 @@ import {
   Search,
   CheckCircle,
   X,
-  XCircle,
   Clock,
   KeyRound,
-  AlertCircle,
-  RefreshCw
+  AlertCircle
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -29,42 +27,6 @@ export default function RecoveryRequestsPage() {
 
   useEffect(() => {
     loadRequests();
-
-    // Setup WebSocket for real-time updates
-    const wsUrl = import.meta.env.VITE_API_URL 
-      ? import.meta.env.VITE_API_URL.replace(/^http/, "ws").replace(/\/$/, "") + "/ws"
-      : `ws://${window.location.hostname}:8000/ws`;
-      
-    const socket = new WebSocket(wsUrl);
-    
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "NEW_RECOVERY_REQUEST") {
-          console.log("🔔 New recovery request received via WS:", data);
-          loadRequests(); // Refresh the list
-          toast.success(`New recovery request from ${data.email}`, {
-            icon: '🔔',
-            duration: 5000
-          });
-        } else if (data.type === "RECOVERY_COMPLETED") {
-          console.log("✅ Recovery request completed via WS:", data);
-          loadRequests(); // Refresh the list to update status
-          toast.success(`User ${data.email} has successfully reset their password`, {
-            icon: '✅',
-            duration: 5000
-          });
-        }
-      } catch (err) {
-        console.error("WS message error:", err);
-      }
-    };
-
-    return () => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.close();
-      }
-    };
   }, []);
 
   const loadRequests = async () => {
@@ -105,7 +67,6 @@ export default function RecoveryRequestsPage() {
   
     if (activeFilter === "All") return matchesSearch;
     if (activeFilter === "Pending") return matchesSearch && r.status === "pending";
-    if (activeFilter === "Declined") return matchesSearch && r.status === "declined";
     if (activeFilter === "Completed") return matchesSearch && r.status === "completed";
   
     return matchesSearch;
@@ -113,7 +74,6 @@ export default function RecoveryRequestsPage() {
 
   const filterOptions = [
     { value: "Pending", label: "Pending", icon: Clock },
-    { value: "Declined", label: "Declined", icon: XCircle },
     { value: "All", label: "All Requests", icon: AlertCircle },
   ];
 
@@ -124,24 +84,17 @@ export default function RecoveryRequestsPage() {
   );
 
   const handleApprove = async (id, targetEmail) => {
-    if (!window.confirm(`Approve recovery for ${targetEmail}?`)) return;
+    if (!window.confirm(`Are you sure you want to approve recovery for ${targetEmail}?`)) {
+      return;
+    }
+
     try {
       await api.post(`/recovery/admin/approve/${id}`);
-      toast.success("Recovery approved — code sent to user");
+      toast.success("Recovery approved and push code sent to user");
       loadRequests();
     } catch (err) {
+      console.error(err);
       toast.error(getErrorMessage(err, "Failed to approve request"));
-    }
-  };
-
-  const handleDecline = async (id, targetEmail) => {
-    if (!window.confirm(`Decline recovery request for ${targetEmail}?`)) return;
-    try {
-      await api.post(`/recovery/admin/decline/${id}`);
-      toast.success("Recovery request declined");
-      loadRequests();
-    } catch (err) {
-      toast.error(getErrorMessage(err, "Failed to decline request"));
     }
   };
 
@@ -178,35 +131,6 @@ export default function RecoveryRequestsPage() {
             Review and approve pending staff and patient password resets
           </p>
         </div>
-        <button
-          onClick={loadRequests}
-          disabled={loading}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 16px",
-            borderRadius: 8,
-            border: `1px solid ${theme.border}`,
-            background: theme.cardBg,
-            color: theme.textPrimary,
-            cursor: "pointer",
-            fontWeight: 600,
-            fontSize: 13,
-            transition: "all 0.2s"
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = theme.innerBg;
-            e.currentTarget.style.borderColor = theme.primary;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = theme.cardBg;
-            e.currentTarget.style.borderColor = theme.border;
-          }}
-        >
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-          {loading ? "Refreshing..." : "Refresh"}
-        </button>
       </div>
 
       <Divider style={{ marginBottom: 24 }} />
@@ -224,13 +148,20 @@ export default function RecoveryRequestsPage() {
 
         {/* Table */}
         <div style={{ overflowX: "auto" }}>
-          <table className="portal-table" style={{ borderColor: theme.border }}>
+          <table style={tableStyle}>
             <thead>
-              <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : "#f8fafc"), borderColor: theme.border }}>
-                <th style={{ color: theme.textSecondary }}>Requester Details</th>
-                <th style={{ color: theme.textSecondary }}>Request Origins</th>
-                <th style={{ color: theme.textSecondary }}>Status</th>
-                <th style={{ color: theme.textSecondary, textAlign: "right" }}>Actions</th>
+              <tr style={tableHeaderRowStyle(theme)}>
+                <th style={thStyle(theme)}>Requester Details</th>
+                <th style={thStyle(theme)}>Request Origins</th>
+                <th style={thStyle(theme)}>Status</th>
+                <th
+                  style={{
+                    ...thStyle(theme),
+                    textAlign: "right",
+                  }}
+                >
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -315,7 +246,6 @@ export default function RecoveryRequestsPage() {
                       {req.status === "pending" ? (
                         <ActionButtons
                           onApprove={() => handleApprove(req.id, req.userEmail)}
-                          onDecline={() => handleDecline(req.id, req.userEmail)}
                           theme={theme}
                         />
                       ) : (
@@ -350,8 +280,7 @@ const StatusBadge = ({ status, theme }) => (
         borderRadius: "50%",
         background:
           status === "pending" ? theme.warningText : 
-          status === "completed" ? theme.successText : 
-          status === "declined" ? theme.dangerText : theme.textMuted,
+          status === "completed" ? theme.successText : theme.textMuted,
       }}
     />
     <span
@@ -362,8 +291,6 @@ const StatusBadge = ({ status, theme }) => (
           ? theme.warningText
           : status === "completed"
           ? theme.successText
-          : status === "declined"
-          ? theme.dangerText
           : theme.textMuted,
       }}
     >
@@ -372,7 +299,7 @@ const StatusBadge = ({ status, theme }) => (
   </div>
 );
 
-const ActionButtons = ({ onApprove, onDecline, theme }) => (
+const ActionButtons = ({ onApprove, theme }) => (
   <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
     <button
       onClick={onApprove}
@@ -381,26 +308,11 @@ const ActionButtons = ({ onApprove, onDecline, theme }) => (
         ...actionBtnStyle(theme),
         color: theme.successText,
         borderColor: `${theme.successText}40`,
-        background: theme.isDark ? "rgba(34, 197, 94, 0.1)" : "#dcfce7",
-        display: "flex", alignItems: "center", gap: 6,
+        background: theme.isDark ? "rgba(34, 197, 94, 0.1)" : "#dcfce7"
       }}
     >
-      <CheckCircle size={16} />
-      <span style={{ fontSize: 13, fontWeight: 700 }}>Approve</span>
-    </button>
-    <button
-      onClick={onDecline}
-      title="Decline Request"
-      style={{
-        ...actionBtnStyle(theme),
-        color: theme.dangerText,
-        borderColor: `${theme.dangerText}40`,
-        background: theme.isDark ? "rgba(239, 68, 68, 0.1)" : "#fee2e2",
-        display: "flex", alignItems: "center", gap: 6,
-      }}
-    >
-      <XCircle size={16} />
-      <span style={{ fontSize: 13, fontWeight: 700 }}>Decline</span>
+      <CheckCircle size={16} /> 
+      <span style={{ marginLeft: 6, fontSize: 13, fontWeight: 700 }}>Approve</span>
     </button>
   </div>
 );

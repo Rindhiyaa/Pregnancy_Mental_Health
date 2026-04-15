@@ -1,555 +1,757 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { api } from "../../utils/api";
 import {
-  LineChart, Line, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer
-} from "recharts";
-import {
-  Loader2, HeartPulse, Activity, Smile,
-  ChevronDown, ChevronUp, Calendar, Clock,
-  CheckCircle, User, Info, MessageCircle, ArrowRight, FileText, Download
+  ClipboardList,
+  AlertCircle,
+  Stethoscope,
+  CheckCircle2,
+  Calendar,
+  Phone,
+  Clock,
+  Heart,
+  Sparkles,
+  Smile,
+  Loader2,
+  Info,
+  User
 } from "lucide-react";
 import PatientSidebar from "../../components/PatientSidebar";
-import FilterToolbar from "../../components/FilterToolbar";
-import { api } from "../../utils/api";
 import { useTheme } from "../../ThemeContext";
-import { PageTitle, Divider, Card, Badge, PrimaryBtn, Pagination } from "../../components/UI";
-import toast from "react-hot-toast";
+import { PageTitle, Divider, Card, Badge, PrimaryBtn, OutlineBtn } from "../../components/UI";
 
-
-export default function PatientResults() {
+export default function PatientCarePlan() {
+  const { user } = useAuth();
   const { theme } = useTheme();
-  const [assessments, setAssessments] = useState([]);
+  const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("All");
-  const itemsPerPage = 5;
-
-  const WELLNESS_CONFIG = {
-    "extra-care": { label: "Needs Extra Care", color: theme.dangerText, bg: theme.dangerBg, icon: HeartPulse },
-    "consistent": { label: "Stay Consistent", color: theme.warningText, bg: theme.warningBg, icon: Activity },
-    "feeling-well": { label: "Feeling Well", color: theme.successText, bg: theme.successBg, icon: Smile },
-  };
-
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (!active || !payload?.length) return null;
-    const wellnessKey = payload[0]?.payload?.wellness_status;
-    const cfg = WELLNESS_CONFIG[wellnessKey] || {};
-    return (
-      <Card style={{ padding: "10px 14px", border: `1px solid ${theme.divider}`, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
-        <div style={{ fontSize: 11, color: theme.textMuted, marginBottom: 4 }}>{label}</div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: cfg?.color }}>
-          {cfg?.label}
-        </div>
-      </Card>
-    );
-  };
 
   useEffect(() => {
-    const fetchAssessments = async () => {
+    const fetchPlan = async () => {
       try {
         setLoading(true);
-        const { data } = await api.get("/patient/assessments");
-        const assessmentsData = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.data)
-          ? data.data
-          : [];
-  
-        const riskToWellness = {
-          high: "extra-care",
-          moderate: "consistent",
-          low: "feeling-well",
+
+        // 1) Dashboard: risk + care plan + doctor
+        const { data: dash } = await api.get("/patient/dashboard");
+
+        if (!dash || !dash.care_plan || !dash.risk_status) {
+          setPlan(null);
+          return;
+        }
+
+        // Map risk level to wellness status/labels
+        const level = (dash.risk_status.level || "").toLowerCase();
+        const wellness_status =
+          level === "high"
+            ? "extra-care"
+            : level === "moderate"
+            ? "consistent"
+            : "feeling-well";
+
+        const wellness_label =
+          level === "high"
+            ? "Needs Extra Care"
+            : level === "moderate"
+            ? "Stay Consistent"
+            : "Feeling Well";
+
+        const doctorName = dash.doctor_info?.name || "Assigned Clinician";
+
+        // Base plan from dashboard
+        const basePlan = {
+          last_updated: dash.care_plan.date || "N/A",
+          wellness_status,
+          wellness_label,
+          wellness_sub: `Dr. ${doctorName} has a plan for you`,
+          doctor_recommendation:
+            dash.care_plan.plan ||
+            "Your clinician will provide a personalized recommendation after your assessment.",
+          doctor_name: doctorName,
+          rec_date: dash.care_plan.date || "N/A",
+          action_steps: [
+            "Attend all scheduled follow-up appointments",
+            "Contact a mental health specialist if recommended",
+            "Practice daily breathing exercises (see Resources)",
+            "Log your mood every day in the tracker"
+          ],
+          followups: [],
+          specialist: null
         };
-  
-        const normalized = assessmentsData.map((a) => {
-          const riskLevel = a.risk_level?.toLowerCase().split(" ")[0];
-          const wellnessStatus =
-            a.wellness_status || riskToWellness[riskLevel] || "feeling-well";
-  
-          const rawData = typeof a.raw_data === "object" && a.raw_data !== null ? a.raw_data : {};
-          const createdAt = a.created_at ? new Date(a.created_at) : new Date();
-  
-          return {
-            ...a,
-            date:
-              a.date ||
-              createdAt.toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              }),
-            short_date:
-              a.short_date ||
-              createdAt.toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "short",
-              }),
-            wellness_status: wellnessStatus,
-            score: a.score ?? a.risk_score ?? 0,
-            epds_total:
-              a.epds_total ??
-              (Object.keys(rawData)
-                .filter((k) => k.startsWith("epds_"))
-                .reduce((acc, k) => acc + (rawData[k] || 0), 0)),
-            doctor_name: a.doctor_name || a.clinician_name || "Care Team",
-            epds_questions:
-              a.epds_questions ||
-              (Object.keys(rawData)
-                .filter((k) => k.startsWith("epds_"))
-                .map((k, i) => ({
-                  q: `Question ${i + 1}`,
-                  answer: "Reported",
-                  score: rawData[k],
-                }))),
-            clinical_factors:
-              a.clinical_factors || {
-                sleep_quality: rawData.epds_7 > 1 ? "Poor" : "Good",
-                appetite: "Normal",
-                social_support:
-                  rawData.support_during_pregnancy === "No"
-                    ? "Weak"
-                    : "Strong",
-                partner_support: "Good",
-                anxiety_level: "Normal",
-                financial_stress: false,
-                previous_depression:
-                  rawData.depression_before_pregnancy === "Yes",
-              },
-            plan: a.plan || null,      // no default text
-            followups:
-              a.followups && a.followups.length > 0 ? a.followups : [], // no dummy follow-up
-            doctor_message: a.doctor_message || null, // if you add this later in backend
-          };
+
+        // 2) Appointments -> followups
+        const { data: appData } = await api.get("/patient/appointments");
+        const appointmentRecords = Array.isArray(appData)
+          ? appData
+          : Array.isArray(appData?.data)
+          ? appData.data
+          : [];
+
+        const followups = appointmentRecords.map((app, idx) => ({
+          id: app.id,
+          type: app.type || `Follow-up #${idx + 1}`,
+          date: new Date(app.scheduled_date).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric"
+          }),
+          time: new Date(app.scheduled_date).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+          }),
+          status: app.status === "completed" ? "completed" : "upcoming"
+        }));
+
+        setPlan({
+          ...basePlan,
+          followups
         });
-  
-        setAssessments(normalized);
-      } catch (err) {
-        console.error("Error loading assessments", err);
-        toast.error("Failed to load assessments");
-        setAssessments([]);
+      } catch (error) {
+        console.error("Error fetching care plan:", error);
+        setPlan(null);
       } finally {
         setLoading(false);
       }
     };
-  
-    fetchAssessments();
-  }, []);
 
-  const latest = assessments[0];
+    if (user?.email) {
+      fetchPlan();
+    }
+  }, [user?.email]);
 
-  const filteredAssessments = assessments.filter(a => {
-    const matchesSearch = searchQuery === "" || 
-      a.date?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.doctor_name?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (activeFilter === "All") return matchesSearch;
-    if (activeFilter === "High Risk") return matchesSearch && a.wellness_status === "extra-care";
-    if (activeFilter === "Moderate Risk") return matchesSearch && a.wellness_status === "consistent";
-    if (activeFilter === "Low Risk") return matchesSearch && a.wellness_status === "feeling-well";
-    return matchesSearch;
-  });
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          minHeight: "100vh",
+          background: theme.pageBg,
+          fontFamily: theme.fontBody
+        }}
+      >
+        <PatientSidebar />
+        <main
+          className="portal-main"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: theme.pageBg
+          }}
+        >
+          <div style={{ textAlign: "center" }}>
+            <Loader2
+              className="animate-spin"
+              size={40}
+              color={theme.primary}
+              style={{ marginBottom: 16 }}
+            />
+            <div style={{ color: theme.textMuted, fontWeight: 500 }}>
+              Loading your care plan...
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
-  const filterOptions = [
-    { value: "All", label: "All Results", icon: FileText },
-    { value: "High Risk", label: "High Risk", icon: HeartPulse },
-    { value: "Moderate Risk", label: "Moderate Risk", icon: Activity },
-    { value: "Low Risk", label: "Low Risk", icon: Smile }
-  ];
-
-  const handlePDFExport = () => {
-    window.print();
-    toast.success("PDF export initiated!");
-  };
-
-  const totalPages = Math.ceil(filteredAssessments.length / itemsPerPage);
-  const paginatedAssessments = filteredAssessments.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  if (loading) return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", width: "100%", background: theme.pageBg, fontFamily: theme.fontBody }}>
-      <PatientSidebar />
-      <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
-        <div style={{ textAlign: 'center' }}>
-          <Loader2 className="animate-spin" size={40} color={theme.primary} style={{ marginBottom: 16 }} />
-          <div style={{ color: theme.textMuted, fontWeight: 500 }}>Loading your results...</div>
-        </div>
-      </main>
-    </div>
-  );
+  // If no plan from backend at all
+  if (!plan) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          minHeight: "100vh",
+          background: theme.pageBg,
+          fontFamily: theme.fontBody
+        }}
+      >
+        <PatientSidebar />
+        <main className="portal-main" style={{ background: theme.pageBg }}>
+          <PageTitle
+            title="My Care Plan"
+            subtitle="Your personalized path to wellness"
+          />
+          <Divider />
+          <Card style={{ padding: "24px", textAlign: "center" }}>
+            <div style={{ fontSize: 15, color: theme.textMuted }}>
+              Your care plan will appear here once your clinician has created
+              it after your assessment.
+            </div>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", width: "100%", background: theme.pageBg, fontFamily: theme.fontBody }}>
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        background: theme.pageBg,
+        fontFamily: theme.fontBody
+      }}
+    >
       <PatientSidebar />
 
       <main className="portal-main" style={{ background: theme.pageBg }}>
-
-        <PageTitle
-          title="My Results"
-          subtitle="Your complete wellness assessment history"
-        />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            marginBottom: 8
+          }}
+        >
+          <PageTitle
+            title="My Care Plan"
+            subtitle="Your personalized path to wellness"
+          />
+          <div
+            style={{
+              fontSize: 12,
+              color: theme.textMuted,
+              display: "flex",
+              alignItems: "center",
+              gap: 6
+            }}
+          >
+            <Clock size={14} /> Last updated: {plan.last_updated || "N/A"}
+          </div>
+        </div>
         <Divider />
 
-        {/* ── SUMMARY ROW ── */}
-        <div className="stats-grid-3" style={{ gap: 20, marginBottom: 32 }}>
-          <Card style={{ padding: "16px 20px" }}>
-            <div style={{ fontSize: 24, fontWeight: 800, color: theme.primary, marginBottom: 4 }}>{assessments.length}</div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: theme.textMuted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Assessments</div>
-          </Card>
-          <Card style={{ padding: "16px 20px" }}>
-            <div style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary, marginBottom: 4 }}>
-              {latest?.short_date ?? "—"}
+        {/* WELLNESS STATUS BANNER */}
+        <Card
+          style={{
+            background:
+              plan.wellness_status === "extra-care"
+                ? theme.dangerBg
+                : plan.wellness_status === "consistent"
+                ? theme.warningBg
+                : theme.successBg,
+            border: "none",
+            padding: "32px 40px",
+            display: "flex",
+            alignItems: "center",
+            gap: 24,
+            marginBottom: 32
+          }}
+        >
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              background: theme.cardBg,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              border: `1px solid ${theme.border}`
+            }}
+          >
+            {plan.wellness_status === "extra-care" ? (
+              <Heart size={32} color={theme.dangerText} />
+            ) : plan.wellness_status === "consistent" ? (
+              <Sparkles size={32} color={theme.warningText} />
+            ) : (
+              <Smile size={32} color={theme.successText} />
+            )}
+          </div>
+          <div>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: theme.textMuted,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                marginBottom: 4
+              }}
+            >
+              Current Wellness Status
             </div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: theme.textMuted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Latest Submission</div>
-          </Card>
-          <Card style={{ padding: "16px 20px" }}>
             <div
               style={{
                 fontSize: 24,
                 fontWeight: 800,
                 color: theme.textPrimary,
-                marginBottom: 4,
+                marginBottom: 4
               }}
             >
-              {assessments.filter(
-                (a) => a.status === "reviewed" || a.status === "completed"
-              ).length}
+              {plan.wellness_label}
             </div>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: theme.textMuted,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}
+            <div style={{ fontSize: 14, color: theme.textSecondary }}>
+              {plan.wellness_sub}
+            </div>
+          </div>
+        </Card>
+
+        {/* EMERGENCY STRIP */}
+        <Card
+          style={{
+            background: theme.primary,
+            color: "white",
+            padding: "16px 24px",
+            marginBottom: 32,
+            border: "none",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <AlertCircle size={20} />
+            <div style={{ fontSize: 14, fontWeight: 600 }}>
+              Feeling overwhelmed right now?{" "}
+              <span style={{ opacity: 0.9, fontWeight: 400 }}>
+                Support is available 24/7.
+              </span>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>
+              iCall: 9152987821
+            </div>
+            <PrimaryBtn
+              style={{ background: "white", color: theme.primary, padding: "8px 16px" }}
+              onClick={() => (window.location.href = "tel:9152987821")}
             >
-              Clinician Reviewed
-            </div>
-          </Card>
-        </div>
+              <Phone
+                size={14}
+                style={{ marginRight: 8, verticalAlign: "middle" }}
+              />{" "}
+              Call Now
+            </PrimaryBtn>
+          </div>
+        </Card>
 
-        {/* ── ASSESSMENT LIST ── */}
-        <div style={{ marginBottom: 20 }}>
-          <FilterToolbar
-            searchValue={searchQuery}
-            onSearchChange={setSearchQuery}
-            filters={filterOptions}
-            activeFilter={activeFilter}
-            onFilterChange={setActiveFilter}
-            onPDFExport={handlePDFExport}
-            placeholder="Search by date or doctor..."
-            showExport={true}
-          />
-        </div>
-        
-        <h3 style={{ fontSize: 18, fontWeight: 700, color: theme.textPrimary, marginBottom: 20 }}>
-          Assessment History
-        </h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {paginatedAssessments.map((a) => {
-            const displayDoctor =
-              a.doctor_name && a.doctor_name !== "Care Team"
-                ? `Dr. ${a.doctor_name}`
-                : (a.doctor_name || "Care Team");
-            
-
-            const messageText =
-              a.doctor_message ||
-              a.plan ||
-              "Your clinician will share a message here when available.";
-
-            return (
-              <Card key={a.id} style={{ padding: 0, overflow: "hidden" }}>
+        <div className="dashboard-grid" style={{ gap: 32 }}>
+          {/* LEFT COLUMN */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+            {/* Recommendation */}
+            <Card>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 24
+                }}
+              >
                 <div
-                  onClick={() => setExpanded(expanded === a.id ? null : a.id)}
                   style={{
-                    padding: "20px 24px",
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    background: theme.primaryBg,
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
-                    cursor: "pointer",
-                    transition: "background 0.2s",
+                    justifyContent: "center"
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                    <div style={{ textAlign: "center", minWidth: 60 }}>
-                      <div
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: theme.textMuted,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {a.short_date.split(" ")[1]}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 20,
-                          fontWeight: 800,
-                          color: theme.textPrimary,
-                        }}
-                      >
-                        {a.short_date.split(" ")[0]}
-                      </div>
+                  <Stethoscope size={18} color={theme.primary} />
+                </div>
+                <h3
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: theme.textPrimary,
+                    margin: 0
+                  }}
+                >
+                  Clinician's Recommendation
+                </h3>
+              </div>
+              <div
+                style={{
+                  position: "relative",
+                  padding: "24px 32px",
+                  background: theme.primaryBg,
+                  borderRadius: 16
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 24,
+                    color: theme.primary,
+                    opacity: 0.2,
+                    position: "absolute",
+                    top: 10,
+                    left: 15,
+                    fontFamily: "serif"
+                  }}
+                >
+                  "
+                </div>
+                <p
+                  style={{
+                    fontSize: 15,
+                    color: theme.textPrimary,
+                    lineHeight: 1.8,
+                    fontStyle: "italic",
+                    margin: 0,
+                    position: "relative",
+                    zIndex: 1
+                  }}
+                >
+                  {plan.doctor_recommendation}
+                </p>
+                <div
+                  style={{
+                    fontSize: 24,
+                    color: theme.primary,
+                    opacity: 0.2,
+                    position: "absolute",
+                    bottom: -10,
+                    right: 15,
+                    fontFamily: "serif"
+                  }}
+                >
+                  "
+                </div>
+              </div>
+              <div
+                style={{
+                  textAlign: "right",
+                  marginTop: 16,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: theme.primary
+                }}
+              >
+                — Dr. {plan.doctor_name}
+              </div>
+            </Card>
+
+            {/* Action Steps */}
+            <Card>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 24
+                }}
+              >
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    background: theme.isDark
+                      ? "rgba(4, 120, 87, 0.2)"
+                      : "#F0FDF4",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  <CheckCircle2
+                    size={18}
+                    color={theme.isDark ? "#A7F3D0" : "#047857"}
+                  />
+                </div>
+                <h3
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: theme.textPrimary,
+                    margin: 0
+                  }}
+                >
+                  Your Action Steps
+                </h3>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12
+                }}
+              >
+                {plan.action_steps.map((step, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      gap: 16,
+                      alignItems: "flex-start",
+                      padding: "16px",
+                      background: theme.innerBg,
+                      borderRadius: 12,
+                      border: `1px solid ${theme.border}`
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: "50%",
+                        background: theme.primaryBg,
+                        color: theme.primary,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 12,
+                        fontWeight: 800,
+                        flexShrink: 0
+                      }}
+                    >
+                      {i + 1}
                     </div>
                     <div
                       style={{
-                        height: 32,
-                        width: 1,
-                        background: theme.divider,
+                        fontSize: 14,
+                        color: theme.textPrimary,
+                        lineHeight: 1.5
                       }}
-                    />
-                    <div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          marginBottom: 4,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 16,
-                            fontWeight: 700,
-                            color: theme.textPrimary,
-                          }}
-                        >
-                          Assessment completed
-                        </span>
-                        {a.status === "finalized" && (
-                          <Badge type="warning" size="sm">
-                            Clinician Reviewed
-                          </Badge>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 13, color: theme.textMuted }}>
-                        Completed on {a.date} • Reviewed by{" "}
-                        <strong>{displayDoctor}</strong>
-                      </div>
+                    >
+                      {step}
                     </div>
                   </div>
-                  <div style={{ color: theme.primary }}>
-                    {expanded === a.id ? (
-                      <ChevronUp size={20} />
-                    ) : (
-                      <ChevronDown size={20} />
-                    )}
-                  </div>
-                </div>
+                ))}
+              </div>
+            </Card>
+          </div>
 
-                {expanded === a.id && (
+          {/* RIGHT COLUMN */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+            {/* Follow-up Schedule */}
+            <Card>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 24
+                }}
+              >
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    background: theme.isDark
+                      ? "rgba(29, 78, 216, 0.2)"
+                      : "#EFF6FF",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  <Calendar
+                    size={18}
+                    color={theme.isDark ? "#BFDBFE" : "#1D4ED8"}
+                  />
+                </div>
+                <h3
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: theme.textPrimary,
+                    margin: 0
+                  }}
+                >
+                  Follow-up Schedule
+                </h3>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 16
+                }}
+              >
+                {plan.followups.map((f) => (
                   <div
+                    key={f.id}
                     style={{
-                      padding: "0 24px 24px 24px",
-                      borderTop: `1px solid ${theme.divider}`,
+                      padding: "16px",
+                      borderRadius: 12,
+                      border: `1px solid ${theme.border}`,
+                      background:
+                        f.status === "completed"
+                          ? theme.innerBg
+                          : theme.cardBg,
+                      opacity: f.status === "completed" ? 0.7 : 1
                     }}
                   >
-                    <div style={{ paddingTop: 24, maxWidth: "800px" }}>
-                      <h4
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: 8
+                      }}
+                    >
+                      <span
                         style={{
-                          fontSize: 16,
+                          fontSize: 13,
                           fontWeight: 700,
-                          color: theme.textPrimary,
-                          marginBottom: 16,
+                          color: theme.textPrimary
+                        }}
+                      >
+                        {f.type}
+                      </span>
+                      <Badge
+                        type={
+                          f.status === "completed" ? "success" : "primary"
+                        }
+                      >
+                        {f.status}
+                      </Badge>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 12,
+                        fontSize: 12,
+                        color: theme.textMuted
+                      }}
+                    >
+                      <span
+                        style={{
                           display: "flex",
                           alignItems: "center",
-                          gap: 8,
+                          gap: 4
                         }}
                       >
-                        <MessageCircle size={18} color={theme.primary} /> Doctor's Message
-                      </h4>
-                      <Card
+                        <Calendar size={14} /> {f.date}
+                      </span>
+                      <span
                         style={{
-                          background: theme.primaryBg,
-                          border: "none",
-                          marginBottom: 32,
-                        }}
-                      >
-                        <p
-                          style={{
-                            fontSize: 15,
-                            color: theme.primaryText,
-                            lineHeight: 1.6,
-                            margin: 0,
-                          }}
-                        >
-                          {messageText}
-                        </p>
-                      </Card>
-
-                      <h4
-                        style={{
-                          fontSize: 16,
-                          fontWeight: 700,
-                          color: theme.textPrimary,
-                          marginBottom: 16,
                           display: "flex",
                           alignItems: "center",
-                          gap: 8,
+                          gap: 4
                         }}
                       >
-                        <CheckCircle size={18} color={theme.success} /> Care Plan & Next Steps
-                      </h4>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 16,
-                          padding: "20px",
-                          background: theme.pageBg,
-                          borderRadius: 12,
-                        }}
-                      >
-                        {a.followups && a.followups.length > 0 && (
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 12,
-                              fontSize: 15,
-                              color: theme.textPrimary,
-                              fontWeight: 700,
-                            }}
-                          >
-                            <div
-                              style={{
-                                background: theme.primary + "20",
-                                padding: "4px",
-                                borderRadius: "50%",
-                                display: "flex",
-                              }}
-                            >
-                              <Calendar size={18} color={theme.primary} />
-                            </div>
-                            Meeting Scheduled: {a.followups[0].date} at{" "}
-                            {a.followups[0].time}
-                          </div>
-                        )}
-
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            fontSize: 15,
-                            color: theme.textSecondary,
-                            fontWeight: 500,
-                          }}
-                        >
-                          <div
-                            style={{
-                              background: theme.success + "20",
-                              padding: "4px",
-                              borderRadius: "50%",
-                              display: "flex",
-                            }}
-                          >
-                            <CheckCircle size={18} color={theme.success} />
-                          </div>
-                          Attend scheduled follow-up
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            fontSize: 15,
-                            color: theme.textSecondary,
-                            fontWeight: 500,
-                          }}
-                        >
-                          <div
-                            style={{
-                              background: theme.success + "20",
-                              padding: "4px",
-                              borderRadius: "50%",
-                              display: "flex",
-                            }}
-                          >
-                            <CheckCircle size={18} color={theme.success} />
-                          </div>
-                          Practice relaxation techniques
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            fontSize: 15,
-                            color: theme.textSecondary,
-                            fontWeight: 500,
-                          }}
-                        >
-                          <div
-                            style={{
-                              background: theme.success + "20",
-                              padding: "4px",
-                              borderRadius: "50%",
-                              display: "flex",
-                            }}
-                          >
-                            <CheckCircle size={18} color={theme.success} />
-                          </div>
-                          Reach out if you feel overwhelmed
-                        </div>
-                      </div>
-
-                      <PrimaryBtn
-                        style={{ marginTop: 24, width: "fit-content" }}
-                        onClick={handlePDFExport}
-                      >
-                        <FileText size={16} style={{ marginRight: 8 }} />
-                        Export as PDF
-                      </PrimaryBtn>
+                        <Clock size={14} /> {f.time}
+                      </span>
                     </div>
                   </div>
+                ))}
+                {plan.followups.length === 0 && (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "20px 0",
+                      color: theme.textMuted,
+                      fontSize: 13,
+                      fontStyle: "italic"
+                    }}
+                  >
+                    No follow-ups scheduled yet.
+                  </div>
                 )}
-              </Card>
-            );
-          })}
-        </div>
-  
-        <Pagination 
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+              </div>
+            </Card>
 
-        {/* ── HELP FOOTER ── */}
-        <div style={{
-          marginTop: 40,
-          padding: "28px 32px",
-          background: theme.primaryBg,
-          borderRadius: 16,
-          border: `1.5px solid ${theme.primary}30`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 24
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ width: 48, height: 48, borderRadius: "50%", background: theme.primary + "20", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <MessageCircle size={22} color={theme.primary} />
-            </div>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: theme.textPrimary, marginBottom: 4 }}>Questions? Message your care team</div>
-              <div style={{ fontSize: 13, color: theme.textMuted }}>Your clinician is here to support you every step of the way.</div>
-            </div>
+            {/* Specialist Info (optional – keep simple fallback) */}
+            {plan.specialist && (
+              <Card>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginBottom: 24
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      background: theme.primaryBg,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                  >
+                    <User size={18} color={theme.primary} />
+                  </div>
+                  <h3
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 700,
+                      color: theme.textPrimary,
+                      margin: 0
+                    }}
+                  >
+                    Recommended Specialist
+                  </h3>
+                </div>
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "10px 0"
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: "50%",
+                      background: theme.primaryBg,
+                      color: theme.primary,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 24,
+                      fontWeight: 800,
+                      margin: "0 auto 16px"
+                    }}
+                  >
+                    {plan.specialist.name?.charAt(0)}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 700,
+                      color: theme.textPrimary,
+                      marginBottom: 4
+                    }}
+                  >
+                    {plan.specialist.name}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: theme.primary,
+                      fontWeight: 600,
+                      marginBottom: 16
+                    }}
+                  >
+                    {plan.specialist.role}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: theme.textMuted,
+                      marginBottom: 20
+                    }}
+                  >
+                    {plan.specialist.hospital}
+                  </div>
+                  <PrimaryBtn
+                    style={{ width: "100%" }}
+                    onClick={() =>
+                      (window.location.href = `tel:${plan.specialist.phone}`)
+                    }
+                  >
+                    <Phone
+                      size={14}
+                      style={{ marginRight: 8, verticalAlign: "middle" }}
+                    />{" "}
+                    Call Specialist
+                  </PrimaryBtn>
+                </div>
+              </Card>
+            )}
           </div>
-          <PrimaryBtn onClick={() => window.location.href = "/patient/messages"}>
-            <MessageCircle size={16} style={{ verticalAlign: "middle", marginRight: 8 }} /> Message Now
-          </PrimaryBtn>
         </div>
       </main>
     </div>
   );
 }
-
-
-

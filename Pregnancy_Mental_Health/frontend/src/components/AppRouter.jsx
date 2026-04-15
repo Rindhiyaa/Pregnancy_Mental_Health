@@ -91,7 +91,7 @@ export default function AppRouter() {
             <Route path="assessment/new" element={<ProtectedRoute requiredRole={["nurse", "doctor"]}><NurseNewAssessment /></ProtectedRoute>} />
             <Route path="assessments" element={<ProtectedRoute requiredRole="nurse"><NurseAssessmentHistory /></ProtectedRoute>} />
             <Route path="appointments" element={<ProtectedRoute requiredRole={["nurse", "doctor"]}><NurseAppointmentsPage /></ProtectedRoute>} />
-            <Route path="doctors" element={<ProtectedRoute requiredRole="nurse"><NurseDoctorsPage /></ProtectedRoute>} />
+            <Route path="doctors" element={<NurseDoctorsPage />} />
             <Route path="messages" element={<ProtectedRoute requiredRole="nurse"><ClinicianMessages /></ProtectedRoute>} />
             <Route path="profile" element={<ProtectedRoute requiredRole="nurse"><NurseProfilePage /></ProtectedRoute>} />
           </Routes>

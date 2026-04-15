@@ -11,7 +11,6 @@ import {
     Search, CheckSquare, Ban, Stethoscope, AlertCircle, X, Menu
 } from "lucide-react";
 import { getAvatarColor } from "../../utils/helpers";
-import { useBreakpoint } from "../../hooks/useBreakpoint";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -131,7 +130,20 @@ const SchedulePage = () => {
     const { theme } = useTheme();
     const navigate  = useNavigate();
     const calRef    = useRef(null);
-    const { isMobile, isTablet, isDesktop } = useBreakpoint();
+    // Temporary: use window width instead of content width for debugging
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+    
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    
+    const isMobile = windowWidth < 768;
+    const isTablet = windowWidth >= 768 && windowWidth < 1024;
+    const isDesktop = windowWidth >= 1024;
+    
+    const mainRef = useRef(null);
 
     const today = new Date().toISOString().split("T")[0];
 
@@ -156,8 +168,6 @@ const SchedulePage = () => {
             setLoading(true);
     
             const { data } = await api.get("/doctor/appointments");
-    
-            console.log("API DATA:", data);  // 🔍 debug
     
             setAppointments(data || []);
             setSelected(data?.find(a => a.date === today) || data?.[0] || null);
@@ -240,12 +250,6 @@ const SchedulePage = () => {
         return new Date(dateFilter + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
     })();
 
-    if (loading) return (
-        <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: theme.pageBg }}>
-            <Loader2 size={48} className="animate-spin" color={theme.primary} />
-        </div>
-    );
-
     const card = {
         background: "rgba(255, 255, 255, 0.55)",
         backdropFilter: "blur(16px)",
@@ -260,14 +264,24 @@ const SchedulePage = () => {
         }),
     };
 
+    if (loading) {
+        return (
+        <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: theme.pageBg }}>
+            <Loader2 size={48} className="animate-spin" color={theme.primary} />
+        </div>
+    );
+    }
+
     return (
         <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, flexDirection: isDesktop ? "row" : "column" }}>
             <DoctorSidebar />
-            <main className="portal-main" style={{ 
+            <main ref={mainRef} className="portal-main" style={{ 
                 background: theme.pageBg,
                 flex: 1,
-                padding: isMobile ? "16px" : isTablet ? "24px" : "32px",
-                paddingTop: !isDesktop ? "60px" : "32px", // Space for mobile nav if needed
+                paddingTop: !isDesktop ? "60px" : "32px",
+                paddingRight: isMobile ? "16px" : isTablet ? "24px" : "32px",
+                paddingBottom: isMobile ? "16px" : isTablet ? "24px" : "32px",
+                paddingLeft: isMobile ? "16px" : isTablet ? "24px" : "32px",
                 maxWidth: "100%",
                 overflowX: "hidden"
             }}>

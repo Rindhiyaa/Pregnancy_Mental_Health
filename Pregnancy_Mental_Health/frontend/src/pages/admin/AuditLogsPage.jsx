@@ -33,6 +33,7 @@ export default function AuditLogsPage() {
 
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const [showFilterMenu, setShowFilterMenu] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
@@ -45,6 +46,10 @@ export default function AuditLogsPage() {
     const itemsPerPage = 15;
 
     useEffect(() => { loadLogs(); }, []);
+
+    useEffect(() => {
+        if (isDesktop) setSidebarOpen(false);
+    }, [isDesktop]);
 
     useEffect(() => {
         const handler = () => { setShowFilterMenu(false); setShowExportMenu(false); };
@@ -134,6 +139,11 @@ export default function AuditLogsPage() {
         }
       };
 
+    const SIDEBAR_WIDTH = 260;
+    const mainMarginLeft = isDesktop ? SIDEBAR_WIDTH : 0;
+    const mainPadding = isMobile ? "16px" : isTablet ? "24px 28px" : "40px 48px";
+    const mainWidth = isDesktop ? `calc(100% - ${SIDEBAR_WIDTH}px)` : "100%";
+
     const filterOptions = [
         { label: "All Actions", value: "all" },
         { label: "User Created", value: "User Created" },
@@ -144,25 +154,84 @@ export default function AuditLogsPage() {
     ];
 
     return (
-        <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: theme.pageBg, fontFamily: theme.fontBody }}>
+        <div style={{
+            display: "flex", minHeight: "100vh",
+            background: theme.pageBg, fontFamily: theme.fontBody
+        }}>
 
-            {/* ── Sidebar ── */}
-            <AdminSidebar />
+            {/* ── Mobile overlay backdrop ── */}
+            {!isDesktop && sidebarOpen && (
+                <div
+                    onClick={() => setSidebarOpen(false)}
+                    style={{
+                        position: "fixed", inset: 0,
+                        background: "rgba(0,0,0,0.5)",
+                        zIndex: 200, backdropFilter: "blur(2px)",
+                    }}
+                />
+            )}
+
+            {/* ── Sidebar drawer ── */}
+            <div style={{
+                position: "fixed",
+                top: 0, left: 0, bottom: 0,
+                zIndex: 300, width: SIDEBAR_WIDTH,
+                transform: isDesktop
+                    ? "translateX(0)"
+                    : sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+                transition: "transform 0.3s ease",
+            }}>
+                <AdminSidebar onClose={() => setSidebarOpen(false)} />
+            </div>
 
             {/* ── Main content ── */}
             <main style={{
-                flex: 1, minWidth: 0,
-                height: "100vh", overflowY: "auto",
-                background: theme.pageBg, fontFamily: theme.fontBody,
-                paddingTop: !isDesktop ? "56px" : 0,
+                flex: 1,
+                marginLeft: mainMarginLeft,
+                padding: mainPadding,
+                width: mainWidth,
+                boxSizing: "border-box",
+                minWidth: 0,
+                background: theme.pageBg,
+                fontFamily: theme.fontBody,
             }}>
-            <div style={{ padding: isMobile ? "16px" : isTablet ? "24px 28px" : "40px 48px" }}>
+
+                {/* ── Mobile top bar ── */}
+                {!isDesktop && (
+                    <div style={{
+                        display: "flex", alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: 16, padding: "8px 0",
+                    }}>
+                        <button
+                            onClick={() => setSidebarOpen(true)}
+                            style={{
+                                background: "none", border: "none",
+                                cursor: "pointer", color: theme.textPrimary,
+                                display: "flex", alignItems: "center", padding: 4,
+                            }}
+                            aria-label="Open navigation"
+                        >
+                            <Menu size={24} />
+                        </button>
+                        <span style={{ fontWeight: 700, fontSize: 16, color: theme.textPrimary }}>
+                            Audit Logs
+                        </span>
+                        <ThemeToggle />
+                    </div>
+                )}
 
                 {/* ── Page Title ── */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                <div style={{
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "center", marginBottom: 24,
+                }}>
                     <PageTitle
                         title="Audit Logs"
-                        subtitle={isMobile ? "System action tracking" : "Comprehensive system-wide action tracking for security and compliance"}
+                        subtitle={isMobile
+                            ? "System action tracking"
+                            : "Comprehensive system-wide action tracking for security and compliance"
+                        }
                     />
                 </div>
                 <Divider style={{ marginBottom: 24 }} />
@@ -515,23 +584,21 @@ export default function AuditLogsPage() {
                     ) : (
                         // ── TABLET + DESKTOP: Full 5-column table ────────────
                         <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-                            <table
-                                className="portal-table"
-                                style={{
-                                    borderColor: theme.divider,
-                                    minWidth: isTablet ? 680 : 800,
-                                }}
-                            >
+                            <table style={{
+                                width: "100%", borderCollapse: "collapse",
+                                textAlign: "left",
+                                minWidth: isTablet ? 680 : 800, // ensures scroll kicks in before columns collapse
+                            }}>
                                 <thead>
                                     <tr style={{
-                                        background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : "#f8fafc"),
-                                        borderColor: theme.divider,
+                                        background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : "white"),
+                                        borderBottom: `2px solid ${theme.divider}`,
                                     }}>
-                                        <th style={{ color: theme.textSecondary }}>Timestamp</th>
-                                        <th style={{ color: theme.textSecondary }}>User</th>
-                                        <th style={{ color: theme.textSecondary }}>Action Type</th>
-                                        <th style={{ color: theme.textSecondary }}>Details</th>
-                                        {!isTablet && <th style={{ color: theme.textSecondary }}>IP Address</th>}
+                                        <th style={thStyle(theme, isTablet)}>Timestamp</th>
+                                        <th style={thStyle(theme, isTablet)}>User</th>
+                                        <th style={thStyle(theme, isTablet)}>Action Type</th>
+                                        <th style={thStyle(theme, isTablet)}>Details</th>
+                                        {!isTablet && <th style={thStyle(theme, isTablet)}>IP Address</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -658,7 +725,6 @@ export default function AuditLogsPage() {
                         onPageChange={setCurrentPage}
                     />
                 </Card>
-            </div>
             </main>
         </div>
     );

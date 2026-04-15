@@ -10,9 +10,8 @@ class AuditLogCreate(BaseModel):
 
 class AuditLog(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
     id: int
-    user_id: int
+    user_id: Optional[int] = None
     user_name: str
     action: str
     details: str
@@ -45,7 +44,6 @@ class UserCreate(BaseModel):
 
 class UserProfileOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
     id: int
     full_name: str
     email: str
@@ -68,7 +66,6 @@ class UserProfileUpdate(BaseModel):
 
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
     id: int
     first_name: str
     last_name: str | None = None
@@ -163,7 +160,6 @@ class ReferralRequest(BaseModel):
 
 class NurseAssessmentOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
     id: int
     patient_id: Optional[int] = None
     patient_name: str

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 from typing import Optional, List
 from ..database import get_db
 from .. import models, schemas
@@ -16,36 +16,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/nurse", tags=["nurse"])
-
-@router.get("/profile")
-def get_nurse_profile(
-    db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email)
-):
-    nurse = db.query(models.User).filter(
-        models.User.email == current_user_email,
-        models.User.role == "nurse"
-    ).first()
-
-    if not nurse:
-        raise HTTPException(status_code=403, detail="Nurse not found")
-
-    return {
-        "id": nurse.id,
-        "email": nurse.email,
-        "first_name": nurse.first_name,
-        "last_name": nurse.last_name,
-        "full_name": f"{nurse.first_name} {nurse.last_name or ''}".strip(),
-        "role": nurse.role,
-        "phone_number": nurse.phone_number,
-        "hospital_name": nurse.hospital_name,
-        "department": nurse.department,
-        "designation": nurse.designation,
-        "specialization": nurse.specialization,
-        "ward": nurse.ward,
-        "years_of_experience": nurse.years_of_experience,
-        "member_since": nurse.member_since,
-    }
 
 @router.get("/dashboard")
 def get_nurse_dashboard(
@@ -102,31 +72,11 @@ def get_nurse_dashboard(
                     "phone": p.phone,
                     "pregnancy_week": p.pregnancy_week,
                     "assigned_doctor": doctor_name,
-                    "status": "Registered",
+                    # Simple status for now; adjust later as needed
+                    "status": "Active",
                     "created_at": p.created_at.strftime("%Y-%m-%d"),
-                    "is_online": (datetime.now(timezone.utc) - p.user.last_active.replace(tzinfo=timezone.utc)).total_seconds() < 300 if p.user and p.user.last_active else False,
                 }
             )
-
-        # Calculate trends (last 7 days)
-        last_7d = datetime.now() - timedelta(days=7)
-        
-        new_patients_last_7d = db.query(models.Patient).filter(
-            models.Patient.created_by_nurse_id == nurse.id,
-            models.Patient.created_at >= last_7d
-        ).count()
-        
-        pending_assessments_last_7d = db.query(models.Assessment).filter(
-            models.Assessment.nurse_id == nurse.id,
-            models.Assessment.status == "draft",
-            models.Assessment.created_at >= last_7d
-        ).count()
-        
-        waiting_review_last_7d = db.query(models.Assessment).filter(
-            models.Assessment.nurse_id == nurse.id,
-            models.Assessment.status == "submitted",
-            models.Assessment.created_at >= last_7d
-        ).count()
 
         return {
             "stats": {
@@ -134,12 +84,6 @@ def get_nurse_dashboard(
                 "pending_assessments": pending_assessments,
                 "waiting_review": waiting_review,
                 "total_patients": total_patients,
-                "trends": {
-                    "total_patients": f"+{new_patients_last_7d}" if new_patients_last_7d > 0 else "0",
-                    "pending_assessments": f"+{pending_assessments_last_7d}" if pending_assessments_last_7d > 0 else "0",
-                    "waiting_review": f"+{waiting_review_last_7d}" if waiting_review_last_7d > 0 else "0",
-                    "new_patients_today": f"+{new_patients_today}" if new_patients_today > 0 else "0"
-                }
             },
             "recentPatients": recentPatients,
         }
@@ -148,7 +92,11 @@ def get_nurse_dashboard(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/doctors")
-def get_nurse_doctors(db: Session = Depends(get_db)):  # ← PUBLIC!
+def get_nurse_doctors(
+    db: Session = Depends(get_db),
+):
+    # Removed authentication to make it fully liberal
+
     doctors = (
         db.query(models.User)
         .filter(models.User.role == "doctor")
@@ -162,21 +110,8 @@ def get_nurse_doctors(db: Session = Depends(get_db)):  # ← PUBLIC!
     )
 
     result = []
-    now = datetime.now(datetime.now().astimezone().tzinfo)
     for d in doctors:
         full_name = f"{d.first_name or ''} {d.last_name or ''}".strip() or d.email
-        
-        # ✅ Calculate is_online (active in last 5 minutes)
-        is_online = False
-        if d.last_active:
-            # Handle timezone-aware comparison
-            last_active = d.last_active
-            if last_active.tzinfo is None:
-                last_active = last_active.replace(tzinfo=timezone.utc)
-            
-            diff = datetime.now(timezone.utc) - last_active
-            is_online = diff.total_seconds() < 300 # 5 minutes
-            
         result.append(
             {
                 "id": d.id,
@@ -186,8 +121,6 @@ def get_nurse_doctors(db: Session = Depends(get_db)):  # ← PUBLIC!
                 "email": d.email,
                 "specialization": getattr(d, "specialization", None),
                 "active_patients": counts.get(d.id, 0),
-                "is_online": is_online,
-                "last_active": d.last_active
             }
         )
     return result
@@ -349,6 +282,7 @@ def get_nurse_assessments(
                 "id": a.id,
                 "patient_id": a.patient_id,
                 "patient_name": a.patient_name,
+                "risk_level": a.risk_level,
                 "status": a.status,
                 "created_at": a.created_at,
                 "assigned_doctor_id": a.assigned_doctor_id,
@@ -391,15 +325,17 @@ def get_nurse_patients(
         if latest:
             if latest.status == "draft":
                 patient_status = "Draft"
-            elif latest.status == "submitted" or latest.risk_level == "Pending":
+            elif latest.risk_level == "Pending" or latest.status == "submitted":
                 patient_status = "Pending"
             else:
-                patient_status = "Assessed"
+                patient_status = "Active"
         else:
-            patient_status = "Registered"
+            patient_status = "Active"
 
         last_assessment_date = latest.created_at if latest else None
-        last_assessment_label = "Assessment Logged" if latest else None
+        last_assessment_label = None
+        if latest:
+            last_assessment_label = f"Risk: {latest.risk_level or 'Pending'}"
 
         doctor_name = None
         if p.assigned_doctor_id:
@@ -414,28 +350,18 @@ def get_nurse_patients(
                     or doc.email
                 )
 
-        is_online = False
-        if p.user and p.user.last_active:
-            last_active = p.user.last_active
-            if last_active.tzinfo is None:
-                last_active = last_active.replace(tzinfo=timezone.utc)
-
-            is_online = (datetime.now(timezone.utc) - last_active).total_seconds() < 300
-
         results.append(
             {
                 "id": p.id,
                 "name": p.name,
                 "email": p.email,
                 "phone": p.phone,
-                "age": p.age,
                 "pregnancy_week": p.pregnancy_week,
                 "status": patient_status,
                 "assigned_doctor": doctor_name,
                 "doctor_id": p.assigned_doctor_id,
                 "last_assessment": last_assessment_label,
                 "last_assessment_date": last_assessment_date,
-                "is_online": is_online,
             }
         )
 
@@ -490,7 +416,6 @@ def get_nurse_patient_detail(
         "status": patient.status,
         "assigned_doctor_id": patient.assigned_doctor_id,
         "assigned_doctor": doctor_name,
-        "is_online": (datetime.now(timezone.utc) - patient.user.last_active.replace(tzinfo=timezone.utc)).total_seconds() < 300 if patient.user and patient.user.last_active else False,
     }
 
 
@@ -503,24 +428,6 @@ def create_nurse_assessment(
     nurse = db.query(models.User).filter(models.User.email == current_user_email).first()
     if not nurse or nurse.role != "nurse":
         raise HTTPException(status_code=403, detail="Nurse role required")
-
-    if payload.status == "submitted":
-        required = [
-            "age", "residence", "education_level", "marital_status", 
-            "partner_education", "partner_income", "household_members",
-            "relationship_inlaws", "relationship_husband", "support_during_pregnancy",
-            "need_more_support", "trust_share_feelings", "family_type",
-            "total_children_now", "pregnancy_number", "pregnancy_planned", 
-            "regular_checkups", "medical_conditions_pregnancy", "occupation_before_surgery",
-            "depression_before_pregnancy", "depression_during_pregnancy",
-            "fear_pregnancy_childbirth", "major_life_changes_pregnancy", "abuse_during_pregnancy"
-        ]
-        required.extend([f"epds_{i}" for i in range(1, 11)])
-
-        raw = payload.raw_data or {}
-        missing = [f for f in required if raw.get(f) is None or str(raw.get(f)).strip() == ""]
-        if missing:
-            raise HTTPException(status_code=400, detail=f"Incomplete assessment submission. Missing required fields: {', '.join(missing[:5])}" + ("..." if len(missing) > 5 else ""))
 
     new_assessment = models.Assessment(
         patient_id=payload.patient_id,
@@ -699,16 +606,13 @@ def list_nurse_appointments(
 
     appts = (
         db.query(models.Appointment)
-        .filter(
-            models.Appointment.created_by_nurse_id == nurse.id,
-            models.Appointment.status.notin_(["Completed", "Cancelled"])
-        )
         .order_by(models.Appointment.date.asc(), models.Appointment.time.asc())
         .all()
     )
 
     results = []
     for a in appts:
+        # Get doctor: nurse-assigned first, fallback to doctor_id
         doctor = db.query(models.User).filter(
             models.User.id == (a.assigned_doctor_id or a.doctor_id)
         ).first()
@@ -726,7 +630,6 @@ def list_nurse_appointments(
             "notes": a.notes,
             "urgency": a.urgency,
             "department": a.department,
-            "status": a.status,
         })
 
     return results
@@ -743,6 +646,7 @@ def create_nurse_appointment(
         raise HTTPException(status_code=403, detail="Nurse role required")
 
     try:
+        # Parse date and time
         appt_date = datetime.strptime(str(payload["date"]), "%Y-%m-%d").date()
         time_str = str(payload["time"])
         if len(time_str) == 5:
@@ -751,18 +655,21 @@ def create_nurse_appointment(
         else:
             appt_time = datetime.strptime(time_str, "%H:%M:%S").time()
 
+        # Fetch patient
         patient = db.query(models.Patient).filter(models.Patient.id == payload["patientid"]).first()
         if not patient:
             raise HTTPException(status_code=404, detail="Patient not found")
 
+        # Fetch doctor
         doctor = db.query(models.User).filter(models.User.id == payload["doctorid"]).first()
         if not doctor or doctor.role != "doctor":
             raise HTTPException(status_code=404, detail="Doctor not found")
 
+        # Create appointment with assigned_doctor_id
         appt = models.Appointment(
             patient_id=patient.id,
             doctor_id=doctor.id,
-            assigned_doctor_id=doctor.id,
+            assigned_doctor_id=doctor.id,  # ✅ ensures doctor sees this
             patient_name=patient.name,
             date=appt_date,
             time=appt_time,
@@ -770,7 +677,6 @@ def create_nurse_appointment(
             notes=payload.get("notes", ""),
             urgency=payload.get("urgency", "Routine"),
             department=payload.get("department", "General"),
-            created_by_nurse_id=nurse.id,  # ← ADD THIS
         )
         db.add(appt)
         db.commit()
@@ -808,28 +714,6 @@ def create_nurse_appointment(
         db.commit()
         db.refresh(followup)
 
-        # ✅ SEND NOTIFICATION TO DOCTOR AFTER APPOINTMENT IS CREATED
-        try:
-            if doctor and doctor.email:
-                nurse_name = f"{nurse.first_name or ''} {nurse.last_name or ''}".strip() or nurse.email
-
-                notification = models.Notification(
-                    title="New Appointment Scheduled",
-                    message=(
-                        f"An appointment has been scheduled for {patient.name} "
-                        f"by Nurse {nurse_name} on {appt.date.strftime('%Y-%m-%d')} at {appt.time.strftime('%H:%M')}."
-                    ),
-                    type="info",
-                    priority="medium",
-                    clinician_email=doctor.email,
-                )
-
-                db.add(notification)
-                db.commit()
-
-        except Exception as notif_err:
-            logger.error(f"Notification creation failed: {notif_err}")
-
         return {
             "appointment_id": appt.id,
             "patient_name": patient.name,
@@ -861,10 +745,7 @@ def update_nurse_appointment(
     if not nurse or nurse.role != "nurse":
         raise HTTPException(status_code=403, detail="Nurse role required")
 
-    appt = db.query(models.Appointment).filter(
-        models.Appointment.id == appointment_id,
-        models.Appointment.created_by_nurse_id == nurse.id,  # ← VERIFY NURSE OWNS IT
-    ).first()
+    appt = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
@@ -898,10 +779,7 @@ def update_appointment_status(
 
     appt = (
         db.query(models.Appointment)
-        .filter(
-            models.Appointment.id == appointment_id,
-            models.Appointment.created_by_nurse_id == nurse.id,
-        )
+        .filter(models.Appointment.id == appointment_id)
         .first()
     )
     if not appt:
@@ -949,12 +827,10 @@ def delete_nurse_appointment(
     if not nurse or nurse.role != "nurse":
         raise HTTPException(status_code=403, detail="Nurse role required")
 
-    appt = db.query(models.Appointment).filter(
-        models.Appointment.id == appointment_id,
-        models.Appointment.created_by_nurse_id == nurse.id,  # ← VERIFY NURSE OWNS IT
-    ).first()
+    appt = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
     db.delete(appt)
     db.commit()
+

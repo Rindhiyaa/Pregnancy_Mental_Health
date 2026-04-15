@@ -1,0 +1,314 @@
+/* Responsive Table System - Mobile-First */
+
+/* ============================================================
+   RESPONSIVE TABLE WRAPPER
+   ============================================================ */
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-white);
+}
+
+/* Scroll indicators */
+.table-responsive::before,
+.table-responsive::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity var(--transition-fast);
+}
+
+.table-responsive::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(255,255,255,1), rgba(255,255,255,0));
+}
+
+.table-responsive::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(255,255,255,1), rgba(255,255,255,0));
+}
+
+/* ============================================================
+   BASE TABLE STYLES
+   ============================================================ */
+
+.responsive-table {
+  width: 100%;
+  min-width: 600px; /* Minimum width before horizontal scroll */
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: var(--font-size-sm);
+  background: var(--color-white);
+}
+
+/* Table header */
+.responsive-table thead {
+  background: var(--color-gray-50);
+  border-bottom: 2px solid var(--color-gray-200);
+}
+
+.responsive-table th {
+  padding: var(--space-md) var(--space-lg);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-700);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+/* Table body */
+.responsive-table tbody tr {
+  border-bottom: 1px solid var(--color-gray-100);
+  transition: background-color var(--transition-fast);
+}
+
+.responsive-table tbody tr:hover {
+  background: var(--color-gray-50);
+}
+
+.responsive-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.responsive-table td {
+  padding: var(--space-md) var(--space-lg);
+  color: var(--color-gray-900);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  vertical-align: middle;
+}
+
+/* ============================================================
+   MOBILE TABLE STYLES
+   ============================================================ */
+
+@media (max-width: 767px) {
+  /* Hide table headers on mobile */
+  .responsive-table thead {
+    display: none;
+  }
+  
+  /* Stack table rows as cards */
+  .responsive-table,
+  .responsive-table tbody,
+  .responsive-table tr,
+  .responsive-table td {
+    display: block;
+  }
+  
+  .responsive-table {
+    min-width: auto;
+  }
+  
+  .responsive-table tr {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-md);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .responsive-table tr:hover {
+    background: var(--color-white);
+    box-shadow: var(--shadow-md);
+  }
+  
+  .responsive-table td {
+    padding: var(--space-sm) 0;
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: var(--touch-target-min);
+  }
+  
+  /* Add labels for mobile */
+  .responsive-table td::before {
+    content: attr(data-label);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-600);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+    margin-right: var(--space-md);
+  }
+  
+  .responsive-table td:last-child {
+    border-bottom: none;
+  }
+  
+  /* Remove wrapper on mobile since we're using cards */
+  .table-responsive {
+    overflow: visible;
+    border: none;
+    background: transparent;
+  }
+}
+
+/* ============================================================
+   TABLE VARIANTS
+   ============================================================ */
+
+/* Compact table */
+.responsive-table.table-compact th,
+.responsive-table.table-compact td {
+  padding: var(--space-sm) var(--space-md);
+}
+
+/* Striped table */
+.responsive-table.table-striped tbody tr:nth-child(even) {
+  background: var(--color-gray-25);
+}
+
+.responsive-table.table-striped tbody tr:nth-child(even):hover {
+  background: var(--color-gray-50);
+}
+
+/* Bordered table */
+.responsive-table.table-bordered th,
+.responsive-table.table-bordered td {
+  border: 1px solid var(--color-gray-200);
+}
+
+/* ============================================================
+   TABLE CELL TYPES
+   ============================================================ */
+
+/* Status badges in tables */
+.table-status {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table-status.status-active {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+}
+
+.table-status.status-inactive {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--color-gray-600);
+}
+
+.table-status.status-pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.table-status.status-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+}
+
+/* Action buttons in tables */
+.table-actions {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.table-action-btn {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--color-gray-700);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.table-action-btn:hover {
+  background: var(--color-gray-50);
+  border-color: var(--color-gray-400);
+}
+
+.table-action-btn.btn-primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.table-action-btn.btn-primary:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+/* ============================================================
+   LOADING AND EMPTY STATES
+   ============================================================ */
+
+.table-loading,
+.table-empty {
+  text-align: center;
+  padding: var(--space-4xl) var(--space-lg);
+  color: var(--color-gray-500);
+}
+
+.table-loading {
+  background: var(--color-gray-25);
+}
+
+.table-empty {
+  background: var(--color-white);
+  border: 2px dashed var(--color-gray-200);
+  border-radius: var(--radius-lg);
+}
+
+/* ============================================================
+   ACCESSIBILITY IMPROVEMENTS
+   ============================================================ */
+
+/* Focus styles for table elements */
+.responsive-table th:focus,
+.responsive-table td:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+/* Screen reader improvements */
+.table-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .responsive-table th,
+  .responsive-table td {
+    border: 1px solid;
+  }
+  
+  .table-status {
+    border: 1px solid currentColor;
+  }
+}

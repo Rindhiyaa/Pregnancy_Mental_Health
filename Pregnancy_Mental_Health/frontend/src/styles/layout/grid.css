@@ -1,0 +1,316 @@
+/* Responsive Grid System - Mobile-First */
+
+/* ============================================================
+   CONTAINER SYSTEM
+   ============================================================ */
+
+.container {
+  width: min(100% - var(--container-padding-mobile) * 2, var(--container-max-width));
+  margin-inline: auto;
+  padding-inline: var(--container-padding-mobile);
+}
+
+@media (min-width: 600px) {
+  .container {
+    padding-inline: var(--container-padding-tablet);
+  }
+}
+
+@media (min-width: 900px) {
+  .container {
+    padding-inline: var(--container-padding-desktop);
+  }
+}
+
+/* ============================================================
+   FLEXIBLE GRID SYSTEM
+   ============================================================ */
+
+.grid {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+/* Single column (mobile default) */
+.grid-1 {
+  grid-template-columns: 1fr;
+}
+
+/* Two columns - responsive */
+.grid-2 {
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+}
+
+@media (min-width: 600px) {
+  .grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-xl);
+  }
+}
+
+/* Three columns - responsive */
+.grid-3 {
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+}
+
+@media (min-width: 600px) {
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-xl);
+  }
+}
+
+@media (min-width: 900px) {
+  .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2xl);
+  }
+}
+
+/* Four columns - responsive */
+.grid-4 {
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+}
+
+@media (min-width: 600px) {
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-xl);
+  }
+}
+
+@media (min-width: 900px) {
+  .grid-4 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2xl);
+  }
+}
+
+@media (min-width: 1200px) {
+  .grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Auto-fit grid - responsive columns based on content */
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-xl);
+}
+
+@media (max-width: 599px) {
+  .grid-auto {
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+  }
+}
+
+/* ============================================================
+   DASHBOARD GRID LAYOUTS
+   ============================================================ */
+
+/* Stats grid - for dashboard statistics */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+}
+
+@media (min-width: 600px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-xl);
+  }
+}
+
+@media (min-width: 900px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Cards grid - for content cards */
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xl);
+}
+
+@media (min-width: 600px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-2xl);
+  }
+}
+
+/* ============================================================
+   LAYOUT UTILITIES
+   ============================================================ */
+
+/* Flexbox utilities */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-row {
+  flex-direction: row;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.items-end {
+  align-items: flex-end;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-start {
+  justify-content: flex-start;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+/* Gap utilities */
+.gap-xs { gap: var(--space-xs); }
+.gap-sm { gap: var(--space-sm); }
+.gap-md { gap: var(--space-md); }
+.gap-lg { gap: var(--space-lg); }
+.gap-xl { gap: var(--space-xl); }
+.gap-2xl { gap: var(--space-2xl); }
+
+/* ============================================================
+   RESPONSIVE VISIBILITY
+   ============================================================ */
+
+/* Hide on mobile */
+.hidden-mobile {
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .hidden-mobile {
+    display: block;
+  }
+}
+
+/* Show only on mobile */
+.show-mobile {
+  display: block;
+}
+
+@media (min-width: 600px) {
+  .show-mobile {
+    display: none;
+  }
+}
+
+/* Hide on tablet */
+@media (min-width: 600px) and (max-width: 899px) {
+  .hidden-tablet {
+    display: none;
+  }
+}
+
+/* Hide on desktop */
+@media (min-width: 900px) {
+  .hidden-desktop {
+    display: none;
+  }
+}
+
+/* Show only on desktop */
+.show-desktop {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .show-desktop {
+    display: block;
+  }
+}
+
+/* ============================================================
+   ASPECT RATIOS
+   ============================================================ */
+
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-photo {
+  aspect-ratio: 4 / 3;
+}
+
+/* ============================================================
+   RESPONSIVE SPACING
+   ============================================================ */
+
+/* Responsive margins */
+.m-responsive {
+  margin: var(--space-lg);
+}
+
+@media (min-width: 600px) {
+  .m-responsive {
+    margin: var(--space-xl);
+  }
+}
+
+@media (min-width: 900px) {
+  .m-responsive {
+    margin: var(--space-2xl);
+  }
+}
+
+/* Responsive padding */
+.p-responsive {
+  padding: var(--space-lg);
+}
+
+@media (min-width: 600px) {
+  .p-responsive {
+    padding: var(--space-xl);
+  }
+}
+
+@media (min-width: 900px) {
+  .p-responsive {
+    padding: var(--space-2xl);
+  }
+}

@@ -205,11 +205,133 @@ async def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    db.delete(user)
-    db.commit()
+    # ✅ Save user info BEFORE any deletion to avoid DetachedInstanceError
+    user_full_name = f"{user.first_name} {user.last_name or ''}".strip()
+    user_email = user.email
+    user_id_copy = user.id
+    admin_full_name = f"{admin.first_name} {admin.last_name or ''}".strip()
+    admin_id_copy = admin.id  # ← ADD THIS LINE
 
-    # Broadcast update to all connected clients
-    await manager.broadcast(json.dumps({"type": "user_deleted", "userId": user_id}))
+    # Comprehensive cascading delete to clean up all related data
+    try:
+        from sqlalchemy import or_
+        
+        # 1. Delete mood entries
+        db.query(models.MoodEntry).filter(
+            models.MoodEntry.user_id == user_id
+        ).delete(synchronize_session=False)
+        
+        # 2. Delete messages (both sent and received) - ✅ Fixed OR condition
+        db.query(models.Message).filter(
+            or_(
+                models.Message.sender_id == user_id,
+                models.Message.receiver_id == user_id
+            )
+        ).delete(synchronize_session=False)
+        
+        # 3. Delete recovery challenges first, then requests
+        recovery_ids = [
+            r.id for r in db.query(models.RecoveryRequest.id)
+            .filter(models.RecoveryRequest.user_id == user_id).all()
+        ]
+        if recovery_ids:
+            db.query(models.RecoveryChallenge).filter(
+                models.RecoveryChallenge.recovery_request_id.in_(recovery_ids)
+            ).delete(synchronize_session=False)
+        
+        db.query(models.RecoveryRequest).filter(
+            models.RecoveryRequest.user_id == user_id
+        ).delete(synchronize_session=False)
+        
+        # 4. Handle assessments - set foreign keys to NULL for assessments created by this user
+        db.query(models.Assessment).filter(
+            models.Assessment.nurse_id == user_id
+        ).update({"nurse_id": None}, synchronize_session=False)
+        
+        db.query(models.Assessment).filter(
+            models.Assessment.assigned_doctor_id == user_id
+        ).update({"assigned_doctor_id": None}, synchronize_session=False)
+        
+        db.query(models.Assessment).filter(
+            models.Assessment.overridden_by == user_id
+        ).update({"overridden_by": None}, synchronize_session=False)
+        
+        # 5. Handle patient records - if this user is a patient, delete their patient profile
+        # This will cascade to delete assessments, follow-ups, and appointments via the model relationships
+        patient = db.query(models.Patient).filter(models.Patient.user_id == user_id).first()
+        if patient:
+            db.delete(patient)
+            db.flush()  # ✅ Flush so cascade completes before next steps
+        
+        # 6. Handle patients created/assigned by this user (doctor/nurse)
+        # Set foreign keys to NULL instead of deleting patients
+        db.query(models.Patient).filter(
+            models.Patient.created_by_nurse_id == user_id
+        ).update({"created_by_nurse_id": None}, synchronize_session=False)
+        
+        db.query(models.Patient).filter(
+            models.Patient.assigned_doctor_id == user_id
+        ).update({"assigned_doctor_id": None}, synchronize_session=False)
+        
+        db.query(models.Patient).filter(
+            models.Patient.doctor_id == user_id
+        ).update({"doctor_id": None}, synchronize_session=False)
+        
+        # 7. Handle appointments - delete appointments where this user is the doctor
+        # Appointments where this user is assigned_doctor will be set to NULL
+        db.query(models.Appointment).filter(
+            models.Appointment.doctor_id == user_id
+        ).delete(synchronize_session=False)
+        
+        db.query(models.Appointment).filter(
+            models.Appointment.assigned_doctor_id == user_id
+        ).update({"assigned_doctor_id": None}, synchronize_session=False)
+        
+        # 8. Handle notifications - delete notifications for this user
+        db.query(models.Notification).filter(
+            models.Notification.clinician_email == user_email
+        ).delete(synchronize_session=False)
+        
+        # 9. Handle follow-ups - delete follow-ups created by this user
+        db.query(models.FollowUp).filter(
+            models.FollowUp.clinician_email == user_email
+        ).delete(synchronize_session=False)
+        
+        # 10. Handle audit logs - keep audit logs for historical purposes but could optionally delete
+        # db.query(models.AuditLog).filter(models.AuditLog.user_id == user_id).delete()
+        
+        # 11. Finally delete the user - this will trigger any remaining cascade deletes
+        db.delete(user)
+        
+        # Commit all changes
+        db.commit()
+        
+        # 12. Log the deletion for audit purposes - ✅ AFTER commit using saved variables
+        try:
+            from ..utils.audit import add_audit_log
+            await add_audit_log(
+                db, 
+                admin_id_copy,  # ← use saved copy, not admin.id
+                admin_full_name,
+                "User Deleted", 
+                f"Permanently deleted user {user_full_name} (ID: {user_id_copy}, Email: {user_email}) and all associated data"
+            )
+        except Exception as audit_error:
+            print(f"Failed to log user deletion: {audit_error}")
+        
+        # 13. Broadcast update to all connected clients
+        await manager.broadcast(json.dumps({
+            "type": "user_deleted", 
+            "userId": user_id_copy,
+            "message": f"User {user_full_name} and all associated data has been permanently deleted"
+        }))
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to delete user and associated data: {str(e)}"
+        )
 
     return
 

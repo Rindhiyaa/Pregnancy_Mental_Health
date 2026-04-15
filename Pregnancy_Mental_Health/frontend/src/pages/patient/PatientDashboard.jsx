@@ -54,7 +54,7 @@ export default function PatientDashboard() {
   }, [user?.email]);
 
   if (loading) return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", width: "100%", background: theme.pageBg, fontFamily: theme.fontBody }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
       <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
         <div style={{ textAlign: 'center' }}>
@@ -66,25 +66,21 @@ export default function PatientDashboard() {
   );
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", width: "100%", background: theme.pageBg, fontFamily: theme.fontBody }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
 
       <main className="portal-main" style={{ background: theme.pageBg }}>
         {/* Welcome Header */}
-        <div
-          className="dashboard-hero"
-          style={{
-            background: theme.heroGradient,
-            color: "white",
-            boxShadow: theme.shadowPremium,
-            position: "relative",
-            padding: 32,
-            borderRadius: 24,
-            marginBottom: 32,
-            overflow: "visible"
-          }}
-        >
-          <div className="dashboard-hero-inner" style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        <div style={{
+          background: theme.heroGradient,
+          padding: "40px",
+          borderRadius: 24,
+          color: "white",
+          marginBottom: 32,
+          position: "relative",
+          overflow: "hidden"
+        }}>
+          <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <h1 style={{
                 fontFamily: theme.fontHeading,

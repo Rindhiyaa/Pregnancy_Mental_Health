@@ -1,7 +1,24 @@
-:root {
-  --font-primary: 'Inter', 'Poppins', sans-serif;
-  --font-body: 'Inter', 'Poppins', sans-serif;
-}
+/* Import base responsive system */
+@import './styles/base/variables.css';
+@import './styles/base/reset.css';
+@import './styles/base/typography.css';
+
+/* Import layout system */
+@import './styles/layout/grid.css';
+
+/* Import portal responsive system */
+@import './styles/portal-responsive.css';
+
+/* Import components */
+@import './styles/components/tables.css';
+@import './styles/components/portal-tables.css';
+
+/* Import utilities */
+@import './styles/utilities/spacing.css';
+@import './styles/utilities/display.css';
+@import './styles/utilities/accessibility.css';
+
+/* Legacy styles - will be gradually migrated */
 
 /* Base scrollbar hide utility */
 .hide-scrollbar::-webkit-scrollbar {

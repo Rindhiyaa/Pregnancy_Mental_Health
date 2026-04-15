@@ -6,12 +6,14 @@ import FilterToolbar from "../../components/FilterToolbar";
 import { PageTitle, Divider, Card, Badge, Pagination } from "../../components/UI";
 import { api, addAuditLog, getErrorMessage } from "../../utils/api";
 import {
+  Search,
   Plus,
   Trash2,
   ShieldOff,
+  KeyRound,
   CheckCircle,
   X,
-  Edit,
+  Shield,
   Stethoscope,
   UserCheck,
   UserX,
@@ -19,22 +21,10 @@ import {
 import toast from "react-hot-toast";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 import {
-  exportDoctorsToPDF,
-  exportDoctorsToExcel,
-  exportDoctorsToCSV,
-} from "../../utils/exportUtils";
-
-const initialFormData = {
-  id: null,
-  name: "",
-  email: "",
-  phone: "",
-  role: "doctor",
-  specialization: "",
-  hospital_name: "",
-  department: "",
-  designation: "",
-};
+    exportDoctorsToPDF,
+    exportDoctorsToExcel,
+    exportDoctorsToCSV,
+  } from "../../utils/exportUtils"; // adjust path if needed
 
 export default function DoctorsPage() {
   const { theme } = useTheme();
@@ -45,94 +35,29 @@ export default function DoctorsPage() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState(initialFormData);
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    role: "doctor",
+    specialization: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-
   const itemsPerPage = 10;
 
   useEffect(() => {
     loadDoctors();
   }, []);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, activeFilter]);
-
-  const validateDoctorForm = (values) => {
-    const newErrors = {};
-
-    const name = (values.name || "").trim();
-    const email = (values.email || "").trim();
-    const phone = (values.phone || "").trim();
-    const hospital = (values.hospital_name || "").trim();
-    const department = (values.department || "").trim();
-    const designation = (values.designation || "").trim();
-    const specialization = (values.specialization || "").trim();
-
-    if (!name) {
-      newErrors.name = "Full name is required";
-    } else if (name.length < 3) {
-      newErrors.name = "Full name must be at least 3 characters";
-    } else if (!/^[A-Za-z.\s]+$/.test(name)) {
-      newErrors.name = "Name should contain only letters, spaces, and periods";
-    }
-
-    if (!hospital) {
-      newErrors.hospital_name = "Hospital name is required";
-    } else if (hospital.length < 3) {
-      newErrors.hospital_name = "Hospital name must be at least 3 characters";
-    }
-
-    if (!email) {
-      newErrors.email = "Email address is required";
-    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-      newErrors.email = "Enter a valid email address";
-    }
-
-    if (!phone) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^\+?[0-9\s-]{10,15}$/.test(phone)) {
-      newErrors.phone = "Enter a valid phone number";
-    }
-
-    if (department && department.length < 2) {
-      newErrors.department = "Department must be at least 2 characters";
-    }
-
-    if (designation && designation.length < 2) {
-      newErrors.designation = "Designation must be at least 2 characters";
-    }
-
-    if (specialization && specialization.length < 2) {
-      newErrors.specialization = "Specialization must be at least 2 characters";
-    }
-
-    return newErrors;
-  };
-
-  const handleFieldChange = (field, value) => {
-    const updated = { ...formData, [field]: value };
-    setFormData(updated);
-
-    if (touched[field]) {
-      setErrors(validateDoctorForm(updated));
-    }
-  };
-
-  const handleFieldBlur = (field) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    setErrors(validateDoctorForm(formData));
-  };
-
-  const loadDoctors = async () => {
+  
+const loadDoctors = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get("/admin/clinicians");
+      const { data } = await api.get("/admin/clinicians"); // <- changed
       const clinicians = Array.isArray(data) ? data : [];
-
+      console.log("clinicians data:", clinicians);
+  
       const doctorsOnly = clinicians.filter((u) => u.role === "doctor");
       const mapped = doctorsOnly.map((u) => ({
         id: u.id,
@@ -141,14 +66,9 @@ export default function DoctorsPage() {
         phone: u.phone_number,
         status: u.is_active ? "active" : "suspended",
         specialization: u.specialization || "",
-        hospital_name: u.hospital_name || "",
-        department: u.department || "",
-        designation: u.designation || "",
         joinDate: u.member_since || u.created_at || null,
-        lastActive: u.last_active,
-        isOnline: u.is_online,
       }));
-
+  
       setDoctors(mapped);
     } catch (err) {
       console.error("loadDoctors error:", err);
@@ -183,7 +103,7 @@ export default function DoctorsPage() {
     exportDoctorsToPDF(filteredDoctors);
     toast.success("PDF exported!");
   };
-
+  
   const handleExcelExport = () => {
     if (!filteredDoctors.length) {
       toast.error("No doctors to export");
@@ -192,7 +112,7 @@ export default function DoctorsPage() {
     exportDoctorsToExcel(filteredDoctors);
     toast.success("Excel exported!");
   };
-
+  
   const handleCSVExport = () => {
     if (!filteredDoctors.length) {
       toast.error("No doctors to export");
@@ -210,85 +130,40 @@ export default function DoctorsPage() {
 
   const handleCreateDoctor = async (e) => {
     e.preventDefault();
-
-    const validationErrors = validateDoctorForm(formData);
-    setErrors(validationErrors);
-    setTouched({
-      name: true, hospital_name: true, department: true,
-      designation: true, specialization: true, email: true, phone: true,
-    });
-
-    if (Object.keys(validationErrors).length > 0) {
-      toast.error("Please fix the highlighted fields");
-      return;
-    }
-
     setSubmitting(true);
     try {
       const rawName = (formData.name || "").trim();
-      const [firstName, ...rest] = rawName.split(/\s+/);
-      const lastName = rest.join(" ");
-
-      if (formData.id) {
-        // ── EDIT MODE ──
-        await api.patch(`/admin/users/${formData.id}`, {
-          first_name: firstName,
-          last_name: lastName,
-          email: formData.email.trim(),
-          phone_number: formData.phone.trim(),
-          specialization: formData.specialization.trim(),
-          hospital_name: formData.hospital_name.trim(),
-          department: formData.department.trim(),
-          designation: formData.designation.trim(),
-        });
-        await addAuditLog("User Updated", `Updated doctor ${rawName} (ID ${formData.id})`).catch(() => {});
-        toast.success(`Doctor ${rawName} updated successfully!`);
-      } else {
-        // ── CREATE MODE ──
-        const { data: created } = await api.post("/admin/users", {
-          first_name: firstName,
-          last_name: lastName,
-          email: formData.email.trim(),
-          phone_number: formData.phone.trim(),
-          password: "TempPass123!",
-          role: "doctor",
-          specialization: formData.specialization.trim(),
-          hospital_name: formData.hospital_name.trim(),
-          department: formData.department.trim(),
-          designation: formData.designation.trim(),
-        });
-        await addAuditLog("User Created", `Created doctor ${created.first_name} ${created.last_name || ""} (ID ${created.id})`).catch(() => {});
-        toast.success(`Doctor ${rawName} added successfully!`);
+      const base = rawName.split(" ")[0].toLowerCase();
+      const email = `doctor.${base}@ppdrisk.com`; // auto email
+  
+      const { data: created } = await api.post("/admin/users", { // <- changed
+        first_name: rawName,
+        last_name: "",
+        email,
+        phone_number: formData.phone,
+        password: "TempPass123!",
+        role: "doctor",
+      });
+  
+      try {
+        await addAuditLog(
+          "User Created",
+          `Created doctor ${created.first_name} ${created.last_name || ""} (ID ${created.id})`
+        );
+      } catch (logErr) {
+        console.warn("Audit log failed", logErr);
       }
-
-      setFormData(initialFormData);
-      setErrors({});
-      setTouched({});
+  
+      toast.success(`Doctor ${rawName} added successfully!`);
+      setFormData({ name: "", email: "", phone: "", role: "doctor", specialization: "" });
       setShowModal(false);
       loadDoctors();
     } catch (err) {
       console.error(err);
-      toast.error(getErrorMessage(err, formData.id ? "Failed to update doctor" : "Failed to add doctor"));
+      toast.error(getErrorMessage(err, "Failed to add doctor"));
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleEditDoctor = (doctor) => {
-    setFormData({
-      id: doctor.id,
-      name: doctor.name,
-      email: doctor.email,
-      phone: doctor.phone || "",
-      role: "doctor",
-      specialization: doctor.specialization || "",
-      hospital_name: doctor.hospital_name || "",
-      department: doctor.department || "",
-      designation: doctor.designation || "",
-    });
-    setErrors({});
-    setTouched({});
-    setShowModal(true);
   };
 
   const handleSuspend = async (id, currentStatus) => {
@@ -304,8 +179,8 @@ export default function DoctorsPage() {
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to permanently delete ${name}?`)) return;
-
+    if (!window.confirm(`Are you sure you want to permanently delete ${name}?`))
+      return;
     try {
       await api.delete(`/admin/users/${id}`);
       toast.success("User record deleted");
@@ -316,15 +191,34 @@ export default function DoctorsPage() {
     }
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-    setFormData(initialFormData);
-    setErrors({});
-    setTouched({});
+  const handleResetPassword = async (doctor) => {
+    if (!window.confirm(`Reset password for ${doctor.name}?`)) return;
+
+    try {
+      const { data } = await api.post(
+        `/admin/users/${doctor.id}/reset-password`
+      );
+      console.log("Reset response:", data);
+
+      try {
+        await addAuditLog(
+          "Password Reset",
+          `Reset password for ${doctor.name} (ID ${doctor.id})`
+        );
+      } catch (logErr) {
+        console.warn("Audit log failed", logErr);
+      }
+
+      toast.success("Password reset successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error(getErrorMessage(err, "Failed to reset password"));
+    }
   };
 
   return (
     <AdminLayout pageTitle="Doctors Directory">
+      {/* Page Header */}
       <div
         style={{
           display: "flex",
@@ -338,9 +232,7 @@ export default function DoctorsPage() {
         <PageTitle
           title="Doctors Directory"
           subtitle={
-            isMobile
-              ? "Manage medical specialists"
-              : "Manage hospital medical specialists and credentials"
+            isMobile ? "Manage medical specialists" : "Manage hospital medical specialists and credentials"
           }
         />
         <button
@@ -372,6 +264,7 @@ export default function DoctorsPage() {
           placeholder="Search by name or email..."
         />
 
+        {/* MOBILE LIST */}
         {isMobile ? (
           <div style={{ padding: "8px 0" }}>
             {loading ? (
@@ -396,6 +289,7 @@ export default function DoctorsPage() {
                     gap: 10,
                   }}
                 >
+                  {/* Name + Status */}
                   <div
                     style={{
                       display: "flex",
@@ -423,9 +317,10 @@ export default function DoctorsPage() {
                         ID: {doctor.id}
                       </div>
                     </div>
-                    <StatusBadge status={doctor.status} isOnline={doctor.isOnline} theme={theme} />
+                    <StatusBadge status={doctor.status} theme={theme} />
                   </div>
 
+                  {/* Specialization */}
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <span style={mobileLabelStyle}>Spec.</span>
                     <Badge type="warning">
@@ -433,13 +328,8 @@ export default function DoctorsPage() {
                     </Badge>
                   </div>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      alignItems: "flex-start",
-                    }}
-                  >
+                  {/* Contact */}
+                  <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                     <span style={{ ...mobileLabelStyle, paddingTop: 1 }}>Contact</span>
                     <div>
                       <div style={{ fontSize: 13, color: theme.textSecondary }}>
@@ -457,6 +347,7 @@ export default function DoctorsPage() {
                     </div>
                   </div>
 
+                  {/* Actions */}
                   <div
                     style={{
                       display: "flex",
@@ -467,9 +358,9 @@ export default function DoctorsPage() {
                     }}
                   >
                     <ActionButtons
-                      onEdit={() => handleEditDoctor(doctor)}
-                          onSuspend={() => handleSuspend(doctor.id, doctor.status)}
-                          onDelete={() => handleDelete(doctor.id, doctor.name)}
+                      onReset={() => handleResetPassword(doctor)}
+                      onSuspend={() => handleSuspend(doctor.id, doctor.status)}
+                      onDelete={() => handleDelete(doctor.id, doctor.name)}
                       status={doctor.status}
                       theme={theme}
                     />
@@ -479,33 +370,48 @@ export default function DoctorsPage() {
             )}
           </div>
         ) : (
+          // TABLET / DESKTOP
           <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             <table
-              className="portal-table"
               style={{
-                borderColor: theme.border,
+                width: "100%",
+                borderCollapse: "collapse",
+                textAlign: "left",
                 minWidth: isTablet ? 600 : 750,
               }}
             >
               <thead>
-                <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? theme.innerBg : "#f8fafc"), borderColor: theme.border }}>
-                  <th style={{ color: theme.textSecondary }}>Doctor Details</th>
-                  <th style={{ color: theme.textSecondary }}>Specialization</th>
-                  {!isTablet && <th style={{ color: theme.textSecondary }}>Contact</th>}
-                  <th style={{ color: theme.textSecondary }}>Status</th>
-                  <th style={{ color: theme.textSecondary, textAlign: "right" }}>Actions</th>
+                <tr style={tableHeaderRowStyle(theme)}>
+                  <th style={thStyle(theme, isTablet)}>Doctor Details</th>
+                  <th style={thStyle(theme, isTablet)}>Specialization</th>
+                  {!isTablet && <th style={thStyle(theme, isTablet)}>Contact</th>}
+                  <th style={thStyle(theme, isTablet)}>Status</th>
+                  <th
+                    style={{
+                      ...thStyle(theme, isTablet),
+                      textAlign: "right",
+                    }}
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={isTablet ? 4 : 5} style={loadingTdStyle(theme)}>
+                    <td
+                      colSpan={isTablet ? 4 : 5}
+                      style={loadingTdStyle(theme)}
+                    >
                       Loading clinicians...
                     </td>
                   </tr>
                 ) : filteredDoctors.length === 0 ? (
                   <tr>
-                    <td colSpan={isTablet ? 4 : 5} style={loadingTdStyle(theme)}>
+                    <td
+                      colSpan={isTablet ? 4 : 5}
+                      style={loadingTdStyle(theme)}
+                    >
                       No doctors found.
                     </td>
                   </tr>
@@ -533,6 +439,7 @@ export default function DoctorsPage() {
                             : theme.cardBg;
                       }}
                     >
+                      {/* Doctor Details */}
                       <td style={tdStyle(isTablet)}>
                         <div
                           style={{
@@ -569,12 +476,14 @@ export default function DoctorsPage() {
                         )}
                       </td>
 
+                      {/* Specialization */}
                       <td style={tdStyle(isTablet)}>
                         <Badge type="warning">
                           {doctor.specialization || "General Medicine"}
                         </Badge>
                       </td>
 
+                      {/* Contact (desktop only) */}
                       {!isTablet && (
                         <td style={tdStyle(isTablet)}>
                           <div
@@ -598,10 +507,12 @@ export default function DoctorsPage() {
                         </td>
                       )}
 
+                      {/* Status */}
                       <td style={tdStyle(isTablet)}>
-                        <StatusBadge status={doctor.status} isOnline={doctor.isOnline} theme={theme} />
+                        <StatusBadge status={doctor.status} theme={theme} />
                       </td>
 
+                      {/* Actions */}
                       <td
                         style={{
                           ...tdStyle(isTablet),
@@ -609,9 +520,13 @@ export default function DoctorsPage() {
                         }}
                       >
                         <ActionButtons
-                          onEdit={() => handleEditDoctor(doctor)}
-                          onSuspend={() => handleSuspend(doctor.id, doctor.status)}
-                          onDelete={() => handleDelete(doctor.id, doctor.name)}
+                          onReset={() => handleResetPassword(doctor)}
+                          onSuspend={() =>
+                            handleSuspend(doctor.id, doctor.status)
+                          }
+                          onDelete={() =>
+                            handleDelete(doctor.id, doctor.name)
+                          }
                           status={doctor.status}
                           theme={theme}
                         />
@@ -631,14 +546,15 @@ export default function DoctorsPage() {
         />
       </Card>
 
+      {/* Add Doctor Modal */}
       {showModal && (
         <Modal
-          onClose={closeModal}
-          title={formData.id ? "Edit Doctor" : "Add New Doctor"}
+          onClose={() => setShowModal(false)}
+          title="Add New Doctor"
           theme={theme}
           isMobile={isMobile}
         >
-          <form onSubmit={handleCreateDoctor} noValidate>
+          <form onSubmit={handleCreateDoctor}>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <label style={labelStyle(theme)}>Full Name</label>
@@ -646,89 +562,28 @@ export default function DoctorsPage() {
                   required
                   type="text"
                   value={formData.name}
-                  onChange={(e) => handleFieldChange("name", e.target.value)}
-                  onBlur={() => handleFieldBlur("name")}
-                  style={inputStyle(theme, errors.name)}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  style={inputStyle(theme)}
                   placeholder="Jane Smith"
                 />
-                {touched.name && errors.name && (
-                  <div style={errorTextStyle(theme)}>{errors.name}</div>
-                )}
               </div>
-
-              <div>
-                <label style={labelStyle(theme)}>Hospital Name</label>
-                <input
-                  required
-                  type="text"
-                  value={formData.hospital_name}
-                  onChange={(e) =>
-                    handleFieldChange("hospital_name", e.target.value)
-                  }
-                  onBlur={() => handleFieldBlur("hospital_name")}
-                  style={inputStyle(theme, errors.hospital_name)}
-                  placeholder="ABC Women & Child Hospital"
-                />
-                {touched.hospital_name && errors.hospital_name && (
-                  <div style={errorTextStyle(theme)}>{errors.hospital_name}</div>
-                )}
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-                  gap: 16,
-                }}
-              >
-                <div>
-                  <label style={labelStyle(theme)}>Department / Unit</label>
-                  <input
-                    type="text"
-                    value={formData.department}
-                    onChange={(e) => handleFieldChange("department", e.target.value)}
-                    onBlur={() => handleFieldBlur("department")}
-                    style={inputStyle(theme, errors.department)}
-                    placeholder="OB-GYN"
-                  />
-                  {touched.department && errors.department && (
-                    <div style={errorTextStyle(theme)}>{errors.department}</div>
-                  )}
-                </div>
-
-                <div>
-                  <label style={labelStyle(theme)}>Designation</label>
-                  <input
-                    type="text"
-                    value={formData.designation}
-                    onChange={(e) => handleFieldChange("designation", e.target.value)}
-                    onBlur={() => handleFieldBlur("designation")}
-                    style={inputStyle(theme, errors.designation)}
-                    placeholder="Consultant Psychiatrist"
-                  />
-                  {touched.designation && errors.designation && (
-                    <div style={errorTextStyle(theme)}>{errors.designation}</div>
-                  )}
-                </div>
-              </div>
-
               <div>
                 <label style={labelStyle(theme)}>Specialization</label>
                 <input
                   type="text"
                   value={formData.specialization}
                   onChange={(e) =>
-                    handleFieldChange("specialization", e.target.value)
+                    setFormData({
+                      ...formData,
+                      specialization: e.target.value,
+                    })
                   }
-                  onBlur={() => handleFieldBlur("specialization")}
-                  style={inputStyle(theme, errors.specialization)}
-                  placeholder="e.g. Obstetrician"
+                  style={inputStyle(theme)}
+                  placeholder="e.g. Obstetrics & Gynecology"
                 />
-                {touched.specialization && errors.specialization && (
-                  <div style={errorTextStyle(theme)}>{errors.specialization}</div>
-                )}
               </div>
-
               <div
                 style={{
                   display: "grid",
@@ -742,46 +597,40 @@ export default function DoctorsPage() {
                     required
                     type="email"
                     value={formData.email}
-                    onChange={(e) => handleFieldChange("email", e.target.value)}
-                    onBlur={() => handleFieldBlur("email")}
-                    style={inputStyle(theme, errors.email)}
-                    placeholder="doctor.jane@ppdrisk.com"
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    style={inputStyle(theme)}
+                    placeholder="jane@hospital.com"
                   />
-                  {touched.email && errors.email && (
-                    <div style={errorTextStyle(theme)}>{errors.email}</div>
-                  )}
                 </div>
-
                 <div>
                   <label style={labelStyle(theme)}>Phone Number</label>
                   <input
                     required
                     type="text"
                     value={formData.phone}
-                    onChange={(e) => handleFieldChange("phone", e.target.value)}
-                    onBlur={() => handleFieldBlur("phone")}
-                    style={inputStyle(theme, errors.phone)}
-                    placeholder="+91 98765 43210"
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    style={inputStyle(theme)}
+                    placeholder="+1 234 567 8900"
                   />
-                  {touched.phone && errors.phone && (
-                    <div style={errorTextStyle(theme)}>{errors.phone}</div>
-                  )}
                 </div>
               </div>
             </div>
-
             <div
               style={{
+                marginTop: 24,
                 display: "flex",
-                flexDirection: isMobile ? "column" : "row",
                 gap: 12,
                 justifyContent: "flex-end",
-                marginTop: 24,
+                flexDirection: isMobile ? "column-reverse" : "row",
               }}
             >
               <button
                 type="button"
-                onClick={closeModal}
+                onClick={() => setShowModal(false)}
                 style={{
                   ...secondaryBtnStyle(theme),
                   width: isMobile ? "100%" : "auto",
@@ -790,7 +639,6 @@ export default function DoctorsPage() {
               >
                 Cancel
               </button>
-
               <button
                 type="submit"
                 disabled={submitting}
@@ -801,7 +649,7 @@ export default function DoctorsPage() {
                   opacity: submitting ? 0.7 : 1,
                 }}
               >
-                {submitting ? "Saving..." : formData.id ? "Save Changes" : "Add Doctor"}
+                {submitting ? "Adding..." : "Add Doctor"}
               </button>
             </div>
           </form>
@@ -813,60 +661,64 @@ export default function DoctorsPage() {
 
 /* Sub-components */
 
-const StatusBadge = ({ status, isOnline, theme }) => {
-  const isSuspended = status === "suspended";
-  
-  let label = "Offline";
-  let color = theme.textMuted;
-  let dotColor = "#94A3B8";
-
-  if (isSuspended) {
-    label = "Suspended";
-    color = theme.dangerText;
-    dotColor = theme.dangerText;
-  } else if (isOnline) {
-    label = "Active";
-    color = "#10B981";
-    dotColor = "#10B981";
-  }
-
+const StatusBadge = ({ status, theme }) => {
+  const isActive = status === "active";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <div
         style={{
           width: 8,
           height: 8,
-          borderRadius: "50%",
+          borderRadius: 50,
           flexShrink: 0,
-          background: dotColor,
-          boxShadow: isOnline && !isSuspended ? "0 0 8px #10B981" : "none"
+          background: isActive ? theme.successText : theme.dangerText,
         }}
       />
       <span
         style={{
           fontSize: 13,
-          fontWeight: 700,
+          fontWeight: 600,
+          color: isActive ? theme.successText : theme.dangerText,
           whiteSpace: "nowrap",
-          color: color,
         }}
       >
-        {label}
+        {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     </div>
   );
 };
 
-const ActionButtons = ({ onEdit, onSuspend, onDelete, status, theme }) => {
+const ActionButtons = ({ onReset, onSuspend, onDelete, status, theme }) => {
   const isActive = status === "active";
   return (
     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-      <button onClick={onEdit} title="Edit" style={actionBtnStyle(theme)}>
-        <Edit size={15} />
+      <button
+        onClick={onReset}
+        title="Reset Password"
+        style={actionBtnStyle(theme)}
+      >
+        <KeyRound size={15} />
       </button>
-      <button onClick={onSuspend} title={isActive ? "Suspend" : "Activate"} style={actionBtnStyle(theme)}>
-        {isActive ? <ShieldOff size={15} color={theme.warningText} /> : <CheckCircle size={15} color={theme.successText} />}
+      <button
+        onClick={onSuspend}
+        title={isActive ? "Suspend" : "Activate"}
+        style={actionBtnStyle(theme)}
+      >
+        {isActive ? (
+          <ShieldOff size={15} color={theme.warningText} />
+        ) : (
+          <CheckCircle size={15} color={theme.successText} />
+        )}
       </button>
-      <button onClick={onDelete} title="Delete" style={{ ...actionBtnStyle(theme), color: theme.dangerText, borderColor: `${theme.dangerText}40` }}>
+      <button
+        onClick={onDelete}
+        title="Delete"
+        style={{
+          ...actionBtnStyle(theme),
+          color: theme.dangerText,
+          borderColor: `${theme.dangerText}40`,
+        }}
+      >
         <Trash2 size={15} />
       </button>
     </div>
@@ -884,7 +736,7 @@ const Modal = ({ children, title, onClose, theme, isMobile }) => (
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1000,
-      padding: isMobile ? "16px" : 0,
+      padding: isMobile ? "16px 0" : 0,
     }}
   >
     <div
@@ -918,9 +770,7 @@ const Modal = ({ children, title, onClose, theme, isMobile }) => (
         >
           {title}
         </h2>
-
         <button
-          type="button"
           onClick={onClose}
           style={{
             background: "none",
@@ -932,13 +782,12 @@ const Modal = ({ children, title, onClose, theme, isMobile }) => (
           <X size={20} />
         </button>
       </div>
-
       <div style={{ padding: isMobile ? "16px 24px" : "20px 24px" }}>{children}</div>
     </div>
   </div>
 );
 
-/* Styles */
+/* Theme-based style helpers – from your updated code */
 
 const primaryBtnStyle = (theme) => ({
   background: theme.primary,
@@ -967,24 +816,17 @@ const secondaryBtnStyle = (theme) => ({
   alignItems: "center",
 });
 
-const inputStyle = (theme, hasError) => ({
+const inputStyle = (theme) => ({
   width: "100%",
   padding: "10px 12px",
   borderRadius: 8,
-  border: `1px solid ${hasError ? theme.dangerText : theme.border}`,
+  border: `1px solid ${theme.border}`,
   fontSize: 16,
   fontFamily: "inherit",
   outline: "none",
   boxSizing: "border-box",
   background: theme.inputBg,
   color: theme.textPrimary,
-});
-
-const errorTextStyle = (theme) => ({
-  marginTop: 6,
-  fontSize: 12,
-  color: theme.dangerText,
-  fontWeight: 600,
 });
 
 const tableHeaderRowStyle = (theme) => ({

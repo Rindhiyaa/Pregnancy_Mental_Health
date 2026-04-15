@@ -170,7 +170,7 @@ export default function PatientResults() {
   );
 
   if (loading) return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", width: "100%", background: theme.pageBg, fontFamily: theme.fontBody }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
       <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
         <div style={{ textAlign: 'center' }}>
@@ -182,7 +182,7 @@ export default function PatientResults() {
   );
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", width: "100%", background: theme.pageBg, fontFamily: theme.fontBody }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
 
       <main className="portal-main" style={{ background: theme.pageBg }}>

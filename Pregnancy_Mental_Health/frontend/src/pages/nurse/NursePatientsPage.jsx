@@ -20,7 +20,7 @@ export default function NursePatientsPage() {
   const [loading, setLoading] = useState(true);
   const [patients, setPatients] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filter, setFilter] = useState(initialFilter);
+  const [filter, setFilter] = useState(initialFilter); 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -33,13 +33,13 @@ export default function NursePatientsPage() {
     const fetchPatients = async () => {
       try {
         setLoading(true);
-
+  
         const { data } = await api.get("/nurse/patients");
         const patientsData = Array.isArray(data)
           ? data
           : Array.isArray(data?.patients)
-            ? data.patients
-            : [];
+          ? data.patients
+          : [];
         setPatients(patientsData);
       } catch (err) {
         console.error("Failed to fetch patients:", err);
@@ -48,7 +48,7 @@ export default function NursePatientsPage() {
         setLoading(false);
       }
     };
-
+  
     fetchPatients();
   }, []);
 
@@ -56,31 +56,31 @@ export default function NursePatientsPage() {
     const hasDraft = !!localStorage.getItem(
       `ppd_draft_${(p.name || "").replace(/\s+/g, "_").toLowerCase()}`
     );
-
+  
     const matchesSearch =
       p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.phone?.includes(searchQuery);
-
+  
     const matchesDoctor = !doctorIdNum || p.doctor_id === doctorIdNum;
     if (!matchesDoctor) return false;
-
+  
     if (filter === "All") return matchesSearch;
-
+  
     if (filter === "Assessed") {
       // Assessed: status is "Active" (doctor reviewed) AND no draft in progress
       return matchesSearch && (p.status === "Active" || p.status === "Assessed");
     }
-
+  
     if (filter === "Pending") {
       // Pending: status is "Pending" (submitted, waiting review)
       return matchesSearch && p.status === "Pending";
     }
-
+  
     if (filter === "Draft") {
       // Draft: local draft in progress AND status is "Draft"
       return matchesSearch && hasDraft && p.status === "Draft";
     }
-
+  
     return matchesSearch;
   });
 
@@ -139,7 +139,7 @@ export default function NursePatientsPage() {
       }}
     >
       <NurseSidebar />
-
+  
       <main
         className="portal-main"
         style={{ background: theme.pageBg, fontFamily: theme.fontBody }}
@@ -175,7 +175,7 @@ export default function NursePatientsPage() {
             <PlusCircle size={20} /> Register New Patient
           </button>
         </div>
-
+  
         {/* Filters & Search */}
         <div
           style={{
@@ -197,7 +197,7 @@ export default function NursePatientsPage() {
               </button>
             ))}
           </div>
-
+  
           <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
             <Search
               size={18}
@@ -226,7 +226,7 @@ export default function NursePatientsPage() {
             />
           </div>
         </div>
-
+  
         {/* Doctor Filter Indicator */}
         {doctorId && (
           <div
@@ -295,285 +295,261 @@ export default function NursePatientsPage() {
             </button>
           </div>
         )}
-
+  
         <Card padding="0">
-          <div className="portal-table-wrap">
-            <table className="portal-table" style={{ borderColor: theme.border }}>
-              <thead>
-                <tr style={{ background: theme.cardBgSecondary, borderColor: theme.border }}>
-                  <th style={{ ...tableHeaderStyle, width: "60px", color: theme.textMuted }}>S.No</th>
-                  <th style={{ ...tableHeaderStyle, color: theme.textMuted }}>Patient Name</th>
-                  <th style={{ ...tableHeaderStyle, color: theme.textMuted }}>Phone / Week</th>
-                  <th style={{ ...tableHeaderStyle, color: theme.textMuted }}>Assigned Doctor</th>
-                  <th style={{ ...tableHeaderStyle, color: theme.textMuted }}>Last Assessment</th>
-                  <th style={{ ...tableHeaderStyle, color: theme.textMuted }}>Status</th>
-                  <th style={{ ...tableHeaderStyle, textAlign: "right", color: theme.textMuted }}>
-                    Actions
-                  </th>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: theme.cardBgSecondary }}>
+                <th style={{ ...tableHeaderStyle, width: "60px" }}>S.No</th>
+                <th style={tableHeaderStyle}>Patient Name</th>
+                <th style={tableHeaderStyle}>Phone / Week</th>
+                <th style={tableHeaderStyle}>Assigned Doctor</th>
+                <th style={tableHeaderStyle}>Last Assessment</th>
+                <th style={tableHeaderStyle}>Status</th>
+                <th style={{ ...tableHeaderStyle, textAlign: "right" }}>
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan="7"
+                    style={{ padding: "60px", textAlign: "center" }}
+                  >
+                    <Loader2
+                      className="animate-spin"
+                      size={32}
+                      color={theme.primary}
+                      style={{ margin: "0 auto 16px" }}
+                    />
+                    <div style={{ color: theme.textMuted }}>
+                      Loading patients...
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td
-                      colSpan="7"
-                      style={{ padding: "60px", textAlign: "center" }}
+              ) : paginatedPatients.length > 0 ? (
+                paginatedPatients.map((p, idx) => {
+                  const hasDraft = !!localStorage.getItem(
+                    `ppd_draft_${(p.name || "")
+                      .replace(/\s+/g, "_")
+                      .toLowerCase()}`
+                  );
+  
+                  return (
+                    <tr
+                      key={`${p.id}-${idx}`}
+                      style={tableRowStyle}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = theme.pageBg)
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "transparent")
+                      }
+                      onClick={() => navigate(`/nurse/patients/${p.id}`)}
                     >
-                      <Loader2
-                        className="animate-spin"
-                        size={32}
-                        color={theme.primary}
-                        style={{ margin: "0 auto 16px" }}
-                      />
-                      <div style={{ color: theme.textMuted }}>
-                        Loading patients...
-                      </div>
-                    </td>
-                  </tr>
-                ) : paginatedPatients.length > 0 ? (
-                  paginatedPatients.map((p, idx) => {
-                    const hasDraft = !!localStorage.getItem(
-                      `ppd_draft_${(p.name || "")
-                        .replace(/\s+/g, "_")
-                        .toLowerCase()}`
-                    );
-
-                    return (
-                      <tr
-                        key={`${p.id}-${idx}`}
-                        style={tableRowStyle}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.background = theme.pageBg)
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.background = "transparent")
-                        }
-                        onClick={() => navigate(`/nurse/patients/${p.id}`)}
+                      <td
+                        style={{
+                          ...tableCellStyle,
+                          fontWeight: 700,
+                          color: theme.textMuted,
+                        }}
                       >
-                        <td
+                        {(currentPage - 1) * itemsPerPage + idx + 1}
+                      </td>
+                      <td style={tableCellStyle}>
+                        <div
                           style={{
-                            ...tableCellStyle,
-                            textAlign: "center",
-                            fontWeight: 700,
-                            color: theme.textMuted,
-                            fontSize: 13,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
                           }}
                         >
-                          {(currentPage - 1) * itemsPerPage + idx + 1}
-                        </td>
-                        <td style={tableCellStyle}>
                           <div
                             style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 10,
+                              background:
+                                getAvatarColor(p.name) + "15",
+                              color: getAvatarColor(p.name),
                               display: "flex",
                               alignItems: "center",
-                              gap: 14,
+                              justifyContent: "center",
+                              fontWeight: 800,
+                              fontSize: 16,
+                              flexShrink: 0,
                             }}
                           >
-                            <div
-                              style={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 14,
-                                background: getAvatarColor(p.name) + "15",
-                                color: getAvatarColor(p.name),
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 18,
-                                fontWeight: 800,
-                                boxShadow: "inset 0 0 0 1px " + getAvatarColor(p.name) + "25",
-                                position: "relative",
-                              }}
-                            >
-                              {p.name?.charAt(0) || <User size={20} />}
-                              {/* Online Status Dot */}
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  bottom: -2,
-                                  right: -2,
-                                  width: 14,
-                                  height: 14,
-                                  borderRadius: "50%",
-                                  border: "3px solid white",
-                                  background: p.is_online ? "#10b981" : "#94a3b8",
-                                  boxShadow: p.is_online ? "0 0 8px #10b981" : "none",
-                                  zIndex: 1,
-                                }}
-                                title={p.is_online ? "Active Now" : "Offline"}
-                              />
-                            </div>
-                            <div>
-                              <div
-                                style={{
-                                  fontSize: 16,
-                                  fontWeight: 800,
-                                  color: theme.text,
-                                  marginBottom: 2,
-                                }}
-                              >
-                                {p.name}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td style={tableCellStyle}>
-                          <div style={{ fontWeight: 600 }}>
-                            {p.phone || "-"}
+                            {p.name?.charAt(0) || "?"}
                           </div>
                           <div
                             style={{
-                              fontSize: 13,
-                              color: theme.textMuted,
+                              fontWeight: 700,
+                              color: theme.text,
                             }}
                           >
-                            Week {p.pregnancy_week || "-"}
+                            {p.name}
                           </div>
-                        </td>
-                        <td style={tableCellStyle}>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                            }}
-                          >
-                            <Stethoscope size={16} color={theme.textMuted} />
-                            <span style={{ fontWeight: 600 }}>
-                              Dr. {p.assigned_doctor || "Unassigned"}
-                            </span>
-                          </div>
-                        </td>
-                        <td style={tableCellStyle}>
-                          <div
-                            style={{
-                              color: theme.textMuted,
-                              fontSize: 14,
-                            }}
-                          >
-                            {p.last_assessment_date ? (
-                              new Date(
-                                p.last_assessment_date
-                              ).toLocaleDateString(undefined, {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })
-                            ) : hasDraft ? (
-                              "Draft in progress"
-                            ) : (
-                              "No assessment yet"
-                            )}
-                          </div>
-                          {p.last_assessment && (
-                            <div
-                              style={{
-                                fontSize: 12,
-                                color: theme.textMuted,
-                              }}
-                            >
-                              {p.last_assessment}
-                            </div>
+                        </div>
+                      </td>
+                      <td style={tableCellStyle}>
+                        <div style={{ fontWeight: 600 }}>
+                          {p.phone || "-"}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            color: theme.textMuted,
+                          }}
+                        >
+                          Week {p.pregnancy_week || "-"}
+                        </div>
+                      </td>
+                      <td style={tableCellStyle}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <Stethoscope size={16} color={theme.textMuted} />
+                          <span style={{ fontWeight: 600 }}>
+                            Dr. {p.assigned_doctor || "Unassigned"}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={tableCellStyle}>
+                        <div
+                          style={{
+                            color: theme.textMuted,
+                            fontSize: 14,
+                          }}
+                        >
+                          {p.last_assessment_date ? (
+                            new Date(
+                              p.last_assessment_date
+                            ).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          ) : hasDraft ? (
+                            "Draft in progress"
+                          ) : (
+                            "No assessment yet"
                           )}
-                        </td>
-                        <td style={tableCellStyle}>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
-                            <Badge
-                              variant={
-                                p.status === "Draft"
-                                  ? "warning"
-                                  : p.status === "Pending"
-                                    ? "secondary"
-                                    : p.status === "Registered"
-                                      ? "info"
-                                      : "success"
-                              }
-                            >
-                              {p.status || "Registered"}
-                            </Badge>
-                          </div>
-                        </td>
-                        <td style={tableCellStyle}>
+                        </div>
+                        {p.last_assessment && (
                           <div
                             style={{
-                              display: "flex",
-                              gap: 8,
-                              justifyContent: "flex-end",
+                              fontSize: 12,
+                              color: theme.textMuted,
                             }}
-                            onClick={(e) => e.stopPropagation()}
                           >
-                            <button
-                              onClick={() =>
-                                navigate(
-                                  `/nurse/assessment/new?patient=${p.id}`
-                                )
-                              }
-                              title="New Assessment"
-                              style={{
-                                padding: 8,
-                                borderRadius: 8,
-                                border: "none",
-                                background: `${theme.secondary}15`,
-                                color: theme.secondary,
-                                cursor: "pointer",
-                              }}
-                            >
-                              <ClipboardList size={18} />
-                            </button>
-                            <button
-                              onClick={() =>
-                                navigate(`/nurse/messages?to=${p.id}`)
-                              }
-                              title="Send Message"
-                              style={{
-                                padding: 8,
-                                borderRadius: 8,
-                                border: "none",
-                                background: `${theme.primary}15`,
-                                color: theme.primary,
-                                cursor: "pointer",
-                              }}
-                            >
-                              <MessageSquare size={18} />
-                            </button>
-                            <button
-                              onClick={() =>
-                                navigate(`/nurse/patients/${p.id}`)
-                              }
-                              title="View Profile"
-                              style={{
-                                padding: 8,
-                                borderRadius: 8,
-                                border: "none",
-                                background: `${theme.textMuted}15`,
-                                color: theme.textMuted,
-                                cursor: "pointer",
-                              }}
-                            >
-                              <ChevronRight size={18} />
-                            </button>
+                            {p.last_assessment}
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      style={{
-                        padding: "60px",
-                        textAlign: "center",
-                        color: theme.textMuted,
-                      }}
-                    >
-                      No patients found matching your search.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                        )}
+                      </td>
+                      <td style={tableCellStyle}>
+                      <Badge
+                        variant={
+                          p.status === "Draft"
+                            ? "warning"
+                            : p.status === "Pending"
+                            ? "secondary"
+                            : "success"
+                        }
+                      >
+                        {["Draft", "Pending", "Active"].includes(p.status)
+                          ? p.status
+                          : "Active"}
+                      </Badge>
+                      </td>
+                      <td style={tableCellStyle}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            justifyContent: "flex-end",
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/nurse/assessment/new?patient=${p.id}`
+                              )
+                            }
+                            title="New Assessment"
+                            style={{
+                              padding: 8,
+                              borderRadius: 8,
+                              border: "none",
+                              background: `${theme.secondary}15`,
+                              color: theme.secondary,
+                              cursor: "pointer",
+                            }}
+                          >
+                            <ClipboardList size={18} />
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(`/nurse/messages?to=${p.id}`)
+                            }
+                            title="Send Message"
+                            style={{
+                              padding: 8,
+                              borderRadius: 8,
+                              border: "none",
+                              background: `${theme.primary}15`,
+                              color: theme.primary,
+                              cursor: "pointer",
+                            }}
+                          >
+                            <MessageSquare size={18} />
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(`/nurse/patients/${p.id}`)
+                            }
+                            title="View Profile"
+                            style={{
+                              padding: 8,
+                              borderRadius: 8,
+                              border: "none",
+                              background: `${theme.textMuted}15`,
+                              color: theme.textMuted,
+                              cursor: "pointer",
+                            }}
+                          >
+                            <ChevronRight size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td
+                    colSpan="6"
+                    style={{
+                      padding: "60px",
+                      textAlign: "center",
+                      color: theme.textMuted,
+                    }}
+                  >
+                    No patients found matching your search.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+  
+          {/* Pagination Controls */}
           {!loading && totalPages > 1 && (
             <div
               style={{

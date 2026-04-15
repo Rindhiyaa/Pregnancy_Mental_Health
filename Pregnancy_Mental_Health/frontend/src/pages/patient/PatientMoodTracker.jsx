@@ -134,7 +134,7 @@ export default function MoodTracker() {
     : 0;
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", width: "100%", background: theme.pageBg, fontFamily: theme.fontBody }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
 
       <main className="portal-main" style={{ background: theme.pageBg }}>

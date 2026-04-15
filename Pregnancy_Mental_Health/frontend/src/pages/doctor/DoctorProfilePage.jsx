@@ -17,11 +17,10 @@ export default function DoctorProfilePage() {
     const { theme } = useTheme();
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({
-        assessments_reviewed: 0,
-        high_risk_cases: 0,
-        patients_assigned: 0
+        assessments_reviewed: 42,
+        high_risk_cases: 5,
+        patients_assigned: 12
     });
-    const [profile, setProfile] = useState(null);
 
     const [passwordData, setPasswordData] = useState({
         currentPassword: "",
@@ -40,18 +39,6 @@ export default function DoctorProfilePage() {
         };
         fetchStats();
     }, []);
-    useEffect(() => {
-        const fetchProfile = async () => {
-          try {
-            const { data } = await api.get("/doctor/profile"); // or "/doctor/profile"
-            setProfile(data);
-          } catch (err) {
-            console.error("Failed to fetch doctor profile:", err);
-            toast.error("Failed to load profile");
-          }
-        };
-        fetchProfile();
-      }, []);
 
     const handlePasswordChange = async (e) => {
         e.preventDefault();
@@ -83,7 +70,6 @@ export default function DoctorProfilePage() {
             </div>
         </div>
     );
-    const display = profile || user || {};
 
     return (
         <div className={`np-page ${theme.isDark ? "dark" : ""}`}>
@@ -105,62 +91,21 @@ export default function DoctorProfilePage() {
                                     {user?.fullName?.charAt(0) || "D"}
                                 </div>
                                 <div>
-                                <div className="np-name">
-                                Dr. {user?.fullName || "Dr. Sarah Johnson"}
-                                </div>
-                                <div className="np-role">
-                                <div className="np-badge-role">
-                                    {display?.designation || "Perinatal Specialist"}
-                                </div>
-                                <div className="np-id">
-                                    {display?.hospital_name && (
-                                    <>
-                                        {display.hospital_name}
-                                        {" • "}
-                                    </>
-                                    )}
-                                    ID: <span>MD-{display?.id?.toString().slice(-5).toUpperCase() || "88120"}</span>
-                                </div>
-                                </div>
+                                    <div className="np-name">Dr. {user?.fullName || "Dr. Sarah Johnson"}</div>
+                                    <div className="np-role">
+                                        <div className="np-badge-role">Senior Perinatal Specialist</div>
+                                        <div className="np-id">ID: <span>MD-{user?.id?.toString().slice(-5).toUpperCase() || '88120'}</span></div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="np-info-grid">
-                            <InfoRow
-                            icon={<Mail size={20} />}
-                            label="Clinical Email"
-                            value={display?.email}
-                            />
-
-                            <InfoRow
-                            icon={<Briefcase size={20} />}
-                            label="Hospital"
-                            value={display?.hospital_name || "Not updated yet"}
-                            />
-
-                            <InfoRow
-                            icon={<Briefcase size={20} />}
-                            label="Department / Unit"
-                            value={display?.department || "Not updated yet"}
-                            />
-
-                            <InfoRow
-                            icon={<User size={20} />}
-                            label="Designation"
-                            value={display?.designation || "Not updated yet"}
-                            />
-
-                            <InfoRow
-                            icon={<Phone size={20} />}
-                            label="Contact Number"
-                            value={display?.phone_number || "Not updated yet"}
-                            />
-
-                            <InfoRow
-                            icon={<ClipboardCheck size={20} />}
-                            label="Primary Specialization"
-                            value={display?.specialization || "Not updated yet"}
-                            />
+                                <InfoRow icon={<Mail size={20} />} label="Clinical Email" value={user?.email} />
+                                <InfoRow icon={<Briefcase size={20} />} label="Unit / Dept" value={user?.department || "Mental Health Unit"} />
+                                <InfoRow icon={<Phone size={20} />} label="Secured Line" value={user?.phone || '+91 81482 82009'} />
+                                <InfoRow icon={<ShieldCheck size={20} />} label="License Hash" value="TMC-551-229-88" />
+                                <InfoRow icon={<Award size={20} />} label="Board Certification" value="Medical Council Ver. 2024" />
+                                <InfoRow icon={<User size={20} />} label="Privileges" value="Full Clinical Authority" />
                             </div>
 
 

@@ -1,0 +1,88 @@
+/* Modern CSS Reset for Mobile-First Responsive Design */
+
+/* Box sizing reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Remove default margins and paddings */
+* {
+  margin: 0;
+  padding: 0;
+}
+
+/* HTML and body setup */
+html {
+  font-size: 16px; /* Base font size for rem calculations */
+  -webkit-text-size-adjust: 100%; /* Prevent iOS font size adjustment */
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Media elements */
+img, picture, video, canvas, svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Form elements */
+button, input, select, textarea {
+  font: inherit;
+  font-size: 16px; /* Prevent iOS zoom on input focus */
+}
+
+/* Remove button styles */
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* List styles */
+ul, ol {
+  list-style: none;
+}
+
+/* Link styles */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Table styles */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* Accessibility improvements */
+:focus-visible {
+  outline: 2px solid #2A9D8F;
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :focus-visible {
+    outline: 3px solid;
+  }
+}

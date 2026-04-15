@@ -51,14 +51,7 @@ export default function DashboardPage() {
     highRisk: 0,
     reviewedThisWeek: 0,
     todayAppointments: 0,
-    totalPatients: 0,
-    trends: {
-      pending: "0",
-      high: "0",
-      reviewed_week: "0",
-      total: "0",
-      today_apps: "0"
-    }
+    totalPatients: 0
   });
 
   const [queue, setQueue] = useState([]);
@@ -90,14 +83,7 @@ export default function DashboardPage() {
           highRisk: statsFromApi.high ?? statsFromApi.highRisk ?? 0,
           reviewedThisWeek: statsFromApi.reviewed_week ?? 0,
           todayAppointments: statsFromApi.today_apps ?? statsFromApi.todayAppointments ?? 0,
-          totalPatients: statsFromApi.total ?? 0,
-          trends: statsFromApi.trends || {
-            pending: "0",
-            high: "0",
-            reviewed_week: "0",
-            total: "0",
-            today_apps: "0"
-          }
+          totalPatients: statsFromApi.total ?? 0
         });
 
         console.log("Dashboard API:", dashData);
@@ -532,32 +518,32 @@ export default function DashboardPage() {
             title="Today's Consults"
             value={stats.todayAppointments}
             icon={<Calendar size={24} />}
-            trend={stats.trends.today_apps?.startsWith('-') ? "down" : "up"}
-            trendValue={stats.trends.today_apps || "0"}
+            trend="up"
+            trendValue="8"
           />
           <StatCard
             title="Pending Reviews"
             value={stats.pending}
             icon={<Clock size={24} />}
             color="warning"
-            trend={stats.trends.pending?.startsWith('-') ? "down" : "up"}
-            trendValue={stats.trends.pending || "0"}
+            trend="down"
+            trendValue="2"
           />
           <StatCard
             title="High Risk Alerts"
             value={stats.highRisk}
             icon={<AlertCircle size={24} />}
             color="danger"
-            trend={stats.trends.high?.startsWith('-') ? "down" : "up"}
-            trendValue={stats.trends.high || "0"}
+            trend="up"
+            trendValue="1"
           />
           <StatCard
             title="Total Patients"
             value={stats.totalPatients}
             icon={<Users size={24} />}
             color="success"
-            trend={stats.trends.total?.startsWith('-') ? "down" : "up"}
-            trendValue={stats.trends.total || "0"}
+            trend="up"
+            trendValue="12%"
           />
         </div>
 

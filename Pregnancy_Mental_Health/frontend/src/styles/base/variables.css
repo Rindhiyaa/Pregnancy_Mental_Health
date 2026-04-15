@@ -1,0 +1,170 @@
+/* CSS Custom Properties - Preserving Existing Design System */
+
+:root {
+  /* ============================================================
+     COLORS - Preserving Existing Teal Theme
+     ============================================================ */
+  
+  /* Primary Colors - Teal Theme */
+  --color-primary: #2A9D8F;
+  --color-primary-dark: #1F6F78;
+  --color-primary-light: #E6F4F2;
+  --color-primary-border: #b2dfdb;
+  
+  /* Neutral Colors */
+  --color-white: #ffffff;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  
+  /* Status Colors */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+  
+  /* ============================================================
+     RESPONSIVE BREAKPOINTS
+     ============================================================ */
+  
+  --breakpoint-mobile: 320px;
+  --breakpoint-tablet: 600px;
+  --breakpoint-laptop: 900px;
+  --breakpoint-desktop: 1200px;
+  --breakpoint-xl: 1440px;
+  
+  /* ============================================================
+     SPACING SYSTEM - Mobile-First
+     ============================================================ */
+  
+  /* Base spacing (mobile) */
+  --space-xs: 0.25rem;    /* 4px */
+  --space-sm: 0.5rem;     /* 8px */
+  --space-md: 0.75rem;    /* 12px */
+  --space-lg: 1rem;       /* 16px */
+  --space-xl: 1.5rem;     /* 24px */
+  --space-2xl: 2rem;      /* 32px */
+  --space-3xl: 2.5rem;    /* 40px */
+  --space-4xl: 3rem;      /* 48px */
+  --space-5xl: 4rem;      /* 64px */
+  
+  /* Container spacing */
+  --container-padding-mobile: 1rem;
+  --container-padding-tablet: 1.5rem;
+  --container-padding-desktop: 2rem;
+  --container-max-width: 1200px;
+  
+  /* ============================================================
+     TYPOGRAPHY SYSTEM
+     ============================================================ */
+  
+  /* Font families */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  --font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  
+  /* Font sizes - Mobile-first responsive */
+  --font-size-xs: 0.75rem;   /* 12px */
+  --font-size-sm: 0.875rem;  /* 14px */
+  --font-size-base: 1rem;    /* 16px - prevents iOS zoom */
+  --font-size-lg: 1.125rem;  /* 18px */
+  --font-size-xl: 1.25rem;   /* 20px */
+  --font-size-2xl: 1.5rem;   /* 24px */
+  --font-size-3xl: 1.875rem; /* 30px */
+  --font-size-4xl: 2.25rem;  /* 36px */
+  
+  /* Line heights */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* Font weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  
+  /* ============================================================
+     LAYOUT SYSTEM
+     ============================================================ */
+  
+  /* Z-index scale */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 99999;
+  
+  /* Border radius */
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-md: 0.5rem;    /* 8px */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-xl: 1rem;      /* 16px */
+  --radius-2xl: 1.25rem;  /* 20px */
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-primary: 0 4px 18px rgba(42, 157, 143, 0.35);
+  --shadow-primary-hover: 0 8px 28px rgba(42, 157, 143, 0.5);
+  
+  /* ============================================================
+     TOUCH INTERFACE STANDARDS
+     ============================================================ */
+  
+  /* Minimum touch target size (44x44px) */
+  --touch-target-min: 44px;
+  --touch-spacing-min: 8px;
+  
+  /* ============================================================
+     TRANSITIONS AND ANIMATIONS
+     ============================================================ */
+  
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+  
+  --easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ============================================================
+   RESPONSIVE CUSTOM PROPERTIES
+   ============================================================ */
+
+/* Tablet adjustments */
+@media (min-width: 600px) {
+  :root {
+    --font-size-3xl: 2rem;     /* 32px */
+    --font-size-4xl: 2.5rem;   /* 40px */
+  }
+}
+
+/* Laptop adjustments */
+@media (min-width: 900px) {
+  :root {
+    --font-size-3xl: 2.25rem;  /* 36px */
+    --font-size-4xl: 2.75rem;  /* 44px */
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 1200px) {
+  :root {
+    --font-size-4xl: 3rem;     /* 48px */
+  }
+}

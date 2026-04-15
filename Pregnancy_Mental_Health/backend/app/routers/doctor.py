@@ -322,7 +322,7 @@ def get_doctor_assessments(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get all assessments assigned to this doctor with appointment status"""
+    """Get all assessments assigned to this doctor with appointment status - only for existing patients"""
     try:
         # 🔐 Role check
         if current_user.role != "doctor":
@@ -330,12 +330,16 @@ def get_doctor_assessments(
 
         logger.info(f"Doctor {current_user.id} fetching assessments")
 
-        # 📌 Get assessments
-        assessments = db.query(Assessment).filter(
-            Assessment.assigned_doctor_id == current_user.id
-        ).order_by(Assessment.created_at.desc()).all()
+        # 📌 Get assessments - DEFENSIVE: Only assessments with existing patients
+        assessments = (
+            db.query(Assessment)
+            .join(Patient, Assessment.patient_id == Patient.id)  # ✅ INNER JOIN ensures patient exists
+            .filter(Assessment.assigned_doctor_id == current_user.id)
+            .order_by(Assessment.created_at.desc())
+            .all()
+        )
 
-        logger.info(f"Found {len(assessments)} assessments")
+        logger.info(f"Found {len(assessments)} assessments with valid patients")
 
         # 📌 Get all appointments
         appointments = db.query(Appointment).all()
@@ -535,6 +539,15 @@ def review_assessment(
         if not a:
             raise HTTPException(status_code=404, detail="Assessment not found")
 
+        # ✅ DEFENSIVE: Check if patient still exists
+        if a.patient_id:
+            patient = db.query(models.Patient).filter(models.Patient.id == a.patient_id).first()
+            if not patient:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Patient has been deleted; assessment cannot be reviewed or follow-up created"
+                )
+
         # ✅ Prevent re-submitting if already approved (unless saving as draft/reviewed)
         if a.status == "approved" and payload.get("status") == "approved":
             # If already approved, we only update the decision fields. 
@@ -585,58 +598,63 @@ def review_assessment(
         # This surfaces as an actionable task in the nurse's scheduling queue.
         if a.status == "approved" and a.patient_id:
             try:
-                # ✅ CHECK: Does a pending FollowUp already exist for this assessment?
-                existing_fup = db.query(models.FollowUp).filter(
-                    models.FollowUp.assessment_id == a.id,
-                    models.FollowUp.status == "pending"
-                ).first()
+                # ✅ CRITICAL: Check if patient still exists before creating follow-up
+                patient_exists = db.query(models.Patient).filter(models.Patient.id == a.patient_id).first()
+                if not patient_exists:
+                    logger.warning(f"Cannot create follow-up for assessment {a.id}: patient {a.patient_id} no longer exists")
+                else:
+                    # ✅ CHECK: Does a pending FollowUp already exist for this assessment?
+                    existing_fup = db.query(models.FollowUp).filter(
+                        models.FollowUp.assessment_id == a.id,
+                        models.FollowUp.status == "pending"
+                    ).first()
 
-                if not existing_fup:
-                    # 📅 Try to find the nurse: assessment.nurse_id -> patient.created_by_nurse_id -> fallback
-                    nurse_id = a.nurse_id
-                    if not nurse_id:
-                        patient = db.query(models.Patient).filter(models.Patient.id == a.patient_id).first()
-                        if patient:
-                            nurse_id = patient.created_by_nurse_id
-                    
-                    nurse_for_followup = None
-                    if nurse_id:
-                        nurse_for_followup = db.query(models.User).filter(
-                            models.User.id == nurse_id,
-                            models.User.role == "nurse"
-                        ).first()
-                    
-                    if not nurse_for_followup:
-                        nurse_for_followup = db.query(models.User).filter(
-                            models.User.role == "nurse",
-                            models.User.is_active == True
-                        ).first()
+                    if not existing_fup:
+                        # 📅 Try to find the nurse: assessment.nurse_id -> patient.created_by_nurse_id -> fallback
+                        nurse_id = a.nurse_id
+                        if not nurse_id:
+                            patient = db.query(models.Patient).filter(models.Patient.id == a.patient_id).first()
+                            if patient:
+                                nurse_id = patient.created_by_nurse_id
+                        
+                        nurse_for_followup = None
+                        if nurse_id:
+                            nurse_for_followup = db.query(models.User).filter(
+                                models.User.id == nurse_id,
+                                models.User.role == "nurse"
+                            ).first()
+                        
+                        if not nurse_for_followup:
+                            nurse_for_followup = db.query(models.User).filter(
+                                models.User.role == "nurse",
+                                models.User.is_active == True
+                            ).first()
 
-                    if nurse_for_followup:
-                        window_str  = payload.get("followup_window", "within 14 days")
-                        urgency_str = payload.get("followup_urgency", "Routine")
-                        instruction = payload.get("nurse_instruction", "").strip()
+                        if nurse_for_followup:
+                            window_str  = payload.get("followup_window", "within 14 days")
+                            urgency_str = payload.get("followup_urgency", "Routine")
+                            instruction = payload.get("nurse_instruction", "").strip()
 
-                        # ✅ Fix: 14-day default to satisfy NOT NULL constraint in database
-                        # The nurse can still manually change this later.
-                        scheduled = datetime.now() + timedelta(days=14)
+                            # ✅ Fix: 14-day default to satisfy NOT NULL constraint in database
+                            # The nurse can still manually change this later.
+                            scheduled = datetime.now() + timedelta(days=14)
 
-                        followup_notes = (
-                            instruction
-                            or f"Doctor review - follow up in 14 days ({urgency_str})"
-                        )
+                            followup_notes = (
+                                instruction
+                                or f"Doctor review - follow up in 14 days ({urgency_str})"
+                            )
 
-                        new_followup = models.FollowUp(
-                            patient_id=a.patient_id,
-                            patient_email=a.patient_email,
-                            assessment_id=a.id,
-                            scheduled_date=scheduled, # Satisfy NOT NULL with default
-                            status="pending",
-                            type=f"To be scheduled ({urgency_str})",
-                            notes=followup_notes,
-                            clinician_email=doctor.email, # Assigned to validating doctor by default
-                        )
-                        db.add(new_followup)
+                            new_followup = models.FollowUp(
+                                patient_id=a.patient_id,
+                                patient_email=a.patient_email,
+                                assessment_id=a.id,
+                                scheduled_date=scheduled, # Satisfy NOT NULL with default
+                                status="pending",
+                                type=f"To be scheduled ({urgency_str})",
+                                notes=followup_notes,
+                                clinician_email=doctor.email, # Assigned to validating doctor by default
+                            )
+                            db.add(new_followup)
             except Exception as fu_err:
                 logger.error(f"FollowUp creation failed: {fu_err}")
 
@@ -1062,8 +1080,10 @@ def get_doctor_appointments(
     if current_user.role != "doctor":
         raise HTTPException(status_code=403, detail="Doctor role required")
 
+    # ✅ DEFENSIVE: Only get appointments for existing patients
     appointments = (
         db.query(models.Appointment)
+        .join(models.Patient, models.Appointment.patient_id == models.Patient.id)  # ✅ INNER JOIN ensures patient exists
         .filter(
             or_(
                 models.Appointment.doctor_id == current_user.id,
@@ -1077,6 +1097,10 @@ def get_doctor_appointments(
     results = []
     for a in appointments:
         patient = db.query(Patient).filter(Patient.id == a.patient_id).first()
+        
+        # ✅ Double-check patient exists (should always be true due to JOIN, but defensive)
+        if not patient:
+            continue
 
         # Get latest assessment for this patient assigned to this doctor
         latest_assessment = (

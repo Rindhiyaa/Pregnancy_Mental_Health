@@ -102,8 +102,7 @@ class Assessment(Base):
 
     # --- New Fields for Nurse Workflow ---
     nurse_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
-   # doctor_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
-    assigned_doctor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    assigned_doctor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     
     # Status: draft, submitted, reviewed, complete
     status = Column(String, default="submitted") 
@@ -233,8 +232,8 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
-    user_name = Column(String, nullable=False)      # or a FK to users
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    user_name = Column(String, nullable=False)      # Keep user name even if user is deleted
     action = Column(String, nullable=False)
     details = Column(String, nullable=False)
     ip_address = Column(String, nullable=True)
@@ -264,7 +263,8 @@ class Appointment(Base):
     # Explicitly specify foreign keys to avoid ambiguity
     doctor = relationship("User", foreign_keys=[doctor_id], back_populates="appointments_as_doctor")
     assigned_doctor = relationship("User", foreign_keys=[assigned_doctor_id], back_populates="appointments_as_assigned_doctor")
-    created_by_nurse_id = Column(Integer, ForeignKey("users.id"))  # ← ADD THIS
+    
+    created_by_nurse_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
 class RecoveryRequest(Base):
     __tablename__ = "recovery_requests"

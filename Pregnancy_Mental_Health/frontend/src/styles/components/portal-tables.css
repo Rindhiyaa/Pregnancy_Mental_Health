@@ -1,0 +1,211 @@
+/* Quick Responsive Fix for Existing Portal Tables */
+
+/* ============================================================
+   RESPONSIVE PORTAL TABLE WRAPPER
+   ============================================================ */
+
+.portal-table-wrap,
+div[style*="overflowX: auto"],
+div[style*="overflow-x: auto"] {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-lg);
+  position: relative;
+}
+
+/* ============================================================
+   PORTAL TABLE RESPONSIVE STYLES
+   ============================================================ */
+
+.portal-table {
+  width: 100%;
+  min-width: 600px; /* Minimum width before horizontal scroll */
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* Ensure table cells have proper padding on mobile */
+.portal-table th,
+.portal-table td {
+  padding: var(--space-md) var(--space-lg);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   MOBILE RESPONSIVE BEHAVIOR
+   ============================================================ */
+
+@media (max-width: 767px) {
+  /* Allow horizontal scrolling on mobile */
+  .portal-table-wrap,
+  div[style*="overflowX: auto"],
+  div[style*="overflow-x: auto"] {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Reduce padding on mobile */
+  .portal-table th,
+  .portal-table td {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--font-size-sm);
+  }
+  
+  /* Make table headers sticky on mobile scroll */
+  .portal-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: inherit;
+  }
+  
+  /* Add scroll indicators */
+  .portal-table-wrap::after {
+    content: '← Scroll to see more →';
+    position: absolute;
+    bottom: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+}
+
+/* ============================================================
+   TOUCH-FRIENDLY IMPROVEMENTS
+   ============================================================ */
+
+/* Make action buttons touch-friendly */
+.portal-table button {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  font-size: max(14px, var(--font-size-sm)); /* Prevent iOS zoom */
+}
+
+/* Improve button spacing in table actions */
+.portal-table td button + button {
+  margin-left: var(--space-xs);
+}
+
+/* ============================================================
+   SCROLL BEHAVIOR IMPROVEMENTS
+   ============================================================ */
+
+/* Smooth scrolling for table containers */
+.portal-table-wrap {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar on desktop for cleaner look */
+@media (min-width: 768px) {
+  .portal-table-wrap::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .portal-table-wrap::-webkit-scrollbar-track {
+    background: var(--color-gray-100);
+    border-radius: var(--radius-sm);
+  }
+  
+  .portal-table-wrap::-webkit-scrollbar-thumb {
+    background: var(--color-gray-300);
+    border-radius: var(--radius-sm);
+  }
+  
+  .portal-table-wrap::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-400);
+  }
+}
+
+/* Show scrollbar on mobile for better UX */
+@media (max-width: 767px) {
+  .portal-table-wrap::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  .portal-table-wrap::-webkit-scrollbar-track {
+    background: var(--color-gray-200);
+  }
+  
+  .portal-table-wrap::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border-radius: var(--radius-sm);
+  }
+}
+
+/* ============================================================
+   STATUS BADGES IN TABLES
+   ============================================================ */
+
+.portal-table .status-badge,
+.portal-table [class*="badge"] {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   LOADING AND EMPTY STATES
+   ============================================================ */
+
+.portal-table td[colspan] {
+  text-align: center;
+  padding: var(--space-4xl) var(--space-lg);
+  color: var(--color-gray-500);
+  font-style: italic;
+}
+
+/* ============================================================
+   ACCESSIBILITY IMPROVEMENTS
+   ============================================================ */
+
+/* Focus styles for table elements */
+.portal-table th:focus,
+.portal-table td:focus,
+.portal-table button:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Improve contrast for table headers */
+.portal-table th {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ============================================================
+   RESPONSIVE BREAKPOINT ADJUSTMENTS
+   ============================================================ */
+
+/* Tablet adjustments */
+@media (min-width: 600px) and (max-width: 899px) {
+  .portal-table {
+    min-width: 700px;
+  }
+  
+  .portal-table th,
+  .portal-table td {
+    padding: var(--space-md) var(--space-lg);
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 900px) {
+  .portal-table {
+    min-width: auto;
+  }
+  
+  .portal-table th,
+  .portal-table td {
+    padding: var(--space-lg) var(--space-xl);
+  }
+}

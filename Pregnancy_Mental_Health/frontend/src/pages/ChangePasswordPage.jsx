@@ -67,7 +67,7 @@ export default function ChangePasswordPage() {
 
     setLoading(true);
     try {
-      const { data } = await api.post('/set-password', {
+      const { data } = await api.post('/change-password', {
         new_password: form.newPassword
       });
 

@@ -96,8 +96,8 @@ export default function ClinicianMessages() {
     const handleSendMessage = async (e) => {
         e.preventDefault();
         
-        if (!selectedPatientId || !messageBody) {
-            toast.error("Validation failed: Recipient and content required");
+        if (!selectedPatientId || !messageBody || !msgDate || !msgTime) {
+            toast.error("Validation failed: Recipient, content, date and time are all required");
             return;
         }
 

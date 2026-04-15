@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useTheme } from "../ThemeContext";
 import ThemeToggle from "./ThemeToggle";
-import { useBreakpoint } from "../hooks/useBreakpoint";
+import useContentWidth from "../hooks/useContentWidth";
 import { Menu, X } from "lucide-react";
 
 const SIDEBAR_WIDTH = 240;
 
 export default function PortalLayout({ children, pageTitle, sidebar: Sidebar }) {
   const { theme } = useTheme();
-  const { isMobile, isTablet, isDesktop } = useBreakpoint();
+  const { ref: mainRef, width: contentWidth, isMobile, isTablet, isDesktop } = useContentWidth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Close sidebar when switching to desktop
@@ -66,7 +66,7 @@ export default function PortalLayout({ children, pageTitle, sidebar: Sidebar }) 
       </div>
 
       {/* ── Main content ── */}
-      <main style={{
+      <main ref={mainRef} style={{
         flex: 1,
         marginLeft: isDesktop ? SIDEBAR_WIDTH : 0,
         width: isDesktop ? `calc(100% - ${SIDEBAR_WIDTH}px)` : "100%",

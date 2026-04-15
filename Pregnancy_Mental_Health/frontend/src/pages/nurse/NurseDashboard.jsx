@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
+// import { dummyApi, USE_DUMMY_DATA, getAvatarColor } from "../../utils/dummyData";
 import { getAvatarColor } from "../../utils/helpers";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
@@ -22,9 +23,7 @@ import {
   AlertCircle,
   Users,
   Bell,
-  X,
-  TrendingUp,
-  TrendingDown
+  X
 } from "lucide-react";
 
 export default function NurseDashboard() {
@@ -35,13 +34,7 @@ export default function NurseDashboard() {
     new_patients_today: 0,
     pending_assessments: 0,
     waiting_review: 0,
-    total_patients: 0,
-    trends: {
-      total_patients: "0",
-      pending_assessments: "0",
-      waiting_review: "0",
-      new_patients_today: "0"
-    }
+    total_patients: 0
   });
   const [recentPatients, setRecentPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,25 +57,16 @@ export default function NurseDashboard() {
         ]);
 
         const dashboardInfo = dashData || {};
-        setStats({
-          new_patients_today: dashboardInfo.stats?.new_patients_today ?? 0,
-          pending_assessments: dashboardInfo.stats?.pending_assessments ?? 0,
-          waiting_review: dashboardInfo.stats?.waiting_review ?? 0,
-          total_patients: dashboardInfo.stats?.total_patients ?? 0,
-          trends: dashboardInfo.stats?.trends || {
-            total_patients: "0",
-            pending_assessments: "0",
-            waiting_review: "0",
-            new_patients_today: "0"
-          }
+        setStats(dashboardInfo.stats || {
+          new_patients_today: 0,
+          pending_assessments: 0,
+          waiting_review: 0,
+          total_patients: 0,
         });
         setRecentPatients(Array.isArray(dashboardInfo.recentPatients) ? dashboardInfo.recentPatients : []);
 
         const notifs = notifRes.data || [];
-
-        const unreadNotifs = notifs.filter(n => !n.is_read); // ✅ filter
-
-        setNotifications(unreadNotifs);
+        setNotifications(Array.isArray(notifs) ? notifs : []);
         setUnreadCount(unreadRes.data?.count ?? 0);
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
@@ -98,7 +82,7 @@ export default function NurseDashboard() {
   const handleMarkOneRead = async (id) => {
     try {
       await api.post(`/notifications/${id}/read`, {});
-      setNotifications(prev => prev.filter(n => n.id !== id));
+      setNotifications(prev => prev.filter(n => n.id !== id)); // remove
       setUnreadCount(c => Math.max(0, c - 1));
     } catch (e) {
       console.error("Failed to mark notification read", e);
@@ -108,14 +92,12 @@ export default function NurseDashboard() {
   const handleMarkAllRead = async () => {
     try {
       await api.post("/notifications/read-all", {});
-      setNotifications([]);
+      setNotifications([]);  // clear list
       setUnreadCount(0);
     } catch (e) {
       console.error("Failed to mark all notifications read", e);
     }
   };
-
-  
 
   const QuickAction = ({ icon, label, to, color }) => (
     <Link to={to} style={{ textDecoration: 'none', flex: 1 }}>
@@ -225,8 +207,7 @@ export default function NurseDashboard() {
               }}
             >
               {/* Notification bell */}
-              <div style={{ position: "relative" }}>
-                <button
+              <div style={{ position: "relative" }}>                <button
                   onClick={() => setShowNotifications(v => !v)}
                   style={{
                     width: 40,
@@ -390,7 +371,7 @@ export default function NurseDashboard() {
                                 timeStyle: "short"
                               })}
                             </span>
-                            {n.is_read !== true && (
+                            {!n.is_read && (
                               <button
                                 onClick={() => handleMarkOneRead(n.id)}
                                 style={{
@@ -420,26 +401,14 @@ export default function NurseDashboard() {
         {/* Stats Row */}
         <div className="stats-grid-4" style={{ marginBottom: 40 }}>
           {[
-            { label: "Total Patients", value: stats.total_patients, color: theme.primary, icon: <Users size={20} />, trend: stats.trends.total_patients },
-            { label: "Pending Drafts", value: stats.pending_assessments, color: theme.secondary, icon: <Clock size={20} />, trend: stats.trends.pending_assessments },
-            { label: "Waiting Review", value: stats.waiting_review, color: "#f59e0b", icon: <AlertCircle size={20} />, trend: stats.trends.waiting_review },
-            { label: "Registered Today", value: stats.new_patients_today, color: "#10b981", icon: <UserPlus size={20} />, trend: stats.trends.new_patients_today },
+            { label: "Total Patients", value: stats.total_patients, color: theme.primary, icon: <Users size={20} /> },
+            { label: "Pending Drafts", value: stats.pending_assessments, color: theme.secondary, icon: <Clock size={20} /> },
+            { label: "Waiting Review", value: stats.waiting_review, color: "#f59e0b", icon: <AlertCircle size={20} /> },
+            { label: "Registered Today", value: stats.new_patients_today, color: "#10b981", icon: <UserPlus size={20} /> },
           ].map((s, idx) => (
             <Card key={idx} padding="24px">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div style={{ background: `${s.color}15`, color: s.color, padding: 8, borderRadius: 10 }}>{s.icon}</div>
-                {s.trend && s.trend !== "0" && (
-                  <div style={{ 
-                    display: 'flex', alignItems: 'center', gap: 4, 
-                    fontSize: 12, fontWeight: 700, 
-                    color: s.trend.startsWith('-') ? theme.dangerText : theme.successText,
-                    background: s.trend.startsWith('-') ? `${theme.dangerText}15` : `${theme.successText}15`,
-                    padding: '4px 8px', borderRadius: 20
-                  }}>
-                    {s.trend.startsWith('-') ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
-                    {s.trend}
-                  </div>
-                )}
               </div>
               <div style={{ fontSize: 14, color: theme.textMuted, fontWeight: 600, marginBottom: 4 }}>{s.label}</div>
               <div style={{ fontSize: 32, fontWeight: 800, color: theme.text }}>{s.value}</div>
@@ -447,8 +416,9 @@ export default function NurseDashboard() {
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <div style={{ marginBottom: 40 }}>
+        {/* Recent Patients - REFACTORED */}
+
+         <div style={{ marginBottom: 40 }}>
           <h3 style={{ fontFamily: theme.fontHeading, fontSize: 20, fontWeight: 600, marginBottom: 20 }}>Quick Actions</h3>
           <div style={{ display: 'flex', gap: 20 }}>
             <QuickAction icon={<UserPlus size={22} />} label="Register New Patient" to="/nurse/patients/new" color="#4f46e5" />
@@ -457,8 +427,6 @@ export default function NurseDashboard() {
             <QuickAction icon={<FileText size={22} />} label="View Pending Drafts" to="/nurse/patients?filter=Draft" color="#f59e0b" />
           </div>
         </div>
-
-        {/* Recent Patients Table - FIXED VERSION */}
         <div style={{ marginBottom: 40 }}>
           <Card padding="32px">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -494,40 +462,21 @@ export default function NurseDashboard() {
                 >
                   <div style={{ fontWeight: 600, color: theme.textMuted }}>{(currentPage - 1) * itemsPerPage + idx + 1}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ 
-                        width: 40, height: 40, borderRadius: 10, 
-                        background: getAvatarColor(p.name) + '15', color: getAvatarColor(p.name), 
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: 800, fontSize: 16, flexShrink: 0
-                      }}>
-                        {p.name?.charAt(0) || '?'}
-                      </div>
-                      {/* Online Status Dot - ONLY on avatar */}
-                      <div 
-                        style={{
-                          position: "absolute",
-                          bottom: -2,
-                          right: -2,
-                          width: 14,
-                          height: 14,
-                          borderRadius: "50%",
-                          border: "3px solid white",
-                          background: p.is_online ? "#10b981" : "#94a3b8",
-                          boxShadow: p.is_online ? "0 0 8px #10b981" : "none",
-                          zIndex: 1,
-                        }}
-                        title={p.is_online ? "Active Now" : "Offline"}
-                      />
+                    <div style={{ 
+                      width: 40, height: 40, borderRadius: 10, 
+                      background: getAvatarColor(p.name) + '15', color: getAvatarColor(p.name), 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontWeight: 800, fontSize: 16, flexShrink: 0
+                    }}>
+                      {p.name?.charAt(0) || '?'}
                     </div>
                     <div style={{ fontWeight: 700, color: theme.text }}>{p.name}</div>
                   </div>
                   <div style={{ color: theme.textMuted, fontSize: 14 }}>Week {p.pregnancy_week || '-'}</div>
                   <div style={{ color: theme.textMuted, fontSize: 14 }}>Dr. {p.assigned_doctor || 'Unassigned'}</div>
                   <div>
-                    {/* Status Badge - Patient workflow status ONLY */}
-                    <Badge variant={p.status === 'Draft' ? 'warning' : p.status === 'Pending' ? 'secondary' : p.status === 'Registered' ? 'info' : 'success'}>
-                      {p.status || 'Registered'}
+                    <Badge variant={p.status === 'Draft' ? 'warning' : 'success'}>
+                      {['Draft', 'Pending', 'Active'].includes(p.status) ? p.status : 'Active'}
                     </Badge>
                   </div>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -560,7 +509,7 @@ export default function NurseDashboard() {
                   Previous
                 </button>
                 <div style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>
-                  Page {currentPage} of {Math.ceil(recentPatients.length / itemsPerPage)}
+                   Page {currentPage} of {Math.ceil(recentPatients.length / itemsPerPage)}
                 </div>
                 <button 
                   onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.min(prev + 1, Math.ceil(recentPatients.length / itemsPerPage))); }}
@@ -583,3 +532,4 @@ export default function NurseDashboard() {
     </div>
   );
 }
+

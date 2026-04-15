@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import func
 
 from ..database import get_db
@@ -11,30 +11,33 @@ from ..jwt_handler import get_current_user_email, get_current_user
 router = APIRouter(prefix="/patient", tags=["patient"])
 
 
-@router.get("/dashboard")
-def get_patient_dashboard(
+def get_current_patient(
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),
-):
-    # Linked patient record (by email)
+) -> models.Patient:
+    """
+    Defensive dependency: Always resolve Patient from current User.
+    Fails early if patient profile doesn't exist, preventing ghost data bugs.
+    """
     patient = (
         db.query(models.Patient)
         .filter(models.Patient.email == user.email)
         .first()
     )
     if not patient:
-        return {
-            "welcome_message": f"Welcome, {user.first_name}!",
-            "pregnancy_week": "N/A",
-            "due_date": "N/A",
-            "doctor_info": None,
-            "unread_messages": 0,
-            "next_appointment": None,
-            "risk_status": {"level": "N/A", "score": 0, "date": "N/A"},
-            "risk_trend": [],
-            "care_plan": {"plan": "No care plan available yet.", "date": "N/A"},
-        }
+        raise HTTPException(404, "Patient profile not found")
+    return patient
 
+
+@router.get("/dashboard")
+def get_patient_dashboard(
+    patient: models.Patient = Depends(get_current_patient),
+    db: Session = Depends(get_db),
+):
+    """
+    DEFENSIVE: Always starts from authenticated patient, never shows ghost data.
+    Only returns data that belongs to this specific patient.
+    """
     # Resolve clinician: prefer assigned_doctor_id, then clinician_email
     doctor = None
     if getattr(patient, "assigned_doctor_id", None):
@@ -65,8 +68,8 @@ def get_patient_dashboard(
     else:
         doctor_info = None
 
-    # Next appointment (by patient_id)
-    now = datetime.now()
+    # Next appointment - DEFENSIVE: Only for this patient.id
+    now = datetime.now(timezone.utc)
     next_app = (
         db.query(models.FollowUp)
         .filter(
@@ -78,7 +81,7 @@ def get_patient_dashboard(
         .first()
     )
 
-    # Latest assessment
+    # Latest assessment - DEFENSIVE: Only for this patient.id
     latest_assessment = (
         db.query(models.Assessment)
         .filter(models.Assessment.patient_id == patient.id)
@@ -86,7 +89,7 @@ def get_patient_dashboard(
         .first()
     )
 
-    # Risk trend (all assessments)
+    # Risk trend - DEFENSIVE: Only assessments for this patient.id
     assessments = (
         db.query(models.Assessment)
         .filter(models.Assessment.patient_id == patient.id)
@@ -102,14 +105,22 @@ def get_patient_dashboard(
         for a in assessments
     ]
 
-    unread_messages = (
-        db.query(models.Message)
-        .filter(models.Message.receiver_id == user.id, models.Message.is_read == False)
-        .count()
+    # Messages - DEFENSIVE: Only for current user.id
+    user = (
+        db.query(models.User)
+        .filter(models.User.email == patient.email)
+        .first()
     )
+    unread_messages = 0
+    if user:
+        unread_messages = (
+            db.query(models.Message)
+            .filter(models.Message.receiver_id == user.id, models.Message.is_read == False)
+            .count()
+        )
 
     return {
-        "welcome_message": f"Welcome, {user.first_name}!",
+        "welcome_message": f"Welcome, {user.first_name if user else 'Patient'}!",
         "pregnancy_week": str(patient.pregnancy_week)
         if patient.pregnancy_week
         else "N/A",
@@ -144,18 +155,13 @@ def get_patient_dashboard(
 
 @router.get("/assessments")
 def get_patient_assessments(
+    patient: models.Patient = Depends(get_current_patient),
     db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
 ):
-    # Find patient linked to this portal user
-    patient = (
-        db.query(models.Patient)
-        .filter(models.Patient.email == current_user_email)
-        .first()
-    )
-    if not patient:
-        return []
-
+    """
+    DEFENSIVE: Only return assessments that belong to this authenticated patient.
+    No risk of showing assessments from deleted patients or other users.
+    """
     assessments = (
         db.query(models.Assessment)
         .filter(models.Assessment.patient_id == patient.id)
@@ -219,41 +225,34 @@ def get_patient_assessments(
 
 @router.get("/profile", response_model=schemas.PatientOut)
 def get_patient_profile(
-    db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
+    patient: models.Patient = Depends(get_current_patient),
 ):
-    patient = (
-        db.query(models.Patient)
-        .filter(models.Patient.email == current_user_email)
-        .first()
-    )
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient record not found")
+    """
+    DEFENSIVE: Always returns the authenticated patient's profile.
+    No risk of returning deleted or other users' profiles.
+    """
     return patient
 
 
 @router.put("/profile", response_model=schemas.PatientOut)
 def update_patient_profile(
     profile_in: schemas.PatientUpdate,
+    patient: models.Patient = Depends(get_current_patient),
     db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
 ):
-    patient = (
-        db.query(models.Patient)
-        .filter(models.Patient.email == current_user_email)
-        .first()
-    )
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient record not found")
-
+    """
+    DEFENSIVE: Always updates the authenticated patient's profile.
+    No risk of updating deleted or other users' profiles.
+    """
     update_data = profile_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(patient, field, value)
 
+    # Also update the linked User record if name is provided
     if profile_in.name:
         user = (
             db.query(models.User)
-            .filter(models.User.email == current_user_email)
+            .filter(models.User.email == patient.email)
             .first()
         )
         if user:
@@ -270,17 +269,13 @@ def update_patient_profile(
 
 @router.get("/appointments")
 def get_patient_appointments(
+    patient: models.Patient = Depends(get_current_patient),
     db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
 ):
-    patient = (
-        db.query(models.Patient)
-        .filter(models.Patient.email == current_user_email)
-        .first()
-    )
-    if not patient:
-        return []
-
+    """
+    DEFENSIVE: Only return appointments/follow-ups for this authenticated patient.
+    No risk of showing appointments from deleted patients or other users.
+    """
     appointments = (
         db.query(models.FollowUp)
         .filter(models.FollowUp.patient_id == patient.id)
@@ -313,13 +308,13 @@ def get_patient_appointments(
 @router.post("/mood", response_model=schemas.MoodEntryOut)
 def log_mood(
     mood_in: schemas.MoodEntryCreate,
+    user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
 ):
-    user = db.query(models.User).filter(models.User.email == current_user_email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
+    """
+    DEFENSIVE: Always logs mood for the authenticated user.
+    No risk of logging mood for deleted or other users.
+    """
     today = datetime.now().date()
     existing = (
         db.query(models.MoodEntry)
@@ -348,13 +343,13 @@ def log_mood(
 
 @router.get("/mood/history")
 def get_mood_history(
+    user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
 ):
-    user = db.query(models.User).filter(models.User.email == current_user_email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
+    """
+    DEFENSIVE: Only return mood history for the authenticated user.
+    No risk of showing mood data from deleted or other users.
+    """
     mood_entries = (
         db.query(models.MoodEntry)
         .filter(models.MoodEntry.user_id == user.id)
@@ -376,20 +371,21 @@ def get_mood_history(
 @router.get("/mood/history/{patient_email}")
 def get_patient_mood_history(
     patient_email: str,
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
 ):
-    clinician = (
-        db.query(models.User)
-        .filter(models.User.email == current_user_email)
-        .first()
-    )
-    if not clinician or clinician.role not in ["doctor", "nurse"]:
+    """
+    DEFENSIVE: Only clinicians can access this endpoint.
+    Only returns mood data for existing patients.
+    """
+    # Verify current user is a clinician
+    if current_user.role not in ["doctor", "nurse"]:
         raise HTTPException(
             status_code=403,
             detail="Only clinicians can view patient mood history",
         )
 
+    # DEFENSIVE: Ensure patient user exists
     patient_user = (
         db.query(models.User)
         .filter(models.User.email == patient_email)
@@ -398,6 +394,7 @@ def get_patient_mood_history(
     if not patient_user:
         raise HTTPException(status_code=404, detail="Patient user not found")
 
+    # DEFENSIVE: Only return mood entries for this specific user
     mood_entries = (
         db.query(models.MoodEntry)
         .filter(models.MoodEntry.user_id == patient_user.id)
@@ -413,4 +410,42 @@ def get_patient_mood_history(
         }
         for m in mood_entries
     ]
+
+
+@router.get("/messages")
+def get_patient_messages(
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    DEFENSIVE: Only return messages for the authenticated user.
+    Filters by current_user.id, never by free-form email.
+    """
+    messages = (
+        db.query(models.Message)
+        .filter(
+            (models.Message.sender_id == user.id)
+            | (models.Message.receiver_id == user.id)
+        )
+        .order_by(models.Message.created_at.desc())
+        .all()
+    )
+    
+    results = []
+    for msg in messages:
+        # Get sender and receiver info (only if they still exist)
+        sender = db.query(models.User).filter(models.User.id == msg.sender_id).first()
+        receiver = db.query(models.User).filter(models.User.id == msg.receiver_id).first()
+        
+        results.append({
+            "id": msg.id,
+            "content": msg.content,
+            "sender_name": f"{sender.first_name} {sender.last_name or ''}".strip() if sender else "Unknown User",
+            "receiver_name": f"{receiver.first_name} {receiver.last_name or ''}".strip() if receiver else "Unknown User",
+            "is_read": msg.is_read,
+            "created_at": msg.created_at.isoformat() if msg.created_at else None,
+            "is_sent_by_me": msg.sender_id == user.id,
+        })
+    
+    return results
 

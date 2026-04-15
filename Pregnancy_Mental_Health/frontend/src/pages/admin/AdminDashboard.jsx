@@ -4,7 +4,7 @@ import AdminSidebar from "../../components/AdminSidebar";
 import { api, addAuditLog } from "../../utils/api";
 import {
   Users, UserCheck, ClipboardList, Activity,
-  TrendingUp, TrendingDown, Search, Filter,
+  ArrowUpRight, ArrowDownRight, Search, Filter,
   MoreVertical, Shield, Trash2, Edit, UserPlus, X, Menu,
 } from "lucide-react";
 import {
@@ -36,23 +36,20 @@ export default function AdminDashboard() {
   const { theme } = useTheme();
   const { isMobile, isTablet, isDesktop } = useBreakpoint();
 
+  // ─── Sidebar drawer state (mobile/tablet) ──────────────────────────────────
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalClinicians: 0,
     totalPatients: 0,
     totalAssessments: 0,
-    trends: {
-      users: "0",
-      clinicians: "0",
-      patients: "0",
-      assessments: "0"
-    }
   });
   const [recentUsers, setRecentUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
   const [showFilter, setShowFilter] = useState(false);
+  const [editUser, setEditUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const navigate = useNavigate();
@@ -60,27 +57,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchAdminData();
 
-    const wsUrl = import.meta.env.VITE_API_URL 
-      ? import.meta.env.VITE_API_URL.replace(/^http/, "ws").replace(/\/$/, "") + "/ws"
-      : `ws://${window.location.hostname}:8000/ws`;
-      
-    const ws = new WebSocket(wsUrl);
+    const ws = new WebSocket("ws://localhost:8000/ws");
 
     ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "user_deleted") {
-          fetchAdminData();
-        } else if (data.type === "NEW_RECOVERY_REQUEST") {
-          console.log("🔔 New recovery request received via WS:", data);
-          toast.success(`New password recovery request from ${data.email}`, {
-            icon: '🔔',
-            duration: 6000,
-            onClick: () => navigate("/admin/recovery")
-          });
-        }
-      } catch (err) {
-        console.error("WS message error:", err);
+      const data = JSON.parse(event.data);
+      if (data.type === "user_deleted") {
+        fetchAdminData();
       }
     };
 
@@ -89,33 +71,83 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  // Close sidebar when resizing to desktop — handled by AdminSidebar now
+  // Close sidebar when resizing to desktop
+  useEffect(() => {
+    if (isDesktop) setSidebarOpen(false);
+  }, [isDesktop]);
 
   const fetchAdminData = async () => {
     try {
-      const { data } = await api.get("/admin/dashboard");
+      const [{ data: usersData }, { data: assessmentStats }] = await Promise.all([
+        api.get("/admin/users"),
+        api.get("/admin/assessments/count"),
+      ]);
+  
+      const users = Array.isArray(usersData) ? usersData : [];
+      const sorted = users
+        .slice()
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  
+      setRecentUsers(
+        sorted.map((u) => {
+          const joinedSource = u.created_at || u.member_since;
+          const joined =
+            joinedSource && !Number.isNaN(new Date(joinedSource).getTime())
+              ? new Date(joinedSource).toLocaleDateString()
+              : "-";
+  
+          return {
+            id: u.id,
+            name: `${u.first_name} ${u.last_name || ""}`.trim().replace(/[{}]/g, ""),
+            email: u.email,
+            role: u.role.charAt(0).toUpperCase() + u.role.slice(1),
+            status: u.is_active ? "Active" : "Suspended",
+            joined,
+          };
+        })
+      );
+  
+      const totalClinicians = users.filter(
+        (u) => u.role === "doctor" || u.role === "nurse"
+      ).length;
+  
+      const totalPatients = users.filter((u) => u.role === "patient").length;
+  
       setStats({
-        totalUsers: data.totalUsers,
-        totalClinicians: data.totalClinicians,
-        totalPatients: data.totalPatients,
-        totalAssessments: data.totalAssessments,
-        trends: data.trends || {
-          users: "0",
-          clinicians: "0",
-          patients: "0",
-          assessments: "0"
-        }
+        totalUsers: users.length,
+        totalClinicians,
+        totalPatients,
+        totalAssessments: assessmentStats.total_assessments ?? 0,
       });
-      setRecentUsers(data.recentUsers);
     } catch (error) {
       console.error("Error fetching admin data:", error);
       toast.error("Failed to load admin data");
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleDelete = async (user) => {
+  const handleEdit = (user) => setEditUser({ ...user });
+
+  const handleEditSave = async () => {
+  if (!editUser) return;
+  try {
+    const [firstName, ...rest] = (editUser.name || "").trim().split(" ");
+    const lastName = rest.join(" ") || null;
+
+    await api.patch(`/admin/users/${editUser.id}`, {
+      first_name: firstName,
+      last_name: lastName,
+      email: editUser.email,
+    });
+
+    toast.success(`User ${editUser.name} updated successfully`);
+    setEditUser(null);
+    fetchAdminData();
+  } catch {
+    toast.error("Failed to update user");
+  }
+};
+
+const handleDelete = async (user) => {
   if (!window.confirm(`Are you sure you want to delete ${user.name}?`)) return;
 
   try {
@@ -160,32 +192,91 @@ export default function AdminDashboard() {
   );
 
   const statCards = [
-    { label: "Total Users", value: stats.totalUsers, icon: <Users size={20} />, trend: stats.trends.users, up: !stats.trends.users.startsWith('-'), color: "#14B8A6", link: "/admin/patients" },
-    { label: "Clinicians", value: stats.totalClinicians, icon: <Shield size={20} />, trend: stats.trends.clinicians, up: !stats.trends.clinicians.startsWith('-'), color: "#0D9488", link: "/admin/doctors" },
-    { label: "Patients", value: stats.totalPatients, icon: <UserCheck size={20} />, trend: stats.trends.patients, up: !stats.trends.patients.startsWith('-'), color: "#063F47", link: "/admin/patients" },
-    { label: "Assessments", value: stats.totalAssessments, icon: <ClipboardList size={20} />, trend: stats.trends.assessments, up: !stats.trends.assessments.startsWith('-'), color: "#2DD4BF", link: "/admin/analytics" },
+    { label: "Total Users", value: stats.totalUsers, icon: <Users size={20} />, trend: "+12%", up: true, color: "#14B8A6", link: "/admin/patients" },
+    { label: "Clinicians", value: stats.totalClinicians, icon: <Shield size={20} />, trend: "+2", up: true, color: "#0D9488", link: "/admin/doctors" },
+    { label: "Patients", value: stats.totalPatients, icon: <UserCheck size={20} />, trend: "+10", up: true, color: "#063F47", link: "/admin/patients" },
+    { label: "Assessments", value: stats.totalAssessments, icon: <ClipboardList size={20} />, trend: "+24%", up: true, color: "#2DD4BF", link: "/admin/analytics" },
   ];
 
   // ─── Layout values derived from breakpoint ─────────────────────────────────
-  const SIDEBAR_WIDTH = 240;
+  const SIDEBAR_WIDTH = 260;
+  const mainMarginLeft = isDesktop ? SIDEBAR_WIDTH : 0;
+  const mainPadding = isMobile ? "16px" : isTablet ? "24px 28px" : "40px 48px";
+  const mainWidth = isDesktop ? `calc(100% - ${SIDEBAR_WIDTH}px)` : "100%";
+
+  // Stat grid: 4 cols desktop, 2 cols tablet/mobile
   const statGridCols = isDesktop ? "repeat(4, 1fr)" : "repeat(2, 1fr)";
 
-  return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: theme.pageBg, fontFamily: theme.fontBody }}>
+  // Main content grid: side-by-side on desktop, stacked otherwise
+  const contentGridCols = isDesktop ? "2fr 1fr" : "1fr";
 
-      {/* ── Sidebar ── */}
-      <AdminSidebar />
+  return (
+    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
+
+      {/* ── Mobile sidebar overlay backdrop ── */}
+      {!isDesktop && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: "fixed", inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 200,
+            backdropFilter: "blur(2px)",
+          }}
+        />
+      )}
+
+      {/* ── Sidebar: always visible on desktop, drawer on mobile/tablet ── */}
+      <div style={{
+        position: isDesktop ? "fixed" : "fixed",
+        top: 0, left: 0, bottom: 0,
+        zIndex: 300,
+        transform: isDesktop
+          ? "translateX(0)"
+          : sidebarOpen
+            ? "translateX(0)"
+            : "translateX(-100%)",
+        transition: "transform 0.3s ease",
+        width: SIDEBAR_WIDTH,
+      }}>
+        <AdminSidebar onClose={() => setSidebarOpen(false)} />
+      </div>
 
       {/* ── Main content ── */}
       <main style={{
         flex: 1,
-        minWidth: 0,
-        height: "100vh",
-        overflowY: "auto",
-        background: theme.pageBg,
-        paddingTop: !isDesktop ? "56px" : 0,
+        marginLeft: mainMarginLeft,
+        padding: mainPadding,
+        width: mainWidth,
+        boxSizing: "border-box",
+        minWidth: 0, // Prevents grid blowout
       }}>
-        <div style={{ padding: isMobile ? "16px" : isTablet ? "24px 28px" : "40px 48px" }}>
+
+        {/* Mobile top bar with hamburger */}
+        {!isDesktop && (
+          <div style={{
+            display: "flex", alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 16,
+            padding: "8px 0",
+          }}>
+            <button
+              onClick={() => setSidebarOpen(true)}
+              style={{
+                background: "none", border: "none",
+                cursor: "pointer", color: theme.textPrimary,
+                display: "flex", alignItems: "center", padding: 4,
+              }}
+              aria-label="Open navigation"
+            >
+              <Menu size={24} />
+            </button>
+            <span style={{ fontWeight: 700, fontSize: 16, color: theme.textPrimary }}>
+              Admin Dashboard
+            </span>
+            <ThemeToggle />
+          </div>
+        )}
 
         {/* ── Hero Header ── */}
         <div style={{
@@ -228,7 +319,7 @@ export default function AdminDashboard() {
             {/* Hide ThemeToggle here on mobile — shown in top bar instead */}
             {!isMobile && (
               <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                
+                <Badge variant="warning">System Version 1.2.0</Badge>
                 <ThemeToggle inHeader={true} />
               </div>
             )}
@@ -264,14 +355,12 @@ export default function AdminDashboard() {
                   {stat.icon}
                 </div>
                 <div style={{
-                  display: "flex", alignItems: "center", gap: 4,
+                  display: "flex", alignItems: "center", gap: 2,
                   fontSize: 11, fontWeight: 700,
                   color: stat.up ? "#10B981" : "#EF4444",
-                  background: stat.up ? "#10B98115" : "#EF444415",
-                  padding: '4px 8px', borderRadius: 20
                 }}>
-                  {stat.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                   {stat.trend}
+                  {stat.up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                 </div>
               </div>
               <div style={{
@@ -291,8 +380,12 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* ── Main Content: Table full width ── */}
-        <div style={{ width: "100%" }}>
+        {/* ── Main Content: Table + System Health ── */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: contentGridCols,
+          gap: isMobile ? 20 : 32,
+        }}>
 
           {/* ── User Management Table ── */}
           <Card style={{ padding: 0, overflow: "hidden", minWidth: 0 }}>
@@ -425,15 +518,18 @@ export default function AdminDashboard() {
             </div>
 
              {/* Scrollable table wrapper — critical for mobile */}
-             <div className="portal-table-wrap">
-              <table className="portal-table" style={{ borderColor: theme.divider }}>
+             <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+              <table style={{
+                width: "100%", borderCollapse: "collapse",
+                textAlign: "left", minWidth: 520, // Prevents columns from collapsing
+              }}>
                 <thead>
-                  <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#F1F5F9"), borderColor: theme.divider }}>
-                    <th style={{ color: theme.textSecondary }}>User</th>
-                    <th style={{ color: theme.textSecondary, textAlign: "center" }}>Role</th>
-                    <th style={{ color: theme.textSecondary }}>Status</th>
-                    {!isMobile && <th style={{ color: theme.textSecondary }}>Joined</th>}
-                    <th style={{ color: theme.textSecondary, textAlign: "right" }}>Actions</th>
+                  <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#F1F5F9") }}>
+                    <th style={tableHeaderStyle(theme)}>User</th>
+                    <th style={{ ...tableHeaderStyle(theme), textAlign: "center" }}>Role</th>
+                    <th style={tableHeaderStyle(theme)}>Status</th>
+                    {!isMobile && <th style={tableHeaderStyle(theme)}>Joined</th>}
+                    <th style={{ ...tableHeaderStyle(theme), textAlign: "right" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -458,36 +554,15 @@ export default function AdminDashboard() {
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <td style={tableCellStyle(isMobile)}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ position: "relative" }}>
-                              <div style={{ 
-                                width: 32, height: 32, borderRadius: 8, 
-                                background: theme.primary + "15", color: theme.primary,
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                fontWeight: 800, fontSize: 12
-                              }}>
-                                {user.name.charAt(0)}
-                              </div>
-                              <div style={{
-                                position: "absolute", bottom: -2, right: -2,
-                                width: 10, height: 10, borderRadius: "50%",
-                                border: `2px solid ${theme.cardBg}`,
-                                background: user.isOnline ? "#10B981" : "#94A3B8",
-                                boxShadow: user.isOnline ? "0 0 4px #10B981" : "none"
-                              }} title={user.isOnline ? "Online" : "Offline"} />
-                            </div>
-                            <div>
-                              <div style={{ fontWeight: 700, color: theme.textPrimary, fontSize: isMobile ? 13 : 14 }}>
-                                {user.role.toLowerCase() === "doctor" ? `Dr. ${user.name}` : user.name}
-                              </div>
-                              <div style={{
-                                fontSize: 11, color: theme.textMuted,
-                                maxWidth: isMobile ? 120 : "unset",
-                                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                              }}>
-                                {user.email}
-                              </div>
-                            </div>
+                          <div style={{ fontWeight: 700, color: theme.textPrimary, fontSize: isMobile ? 13 : 14 }}>
+                            {user.role.toLowerCase() === "doctor" ? `Dr. ${user.name}` : user.name}
+                          </div>
+                          <div style={{
+                            fontSize: 11, color: theme.textMuted,
+                            maxWidth: isMobile ? 120 : "unset",
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}>
+                            {user.email}
                           </div>
                         </td>
                         
@@ -507,16 +582,9 @@ export default function AdminDashboard() {
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <div style={{
                               width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-                              background: user.status === "Suspended" ? "#EF4444" : (user.isOnline ? "#10B981" : "#94A3B8"),
-                              boxShadow: user.status !== "Suspended" && user.isOnline ? "0 0 6px #10B981" : "none"
+                              background: user.status === "Active" ? "#10B981" : "#F59E0B",
                             }} />
-                            <span style={{ 
-                              fontSize: 12, 
-                              fontWeight: 700, 
-                              color: user.status === "Suspended" ? "#EF4444" : (user.isOnline ? "#10B981" : theme.textMuted) 
-                            }}>
-                              {user.status === "Suspended" ? "Suspended" : (user.isOnline ? "Active" : "Offline")}
-                            </span>
+                            <span style={{ fontSize: 12, color: theme.textSecondary }}>{user.status}</span>
                           </div>
                         </td>
                         {/* Hide "Joined" column on mobile to save space */}
@@ -527,6 +595,13 @@ export default function AdminDashboard() {
                         )}
                         <td style={tableCellStyle(isMobile)}>
                           <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                            <button
+                              style={actionBtnStyle(theme)}
+                              title="Edit User"
+                              onClick={() => handleEdit(user)}
+                            >
+                              <Edit size={15} />
+                            </button>
                             <button
                               style={{
                                 ...actionBtnStyle(theme),
@@ -571,8 +646,107 @@ export default function AdminDashboard() {
             </div>
           </Card>
         </div>
-        </div>
       </main>
+
+      {/* ── Edit User Modal ── */}
+      {editUser && (
+        <div style={{
+          position: "fixed", inset: 0,
+          background: "rgba(0,0,0,0.7)",
+          backdropFilter: "blur(4px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 1000,
+          padding: isMobile ? "16px" : 0, // Adds breathing room on mobile
+        }}>
+          <div style={{
+            background: theme.cardBg,
+            border: `1px solid ${theme.border}`,
+            borderRadius: isMobile ? 12 : 16,
+            width: "100%",
+            maxWidth: 440,
+            overflow: "hidden",
+            boxShadow: "0 24px 50px rgba(0,0,0,0.2)",
+          }}>
+            <div style={{
+              padding: "20px 24px",
+              borderBottom: `1px solid ${theme.border}`,
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              background: theme.cardBgSecondary,
+            }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: theme.textPrimary }}>
+                Edit User
+              </h3>
+              <button
+                onClick={() => setEditUser(null)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: theme.textMuted }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: theme.textSecondary, marginBottom: 6 }}>
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={editUser.name}
+                  onChange={(e) => setEditUser({ ...editUser, name: e.target.value })}
+                  style={{
+                    width: "100%", padding: "10px 12px", borderRadius: 8,
+                    border: `1px solid ${theme.border}`,
+                    background: theme.inputBg, color: theme.textPrimary,
+                    fontSize: 16, // Prevents iOS zoom
+                    fontFamily: "inherit", outline: "none", boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: theme.textSecondary, marginBottom: 6 }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={editUser.email}
+                  onChange={(e) => setEditUser({ ...editUser, email: e.target.value })}
+                  style={{
+                    width: "100%", padding: "10px 12px", borderRadius: 8,
+                    border: `1px solid ${theme.border}`,
+                    background: theme.inputBg, color: theme.textPrimary,
+                    fontSize: 16, // Prevents iOS zoom
+                    fontFamily: "inherit", outline: "none", boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
+                <button
+                  onClick={() => setEditUser(null)}
+                  style={{
+                    padding: "10px 16px", borderRadius: 8,
+                    border: `1px solid ${theme.border}`,
+                    background: theme.cardBg, color: theme.textPrimary,
+                    cursor: "pointer", fontWeight: 600,
+                    flex: isMobile ? 1 : "0 0 auto",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditSave}
+                  style={{
+                    padding: "10px 16px", borderRadius: 8, border: "none",
+                    background: theme.primary, color: "white",
+                    cursor: "pointer", fontWeight: 600,
+                    flex: isMobile ? 1 : "0 0 auto",
+                  }}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

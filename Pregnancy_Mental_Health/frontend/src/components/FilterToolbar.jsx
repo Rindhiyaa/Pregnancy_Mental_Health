@@ -2,21 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, Download, FileText, FileSpreadsheet, Table2, ChevronDown } from 'lucide-react';
 import { useTheme } from '../ThemeContext';
 
-function useBreakpoint() {
-  const [width, setWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1440
-  );
-  useEffect(() => {
-    const handler = () => setWidth(window.innerWidth);
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
-  }, []);
-  return {
-    isMobile: width < 640,
-    isTablet: width >= 640 && width < 1024,
-    isDesktop: width >= 1024,
-  };
-}
+import { useBreakpoint } from '../hooks/useBreakpoint';
 
 const FilterToolbar = ({
   searchValue,
