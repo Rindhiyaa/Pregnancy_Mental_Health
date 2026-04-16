@@ -2,7 +2,7 @@
 
 const SHARED_THEME = {
   fontHeading: "'Poppins', 'Inter', sans-serif",
-  fontBody: "'Inter', 'Poppins', sans-serif",
+  fontBody: "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
   fontNormal: 500,
   fontMedium: 600,
   fontBold: 700,

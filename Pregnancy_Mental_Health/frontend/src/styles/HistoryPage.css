@@ -4,6 +4,7 @@
   min-height: 100vh;
   background: #ffffff;
   position: relative;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .history-shell {

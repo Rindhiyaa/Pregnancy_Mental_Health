@@ -2,7 +2,7 @@
 .pp-root {
   min-height: 100vh;
   background: #ffffff;
-  font-family: inherit;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* ── MAIN ── */
