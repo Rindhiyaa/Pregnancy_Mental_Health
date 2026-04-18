@@ -6,14 +6,12 @@ import FilterToolbar from "../../components/FilterToolbar";
 import { PageTitle, Divider, Card, Badge, Pagination } from "../../components/UI";
 import { api, addAuditLog, getErrorMessage } from "../../utils/api";
 import {
-  Search,
   Plus,
   Trash2,
   ShieldOff,
   KeyRound,
   CheckCircle,
   X,
-  Shield,
   Stethoscope,
   UserCheck,
   UserX,
@@ -21,10 +19,21 @@ import {
 import toast from "react-hot-toast";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 import {
-    exportDoctorsToPDF,
-    exportDoctorsToExcel,
-    exportDoctorsToCSV,
-  } from "../../utils/exportUtils"; // adjust path if needed
+  exportDoctorsToPDF,
+  exportDoctorsToExcel,
+  exportDoctorsToCSV,
+} from "../../utils/exportUtils";
+
+const initialFormData = {
+  name: "",
+  email: "",
+  phone: "",
+  role: "doctor",
+  specialization: "",
+  hospital_name: "",
+  department: "",
+  designation: "",
+};
 
 export default function DoctorsPage() {
   const { theme } = useTheme();
@@ -35,29 +44,94 @@ export default function DoctorsPage() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    role: "doctor",
-    specialization: "",
-  });
+  const [formData, setFormData] = useState(initialFormData);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+
   const itemsPerPage = 10;
 
   useEffect(() => {
     loadDoctors();
   }, []);
 
-  
-const loadDoctors = async () => {
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, activeFilter]);
+
+  const validateDoctorForm = (values) => {
+    const newErrors = {};
+
+    const name = (values.name || "").trim();
+    const email = (values.email || "").trim();
+    const phone = (values.phone || "").trim();
+    const hospital = (values.hospital_name || "").trim();
+    const department = (values.department || "").trim();
+    const designation = (values.designation || "").trim();
+    const specialization = (values.specialization || "").trim();
+
+    if (!name) {
+      newErrors.name = "Full name is required";
+    } else if (name.length < 3) {
+      newErrors.name = "Full name must be at least 3 characters";
+    } else if (!/^[A-Za-z.\s]+$/.test(name)) {
+      newErrors.name = "Name should contain only letters, spaces, and periods";
+    }
+
+    if (!hospital) {
+      newErrors.hospital_name = "Hospital name is required";
+    } else if (hospital.length < 3) {
+      newErrors.hospital_name = "Hospital name must be at least 3 characters";
+    }
+
+    if (!email) {
+      newErrors.email = "Email address is required";
+    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    if (!phone) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^\+?[0-9\s-]{10,15}$/.test(phone)) {
+      newErrors.phone = "Enter a valid phone number";
+    }
+
+    if (department && department.length < 2) {
+      newErrors.department = "Department must be at least 2 characters";
+    }
+
+    if (designation && designation.length < 2) {
+      newErrors.designation = "Designation must be at least 2 characters";
+    }
+
+    if (specialization && specialization.length < 2) {
+      newErrors.specialization = "Specialization must be at least 2 characters";
+    }
+
+    return newErrors;
+  };
+
+  const handleFieldChange = (field, value) => {
+    const updated = { ...formData, [field]: value };
+    setFormData(updated);
+
+    if (touched[field]) {
+      setErrors(validateDoctorForm(updated));
+    }
+  };
+
+  const handleFieldBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setErrors(validateDoctorForm(formData));
+  };
+
+  const loadDoctors = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get("/admin/clinicians"); // <- changed
+      const { data } = await api.get("/admin/clinicians");
       const clinicians = Array.isArray(data) ? data : [];
-      console.log("clinicians data:", clinicians);
-  
+
       const doctorsOnly = clinicians.filter((u) => u.role === "doctor");
       const mapped = doctorsOnly.map((u) => ({
         id: u.id,
@@ -66,9 +140,12 @@ const loadDoctors = async () => {
         phone: u.phone_number,
         status: u.is_active ? "active" : "suspended",
         specialization: u.specialization || "",
+        hospital_name: u.hospital_name || "",
+        department: u.department || "",
+        designation: u.designation || "",
         joinDate: u.member_since || u.created_at || null,
       }));
-  
+
       setDoctors(mapped);
     } catch (err) {
       console.error("loadDoctors error:", err);
@@ -103,7 +180,7 @@ const loadDoctors = async () => {
     exportDoctorsToPDF(filteredDoctors);
     toast.success("PDF exported!");
   };
-  
+
   const handleExcelExport = () => {
     if (!filteredDoctors.length) {
       toast.error("No doctors to export");
@@ -112,7 +189,7 @@ const loadDoctors = async () => {
     exportDoctorsToExcel(filteredDoctors);
     toast.success("Excel exported!");
   };
-  
+
   const handleCSVExport = () => {
     if (!filteredDoctors.length) {
       toast.error("No doctors to export");
@@ -130,21 +207,43 @@ const loadDoctors = async () => {
 
   const handleCreateDoctor = async (e) => {
     e.preventDefault();
+
+    const validationErrors = validateDoctorForm(formData);
+    setErrors(validationErrors);
+    setTouched({
+      name: true,
+      hospital_name: true,
+      department: true,
+      designation: true,
+      specialization: true,
+      email: true,
+      phone: true,
+    });
+
+    if (Object.keys(validationErrors).length > 0) {
+      toast.error("Please fix the highlighted fields");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const rawName = (formData.name || "").trim();
-      const base = rawName.split(" ")[0].toLowerCase();
-      const email = `doctor.${base}@ppdrisk.com`; // auto email
-  
-      const { data: created } = await api.post("/admin/users", { // <- changed
-        first_name: rawName,
-        last_name: "",
-        email,
-        phone_number: formData.phone,
+      const [firstName, ...rest] = rawName.split(/\s+/);
+      const lastName = rest.join(" ");
+
+      const { data: created } = await api.post("/admin/users", {
+        first_name: firstName,
+        last_name: lastName,
+        email: formData.email.trim(),
+        phone_number: formData.phone.trim(),
         password: "TempPass123!",
         role: "doctor",
+        specialization: formData.specialization.trim(),
+        hospital_name: formData.hospital_name.trim(),
+        department: formData.department.trim(),
+        designation: formData.designation.trim(),
       });
-  
+
       try {
         await addAuditLog(
           "User Created",
@@ -153,9 +252,11 @@ const loadDoctors = async () => {
       } catch (logErr) {
         console.warn("Audit log failed", logErr);
       }
-  
+
+      setFormData(initialFormData);
+      setErrors({});
+      setTouched({});
       toast.success(`Doctor ${rawName} added successfully!`);
-      setFormData({ name: "", email: "", phone: "", role: "doctor", specialization: "" });
       setShowModal(false);
       loadDoctors();
     } catch (err) {
@@ -179,8 +280,8 @@ const loadDoctors = async () => {
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to permanently delete ${name}?`))
-      return;
+    if (!window.confirm(`Are you sure you want to permanently delete ${name}?`)) return;
+
     try {
       await api.delete(`/admin/users/${id}`);
       toast.success("User record deleted");
@@ -195,9 +296,7 @@ const loadDoctors = async () => {
     if (!window.confirm(`Reset password for ${doctor.name}?`)) return;
 
     try {
-      const { data } = await api.post(
-        `/admin/users/${doctor.id}/reset-password`
-      );
+      const { data } = await api.post(`/admin/users/${doctor.id}/reset-password`);
       console.log("Reset response:", data);
 
       try {
@@ -216,9 +315,15 @@ const loadDoctors = async () => {
     }
   };
 
+  const closeModal = () => {
+    setShowModal(false);
+    setFormData(initialFormData);
+    setErrors({});
+    setTouched({});
+  };
+
   return (
     <AdminLayout pageTitle="Doctors Directory">
-      {/* Page Header */}
       <div
         style={{
           display: "flex",
@@ -232,7 +337,9 @@ const loadDoctors = async () => {
         <PageTitle
           title="Doctors Directory"
           subtitle={
-            isMobile ? "Manage medical specialists" : "Manage hospital medical specialists and credentials"
+            isMobile
+              ? "Manage medical specialists"
+              : "Manage hospital medical specialists and credentials"
           }
         />
         <button
@@ -264,7 +371,6 @@ const loadDoctors = async () => {
           placeholder="Search by name or email..."
         />
 
-        {/* MOBILE LIST */}
         {isMobile ? (
           <div style={{ padding: "8px 0" }}>
             {loading ? (
@@ -289,7 +395,6 @@ const loadDoctors = async () => {
                     gap: 10,
                   }}
                 >
-                  {/* Name + Status */}
                   <div
                     style={{
                       display: "flex",
@@ -320,7 +425,6 @@ const loadDoctors = async () => {
                     <StatusBadge status={doctor.status} theme={theme} />
                   </div>
 
-                  {/* Specialization */}
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <span style={mobileLabelStyle}>Spec.</span>
                     <Badge type="warning">
@@ -328,8 +432,13 @@ const loadDoctors = async () => {
                     </Badge>
                   </div>
 
-                  {/* Contact */}
-                  <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "flex-start",
+                    }}
+                  >
                     <span style={{ ...mobileLabelStyle, paddingTop: 1 }}>Contact</span>
                     <div>
                       <div style={{ fontSize: 13, color: theme.textSecondary }}>
@@ -347,7 +456,6 @@ const loadDoctors = async () => {
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div
                     style={{
                       display: "flex",
@@ -370,7 +478,6 @@ const loadDoctors = async () => {
             )}
           </div>
         ) : (
-          // TABLET / DESKTOP
           <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             <table
               style={{
@@ -399,19 +506,13 @@ const loadDoctors = async () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td
-                      colSpan={isTablet ? 4 : 5}
-                      style={loadingTdStyle(theme)}
-                    >
+                    <td colSpan={isTablet ? 4 : 5} style={loadingTdStyle(theme)}>
                       Loading clinicians...
                     </td>
                   </tr>
                 ) : filteredDoctors.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={isTablet ? 4 : 5}
-                      style={loadingTdStyle(theme)}
-                    >
+                    <td colSpan={isTablet ? 4 : 5} style={loadingTdStyle(theme)}>
                       No doctors found.
                     </td>
                   </tr>
@@ -439,7 +540,6 @@ const loadDoctors = async () => {
                             : theme.cardBg;
                       }}
                     >
-                      {/* Doctor Details */}
                       <td style={tdStyle(isTablet)}>
                         <div
                           style={{
@@ -476,14 +576,12 @@ const loadDoctors = async () => {
                         )}
                       </td>
 
-                      {/* Specialization */}
                       <td style={tdStyle(isTablet)}>
                         <Badge type="warning">
                           {doctor.specialization || "General Medicine"}
                         </Badge>
                       </td>
 
-                      {/* Contact (desktop only) */}
                       {!isTablet && (
                         <td style={tdStyle(isTablet)}>
                           <div
@@ -507,12 +605,10 @@ const loadDoctors = async () => {
                         </td>
                       )}
 
-                      {/* Status */}
                       <td style={tdStyle(isTablet)}>
                         <StatusBadge status={doctor.status} theme={theme} />
                       </td>
 
-                      {/* Actions */}
                       <td
                         style={{
                           ...tdStyle(isTablet),
@@ -521,12 +617,8 @@ const loadDoctors = async () => {
                       >
                         <ActionButtons
                           onReset={() => handleResetPassword(doctor)}
-                          onSuspend={() =>
-                            handleSuspend(doctor.id, doctor.status)
-                          }
-                          onDelete={() =>
-                            handleDelete(doctor.id, doctor.name)
-                          }
+                          onSuspend={() => handleSuspend(doctor.id, doctor.status)}
+                          onDelete={() => handleDelete(doctor.id, doctor.name)}
                           status={doctor.status}
                           theme={theme}
                         />
@@ -546,15 +638,14 @@ const loadDoctors = async () => {
         />
       </Card>
 
-      {/* Add Doctor Modal */}
       {showModal && (
         <Modal
-          onClose={() => setShowModal(false)}
+          onClose={closeModal}
           title="Add New Doctor"
           theme={theme}
           isMobile={isMobile}
         >
-          <form onSubmit={handleCreateDoctor}>
+          <form onSubmit={handleCreateDoctor} noValidate>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <label style={labelStyle(theme)}>Full Name</label>
@@ -562,28 +653,89 @@ const loadDoctors = async () => {
                   required
                   type="text"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  style={inputStyle(theme)}
+                  onChange={(e) => handleFieldChange("name", e.target.value)}
+                  onBlur={() => handleFieldBlur("name")}
+                  style={inputStyle(theme, errors.name)}
                   placeholder="Jane Smith"
                 />
+                {touched.name && errors.name && (
+                  <div style={errorTextStyle(theme)}>{errors.name}</div>
+                )}
               </div>
+
+              <div>
+                <label style={labelStyle(theme)}>Hospital Name</label>
+                <input
+                  required
+                  type="text"
+                  value={formData.hospital_name}
+                  onChange={(e) =>
+                    handleFieldChange("hospital_name", e.target.value)
+                  }
+                  onBlur={() => handleFieldBlur("hospital_name")}
+                  style={inputStyle(theme, errors.hospital_name)}
+                  placeholder="ABC Women & Child Hospital"
+                />
+                {touched.hospital_name && errors.hospital_name && (
+                  <div style={errorTextStyle(theme)}>{errors.hospital_name}</div>
+                )}
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                  gap: 16,
+                }}
+              >
+                <div>
+                  <label style={labelStyle(theme)}>Department / Unit</label>
+                  <input
+                    type="text"
+                    value={formData.department}
+                    onChange={(e) => handleFieldChange("department", e.target.value)}
+                    onBlur={() => handleFieldBlur("department")}
+                    style={inputStyle(theme, errors.department)}
+                    placeholder="OB-GYN"
+                  />
+                  {touched.department && errors.department && (
+                    <div style={errorTextStyle(theme)}>{errors.department}</div>
+                  )}
+                </div>
+
+                <div>
+                  <label style={labelStyle(theme)}>Designation</label>
+                  <input
+                    type="text"
+                    value={formData.designation}
+                    onChange={(e) => handleFieldChange("designation", e.target.value)}
+                    onBlur={() => handleFieldBlur("designation")}
+                    style={inputStyle(theme, errors.designation)}
+                    placeholder="Consultant Psychiatrist"
+                  />
+                  {touched.designation && errors.designation && (
+                    <div style={errorTextStyle(theme)}>{errors.designation}</div>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label style={labelStyle(theme)}>Specialization</label>
                 <input
                   type="text"
                   value={formData.specialization}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      specialization: e.target.value,
-                    })
+                    handleFieldChange("specialization", e.target.value)
                   }
-                  style={inputStyle(theme)}
-                  placeholder="e.g. Obstetrics & Gynecology"
+                  onBlur={() => handleFieldBlur("specialization")}
+                  style={inputStyle(theme, errors.specialization)}
+                  placeholder="e.g. Obstetrician"
                 />
+                {touched.specialization && errors.specialization && (
+                  <div style={errorTextStyle(theme)}>{errors.specialization}</div>
+                )}
               </div>
+
               <div
                 style={{
                   display: "grid",
@@ -597,40 +749,46 @@ const loadDoctors = async () => {
                     required
                     type="email"
                     value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    style={inputStyle(theme)}
-                    placeholder="jane@hospital.com"
+                    onChange={(e) => handleFieldChange("email", e.target.value)}
+                    onBlur={() => handleFieldBlur("email")}
+                    style={inputStyle(theme, errors.email)}
+                    placeholder="doctor.jane@ppdrisk.com"
                   />
+                  {touched.email && errors.email && (
+                    <div style={errorTextStyle(theme)}>{errors.email}</div>
+                  )}
                 </div>
+
                 <div>
                   <label style={labelStyle(theme)}>Phone Number</label>
                   <input
                     required
                     type="text"
                     value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                    style={inputStyle(theme)}
-                    placeholder="+1 234 567 8900"
+                    onChange={(e) => handleFieldChange("phone", e.target.value)}
+                    onBlur={() => handleFieldBlur("phone")}
+                    style={inputStyle(theme, errors.phone)}
+                    placeholder="+91 98765 43210"
                   />
+                  {touched.phone && errors.phone && (
+                    <div style={errorTextStyle(theme)}>{errors.phone}</div>
+                  )}
                 </div>
               </div>
             </div>
+
             <div
               style={{
-                marginTop: 24,
                 display: "flex",
+                flexDirection: isMobile ? "column" : "row",
                 gap: 12,
                 justifyContent: "flex-end",
-                flexDirection: isMobile ? "column-reverse" : "row",
+                marginTop: 24,
               }}
             >
               <button
                 type="button"
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 style={{
                   ...secondaryBtnStyle(theme),
                   width: isMobile ? "100%" : "auto",
@@ -639,6 +797,7 @@ const loadDoctors = async () => {
               >
                 Cancel
               </button>
+
               <button
                 type="submit"
                 disabled={submitting}
@@ -692,13 +851,10 @@ const ActionButtons = ({ onReset, onSuspend, onDelete, status, theme }) => {
   const isActive = status === "active";
   return (
     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-      <button
-        onClick={onReset}
-        title="Reset Password"
-        style={actionBtnStyle(theme)}
-      >
+      <button onClick={onReset} title="Reset Password" style={actionBtnStyle(theme)}>
         <KeyRound size={15} />
       </button>
+
       <button
         onClick={onSuspend}
         title={isActive ? "Suspend" : "Activate"}
@@ -710,6 +866,7 @@ const ActionButtons = ({ onReset, onSuspend, onDelete, status, theme }) => {
           <CheckCircle size={15} color={theme.successText} />
         )}
       </button>
+
       <button
         onClick={onDelete}
         title="Delete"
@@ -736,7 +893,7 @@ const Modal = ({ children, title, onClose, theme, isMobile }) => (
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1000,
-      padding: isMobile ? "16px 0" : 0,
+      padding: isMobile ? "16px" : 0,
     }}
   >
     <div
@@ -770,7 +927,9 @@ const Modal = ({ children, title, onClose, theme, isMobile }) => (
         >
           {title}
         </h2>
+
         <button
+          type="button"
           onClick={onClose}
           style={{
             background: "none",
@@ -782,12 +941,13 @@ const Modal = ({ children, title, onClose, theme, isMobile }) => (
           <X size={20} />
         </button>
       </div>
+
       <div style={{ padding: isMobile ? "16px 24px" : "20px 24px" }}>{children}</div>
     </div>
   </div>
 );
 
-/* Theme-based style helpers – from your updated code */
+/* Styles */
 
 const primaryBtnStyle = (theme) => ({
   background: theme.primary,
@@ -816,17 +976,24 @@ const secondaryBtnStyle = (theme) => ({
   alignItems: "center",
 });
 
-const inputStyle = (theme) => ({
+const inputStyle = (theme, hasError) => ({
   width: "100%",
   padding: "10px 12px",
   borderRadius: 8,
-  border: `1px solid ${theme.border}`,
+  border: `1px solid ${hasError ? theme.dangerText : theme.border}`,
   fontSize: 16,
   fontFamily: "inherit",
   outline: "none",
   boxSizing: "border-box",
   background: theme.inputBg,
   color: theme.textPrimary,
+});
+
+const errorTextStyle = (theme) => ({
+  marginTop: 6,
+  fontSize: 12,
+  color: theme.dangerText,
+  fontWeight: 600,
 });
 
 const tableHeaderRowStyle = (theme) => ({

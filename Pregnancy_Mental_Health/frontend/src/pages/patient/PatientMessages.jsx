@@ -1,4 +1,4 @@
-pimport { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Mail, Bell, Calendar, ClipboardCheck, Settings, User,
   Pin, Loader2, Inbox, Circle, FileText

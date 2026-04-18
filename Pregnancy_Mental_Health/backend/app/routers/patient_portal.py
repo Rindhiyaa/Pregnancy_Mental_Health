@@ -448,4 +448,3 @@ def get_patient_messages(
         })
     
     return results
-
