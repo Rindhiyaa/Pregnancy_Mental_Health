@@ -15,7 +15,7 @@ import {
   Minus,
   Heart,
   Info
-} from 'lucide-react';
+} from'lucide-react';
 import { useTheme } from "../../ThemeContext";
 import { PageTitle, Divider, Card, Badge, PrimaryBtn } from "../../components/UI";
 
