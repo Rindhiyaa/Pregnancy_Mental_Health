@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
-import { PageTitle, Card, Badge, Loader2 } from "../../components/UI";
+import { PageTitle, Card, Badge, Loader2, LoadingState } from "../../components/UI";
 import { api } from "../../utils/api";
 import useContentWidth from "../../hooks/useContentWidth";
 import toast from "react-hot-toast";
@@ -168,10 +168,10 @@ export default function NurseAssessmentHistory() {
           {isMobile ? (
             <div style={{ padding: "8px 0" }}>
               {loading ? (
-                <div style={{ padding: '80px', textAlign: 'center' }}>
-                  <Loader2 className="animate-spin" size={36} color={theme.primary} style={{ margin: '0 auto 16px' }} />
-                  <div style={{ color: theme.textMuted, fontWeight: 600 }}>Loading history...</div>
-                </div>
+                <LoadingState 
+                  size={36} 
+                  message="Loading history..." 
+                />
               ) : filteredAssessments.length > 0 ? (
                 filteredAssessments.map((a, idx) => (
                   <div
@@ -292,9 +292,11 @@ export default function NurseAssessmentHistory() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={isTablet ? 5 : 6} style={{ padding: '80px', textAlign: 'center' }}>
-                    <Loader2 className="animate-spin" size={36} color={theme.primary} style={{ margin: '0 auto 16px' }} />
-                    <div style={{ color: theme.textMuted, fontWeight: 600 }}>Loading history...</div>
+                  <td colSpan={isTablet ? 5 : 6} style={{ padding: 0, border: 'none' }}>
+                    <LoadingState 
+                      size={36} 
+                      message="Loading history..." 
+                    />
                   </td>
                 </tr>
               ) : filteredAssessments.length > 0 ? filteredAssessments.map((a, idx) => (

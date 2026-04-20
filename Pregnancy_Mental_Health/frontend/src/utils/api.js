@@ -54,7 +54,7 @@ const startBackendWakeCheck = () => {
     return;
   }
   
-  let checkDelay = 30000; // Start with 30 seconds
+  let checkDelay = 5000; // Start with 5 seconds for faster detection
   let attemptCount = 0;
   
   const performHealthCheck = async () => {
@@ -66,8 +66,8 @@ const startBackendWakeCheck = () => {
       const res = await fetch(`${API_BASE_URL}/health`, {
         method: "GET",
         credentials: "include",
-        // Add timeout to prevent hanging requests
-        signal: AbortSignal.timeout(10000)
+        // Reduce timeout for faster failure detection
+        signal: AbortSignal.timeout(5000)
       });
       
       if (res.ok) {
@@ -79,10 +79,16 @@ const startBackendWakeCheck = () => {
       }
     } catch (error) {
       attemptCount++;
+      // Keep showing sleeping status during health checks
       notifyBackendStatus("sleeping");
       
-      if (attemptCount >= 3) {
-        checkDelay = 60000; // Switch to 60 seconds
+      // Gradually increase delay: 5s -> 15s -> 30s -> 60s
+      if (attemptCount >= 2 && checkDelay < 15000) {
+        checkDelay = 15000; // 15 seconds after 2 attempts
+      } else if (attemptCount >= 4 && checkDelay < 30000) {
+        checkDelay = 30000; // 30 seconds after 4 attempts  
+      } else if (attemptCount >= 6) {
+        checkDelay = 60000; // 60 seconds after 6 attempts
       }
     } finally {
       backendWakeCheckInProgress = false;
@@ -91,12 +97,14 @@ const startBackendWakeCheck = () => {
     backendWakeCheckTimeout = setTimeout(performHealthCheck, checkDelay);
   };
   
+  // Start first health check immediately
   performHealthCheck();
 };
 
 const markBackendSleeping = () => {
   if (backendState !== "sleeping") {
     backendState = "sleeping";
+    // Show banner immediately when network issue detected
     notifyBackendStatus("sleeping");
   }
   startBackendWakeCheck();

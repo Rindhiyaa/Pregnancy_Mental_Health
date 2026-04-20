@@ -7,7 +7,7 @@ import { getAvatarColor } from "../../utils/helpers";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
 import ThemeToggle from "../../components/ThemeToggle";
-import { PageTitle, Divider, Card, Badge, Loader2 } from "../../components/UI";
+import { PageTitle, Divider, Card, Badge, Loader2, LoadingState } from "../../components/UI";
 import toast from "react-hot-toast";
 
 import {
@@ -145,10 +145,11 @@ export default function NurseDashboard() {
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <NurseSidebar />
       <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
-        <div style={{ textAlign: 'center' }}>
-          <Loader2 className="animate-spin" size={40} color={theme.primary} style={{ marginBottom: 16 }} />
-          <div style={{ color: theme.textMuted, fontWeight: 500 }}>Loading Nurse Portal...</div>
-        </div>
+        <LoadingState 
+          size={40} 
+          message="Loading Nurse Portal..." 
+          fullHeight={true}
+        />
       </main>
     </div>
   );

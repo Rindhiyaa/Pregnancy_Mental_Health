@@ -12,7 +12,7 @@ import PatientSidebar from "../../components/PatientSidebar";
 import FilterToolbar from "../../components/FilterToolbar";
 import { api } from "../../utils/api";
 import { useTheme } from "../../ThemeContext";
-import { PageTitle, Divider, Card, Badge, PrimaryBtn, Pagination } from "../../components/UI";
+import { PageTitle, Divider, Card, Badge, PrimaryBtn, Pagination, LoadingState } from "../../components/UI";
 import toast from "react-hot-toast";
 
 
@@ -173,10 +173,11 @@ export default function PatientResults() {
     <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <PatientSidebar />
       <main className="portal-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.pageBg }}>
-        <div style={{ textAlign: 'center' }}>
-          <Loader2 className="animate-spin" size={40} color={theme.primary} style={{ marginBottom: 16 }} />
-          <div style={{ color: theme.textMuted, fontWeight: 500 }}>Loading your results...</div>
-        </div>
+        <LoadingState 
+          size={40} 
+          message="Loading your results..." 
+          fullHeight={true}
+        />
       </main>
     </div>
   );

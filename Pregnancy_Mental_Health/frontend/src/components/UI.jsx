@@ -206,13 +206,67 @@ export const Loader = ({ size = 24, color = "#475569" }) => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    style={{ animation: "spin 1s linear infinite" }}
+    style={{ 
+      animation: "spin 1s linear infinite",
+      display: "block" // Ensures proper centering
+    }}
   >
     <path d="M21 12a9 9 0 1 1-6.219-8.56" />
   </svg>
 );
 
 export const Loader2 = Loader;
+
+// New standardized loading component with perfect alignment
+export const LoadingState = ({ 
+  size = 40, 
+  color, 
+  message = "Loading...", 
+  fullHeight = false,
+  className = ""
+}) => {
+  const { theme } = useTheme();
+  const loaderColor = color || theme.primary;
+  
+  return (
+    <div 
+      className={`loading-container ${className}`}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        minHeight: fullHeight ? "50vh" : "auto",
+        padding: "2rem",
+        gap: "1rem"
+      }}
+    >
+      <Loader2 
+        className="animate-spin" 
+        size={size} 
+        color={loaderColor}
+        style={{ 
+          flexShrink: 0,
+          display: "block"
+        }}
+      />
+      {message && (
+        <div 
+          style={{ 
+            color: theme.textMuted, 
+            fontWeight: 500,
+            fontSize: "0.875rem",
+            lineHeight: 1.5,
+            maxWidth: "300px"
+          }}
+        >
+          {message}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const Table = ({ headers, children, loading, loadingMessage = "Loading data...", emptyMessage = "No data found." }) => {
   const { theme } = useTheme();
@@ -244,9 +298,12 @@ export const Table = ({ headers, children, loading, loadingMessage = "Loading da
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={headers.length} style={{ padding: '60px', textAlign: 'center' }}>
-                  <Loader2 size={32} color={theme.primary} style={{ margin: '0 auto 16px' }} />
-                  <div style={{ color: theme.textMuted, fontSize: 14 }}>{loadingMessage}</div>
+                <td colSpan={headers.length} style={{ padding: 0, border: 'none' }}>
+                  <LoadingState 
+                    size={32} 
+                    message={loadingMessage}
+                    className="table-loading"
+                  />
                 </td>
               </tr>
             ) : React.Children.count(children) > 0 ? (

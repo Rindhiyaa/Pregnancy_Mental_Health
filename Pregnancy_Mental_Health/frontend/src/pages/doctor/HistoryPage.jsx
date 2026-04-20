@@ -17,7 +17,8 @@ import {
     TableRow,
     TableCell,
     Pagination,
-    Loader2
+    Loader2,
+    LoadingState
 } from "../../components/UI";
 import {
     Download,
@@ -136,7 +137,7 @@ const HistoryPage = () => {
 
     if (loading) return (
         <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: theme.pageBg }}>
-            <Loader2 size={48} className="animate-spin" color={theme.primary} />
+            <LoadingState size={48} message="Loading history..." fullHeight={true} />
         </div>
     );
 

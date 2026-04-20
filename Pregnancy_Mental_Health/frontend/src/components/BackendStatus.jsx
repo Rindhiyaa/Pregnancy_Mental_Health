@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { setBackendStatusCallback } from "../utils/api.js";
 
 export default function BackendStatus() {

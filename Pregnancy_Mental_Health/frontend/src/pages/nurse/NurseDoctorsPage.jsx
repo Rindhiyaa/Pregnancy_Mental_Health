@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../ThemeContext";
 import NurseSidebar from "../../components/NurseSidebar";
-import { PageTitle, Card, Badge, Loader2 } from "../../components/UI";
+import { PageTitle, Card, Badge, Loader2, LoadingState } from "../../components/UI";
 import { api } from "../../utils/api";
 import { getToken, getRoleFromUrl, getFullName } from '../../auth/tokenStorage';
 import { toast } from 'react-hot-toast';
@@ -94,10 +94,11 @@ export default function NurseDoctorsPage() {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '100px 0' }}>
-            <Loader2 className="animate-spin" size={40} color={theme.primary} style={{ margin: '0 auto 16px' }} />
-            <div style={{ color: theme.textMuted, fontWeight: 600 }}>Loading medical team...</div>
-          </div>
+          <LoadingState 
+            size={40} 
+            message="Loading medical team..." 
+            fullHeight={true}
+          />
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 24 }}>
             {filteredDoctors.map((doc) => (

@@ -6,7 +6,7 @@ import { api } from "../../utils/api";
 import DoctorSidebar from "../../components/DoctorSidebar";
 import FilterToolbar from "../../components/FilterToolbar";
 import { 
-    Card, Badge, PageTitle, Table, TableRow, TableCell, Pagination, Loader2 
+    Card, Badge, PageTitle, Table, TableRow, TableCell, Pagination, Loader2, LoadingState 
 } from "../../components/UI";
 import { getAvatarColor } from "../../utils/helpers";
 import { exportPatientsToPDF, exportPatientsToExcel, exportPatientsToCSV } from "../../utils/exportUtils";
@@ -122,7 +122,7 @@ export default function PatientsPage() {
 
     if (loading) return (
         <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: theme.pageBg }}>
-            <Loader2 size={48} className="animate-spin" color={theme.primary} />
+            <LoadingState size={48} message="Loading patients..." fullHeight={true} />
         </div>
     );
 
