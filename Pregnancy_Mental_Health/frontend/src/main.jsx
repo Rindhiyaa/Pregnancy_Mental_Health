@@ -20,7 +20,7 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <HashRouter>
     <AuthProvider>
-      {/* <BackendStatus /> */}
+      <BackendStatus />
       <App />
     </AuthProvider>
   </HashRouter>

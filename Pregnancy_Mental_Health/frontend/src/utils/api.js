@@ -214,34 +214,6 @@ export const apiRequest = async (endpoint, options = {}) => {
             .forEach(k => localStorage.removeItem(k));
           window.location.href = '/signin?error=first_login';
           return response;
-        } else if (errorData.detail && errorData.detail.includes("Not authenticated")) {
-          console.log('🔑 Got 403 Not authenticated, treating as auth failure...');
-          // Treat as 401 - attempt token refresh
-          if (!config._retry) {
-            config._retry = true;
-            if (isRefreshing) {
-              return new Promise((resolve, reject) => {
-                subscribeTokenRefresh((newToken) => {
-                  if (!newToken) return reject(new Error('Session expired. Please login again.'));
-                  config.headers['Authorization'] = `Bearer ${newToken}`;
-                  fetch(url, config).then(resolve).catch(reject);
-                });
-              });
-            }
-            isRefreshing = true;
-            try {
-              const newToken = await refreshAccessToken();
-              isRefreshing = false;
-              onTokenRefreshed(newToken);
-              config.headers['Authorization'] = `Bearer ${newToken}`;
-              return await fetch(url, config);
-            } catch {
-              isRefreshing = false;
-              refreshSubscribers.forEach(cb => cb(null));
-              refreshSubscribers = [];
-              throw new Error('Session expired. Please login again.');
-            }
-          }
         }
       } catch { /* Not JSON */ }
     }
