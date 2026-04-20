@@ -217,7 +217,7 @@ export default function NurseNewAssessment() {
 
 
   return (
-    <div className="new-assessment-page" style={{ display: "flex", minHeight: "100vh", background: "#f1f5f9", fontFamily: "'Inter', sans-serif" }}>
+    <div className="new-assessment-page" style={{ display: "flex", minHeight: "100vh", background: "#f1f5f9", fontFamily: theme.fontBody }}>
       {user?.role === 'doctor' ? <DoctorSidebar /> : <NurseSidebar />}
 
       <main className="portal-main" style={{ background: theme.pageBg, fontFamily: theme.fontBody }}>

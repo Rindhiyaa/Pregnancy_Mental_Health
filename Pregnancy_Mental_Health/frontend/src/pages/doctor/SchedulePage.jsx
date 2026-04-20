@@ -273,10 +273,11 @@ const SchedulePage = () => {
     }
 
     return (
-        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, flexDirection: isDesktop ? "row" : "column" }}>
+        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody, flexDirection: isDesktop ? "row" : "column" }}>
             <DoctorSidebar />
             <main ref={mainRef} className="portal-main" style={{ 
                 background: theme.pageBg,
+                fontFamily: theme.fontBody,
                 flex: 1,
                 paddingTop: !isDesktop ? "60px" : "32px",
                 paddingRight: isMobile ? "16px" : isTablet ? "24px" : "32px",
@@ -363,7 +364,7 @@ const SchedulePage = () => {
                             <div style={{ position: "relative", flex: isMobile ? 1 : "initial" }}>
                                 <select value={filter} onChange={e => setFilter(e.target.value)} style={{
                                     width: "100%",
-                                    padding: "9px 32px 9px 12px", borderRadius: 10, fontFamily: "inherit",
+                                    padding: "9px 32px 9px 12px", borderRadius: 10, fontFamily: theme.fontBody,
                                     border: `1px solid ${filter !== "upcoming" ? theme.primary + "60" : theme.glassBorder}`,
                                     background: filter !== "upcoming" ? theme.primary + "10" : theme.cardBg,
                                     color: filter !== "upcoming" ? theme.primary : theme.textPrimary,
@@ -388,7 +389,17 @@ const SchedulePage = () => {
                                     <thead>
                                         <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#f8fafc"), borderColor: theme.glassBorder }}>
                                             {["Patient", "Date", "Time", "Type", "Risk", "Status"].map(h => (
-                                                <th key={h} style={{ color: theme.textMuted, textAlign: "left", padding: "12px 16px", fontSize: 12, fontWeight: 700 }}>{h}</th>
+                                                <th key={h} style={{ 
+                                                    padding: "16px 20px", 
+                                                    textAlign: "left", 
+                                                    fontSize: 13, 
+                                                    fontWeight: 800, 
+                                                    color: theme.textMuted, 
+                                                    textTransform: "uppercase", 
+                                                    letterSpacing: 1, 
+                                                    borderBottom: `1px solid ${theme.border}`,
+                                                    fontFamily: theme.fontBody
+                                                }}>{h}</th>
                                             ))}
                                         </tr>
                                     </thead>

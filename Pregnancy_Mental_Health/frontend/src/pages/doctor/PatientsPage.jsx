@@ -127,9 +127,9 @@ export default function PatientsPage() {
     );
 
     return (
-        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
+        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
             <DoctorSidebar />
-            <main className="portal-main" style={{ background: theme.pageBg }}>
+            <main className="portal-main" style={{ background: theme.pageBg, fontFamily: theme.fontBody }}>
                 <header className="page-header">
                     <PageTitle title="Patient Directory" subtitle="Full history and clinical mapping for all registered patients." />
                 </header>

@@ -148,7 +148,7 @@ export default function ClinicianMessages() {
     const Sidebar = user?.role === 'nurse' ? NurseSidebar : (user?.role === 'admin' ? AdminSidebar : DoctorSidebar);
 
     if (loading) return (
-        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: "'Poppins', sans-serif" }}>
+        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
             <Sidebar />
             <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Loader2 size={48} className="animate-spin" color={theme.primary} />
@@ -168,7 +168,7 @@ export default function ClinicianMessages() {
     };
 
     return (
-        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: "'Poppins', sans-serif" }}>
+        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
             <Sidebar />
             <main className="portal-main" style={{ background: theme.pageBg, maxWidth: 1600 }}>
                 <header style={{ marginBottom: "32px" }}>
@@ -196,7 +196,7 @@ export default function ClinicianMessages() {
                                     style={{
                                         textAlign: 'left', padding: '16px', borderRadius: '16px', border: `1px solid ${theme.glassBorder}`,
                                         background: 'rgba(255,255,255,0.03)', cursor: 'pointer', transition: 'all 0.2s ease', 
-                                        color: theme.textPrimary, fontFamily: "'Poppins', sans-serif"
+                                        color: theme.textPrimary, fontFamily: theme.fontBody
                                     }}
                                     onMouseEnter={e => {
                                         e.currentTarget.style.background = theme.primary + '11';
@@ -230,7 +230,7 @@ export default function ClinicianMessages() {
                                     style={{ 
                                         width: '100%', padding: '16px', borderRadius: '16px', border: `1px solid ${theme.glassBorder}`, 
                                         background: 'rgba(255,255,255,0.05)', color: theme.textPrimary, outline: 'none', 
-                                        fontFamily: "'Poppins', sans-serif", fontSize: 14, appearance: 'none'
+                                        fontFamily: theme.fontBody, fontSize: 14, appearance: 'none'
                                     }}
                                     onFocus={e => e.target.style.borderColor = theme.primary}
                                     onBlur={e => e.target.style.borderColor = theme.glassBorder}
@@ -252,7 +252,7 @@ export default function ClinicianMessages() {
                                     style={{ 
                                         width: '100%', padding: '16px', borderRadius: '16px', border: `1px solid ${theme.glassBorder}`, 
                                         background: 'rgba(255,255,255,0.05)', color: theme.textPrimary, outline: 'none', 
-                                        fontFamily: "'Poppins', sans-serif", fontSize: 14 
+                                        fontFamily: theme.fontBody, fontSize: 14 
                                     }}
                                     onFocus={e => e.target.style.borderColor = theme.primary}
                                     onBlur={e => e.target.style.borderColor = theme.glassBorder}
@@ -270,7 +270,7 @@ export default function ClinicianMessages() {
                                         style={{ 
                                             width: '100%', padding: '16px', borderRadius: '16px', border: `1px solid ${theme.glassBorder}`, 
                                             background: 'rgba(255,255,255,0.05)', color: theme.textPrimary, outline: 'none', 
-                                            fontFamily: "'Poppins', sans-serif", fontSize: 14 
+                                            fontFamily: theme.fontBody, fontSize: 14 
                                         }}
                                         onFocus={e => e.target.style.borderColor = theme.primary}
                                         onBlur={e => e.target.style.borderColor = theme.glassBorder}
@@ -285,7 +285,7 @@ export default function ClinicianMessages() {
                                         style={{ 
                                             width: '100%', padding: '16px', borderRadius: '16px', border: `1px solid ${theme.glassBorder}`, 
                                             background: 'rgba(255,255,255,0.05)', color: theme.textPrimary, outline: 'none', 
-                                            fontFamily: "'Poppins', sans-serif", fontSize: 14 
+                                            fontFamily: theme.fontBody, fontSize: 14 
                                         }}
                                         onFocus={e => e.target.style.borderColor = theme.primary}
                                         onBlur={e => e.target.style.borderColor = theme.glassBorder}
@@ -302,7 +302,7 @@ export default function ClinicianMessages() {
                                     style={{ 
                                         width: '100%', flex: 1, padding: '16px', borderRadius: '16px', border: `1px solid ${theme.glassBorder}`, 
                                         background: 'rgba(255,255,255,0.05)', color: theme.textPrimary, outline: 'none', 
-                                        resize: 'none', fontFamily: "'Poppins', sans-serif", fontSize: 14, lineHeight: 1.6 
+                                        resize: 'none', fontFamily: theme.fontBody, fontSize: 14, lineHeight: 1.6 
                                     }}
                                     onFocus={e => e.target.style.borderColor = theme.primary}
                                     onBlur={e => e.target.style.borderColor = theme.glassBorder}
@@ -316,7 +316,7 @@ export default function ClinicianMessages() {
                                     width: '100%', background: theme.primary, color: 'white', border: 'none',
                                     padding: '16px', borderRadius: '16px', fontWeight: 600, cursor: (!selectedPatientId || !messageBody) ? 'not-allowed' : 'pointer',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                                    boxShadow: `0 8px 24px ${theme.primary}40`, fontSize: 15, fontFamily: "'Poppins', sans-serif",
+                                    boxShadow: `0 8px 24px ${theme.primary}40`, fontSize: 15, fontFamily: theme.fontBody,
                                     transition: 'all 0.2s', opacity: (!selectedPatientId || !messageBody) ? 0.6 : 1
                                 }}
                                 onMouseEnter={e => { if(selectedPatientId && messageBody) e.currentTarget.style.transform = 'translateY(-2px)' }}

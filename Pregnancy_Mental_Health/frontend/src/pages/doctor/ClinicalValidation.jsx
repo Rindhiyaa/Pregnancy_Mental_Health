@@ -287,13 +287,13 @@ const handleSubmit = async (status) => {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
       <DoctorSidebar />
       <main
         className="portal-main"
         style={{
           minHeight: "100vh",
-          fontFamily: "'Inter', system-ui, sans-serif",
+          fontFamily: theme.fontBody,
           background: theme.pageBg
         }}
       >

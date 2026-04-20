@@ -109,10 +109,10 @@ export default function DoctorPatientProfile() {
     );
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: theme.pageBg }}>
+        <div style={{ display: 'flex', minHeight: '100vh', background: theme.pageBg, fontFamily: theme.fontBody }}>
             <DoctorSidebar />
 
-            <main className="portal-main" style={{ background: theme.pageBg }}>
+            <main className="portal-main" style={{ background: theme.pageBg, fontFamily: theme.fontBody }}>
                 <button
                     onClick={() => navigate('/doctor/patients')}
                     style={{ 

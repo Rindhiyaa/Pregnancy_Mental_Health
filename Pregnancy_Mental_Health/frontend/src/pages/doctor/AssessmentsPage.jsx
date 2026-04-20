@@ -152,9 +152,9 @@ const AssessmentsPage = () => {
     );
 
     return (
-        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
+        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
             <DoctorSidebar />
-            <main className="portal-main" style={{ background: theme.pageBg }}>
+            <main className="portal-main" style={{ background: theme.pageBg, fontFamily: theme.fontBody }}>
                 <header className="page-header">
                     <PageTitle title="Clinical Review Queue" subtitle="Detailed screenings awaiting your professional assessment and approval." />
                 </header>

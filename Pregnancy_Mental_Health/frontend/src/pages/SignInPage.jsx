@@ -4,17 +4,20 @@ import { useAuth } from "../contexts/AuthContext";
 import { api, getErrorMessage } from "../utils/api";
 
 export default function SignInPage() {
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
-  const [form, setForm]               = useState({ identifier: "", password: "" });
-  const [error, setError]             = useState("");
+
+  const [form, setForm] = useState({ identifier: "", password: "" });
+  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading]     = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get("error") === "first_login") {
+    const errorParam = params.get("error");
+
+    if (errorParam === "first_login" || errorParam === "first-login") {
       setError("First-time login: Password reset required. Please log in again.");
     }
   }, [location.search]);
@@ -23,7 +26,7 @@ export default function SignInPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -39,46 +42,62 @@ export default function SignInPage() {
 
     try {
       const isEmail = form.identifier.includes("@");
+
       const payload = isEmail
-        ? { email: form.identifier, password: form.password }
-        : { phone_number: form.identifier, password: form.password };
+        ? { email: form.identifier.trim(), password: form.password }
+        : { phone_number: form.identifier.trim(), password: form.password };
 
       const { data } = await api.post("/login", payload);
 
       const userProfile = {
-        fullName:      data.full_name    || "User",
-        firstName:     data.first_name   || "",
-        lastName:      data.last_name    || "",
-        email:         data.email        || form.identifier,
-        phone:         data.phone_number || "",
-        role:          data.role         || "patient",
-        department:    data.department   || "",
-        memberSince:   data.member_since || new Date().toLocaleDateString(),
-        timestamp:     new Date().toISOString(),
-        access_token:  data.access_token,
-        refresh_token: data.refresh_token,  // ✅ Pass refresh token to login()
-        first_login:   data.first_login,
+        fullName: data?.full_name || "User",
+        firstName: data?.first_name || "",
+        lastName: data?.last_name || "",
+        email: data?.email || form.identifier.trim(),
+        phone: data?.phone_number || "",
+        role: data?.role || "patient",
+        department: data?.department || "",
+        memberSince: data?.member_since || new Date().toLocaleDateString(),
+        timestamp: new Date().toISOString(),
+        access_token: data?.access_token,
+        refresh_token: data?.refresh_token,
+        first_login: data?.first_login,
       };
 
-      login(userProfile);  // AuthContext saves both tokens namespaced
+      login(userProfile);
 
-      const role = data.role ? data.role.toLowerCase() : 'patient';
+      const role = data?.role ? data.role.toLowerCase() : "patient";
 
-      // ✅ FORCE set-password for first-time users (not admin)
-      if (data.first_login && role !== 'admin') {
+      if (data?.first_login && role !== "admin") {
         navigate("/change-password", { replace: true });
         return;
       }
 
-      if (role === 'admin')        navigate("/admin/dashboard",   { replace: true });
-      else if (role === 'nurse')   navigate("/nurse/dashboard",   { replace: true });
-      else if (role === 'doctor')  navigate("/doctor/dashboard",  { replace: true });
-      else if (role === 'patient') navigate("/patient/dashboard", { replace: true });
-      else                         navigate(from,                 { replace: true });
-
+      if (role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (role === "nurse") {
+        navigate("/nurse/dashboard", { replace: true });
+      } else if (role === "doctor") {
+        navigate("/doctor/dashboard", { replace: true });
+      } else if (role === "patient") {
+        navigate("/patient/dashboard", { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
     } catch (err) {
-      console.warn("Backend login failed:", err.message);
-      setError(getErrorMessage(err, "Login failed. Please check your credentials."));
+      console.warn("Backend login failed:", err);
+
+      const status = err?.response?.status ?? err?.status ?? null;
+      const msg = getErrorMessage(err, "Login failed. Please check your credentials.");
+
+      // Only show inline box errors for actual auth/input problems.
+      // For sleeping server, timeout, network, backend unavailable, 5xx:
+      // keep the top banner only.
+      if ([400, 401, 403, 404, 422].includes(status)) {
+        setError(msg);
+      } else {
+        setError("");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -141,18 +160,22 @@ export default function SignInPage() {
               </div>
             </label>
 
-            <div style={{ textAlign: 'right', marginTop: '-0.5rem', marginBottom: '1rem' }}>
+            <div style={{ textAlign: "right", marginTop: "-0.5rem", marginBottom: "1rem" }}>
               <button
                 type="button"
                 className="link-button"
                 onClick={() => navigate("/forgot-password")}
-                style={{ fontSize: '0.9rem', color: '#2A9D8F' }}
+                style={{ fontSize: "0.9rem", color: "#2A9D8F" }}
               >
                 Forgot password?
               </button>
             </div>
 
-            {error && <div className="error" role="alert" aria-live="polite">{error}</div>}
+            {error && (
+              <div className="error" role="alert" aria-live="polite">
+                {error}
+              </div>
+            )}
 
             <button type="submit" className="btn-primary full-width" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign in"}

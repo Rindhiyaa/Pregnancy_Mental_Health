@@ -28,7 +28,7 @@ div[style*="overflow-x: auto"] {
 /* Ensure table cells have proper padding on mobile */
 .portal-table th,
 .portal-table td {
-  padding: var(--space-md) var(--space-lg);
+  padding: 16px 20px;
   white-space: nowrap;
 }
 
@@ -48,8 +48,8 @@ div[style*="overflow-x: auto"] {
   /* Reduce padding on mobile */
   .portal-table th,
   .portal-table td {
-    padding: var(--space-sm) var(--space-md);
-    font-size: var(--font-size-sm);
+    padding: 12px 14px;
+    font-size: 12px;
   }
   
   /* Make table headers sticky on mobile scroll */
@@ -179,7 +179,10 @@ div[style*="overflow-x: auto"] {
 
 /* Improve contrast for table headers */
 .portal-table th {
-  font-weight: var(--font-weight-semibold);
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 /* ============================================================
@@ -194,7 +197,7 @@ div[style*="overflow-x: auto"] {
   
   .portal-table th,
   .portal-table td {
-    padding: var(--space-md) var(--space-lg);
+    padding: 14px 16px;
   }
 }
 
@@ -206,6 +209,6 @@ div[style*="overflow-x: auto"] {
   
   .portal-table th,
   .portal-table td {
-    padding: var(--space-lg) var(--space-xl);
+    padding: 16px 20px;
   }
 }

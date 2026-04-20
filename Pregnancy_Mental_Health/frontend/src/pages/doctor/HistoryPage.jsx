@@ -141,9 +141,9 @@ const HistoryPage = () => {
     );
 
     return (
-        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
+        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
             <DoctorSidebar />
-            <main className="portal-main" style={{ background: theme.pageBg }}>
+            <main className="portal-main" style={{ background: theme.pageBg, fontFamily: theme.fontBody }}>
                 <header className="page-header" style={{ marginBottom: 32 }}>
                     <PageTitle title="Comprehensive History" subtitle="Review all previous clinical interventions and AI diagnostic records." />
                 </header>

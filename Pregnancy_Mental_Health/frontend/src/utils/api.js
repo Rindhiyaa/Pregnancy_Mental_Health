@@ -33,29 +33,65 @@ const notifyBackendStatus = (status) => {
 };
 
 // Backend wake check functionality
-let backendWakeCheckInterval = null;
+let backendWakeCheckTimeout = null;
+let backendWakeCheckInProgress = false;
 let backendState = "online";
+let lastHealthCheckTime = 0;
+const HEALTH_CHECK_DEBOUNCE = 5000; // 5 seconds debounce
+
+const stopBackendWakeCheck = () => {
+  if (backendWakeCheckTimeout) {
+    clearTimeout(backendWakeCheckTimeout);
+    backendWakeCheckTimeout = null;
+  }
+};
 
 const startBackendWakeCheck = () => {
-  if (backendWakeCheckInterval) return;
+  if (backendWakeCheckTimeout || backendWakeCheckInProgress) return;
   
-  backendWakeCheckInterval = setInterval(async () => {
+  const now = Date.now();
+  if (now - lastHealthCheckTime < HEALTH_CHECK_DEBOUNCE) {
+    return;
+  }
+  
+  let checkDelay = 30000; // Start with 30 seconds
+  let attemptCount = 0;
+  
+  const performHealthCheck = async () => {
+    if (backendWakeCheckInProgress) return;
+    backendWakeCheckInProgress = true;
+    lastHealthCheckTime = Date.now();
+
     try {
       const res = await fetch(`${API_BASE_URL}/health`, {
         method: "GET",
         credentials: "include",
+        // Add timeout to prevent hanging requests
+        signal: AbortSignal.timeout(10000)
       });
       
       if (res.ok) {
         backendState = "online";
         notifyBackendStatus("online");
-        clearInterval(backendWakeCheckInterval);
-        backendWakeCheckInterval = null;
+        stopBackendWakeCheck();
+        attemptCount = 0;
+        return;
       }
-    } catch {
+    } catch (error) {
+      attemptCount++;
       notifyBackendStatus("sleeping");
+      
+      if (attemptCount >= 3) {
+        checkDelay = 60000; // Switch to 60 seconds
+      }
+    } finally {
+      backendWakeCheckInProgress = false;
     }
-  }, 10000);
+    
+    backendWakeCheckTimeout = setTimeout(performHealthCheck, checkDelay);
+  };
+  
+  performHealthCheck();
 };
 
 const markBackendSleeping = () => {
@@ -73,10 +109,7 @@ const markBackendOnline = () => {
   }
   
   // Clear any existing wake check
-  if (backendWakeCheckInterval) {
-    clearInterval(backendWakeCheckInterval);
-    backendWakeCheckInterval = null;
-  }
+  stopBackendWakeCheck();
 };
 
 const refreshAccessToken = async () => {
@@ -166,7 +199,8 @@ export const apiRequest = async (endpoint, options = {}) => {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    // Reduce timeout from 15s to 10s to fail faster
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     
     config.signal = controller.signal;
     
@@ -174,8 +208,10 @@ export const apiRequest = async (endpoint, options = {}) => {
     clearTimeout(timeoutId);
 
     const isAuthEndpoint = endpoint.includes('/login') || endpoint.includes('/refresh');
+    const isHealthEndpoint = endpoint.includes('/health');
 
-    if (response.status === 401 && !config._retry && !isAuthEndpoint) {
+    // Skip token refresh for health checks to prevent loops
+    if (response.status === 401 && !config._retry && !isAuthEndpoint && !isHealthEndpoint) {
       console.log('🔑 Got 401, attempting token refresh...');
       config._retry = true;
 
@@ -228,7 +264,8 @@ export const apiRequest = async (endpoint, options = {}) => {
       error?.name === "AbortError" ||
       /Failed to fetch|NetworkError|Load failed|abort/i.test(error?.message);
     
-    if (isNetworkIssue) {
+    // Only mark as sleeping for non-health endpoints to prevent excessive health checks
+    if (isNetworkIssue && !endpoint.includes('/health')) {
       markBackendSleeping();
     }
     
@@ -237,14 +274,26 @@ export const apiRequest = async (endpoint, options = {}) => {
       : error?.message || "API request failed.";
     
     console.error('API request failed:', error);
-    throw new Error(networkMessage);
+
+    // ✅ previous fix also included here
+    const wrappedError = new Error(networkMessage);
+    wrappedError.status = null;
+    wrappedError.response = null;
+    wrappedError.isNetworkIssue = isNetworkIssue;
+    throw wrappedError;
   }
 };
 
 export const api = {
   get: async (endpoint, options = {}) => {
     const response = await apiRequest(endpoint, { ...options, method: 'GET' });
-    if (!response.ok) { const t = await response.text(); throw new Error(t || `HTTP ${response.status}`); }
+    if (!response.ok) {
+      const t = await response.text();
+      const error = new Error(t || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.response = response;
+      throw error;
+    }
     const ct = response.headers.get('content-type');
     if (ct && ct.includes('application/json')) return { data: await response.json(), response };
     return { data: null, response };
@@ -252,7 +301,13 @@ export const api = {
 
   post: async (endpoint, bodyData, options = {}) => {
     const response = await apiRequest(endpoint, { ...options, method: 'POST', body: JSON.stringify(bodyData) });
-    if (!response.ok) { const t = await response.text(); throw new Error(t || `HTTP ${response.status}`); }
+    if (!response.ok) {
+      const t = await response.text();
+      const error = new Error(t || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.response = response;
+      throw error;
+    }
     if (response.status === 204) return { data: null, response };
     const ct = response.headers.get('content-type');
     if (ct && ct.includes('application/json')) return { data: await response.json(), response };
@@ -261,7 +316,13 @@ export const api = {
 
   put: async (endpoint, bodyData, options = {}) => {
     const response = await apiRequest(endpoint, { ...options, method: 'PUT', body: JSON.stringify(bodyData) });
-    if (!response.ok) { const t = await response.text(); throw new Error(t || `HTTP ${response.status}`); }
+    if (!response.ok) {
+      const t = await response.text();
+      const error = new Error(t || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.response = response;
+      throw error;
+    }
     if (response.status === 204) return { data: null, response };
     const ct = response.headers.get('content-type');
     if (ct && ct.includes('application/json')) return { data: await response.json(), response };
@@ -270,7 +331,13 @@ export const api = {
 
   patch: async (endpoint, bodyData, options = {}) => {
     const response = await apiRequest(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(bodyData) });
-    if (!response.ok) { const t = await response.text(); throw new Error(t || `HTTP ${response.status}`); }
+    if (!response.ok) {
+      const t = await response.text();
+      const error = new Error(t || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.response = response;
+      throw error;
+    }
     if (response.status === 204) return { data: null, response };
     const ct = response.headers.get('content-type');
     if (ct && ct.includes('application/json')) return { data: await response.json(), response };
@@ -279,7 +346,13 @@ export const api = {
 
   delete: async (endpoint, options = {}) => {
     const response = await apiRequest(endpoint, { ...options, method: 'DELETE' });
-    if (!response.ok) { const t = await response.text(); throw new Error(t || `HTTP ${response.status}`); }
+    if (!response.ok) {
+      const t = await response.text();
+      const error = new Error(t || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.response = response;
+      throw error;
+    }
     if (response.status === 204) return { data: null, response };
     const ct = response.headers.get('content-type');
     if (ct && ct.includes('application/json')) return { data: await response.json(), response };

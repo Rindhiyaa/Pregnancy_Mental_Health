@@ -66,12 +66,12 @@ export default function DoctorAssessmentReview() {
     const rawData = typeof assessment?.raw_data === "object" && assessment.raw_data !== null ? assessment.raw_data : {}; 
 
     return (
-        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
+        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody }}>
             <DoctorSidebar />
             <main className="portal-main" style={{
                 height: "100vh",
                 overflow: "hidden", display: "flex", flexDirection: "column",
-                fontFamily: "'Inter', system-ui, sans-serif",
+                fontFamily: theme.fontBody,
                 background: theme.pageBg
             }}>
                 {/* Header */}
@@ -161,7 +161,7 @@ export default function DoctorAssessmentReview() {
                                                 {q.label}
                                             </span>
                                         </div>
-                                        <div style={{ fontSize: 15, fontWeight: 600, color: theme.textPrimary, lineHeight: 1.55, paddingLeft: 28, fontFamily: "inherit" }}>
+                                        <div style={{ fontSize: 15, fontWeight: 600, color: theme.textPrimary, lineHeight: 1.55, paddingLeft: 28, fontFamily: theme.fontBody }}>
                                             {display}
                                         </div>
                                     </div>

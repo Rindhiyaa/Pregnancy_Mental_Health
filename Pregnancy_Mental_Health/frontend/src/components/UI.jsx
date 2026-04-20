@@ -220,13 +220,14 @@ export const Table = ({ headers, children, loading, loadingMessage = "Loading da
   const thStyle = {
     padding: '16px 20px',
     textAlign: 'left',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 800,
     color: theme.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1,
     borderBottom: `1px solid ${theme.border}`,
-    background: theme.tableHeaderBg || theme.cardBgSecondary
+    background: theme.tableHeaderBg || theme.cardBgSecondary,
+    fontFamily: theme.fontBody
   };
 
   return (
