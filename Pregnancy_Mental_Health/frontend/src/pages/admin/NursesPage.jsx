@@ -289,8 +289,21 @@ export default function NursesPage() {
 
   const handleSuspend = async (id, currentStatus) => {
     const newIsActive = currentStatus !== "active";
+    const nurse = nurses.find(n => n.id === id);
+    const nurseName = nurse?.name || `Nurse ID ${id}`;
+    
     try {
       await api.patch(`/admin/users/${id}/status?is_active=${newIsActive}`);
+      
+      try {
+        await addAuditLog(
+          newIsActive ? "User Activated" : "User Suspended",
+          `${newIsActive ? "Activated" : "Suspended"} nurse ${nurseName} (ID ${id})`
+        );
+      } catch (logErr) {
+        console.warn("Audit log failed", logErr);
+      }
+      
       toast.success(`Account ${newIsActive ? "activated" : "suspended"}`);
       loadNurses();
     } catch (err) {
@@ -303,6 +316,16 @@ export default function NursesPage() {
     if (!window.confirm(`Are you sure you want to permanently delete ${name}?`)) return;
     try {
       await api.delete(`/admin/users/${id}`);
+      
+      try {
+        await addAuditLog(
+          "User Deleted",
+          `Deleted nurse ${name} (ID ${id})`
+        );
+      } catch (logErr) {
+        console.warn("Audit log failed", logErr);
+      }
+      
       toast.success("User record deleted");
       loadNurses();
     } catch (err) {

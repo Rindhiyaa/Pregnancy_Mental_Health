@@ -293,8 +293,21 @@ export default function DoctorsPage() {
 
   const handleSuspend = async (id, currentStatus) => {
     const newIsActive = currentStatus !== "active";
+    const doctor = doctors.find(d => d.id === id);
+    const doctorName = doctor?.name || `Doctor ID ${id}`;
+    
     try {
       await api.patch(`/admin/users/${id}/status?is_active=${newIsActive}`);
+      
+      try {
+        await addAuditLog(
+          newIsActive ? "User Activated" : "User Suspended",
+          `${newIsActive ? "Activated" : "Suspended"} doctor ${doctorName} (ID ${id})`
+        );
+      } catch (logErr) {
+        console.warn("Audit log failed", logErr);
+      }
+      
       toast.success(`Account ${newIsActive ? "activated" : "suspended"}`);
       loadDoctors();
     } catch (err) {
@@ -308,6 +321,16 @@ export default function DoctorsPage() {
 
     try {
       await api.delete(`/admin/users/${id}`);
+      
+      try {
+        await addAuditLog(
+          "User Deleted",
+          `Deleted doctor ${name} (ID ${id})`
+        );
+      } catch (logErr) {
+        console.warn("Audit log failed", logErr);
+      }
+      
       toast.success("User record deleted");
       loadDoctors();
     } catch (err) {
