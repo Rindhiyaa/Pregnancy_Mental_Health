@@ -624,7 +624,7 @@ useEffect(() => {
                         return (
                             <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
                                 onClick={() => setModalOpen(false)}>
-                                <div style={{ width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", borderRadius: 20, background: theme.isDark ? "#1a2433" : "#ffffff", boxShadow: "0 24px 60px rgba(0,0,0,0.25)", overflow: "hidden" }}
+                                <div style={{ width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", borderRadius: 20, background: theme.isDark ? "#1a2433" : "#ffffff", boxShadow: "0 24px 60px rgba(0,0,0,0.25)" }}
                                     onClick={e => e.stopPropagation()} className="hide-scrollbar">
 
                                     {/* Modal header */}
