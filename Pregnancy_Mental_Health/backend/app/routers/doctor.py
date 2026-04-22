@@ -1017,43 +1017,6 @@ async def get_doctor_stats(
         "patients_assigned": patients_assigned
     }
 
-@router.get("/appointments")
-def list_doctor_appointments(
-    db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user_email),
-):
-    doctor = db.query(models.User).filter(models.User.email == current_user_email).first()
-    if not doctor or doctor.role != "doctor":
-        raise HTTPException(status_code=403, detail="Doctor role required")
-
-    appts = (
-        db.query(models.Appointment)
-        .filter(models.Appointment.assigned_doctor_id == doctor.id)
-        .order_by(models.Appointment.date.asc(), models.Appointment.time.asc())
-        .all()
-    )
-
-    results = []
-    for a in appts:
-        patient = db.query(models.Patient).filter(models.Patient.id == a.patient_id).first()
-
-        results.append({
-            "id": a.id,
-            "date": a.date.strftime("%Y-%m-%d") if a.date else None,
-            "time": a.time.strftime("%H:%M") if a.time else None,
-            "patientid": a.patient_id,
-            "patientname": patient.name if patient else None,
-            "doctorid": a.assigned_doctor_id or a.doctor_id,
-            "doctorname": f"{doctor.first_name or ''} {doctor.last_name or ''}".strip() if doctor else None,
-            "type": a.type,
-            "notes": a.notes,
-            "urgency": a.urgency,
-            "department": a.department,
-            "status": a.status,
-        })
-
-    return results
-
 @router.get("/appointments/today")
 def get_today_appointments(
     db: Session = Depends(get_db),

@@ -51,12 +51,6 @@ export default function AnalyticsPage() {
   const { isMobile, isTablet, isDesktop } = useBreakpoint();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Close sidebar when switching to desktop
-  useEffect(() => {
-    if (isDesktop) setSidebarOpen(false);
-  }, [isDesktop]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,16 +83,6 @@ export default function AnalyticsPage() {
     fetchData();
   }, []);
 
-  // ─── Layout values ───────────────────────────────────────────────────────
-  const SIDEBAR_WIDTH = 260;
-  const mainMarginLeft = isDesktop ? SIDEBAR_WIDTH : 0;
-  const mainPadding = isMobile
-    ? "16px"
-    : isTablet
-    ? "24px 28px"
-    : "40px 48px";
-  const mainWidth = isDesktop ? `calc(100% - ${SIDEBAR_WIDTH}px)` : "100%";
-
   // ─── Chart heights scale down on mobile ──────────────────────────────────
   const areaChartHeight = isMobile ? 220 : isTablet ? 280 : 350;
   const barChartHeight = isMobile ? 200 : isTablet ? 260 : 320;
@@ -106,146 +90,29 @@ export default function AnalyticsPage() {
   // ─── Loading state ───────────────────────────────────────────────────────
   if (loading || !data) {
     return (
-      <div
-        style={{
-          display: "flex",
-          minHeight: "100vh",
-          background: theme.pageBg,
-          fontFamily: theme.fontBody,
-        }}
-      >
-        {/* Sidebar */}
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            bottom: 0,
-            zIndex: 300,
-            width: SIDEBAR_WIDTH,
-            transform: isDesktop
-              ? "translateX(0)"
-              : sidebarOpen
-              ? "translateX(0)"
-              : "translateX(-100%)",
-            transition: "transform 0.3s ease",
-          }}
-        >
-          <AdminSidebar onClose={() => setSidebarOpen(false)} />
-        </div>
-        <main
-          style={{
-            flex: 1,
-            marginLeft: mainMarginLeft,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: theme.pageBg,
-            fontFamily: theme.fontBody,
-          }}
-        >
-          <div style={{ color: theme.textMuted, fontWeight: 600 }}>
-            Loading analytics data...
-          </div>
+      <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: theme.pageBg, fontFamily: theme.fontBody }}>
+        <AdminSidebar />
+        <main style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", background: theme.pageBg }}>
+          <div style={{ color: theme.textMuted, fontWeight: 600 }}>Loading analytics data...</div>
         </main>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background: theme.pageBg,
-        fontFamily: theme.fontBody,
-      }}
-    >
-      {/* ── Mobile overlay backdrop ── */}
-      {!isDesktop && sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 200,
-            backdropFilter: "blur(2px)",
-          }}
-        />
-      )}
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: theme.pageBg, fontFamily: theme.fontBody }}>
 
-      {/* ── Sidebar drawer ── */}
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          bottom: 0,
-          zIndex: 300,
-          width: SIDEBAR_WIDTH,
-          transform: isDesktop
-            ? "translateX(0)"
-            : sidebarOpen
-            ? "translateX(0)"
-            : "translateX(-100%)",
-          transition: "transform 0.3s ease",
-        }}
-      >
-        <AdminSidebar onClose={() => setSidebarOpen(false)} />
-      </div>
+      {/* ── Sidebar ── */}
+      <AdminSidebar />
 
       {/* ── Main content ── */}
-      <main
-        style={{
-          flex: 1,
-          marginLeft: mainMarginLeft,
-          padding: mainPadding,
-          width: mainWidth,
-          boxSizing: "border-box",
-          minWidth: 0,
-          background: theme.pageBg,
-          fontFamily: theme.fontBody,
-        }}
-      >
-        {/* ── Mobile top bar ── */}
-        {!isDesktop && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 16,
-              padding: "8px 0",
-            }}
-          >
-            <button
-              onClick={() => setSidebarOpen(true)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: theme.textPrimary,
-                display: "flex",
-                alignItems: "center",
-                padding: 4,
-              }}
-              aria-label="Open navigation"
-            >
-              <Menu size={24} />
-            </button>
-            <span
-              style={{
-                fontWeight: 700,
-                fontSize: 16,
-                color: theme.textPrimary,
-              }}
-            >
-              Analytics
-            </span>
-            <ThemeToggle />
-          </div>
-        )}
+      <main style={{
+        flex: 1, minWidth: 0,
+        height: "100vh", overflowY: "auto",
+        background: theme.pageBg, fontFamily: theme.fontBody,
+        paddingTop: !isDesktop ? "56px" : 0,
+      }}>
+        <div style={{ padding: isMobile ? "16px" : isTablet ? "24px 28px" : "40px 48px" }}>
 
         {/* ── Page Title ── */}
         <PageTitle
@@ -496,6 +363,7 @@ export default function AnalyticsPage() {
               </ResponsiveContainer>
             </div>
           </Card>
+        </div>
         </div>
       </main>
     </div>

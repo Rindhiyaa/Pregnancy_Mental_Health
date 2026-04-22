@@ -727,7 +727,7 @@ def list_nurse_appointments(
 
 
 @router.post("/appointments")
-def create_nurse_appointment(
+async def create_nurse_appointment(
     payload: dict,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user_email),
@@ -823,6 +823,23 @@ def create_nurse_appointment(
 
         except Exception as notif_err:
             logger.error(f"Notification creation failed: {notif_err}")
+
+        # ✅ BROADCAST WEBSOCKET MESSAGE TO REFRESH DOCTOR'S SCHEDULE
+        try:
+            from ..utils.websocket_manager import manager
+            import json
+            
+            await manager.broadcast(json.dumps({
+                "type": "NEW_APPOINTMENT",
+                "appointment_id": appt.id,
+                "patient_name": patient.name,
+                "doctor_id": doctor.id,
+                "date": appt.date.isoformat(),
+                "time": str(appt.time),
+                "message": f"New appointment scheduled for {patient.name}"
+            }))
+        except Exception as ws_err:
+            logger.error(f"WebSocket broadcast failed: {ws_err}")
 
         return {
             "appointment_id": appt.id,

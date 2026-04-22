@@ -8,7 +8,7 @@ import { PageTitle, Loader2 } from "../../components/UI";
 import {
     Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight,
     User, CheckCircle, XCircle, AlertTriangle, FileText,
-    Search, CheckSquare, Ban, Stethoscope, AlertCircle, X, Menu
+    Search, CheckSquare, Ban, Stethoscope, AlertCircle, X
 } from "lucide-react";
 import { getAvatarColor } from "../../utils/helpers";
 
@@ -130,27 +130,13 @@ const SchedulePage = () => {
     const { theme } = useTheme();
     const navigate  = useNavigate();
     const calRef    = useRef(null);
-    // Temporary: use window width instead of content width for debugging
-    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-    
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-    
-    const isMobile = windowWidth < 768;
-    const isTablet = windowWidth >= 768 && windowWidth < 1024;
-    const isDesktop = windowWidth >= 1024;
-    
-    const mainRef = useRef(null);
 
     const today = new Date().toISOString().split("T")[0];
 
     const [loading, setLoading]           = useState(true);
     const [appointments, setAppointments] = useState([]);
     const [selected, setSelected]         = useState(null);
-    const [filter, setFilter]             = useState("upcoming");
+    const [filter, setFilter]             = useState("all");
     const [searchQ, setSearchQ]           = useState("");
     const [dateFilter, setDateFilter]     = useState(null); // null = all, "week" = this week, or "YYYY-MM-DD"
     const [calOpen, setCalOpen]           = useState(false);
@@ -169,11 +155,18 @@ const SchedulePage = () => {
     
             const { data } = await api.get("/doctor/appointments");
     
+            console.log("📅 Raw API Response:", data);
+            console.log("📅 Number of appointments:", data?.length || 0);
+            console.log("📅 First appointment:", data?.[0]);
+            console.log("📅 Sample appointment fields:", data?.[0] ? Object.keys(data[0]) : []);
+    
             setAppointments(data || []);
             setSelected(data?.find(a => a.date === today) || data?.[0] || null);
     
         } catch (err) {
-            console.error("Error loading appointments:", err.message);
+            console.error("❌ Error loading appointments:", err);
+            console.error("❌ Error message:", err.message);
+            console.error("❌ Error response:", err.response?.data);
             toast.error("Failed to load appointments");
     
             setAppointments([]);
@@ -184,6 +177,40 @@ const SchedulePage = () => {
     }, []);
 
     useEffect(() => { loadData(); }, [loadData]);
+
+// ── WebSocket listener for real-time appointment updates ──
+useEffect(() => {
+  const wsUrl = import.meta.env.VITE_API_URL 
+    ? import.meta.env.VITE_API_URL.replace(/^http/, "ws").replace(/\/$/, "") + "/ws"
+    : `ws://${window.location.hostname}:8000/ws`;
+    
+  const ws = new WebSocket(wsUrl);
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === "NEW_APPOINTMENT") {
+        console.log("🔔 New appointment received via WebSocket:", data);
+        toast.success(`New appointment scheduled for ${data.patient_name}`, {
+          icon: '📅',
+          duration: 5000,
+        });
+        // Reload appointments to show the new one
+        loadData();
+      }
+    } catch (err) {
+      console.error("WebSocket message error:", err);
+    }
+  };
+
+  ws.onerror = (error) => {
+    console.error("WebSocket error:", error);
+  };
+
+  return () => {
+    ws.close();
+  };
+}, [loadData]);
 
     // ── Status update ──────────────────────────────────────────────────────────
     const updateStatus = async (appt, newStatus) => {
@@ -242,6 +269,11 @@ const SchedulePage = () => {
         return true;
     }).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 
+    console.log("🔍 Filter state:", { filter, dateFilter, searchQ, today });
+    console.log("🔍 Total appointments:", appointments.length);
+    console.log("🔍 Filtered appointments:", filtered.length);
+    console.log("🔍 Sample filtered appointment:", filtered[0]);
+
     // ── Date button label ──────────────────────────────────────────────────────
     const dateBtnLabel = (() => {
         if (!dateFilter)             return "All Dates";
@@ -249,6 +281,12 @@ const SchedulePage = () => {
         if (dateFilter === today)    return `Today · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
         return new Date(dateFilter + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
     })();
+
+    if (loading) return (
+        <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: theme.pageBg }}>
+            <Loader2 size={48} className="animate-spin" color={theme.primary} />
+        </div>
+    );
 
     const card = {
         background: "rgba(255, 255, 255, 0.55)",
@@ -264,40 +302,15 @@ const SchedulePage = () => {
         }),
     };
 
-    if (loading) {
-        return (
-        <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: theme.pageBg }}>
-            <Loader2 size={48} className="animate-spin" color={theme.primary} />
-        </div>
-    );
-    }
-
     return (
-        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg, fontFamily: theme.fontBody, flexDirection: isDesktop ? "row" : "column" }}>
+        <div style={{ display: "flex", minHeight: "100vh", background: theme.pageBg }}>
             <DoctorSidebar />
-            <main ref={mainRef} className="portal-main" style={{ 
-                background: theme.pageBg,
-                fontFamily: theme.fontBody,
-                flex: 1,
-                paddingTop: !isDesktop ? "60px" : "32px",
-                paddingRight: isMobile ? "16px" : isTablet ? "24px" : "32px",
-                paddingBottom: isMobile ? "16px" : isTablet ? "24px" : "32px",
-                paddingLeft: isMobile ? "16px" : isTablet ? "24px" : "32px",
-                maxWidth: "100%",
-                overflowX: "hidden"
-            }}>
+            <main className="portal-main" style={{ background: theme.pageBg }}>
 
                 {/* ── Header: Title + Calendar button ── */}
-                <header style={{ 
-                    display: "flex", 
-                    justifyContent: "space-between", 
-                    alignItems: isMobile ? "flex-start" : "center", 
-                    marginBottom: 24,
-                    flexDirection: isMobile ? "column" : "row",
-                    gap: 16
-                }}>
+                <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                     <PageTitle title="Appointments Overview" subtitle="Clinical schedule — confirm, review, and action patient appointments" />
-                    <div ref={calRef} style={{ position: "relative", alignSelf: isMobile ? "flex-end" : "auto" }}>
+                    <div ref={calRef} style={{ position: "relative" }}>
                         <button onClick={() => setCalOpen(o => !o)} style={{
                             display: "flex", alignItems: "center", gap: 8,
                             padding: "10px 18px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13,
@@ -318,59 +331,49 @@ const SchedulePage = () => {
                 </header>
 
                 {/* ── KPI Cards ── */}
-                <div style={{ 
-                    display: "grid", 
-                    gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : isTablet ? "repeat(2, 1fr)" : "repeat(4, 1fr)", 
-                    gap: isMobile ? 12 : 16, 
-                    marginBottom: 24 
-                }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 20 }}>
                     {[
                         { icon: <CalendarIcon size={18} />, label: "Today's Appointments", value: todayCount,     accent: theme.primary },
                         { icon: <AlertCircle  size={18} />, label: "Pending Confirmation",  value: pendingCount,   accent: "#F59E0B" },
                         { icon: <AlertTriangle size={18} />,label: "High-Risk Today",        value: highRiskToday,  accent: "#EF4444" },
                         { icon: <CheckCircle  size={18} />, label: "Completed",              value: completedCount, accent: "#10B981" },
                     ].map(({ icon, label, value, accent }) => (
-                        <div key={label} style={{ ...card, padding: isMobile ? "14px" : "16px 18px", display: "flex", alignItems: "center", gap: isMobile ? 10 : 12 }}>
+                        <div key={label} style={{ ...card, padding: "16px 18px", display: "flex", alignItems: "center", gap: 12 }}>
                             <div style={{ width: 40, height: 40, borderRadius: 10, background: accent + "20", display: "flex", alignItems: "center", justifyContent: "center", color: accent, flexShrink: 0 }}>
                                 {icon}
                             </div>
-                            <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 800, color: theme.textPrimary, lineHeight: 1 }}>{value}</div>
-                                <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</div>
+                            <div>
+                                <div style={{ fontSize: 24, fontWeight: 800, color: theme.textPrimary, lineHeight: 1 }}>{value}</div>
+                                <div style={{ fontSize: 11, color: theme.textMuted, marginTop: 2 }}>{label}</div>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {/* ── Main: Table (left) + Patient Details (right, sticky top) ── */}
-                <div style={{ 
-                    display: "grid", 
-                    gridTemplateColumns: isDesktop ? "1fr 420px" : "1fr", 
-                    gap: 24, 
-                    alignItems: "start" 
-                }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 20, alignItems: "start" }}>
 
                     {/* ── Left: Table + Filter bar ── */}
-                    <div style={{ minWidth: 0 }}>
+                    <div>
                         {/* Filter bar */}
-                        <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, background: theme.cardBg, border: `1px solid ${theme.glassBorder}`, borderRadius: 10, padding: "8px 14px", flex: 1, minWidth: isMobile ? "100%" : 200 }}>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, background: theme.cardBg, border: `1px solid ${theme.glassBorder}`, borderRadius: 10, padding: "8px 14px", flex: 1, minWidth: 160 }}>
                                 <Search size={14} color={theme.textMuted} />
                                 <input value={searchQ} onChange={e => setSearchQ(e.target.value)}
                                     placeholder="Search patient name..."
                                     style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: theme.textPrimary, fontSize: 13 }} />
                                 {searchQ && <button onClick={() => setSearchQ("")} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textMuted, display: "flex" }}><X size={13} /></button>}
                             </div>
-                            <div style={{ position: "relative", flex: isMobile ? 1 : "initial" }}>
+                            <div style={{ position: "relative" }}>
                                 <select value={filter} onChange={e => setFilter(e.target.value)} style={{
-                                    width: "100%",
-                                    padding: "9px 32px 9px 12px", borderRadius: 10, fontFamily: theme.fontBody,
-                                    border: `1px solid ${filter !== "upcoming" ? theme.primary + "60" : theme.glassBorder}`,
-                                    background: filter !== "upcoming" ? theme.primary + "10" : theme.cardBg,
-                                    color: filter !== "upcoming" ? theme.primary : theme.textPrimary,
+                                    padding: "9px 32px 9px 12px", borderRadius: 10, fontFamily: "inherit",
+                                    border: `1px solid ${filter !== "all" ? theme.primary + "60" : theme.glassBorder}`,
+                                    background: filter !== "all" ? theme.primary + "10" : theme.cardBg,
+                                    color: filter !== "all" ? theme.primary : theme.textPrimary,
                                     fontSize: 13, fontWeight: 700, cursor: "pointer", outline: "none",
                                     appearance: "none", WebkitAppearance: "none",
                                 }}>
+                                    <option value="all">All</option>
                                     <option value="upcoming">Upcoming</option>
                                     <option value="pending">Pending</option>
                                     <option value="confirmed">Confirmed</option>
@@ -382,24 +385,14 @@ const SchedulePage = () => {
                             </div>
                         </div>
 
-                        {/* Table container with horizontal scroll */}
+                        {/* Table */}
                         <div style={{ ...card, overflow: "hidden" }}>
-                            <div className="portal-table-wrap" style={{ overflowX: "auto" }}>
-                                <table className="portal-table" style={{ borderColor: theme.glassBorder, width: "100%", minWidth: isMobile ? 600 : "auto" }}>
+                            <div style={{ overflowX: "auto" }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
                                     <thead>
-                                        <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#f8fafc"), borderColor: theme.glassBorder }}>
+                                        <tr style={{ background: theme.tableHeaderBg || (theme.isDark ? "rgba(255,255,255,0.05)" : "#f8fafc"), borderBottom: `2px solid ${theme.glassBorder}` }}>
                                             {["Patient", "Date", "Time", "Type", "Risk", "Status"].map(h => (
-                                                <th key={h} style={{ 
-                                                    padding: "16px 20px", 
-                                                    textAlign: "left", 
-                                                    fontSize: 13, 
-                                                    fontWeight: 800, 
-                                                    color: theme.textMuted, 
-                                                    textTransform: "uppercase", 
-                                                    letterSpacing: 1, 
-                                                    borderBottom: `1px solid ${theme.border}`,
-                                                    fontFamily: theme.fontBody
-                                                }}>{h}</th>
+                                                <th key={h} style={{ padding: "11px 14px", fontSize: 11, fontWeight: 800, color: theme.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
                                             ))}
                                         </tr>
                                     </thead>
@@ -426,7 +419,7 @@ const SchedulePage = () => {
                                                 onMouseEnter={e => { if (!active) e.currentTarget.style.background = theme.isDark ? "rgba(255,255,255,0.03)" : "#f8fafc"; }}
                                                 onMouseLeave={e => { e.currentTarget.style.background = active ? theme.primary + "08" : "transparent"; }}
                                                 >
-                                                    <td style={{ padding: "12px 16px" }}>
+                                                    <td style={{ padding: "11px 14px" }}>
                                                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                                             <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
                                                                 background: getAvatarColor(appt.patient_name) + "25",
@@ -435,28 +428,28 @@ const SchedulePage = () => {
                                                                 fontWeight: 800, fontSize: 13 }}>
                                                                 {appt.patient_name?.charAt(0)}
                                                             </div>
-                                                            <div style={{ minWidth: 0 }}>
-                                                                <div style={{ fontSize: 13, fontWeight: 700, color: theme.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{appt.patient_name}</div>
+                                                            <div>
+                                                                <div style={{ fontSize: 13, fontWeight: 700, color: theme.textPrimary, whiteSpace: "nowrap" }}>{appt.patient_name}</div>
                                                                 <div style={{ fontSize: 11, color: theme.textMuted }}>
                                                                     {[appt.patient_age && `Age ${appt.patient_age}`, appt.pregnancy_week && `Wk ${appt.pregnancy_week}`].filter(Boolean).join(" · ")}
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td style={{ padding: "12px 16px", fontSize: 12, color: theme.textPrimary, whiteSpace: "nowrap" }}>{fmtDate(appt.date)}</td>
-                                                    <td style={{ padding: "12px 16px", fontSize: 12, color: theme.textMuted, whiteSpace: "nowrap" }}>{fmtTime(appt.time)}</td>
-                                                    <td style={{ padding: "12px 16px" }}>
+                                                    <td style={{ padding: "11px 14px", fontSize: 12, color: theme.textPrimary, whiteSpace: "nowrap" }}>{fmtDate(appt.date)}</td>
+                                                    <td style={{ padding: "11px 14px", fontSize: 12, color: theme.textMuted, whiteSpace: "nowrap" }}>{fmtTime(appt.time)}</td>
+                                                    <td style={{ padding: "11px 14px" }}>
                                                         <div style={{ fontSize: 12, color: theme.textPrimary, whiteSpace: "nowrap" }}>{appt.type}</div>
                                                         {appt.urgency && appt.urgency !== "Routine" && (
                                                             <span style={{ fontSize: 10, fontWeight: 700, color: "#EF4444", background: "#FEE2E2", padding: "1px 6px", borderRadius: 20, display: "inline-block", marginTop: 2 }}>{appt.urgency}</span>
                                                         )}
                                                     </td>
-                                                    <td style={{ padding: "12px 16px" }}>
+                                                    <td style={{ padding: "11px 14px" }}>
                                                         {appt.risk_level
                                                             ? <span style={{ fontSize: 11, fontWeight: 700, color: risk.color, background: risk.bg, padding: "3px 9px", borderRadius: 20, whiteSpace: "nowrap" }}>{risk.label} Risk</span>
                                                             : <span style={{ color: theme.textMuted, fontSize: 12 }}>—</span>}
                                                     </td>
-                                                    <td style={{ padding: "12px 16px" }}>
+                                                    <td style={{ padding: "11px 14px" }}>
                                                         <span style={{ fontSize: 11, fontWeight: 700, color: status.color, background: status.bg, padding: "3px 9px", borderRadius: 20, whiteSpace: "nowrap" }}>{status.label}</span>
                                                     </td>
                                                 </tr>
@@ -468,17 +461,14 @@ const SchedulePage = () => {
                         </div>
                     </div>
 
-                    {/* ── Right: Patient Details Card (sticky on desktop) ── */}
+                    {/* ── Right: Patient Details Card (sticky) ── */}
                     <div style={{
-                        position: isDesktop ? "sticky" : "relative", 
-                        top: isDesktop ? 16 : 0,
+                        position: "sticky", top: 16,
                         borderRadius: 20,
                         overflow: "hidden",
                         boxShadow: "0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)",
                         border: theme.isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)",
                         background: theme.isDark ? "#111827" : "#ffffff",
-                        width: "100%",
-                        marginBottom: isDesktop ? 0 : 40
                     }}>
                         {!selected ? (
                             <div style={{ padding: "48px 32px", textAlign: "center" }}>
