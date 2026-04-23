@@ -175,6 +175,7 @@ export default function DoctorsPage() {
     { value: "Suspended", label: "Suspended", icon: UserX },
   ];
 
+  //export
   const handlePDFExport = () => {
     if (!filteredDoctors.length) {
       toast.error("No doctors to export");

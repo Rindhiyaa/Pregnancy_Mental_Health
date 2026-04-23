@@ -874,7 +874,7 @@ def update_nurse_appointment(
 
     appt = db.query(models.Appointment).filter(
         models.Appointment.id == appointment_id,
-        models.Appointment.created_by_nurse_id == nurse.id,  # ← VERIFY NURSE OWNS IT
+        models.Appointment.created_by_nurse_id == nurse.id,  
     ).first()
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")

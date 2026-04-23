@@ -4,7 +4,6 @@ import { useTheme } from "../../ThemeContext";
 import DoctorSidebar from "../../components/DoctorSidebar";
 import { PageTitle, Loader2 } from "../../components/UI";
 import { api, getErrorMessage } from "../../utils/api";
-//import { USE_DUMMY_DATA, dummyApi } from "../../utils/dummyData";
 import toast from "react-hot-toast";
 import {
     User, Mail, Phone, ShieldCheck, ClipboardCheck, AlertTriangle,

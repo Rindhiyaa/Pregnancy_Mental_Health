@@ -106,6 +106,7 @@ export default function NursesPage() {
     { value: "Suspended", label: "Suspended", icon: UserX },
   ];
 
+  //export
   const handlePDFExport = () => {
     if (!filteredNurses.length) {
       toast.error("No nurses to export");

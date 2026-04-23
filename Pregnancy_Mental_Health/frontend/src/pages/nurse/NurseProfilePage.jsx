@@ -9,7 +9,7 @@ import {
   User, Mail, Phone, Shield, Clock, Hospital, Key,
   CheckCircle, Users, ClipboardList
 } from "lucide-react";
-import "../../styles/NurseProfile.css";
+import "../../styles/NurseProfile.css"; // CSS
 
 export default function NurseProfilePage() {
   const { user } = useAuth();
