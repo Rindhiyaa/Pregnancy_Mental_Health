@@ -342,49 +342,180 @@ def get_dashboard_analytics(
     db: Session = Depends(get_db),
     admin=Depends(require_admin),
 ):
-    # 1) Monthly accuracy trend for last 6 months
-    # accuracy_rows = (
-    #     db.query(
-    #         func.to_char(models.Assessment.created_at, "Mon YYYY").label("month"),
-    #         func.avg(models.Assessment.model_accuracy).label("accuracy"),
-    #     )
-    #     .group_by(func.to_char(models.Assessment.created_at, "Mon YYYY"))
-    #     .order_by(func.min(models.Assessment.created_at))  # chronological
-    #     .all()
-    # )
-
-    # accuracy_data = [
-    #     {"month": row.month, "accuracy": round(row.accuracy, 1)}
-    #     for row in accuracy_rows
-    # ]
-    accuracy_data = [
-        {"month": "Jan", "accuracy": 91.2},
-        {"month": "Feb", "accuracy": 92.1},
-    ]
-
-    # 2) Daily usage (assessments per day for last 14 days)
-    two_weeks_ago = datetime.now(timezone.utc) - timedelta(days=13)
-
-    usage_rows = (
-        db.query(
-            cast(models.Assessment.created_at, Date).label("day"),
-            func.count(models.Assessment.id).label("assessments"),
-        )
-        .filter(models.Assessment.created_at >= two_weeks_ago)
-        .group_by(cast(models.Assessment.created_at, Date))
-        .order_by(cast(models.Assessment.created_at, Date))
-        .all()
-    )
-
-    usage_stats = [
-        {"day": row.day.isoformat(), "assessments": row.assessments}
-        for row in usage_rows
-    ]
-
-    return {
-        "accuracyData": accuracy_data,
-        "usageStats": usage_stats,
-    }
+    """
+    Comprehensive analytics endpoint for admin dashboard
+    Returns real-time data from the database
+    """
+    today = datetime.now(timezone.utc).date()
+    week_ago = today - timedelta(days=7)
+    month_ago = today - timedelta(days=30)
+    
+    try:
+        # ===== WEEKLY TOTALS (Last 7 days) =====
+        # New patients this week
+        new_patients_week = db.query(models.Patient).filter(
+            cast(models.Patient.created_at, Date) >= week_ago
+        ).count()
+        
+        # New clinicians this week (doctors + nurses)
+        new_clinicians_week = db.query(models.User).filter(
+            models.User.role.in_(["doctor", "nurse"]),
+            cast(models.User.member_since, Date) >= week_ago
+        ).count()
+        
+        # Weekly logins (from audit logs)
+        weekly_logins = db.query(models.AuditLog).filter(
+            models.AuditLog.action == "Login",
+            cast(models.AuditLog.timestamp, Date) >= week_ago
+        ).count()
+        
+        # Pending approvals (assessments pending review)
+        pending_approvals = db.query(models.Assessment).filter(
+            models.Assessment.status == "pending"
+        ).count()
+        
+        # Failed logins this week (from audit logs)
+        failed_logins_week = db.query(models.AuditLog).filter(
+            models.AuditLog.action == "Failed Login",
+            cast(models.AuditLog.timestamp, Date) >= week_ago
+        ).count()
+        
+        # Locked accounts
+        locked_accounts = db.query(models.User).filter(
+            models.User.is_active == False
+        ).count()
+        
+        # ===== PATIENT REGISTRATION TREND (Last 7 days) =====
+        patient_trend = []
+        for i in range(6, -1, -1):
+            day = today - timedelta(days=i)
+            count = db.query(models.Patient).filter(
+                cast(models.Patient.created_at, Date) == day
+            ).count()
+            patient_trend.append({
+                "label": day.strftime("%a"),
+                "date": day.isoformat(),
+                "count": count
+            })
+        
+        # ===== CLINICIAN REGISTRATION TREND (Last 7 days) =====
+        clinician_trend = []
+        for i in range(6, -1, -1):
+            day = today - timedelta(days=i)
+            count = db.query(models.User).filter(
+                models.User.role.in_(["doctor", "nurse"]),
+                cast(models.User.member_since, Date) == day
+            ).count()
+            clinician_trend.append({
+                "label": day.strftime("%a"),
+                "date": day.isoformat(),
+                "count": count
+            })
+        
+        # ===== LOGIN TREND (Last 7 days) =====
+        login_trend = []
+        for i in range(6, -1, -1):
+            day = today - timedelta(days=i)
+            count = db.query(models.AuditLog).filter(
+                models.AuditLog.action == "Login",
+                cast(models.AuditLog.timestamp, Date) == day
+            ).count()
+            login_trend.append({
+                "label": day.strftime("%a"),
+                "date": day.isoformat(),
+                "count": count
+            })
+        
+        # ===== USER DISTRIBUTION BY ROLE =====
+        role_distribution = []
+        for role in ["patient", "doctor", "nurse"]:
+            count = db.query(models.User).filter(models.User.role == role).count()
+            role_distribution.append({
+                "name": role.capitalize(),
+                "value": count
+            })
+        
+        # ===== ASSESSMENT STATUS DISTRIBUTION =====
+        status_distribution = []
+        for status_val in ["pending", "reviewed", "approved", "rejected"]:
+            count = db.query(models.Assessment).filter(
+                models.Assessment.status == status_val
+            ).count()
+            if count > 0:
+                status_distribution.append({
+                    "name": status_val.capitalize(),
+                    "value": count
+                })
+        
+        # ===== RISK LEVEL DISTRIBUTION (Aggregated, no patient details) =====
+        risk_distribution = []
+        risk_levels = db.query(
+            models.Assessment.risk_level,
+            func.count(models.Assessment.id).label("count")
+        ).filter(
+            models.Assessment.risk_level.isnot(None)
+        ).group_by(models.Assessment.risk_level).all()
+        
+        for risk_level, count in risk_levels:
+            risk_distribution.append({
+                "name": risk_level,
+                "value": count
+            })
+        
+        # ===== RECENT USERS (Last 10 user registrations) =====
+        recent_users = []
+        recent_user_records = db.query(models.User).order_by(
+            models.User.member_since.desc()
+        ).limit(10).all()
+        
+        for user in recent_user_records:
+            recent_users.append({
+                "name": f"{user.first_name} {user.last_name or ''}".strip(),
+                "email": user.email,
+                "role": user.role.capitalize() if user.role else "Unknown",
+                "status": "Active" if user.is_active else "Suspended",
+                "createdAt": user.member_since.isoformat() if user.member_since else None
+            })
+        
+        # ===== RECENT AUDIT LOGS (Last 10 audit logs, no sensitive data) =====
+        recent_audit_logs = []
+        recent_logs = db.query(models.AuditLog).order_by(
+            models.AuditLog.timestamp.desc()
+        ).limit(10).all()
+        
+        for log in recent_logs:
+            recent_audit_logs.append({
+                "action": log.action,
+                "details": log.details,
+                "timestamp": log.timestamp.isoformat() if log.timestamp else None,
+                "user": log.user_name or "System"
+            })
+        
+        return {
+            "totals": {
+                "newPatientsToday": new_patients_week,
+                "newCliniciansToday": new_clinicians_week,
+                "dailyLogins": weekly_logins,
+                "pendingApprovals": pending_approvals,
+                "failedLogins": failed_logins_week,
+                "lockedAccounts": locked_accounts,
+            },
+            "newPatientRegistrations": patient_trend,
+            "newClinicianRegistrations": clinician_trend,
+            "dailyLoginsTrend": login_trend,
+            "usersByRole": role_distribution,
+            "roleDistribution": role_distribution,  # Alias for frontend compatibility
+            "assessmentsByStatus": status_distribution,
+            "accountStatus": status_distribution,  # Alias for frontend compatibility
+            "riskLevelDistribution": risk_distribution,
+            "recentUsers": recent_users,
+            "recentAuditLogs": recent_audit_logs,
+        }
+    except Exception as e:
+        print(f"Analytics error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to fetch analytics: {str(e)}")
 
 @router.patch("/users/{user_id}", response_model=schemas.UserOut)
 def update_user(

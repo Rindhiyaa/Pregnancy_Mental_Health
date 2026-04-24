@@ -113,6 +113,31 @@ def login(credentials: LoginRequest, response: Response, db: Session = Depends(g
 
         if not user or not verify_password(credentials.password, user.hashed_password):
             logger.warning(f"Failed login attempt for identifier: {identifier}")
+            
+            # Log failed login attempt to audit_logs
+            try:
+                # Determine user_name safely
+                if user:
+                    user_name = f"{user.first_name} {user.last_name or ''}".strip()
+                    user_id_for_log = user.id
+                else:
+                    user_name = identifier
+                    user_id_for_log = None
+                
+                audit_log = models.AuditLog(
+                    user_id=user_id_for_log,
+                    user_name=user_name,
+                    action="Failed Login",
+                    details=f"Failed login attempt for {identifier}",
+                    ip_address=None,  # Can be added from request if needed
+                )
+                db.add(audit_log)
+                db.commit()
+                logger.info(f"Failed login audit log created for {identifier}")
+            except Exception as log_err:
+                logger.error(f"Failed to create audit log: {log_err}")
+                db.rollback()
+            
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials",
@@ -120,6 +145,20 @@ def login(credentials: LoginRequest, response: Response, db: Session = Depends(g
 
         # Log successful login
         logger.info(f"User logged in: {user.email} (Role: {user.role})")
+        
+        # Create audit log for successful login
+        try:
+            audit_log = models.AuditLog(
+                user_id=user.id,
+                user_name=f"{user.first_name} {user.last_name or ''}".strip(),
+                action="Login",
+                details=f"Successful login for {user.email} (Role: {user.role})",
+                ip_address=None,  # Can be added from request if needed
+            )
+            db.add(audit_log)
+            db.commit()
+        except Exception as log_err:
+            logger.error(f"Failed to create audit log: {log_err}")
 
         # Mark as logged in
         if not user.is_active:
